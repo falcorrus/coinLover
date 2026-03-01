@@ -1,0 +1,7 @@
+services:
+  coinlover:
+    build: .
+    container_name: coinlover
+    ports:
+      - "8007:80"
+    restart: always

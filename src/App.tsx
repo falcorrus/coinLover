@@ -54,8 +54,14 @@ import {
   TrendingUp,
   Laptop,
   AlertTriangle,
-  Trash2
+  Trash2,
+  CloudDownload,
+  CloudUpload,
+  AlertCircle
 } from "lucide-react";
+
+// === CONSTANTS ===
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwKZ0MPk8EJv-EKOeXfJL7PDVMYPvuNUSt1mRFVkAHBBY7oXAc4tITgLdEkmeco537B/exec";
 
 // === TYPES ===
 interface Account {
@@ -151,6 +157,10 @@ export default function App() {
     return saved ? JSON.parse(saved) : [];
   });
 
+  // Sync state
+  const [syncStatus, setSyncStatus] = React.useState<'idle' | 'loading' | 'error' | 'success'>('idle');
+  const [conflictData, setConflictData] = React.useState<{ accounts: Account[], transactions: Transaction[] } | null>(null);
+
   const [mode, setMode] = React.useState<"expense" | "income">("expense");
   const [activeDragId, setActiveDragId] = React.useState<string | null>(null);
   const [activeDragType, setActiveDragType] = React.useState<"account" | "income" | "category" | null>(null);
@@ -187,6 +197,37 @@ export default function App() {
     onConfirm: () => {},
   });
 
+  // --- GOOGLE SHEETS BACKGROUND SYNC ---
+  
+  const performSync = async () => {
+    setSyncStatus('loading');
+    try {
+      const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getData`);
+      if (response.ok) {
+        const cloudData = await response.json();
+        const hasConflict = 
+          cloudData.accounts && (
+            JSON.stringify(cloudData.accounts) !== JSON.stringify(accounts) || 
+            cloudData.transactions?.length !== transactions.length
+          );
+
+        if (hasConflict && cloudData.accounts.length > 0) {
+          setConflictData({ accounts: cloudData.accounts, transactions: cloudData.transactions || [] });
+        }
+        setSyncStatus('success');
+      } else {
+        setSyncStatus('error');
+      }
+    } catch (error) {
+      console.error("Background sync failed:", error);
+      setSyncStatus('error');
+    }
+  };
+
+  React.useEffect(() => {
+    performSync();
+  }, []);
+
   React.useEffect(() => {
     localStorage.setItem("cl_accounts", JSON.stringify(accounts));
   }, [accounts]);
@@ -198,6 +239,32 @@ export default function App() {
   React.useEffect(() => {
     localStorage.setItem("cl_transactions", JSON.stringify(transactions));
   }, [transactions]);
+
+  const syncToSheets = async (data: any) => {
+    setSyncStatus('loading');
+    try {
+      await fetch(GOOGLE_SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      setSyncStatus('success');
+    } catch (error) {
+      console.error("Sync to Sheets failed:", error);
+      setSyncStatus('error');
+    }
+  };
+
+  const resolveConflict = (source: 'cloud' | 'local') => {
+    if (source === 'cloud' && conflictData) {
+      setAccounts(conflictData.accounts);
+      setTransactions(conflictData.transactions);
+    } else {
+      syncToSheets({ action: "syncFullState", accounts, transactions });
+    }
+    setConflictData(null);
+  };
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 10 } }),
@@ -212,12 +279,15 @@ export default function App() {
   };
 
   const saveAccount = (name: string, balance: number, icon: string, color: string) => {
+    let updatedAccounts;
     if (accountModal.account) {
-      setAccounts(accounts.map(acc => acc.id === accountModal.account!.id ? { ...acc, name, balance, icon, color } : acc));
+      updatedAccounts = accounts.map(acc => acc.id === accountModal.account!.id ? { ...acc, name, balance, icon, color } : acc);
     } else {
       const newAccount: Account = { id: `acc-${Date.now()}`, name, balance, color, icon };
-      setAccounts([...accounts, newAccount]);
+      updatedAccounts = [...accounts, newAccount];
     }
+    setAccounts(updatedAccounts);
+    syncToSheets({ action: "syncAccounts", accounts: updatedAccounts });
     setAccountModal({ isOpen: false, account: null });
   };
 
@@ -226,7 +296,9 @@ export default function App() {
       isOpen: true,
       onConfirm: () => {
         if (accountModal.account) {
-          setAccounts(accounts.filter(acc => acc.id !== accountModal.account!.id));
+          const updatedAccounts = accounts.filter(acc => acc.id !== accountModal.account!.id);
+          setAccounts(updatedAccounts);
+          syncToSheets({ action: "syncAccounts", accounts: updatedAccounts });
           setAccountModal({ isOpen: false, account: null });
         }
         setConfirmDelete(prev => ({ ...prev, isOpen: false }));
@@ -246,7 +318,6 @@ export default function App() {
 
     if (!over) return;
 
-    // SORTING LOGIC
     if (active.data.current?.type === over.data.current?.type) {
       if (active.data.current?.type === "account") {
         setAccounts((items) => {
@@ -266,7 +337,6 @@ export default function App() {
       }
     }
 
-    // TRANSACTION LOGIC
     if (mode === "expense" && active.data.current?.type === "account" && over.data.current?.type === "category") {
       const category = over.data.current?.category as Category;
       setNumpadData({ 
@@ -316,23 +386,27 @@ export default function App() {
         date,
         tag: numpadData.tag || undefined,
       };
-      setTransactions([newTransaction, ...transactions]);
-      setAccounts(accounts.map((acc) => {
+      
+      const updatedTransactions = [newTransaction, ...transactions];
+      const updatedAccounts = accounts.map((acc) => {
         if (isExpense && acc.id === numpadData.source!.id) return { ...acc, balance: acc.balance - amountNum };
         if (!isExpense && acc.id === (numpadData.destination as Account).id) return { ...acc, balance: acc.balance + amountNum };
         return acc;
-      }));
-      fetch("https://script.google.com/macros/s/AKfycbwKZ0MPk8EJv-EKOeXfJL7PDVMYPvuNUSt1mRFVkAHBBY7oXAc4tITgLdEkmeco537B/exec", {
-        method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          date, 
-          type: numpadData.type, 
-          sourceName: numpadData.source.name, 
-          destinationName: numpadData.destination.name, 
-          tagName: numpadData.tag || "",
-          amount: amountNum 
-        }),
-      }).catch(error => console.error("Sync failed:", error));
+      });
+
+      setTransactions(updatedTransactions);
+      setAccounts(updatedAccounts);
+
+      syncToSheets({
+        action: "addTransaction",
+        date,
+        type: numpadData.type,
+        sourceName: numpadData.source.name,
+        destinationName: numpadData.destination.name,
+        tagName: numpadData.tag || "",
+        amount: amountNum,
+        allAccounts: updatedAccounts
+      });
     }
     setNumpadData({ ...numpadData, isOpen: false, amount: "0", tag: null });
   };
@@ -347,6 +421,53 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col max-w-md mx-auto relative shadow-2xl overflow-hidden bg-[#050505]">
+      
+      {/* BACKGROUND SYNC INDICATOR */}
+      <div className="absolute top-4 right-4 z-50">
+        <div className={`w-2 h-2 rounded-full transition-all duration-500 shadow-sm ${
+          syncStatus === 'loading' ? "bg-amber-400 animate-pulse scale-125" :
+          syncStatus === 'success' ? "bg-emerald-500 opacity-50" :
+          syncStatus === 'error' ? "bg-rose-500" : "bg-white/10"
+        }`} />
+      </div>
+
+      {/* CONFLICT RESOLUTION MODAL */}
+      {conflictData && (
+        <div className="fixed inset-0 z-[400] bg-black/90 backdrop-blur-md flex items-center justify-center p-6 animate-in fade-in duration-300">
+          <div className="bg-[#121212] w-full max-w-sm rounded-[32px] border border-white/10 p-8 shadow-2xl text-center">
+            <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500 mx-auto mb-6">
+              <AlertCircle size={32} />
+            </div>
+            <h3 className="text-xl font-black uppercase tracking-tight mb-2 text-white">Sync Mismatch</h3>
+            <p className="text-[var(--text-muted)] text-sm mb-10 px-2">Data in Google Sheets differs from your local data. Which one should we keep?</p>
+            
+            <div className="space-y-4">
+              <button 
+                onClick={() => resolveConflict('cloud')}
+                className="w-full h-16 rounded-2xl bg-white/5 border border-white/5 flex items-center gap-4 px-6 hover:bg-white/10 transition-all group"
+              >
+                <CloudDownload className="text-emerald-500 group-hover:scale-110 transition-transform" />
+                <div className="text-left leading-tight">
+                  <p className="font-bold text-sm text-white">Use Cloud Data</p>
+                  <p className="text-[10px] text-[var(--text-muted)] uppercase font-black">Sheets → Phone</p>
+                </div>
+              </button>
+
+              <button 
+                onClick={() => resolveConflict('local')}
+                className="w-full h-16 rounded-2xl bg-white/5 border border-white/5 flex items-center gap-4 px-6 hover:bg-white/10 transition-all group"
+              >
+                <CloudUpload className="text-[#6d5dfc] group-hover:scale-110 transition-transform" />
+                <div className="text-left leading-tight">
+                  <p className="font-bold text-sm text-white">Use Local Data</p>
+                  <p className="text-[10px] text-[var(--text-muted)] uppercase font-black">Phone → Sheets</p>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <header className="px-6 py-8 flex flex-col gap-6 shrink-0">
         <div className="flex justify-between items-center">
           <div className="glass-icon-btn w-10 h-10"><CircleDollarSign size={20} className="text-[#6d5dfc]" /></div>
@@ -354,7 +475,7 @@ export default function App() {
         </div>
         <div className="flex flex-col items-center justify-center pt-2 pb-4">
           <p className="text-sm font-medium text-[var(--text-muted)] tracking-wide uppercase mb-1">Total Balance</p>
-          <h1 className="text-5xl font-extrabold tracking-tight">${totalBalance.toLocaleString("en-US")}</h1>
+          <h1 className="text-5xl font-extrabold tracking-tight text-white">${totalBalance.toLocaleString("en-US")}</h1>
           <div className="mt-4 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 flex items-center gap-2">
             <TrendingDown size={14} className="text-[#f43f5e]" />
             <span className="text-xs font-medium text-[#f43f5e]">-${totalSpent.toLocaleString("en-US")} this month</span>
@@ -424,10 +545,10 @@ export default function App() {
             </SortableContext>
           </div>
           {transactions.length > 0 && (
-             <div className="mt-6 glass-card p-5">
+             <div className="mt-6 glass-card p-5 mb-4">
               <h2 className="text-xs font-bold text-[var(--text-muted)] tracking-widest uppercase mb-4 text-left px-1">Recent</h2>
               <div className="flex flex-col gap-4">
-                {transactions.slice(0, 5).map(tx => {
+                {transactions.slice(0, 10).map(tx => {
                   const isExp = tx.type === 'expense';
                   const item = isExp ? categories.find(c => c.id === tx.targetId) : initialIncomes.find(i => i.id === tx.targetId);
                   const Icon = item ? IconMap[item.icon] : Wallet;
@@ -437,7 +558,7 @@ export default function App() {
                         <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center" style={{ color: item?.color }}><Icon size={18} /></div>
                         <div className="flex flex-col text-left">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-semibold">{item?.name}</span>
+                            <span className="text-sm font-semibold text-white">{item?.name}</span>
                             {tx.tag && <span className="text-[9px] px-1.5 py-0.5 bg-white/5 rounded text-[var(--text-muted)] font-bold uppercase tracking-tight">{tx.tag}</span>}
                           </div>
                           <span className="text-xs text-[var(--text-muted)]">{new Date(tx.date).toLocaleDateString()}</span>
@@ -463,7 +584,7 @@ export default function App() {
 
       {/* NUMPAD */}
       {numpadData.isOpen && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-[#050505] animate-in slide-in-from-bottom-full duration-300">
+        <div className="fixed inset-0 z-[150] flex flex-col bg-[#050505] animate-in slide-in-from-bottom-full duration-300">
           <div className="flex justify-between items-center px-4 py-4 bg-[#121212] border-b border-white/5">
             <button onClick={() => setNumpadData({ ...numpadData, isOpen: false })} className="p-2 text-[var(--text-muted)] hover:text-white transition-colors"><X size={24} /></button>
             <div className="flex items-center gap-3 text-sm font-semibold tracking-wide">
@@ -542,12 +663,12 @@ export default function App() {
       {/* MODALS */}
       <AccountModal isOpen={accountModal.isOpen} account={accountModal.account} onClose={() => setAccountModal({ isOpen: false, account: null })} onSave={saveAccount} onDelete={handleDeleteTrigger} />
       {confirmDelete.isOpen && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-[200] flex items-center justify-center p-6 animate-in fade-in duration-300">
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-[300] flex items-center justify-center p-6 animate-in fade-in duration-300">
           <div className="glass-panel w-full max-w-xs p-8 flex flex-col items-center gap-6 text-center border-[#f43f5e]/20">
             <div className="w-16 h-16 rounded-full bg-[#f43f5e]/10 flex items-center justify-center text-[#f43f5e]"><AlertTriangle size={32} /></div>
-            <div className="flex flex-col gap-2"><h3 className="text-xl font-bold">Are you sure?</h3><p className="text-sm text-[var(--text-muted)]">This will permanently delete your wallet and all its history.</p></div>
+            <div className="flex flex-col gap-2"><h3 className="text-xl font-bold text-white">Are you sure?</h3><p className="text-sm text-[var(--text-muted)]">This will permanently delete your wallet and all its history.</p></div>
             <div className="flex w-full gap-3 mt-2">
-              <button onClick={() => setConfirmDelete({ ...confirmDelete, isOpen: false })} className="flex-1 h-12 rounded-xl bg-white/5 border border-white/10 font-bold hover:bg-white/10 transition-colors">CANCEL</button>
+              <button onClick={() => setConfirmDelete({ ...confirmDelete, isOpen: false })} className="flex-1 h-12 rounded-xl bg-white/5 border border-white/10 font-bold text-white hover:bg-white/10 transition-colors">CANCEL</button>
               <button onClick={confirmDelete.onConfirm} className="flex-1 h-12 rounded-xl bg-[#f43f5e] text-white font-bold shadow-[0_0_20px_rgba(244,63,94,0.3)] transition-colors">DELETE</button>
             </div>
           </div>
@@ -632,9 +753,9 @@ const AccountModal: React.FC<{ isOpen: boolean; account: Account | null; onClose
   React.useEffect(() => { if (isOpen) { setName(account?.name || ""); setBalance(account?.balance.toString() || "0"); setIcon(account?.icon || "wallet"); setColor(account?.color || "#6d5dfc"); } }, [isOpen, account]);
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[200] flex items-center justify-center p-6 animate-in fade-in duration-300">
       <div className="glass-panel w-full max-w-sm p-8 flex flex-col gap-6 shadow-2xl scale-in-95 animate-in zoom-in-95 duration-300">
-        <div className="flex justify-between items-center"><h3 className="text-lg font-bold uppercase tracking-widest">{account ? "Edit Wallet" : "New Wallet"}</h3><button onClick={onClose} className="text-[var(--text-muted)] hover:text-white transition-colors"><X size={24} /></button></div>
+        <div className="flex justify-between items-center"><h3 className="text-lg font-bold uppercase tracking-widest text-white">{account ? "Edit Wallet" : "New Wallet"}</h3><button onClick={onClose} className="text-[var(--text-muted)] hover:text-white transition-colors"><X size={24} /></button></div>
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5"><label className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest px-1">Name</label><input type="text" value={name} onChange={(e) => setName(e.target.value)} className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-[#6d5dfc] transition-all text-white font-medium" placeholder="e.g. Cash, Visa" /></div>
           <div className="flex flex-col gap-1.5"><label className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest px-1">Current Balance</label><input type="number" value={balance} onChange={(e) => setBalance(e.target.value)} className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-[#6d5dfc] transition-all text-white font-medium" /></div>
