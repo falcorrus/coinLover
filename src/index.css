@@ -1,1 +1,134 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --bg-color: #050505;
+  --primary-color: #6d5dfc;
+  --danger-color: #f43f5e;
+  --success-color: #10b981;
+  --text-main: #ffffff;
+  --text-muted: rgba(255, 255, 255, 0.6);
+  --glass-bg: rgba(255, 255, 255, 0.03);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-border-highlight: rgba(255, 255, 255, 0.15);
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  user-select: none;
+}
+
+/* Glassmorphism Classes */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  border: 1px solid var(--glass-border);
+  border-radius: 28px;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+}
+
+.glass-item {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  transition: all 0.2s ease;
+}
+
+.glass-item:active {
+  transform: scale(0.95);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.glass-icon-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+.glass-icon-btn:active {
+  transform: scale(0.92);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Numpad styles */
+.numpad-overlay {
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.numpad-sheet {
+  background: #0a0a0a;
+  border-top: 1px solid var(--glass-border);
+  border-top-left-radius: 32px;
+  border-top-right-radius: 32px;
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.8);
+}
+
+.numpad-btn {
+  background: transparent;
+  color: var(--text-main);
+  font-size: 1.75rem;
+  font-weight: 500;
+  border-radius: 20px;
+  transition: background 0.1s;
+}
+.numpad-btn:active {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.numpad-action {
+  background: var(--primary-color);
+  color: white;
+  border-radius: 20px;
+  font-weight: 600;
+  transition: opacity 0.2s;
+}
+.numpad-action:active {
+  opacity: 0.8;
+}
+
+/* Draggable coin */
+.draggable-coin {
+  width: 64px;
+  height: 64px;
+  border-radius: 32px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border-highlight);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+}
+.draggable-coin:active {
+  cursor: grabbing;
+}
