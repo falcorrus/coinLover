@@ -3,7 +3,7 @@
 # Configuration
 REMOTE_USER="root"
 REMOTE_HOST="server.reloto.ru"
-REMOTE_DIR="/root/MyProjects/CoinLover"
+REMOTE_DIR="/root/MyProjects/coinLover"
 REPO_URL="https://github.com/falcorrus/coinLover.git"
 
 echo "🚀 Starting deployment to $REMOTE_HOST..."
