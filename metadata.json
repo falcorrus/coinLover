@@ -1,0 +1,5 @@
+{
+  "name": "CoinTrack",
+  "description": "A simplified clone of CoinKeeper to test drag-and-drop functionality for coins.",
+  "requestFramePermissions": []
+}
