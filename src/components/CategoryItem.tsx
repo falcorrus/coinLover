@@ -87,8 +87,10 @@ export const CategoryItem: React.FC<Props> = ({
         {...listeners}
         onPointerDown={handlePointerDown}
         onContextMenu={e => e.preventDefault()}
-        className={`w-[52px] h-[52px] rounded-[20px] flex items-center justify-center mb-2 transition-all duration-300 ${isTarget ? "bg-white/20 shadow-[0_0_20px_rgba(255,255,255,0.2)] border border-white/40 scale-110" : "bg-white/5 border border-white/5"
-          } ${isSortingMode && isDragging ? "scale-110 shadow-2xl border-[#6d5dfc] ring-2 ring-[#6d5dfc]/20" : ""
+        className={`w-[52px] h-[52px] rounded-[20px] flex items-center justify-center mb-2 transition-all duration-300 ${isDragging ? "grabbed-elevation" :
+            isPressing ? "scale-90 brightness-75 border-white/40" : ""
+          } ${isTarget ? "bg-white/20 shadow-[0_0_20px_rgba(255,255,255,0.2)] border border-white/40 scale-110" : "bg-white/5 border border-white/5"
+          } ${isSortingMode && isDragging ? "shadow-2xl border-[#6d5dfc] ring-2 ring-[#6d5dfc]/20" : ""
           }`}
       >
         <Icon size={22} color={isTarget ? "#fff" : category.color} />

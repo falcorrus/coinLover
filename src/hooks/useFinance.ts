@@ -102,6 +102,17 @@ export const useFinance = () => {
       tagName: tag ?? "",
       amount,
     });
+
+    // Also background sync updated balances to Configs
+    await googleSheetsService.syncToSheets({
+      action: "syncSettings",
+      targetSheet: "Configs",
+      accounts: updatedAccounts,
+      categories,
+      incomes,
+      timestamp: date,
+    });
+
     setSyncStatus(ok ? "success" : "error");
   };
 
