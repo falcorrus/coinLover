@@ -4,6 +4,7 @@ import {
   Gift, TrendingUp, Laptop, Baby, Activity, Bitcoin
 } from "lucide-react";
 import React from "react";
+import { Account, Category, IncomeSource } from "../types";
 
 export const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwKZ0MPk8EJv-EKOeXfJL7PDVMYPvuNUSt1mRFVkAHBBY7oXAc4tITgLdEkmeco537B/exec";
 
@@ -19,7 +20,14 @@ export const IconMap: Record<string, React.FC<any>> = {
 export const COLORS = ["#6d5dfc", "#10b981", "#f43f5e", "#f59e0b", "#06b6d4"];
 export const ACCOUNT_ICONS = ["wallet", "card", "savings", "business", "laptop", "bitcoin"];
 
-export const DEFAULT_CATEGORIES = [
+/** Default initial accounts — used only if localStorage is empty */
+export const INITIAL_ACCOUNTS: Account[] = [
+  { id: "acc-1", name: "Main Card", balance: 2450, color: "#6d5dfc", icon: "card" },
+  { id: "acc-2", name: "Cash", balance: 320, color: "#10b981", icon: "wallet" },
+  { id: "acc-3", name: "Savings", balance: 10500, color: "#8b5cf6", icon: "savings" },
+];
+
+export const DEFAULT_CATEGORIES: Category[] = [
   { id: "cat-1", name: "Магазины", color: "#f59e0b", icon: "shop", tags: ["еда", "покупки", "туризм"] },
   { id: "cat-2", name: "Жилье", color: "#f43f5e", icon: "rent", tags: ["квартира", "туризм"] },
   { id: "cat-3", name: "Развлечения", color: "#ec4899", icon: "cafe", tags: ["транспорт", "такси", "кафе", "туризм", "разовое"] },
@@ -30,7 +38,7 @@ export const DEFAULT_CATEGORIES = [
   { id: "cat-8", name: "Работа", color: "#6d5dfc", icon: "business", tags: ["софт", "обучение"] },
 ];
 
-export const INITIAL_INCOMES = [
+export const INITIAL_INCOMES: IncomeSource[] = [
   { id: "inc-1", name: "Salary", color: "#10b981", icon: "business" },
   { id: "inc-2", name: "Freelance", color: "#3b82f6", icon: "laptop" },
   { id: "inc-3", name: "Gifts", color: "#f43f5e", icon: "gift" },

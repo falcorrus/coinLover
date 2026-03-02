@@ -21,7 +21,7 @@ export const Numpad: React.FC<Props> = ({ data, onClose, onPress, onDelete, onSu
         <button onClick={onClose} className="p-2 text-slate-500 hover:text-white"><X size={24} /></button>
         <div className="flex items-center gap-3 text-sm font-semibold tracking-wide text-left text-white">
           <span className="text-slate-500 uppercase">{data.source?.name}</span>
-          <ChevronRight size={16} className={data.type === 'expense' ? "text-[#f43f5e]" : "text-[#10b981]"} />
+          <ChevronRight size={16} className={data.type === 'expense' ? "text-[#D4AF37]" : "text-[#10b981]"} />
           <div className="flex flex-col items-center">
             <span className="text-white uppercase">{data.destination?.name}</span>
             {data.tag && <span className="text-[9px] text-[#10b981] font-black uppercase mt-1">{data.tag}</span>}
@@ -32,9 +32,9 @@ export const Numpad: React.FC<Props> = ({ data, onClose, onPress, onDelete, onSu
 
       <div className="flex-1 flex flex-col items-center justify-center px-4">
         <div className="w-full flex items-center gap-3">
-          <div className={`flex-1 h-36 rounded-[24px] border flex flex-col items-end justify-center p-6 relative ${data.type === 'expense' ? 'bg-[#f43f5e]/10 border-[#f43f5e]/20' : 'bg-[#10b981]/10 border-[#10b981]/20'}`}>
+          <div className={`flex-1 h-36 rounded-[24px] border flex flex-col items-end justify-center p-6 relative ${data.type === 'expense' ? 'bg-[#D4AF37]/10 border-[#D4AF37]/20' : 'bg-[#10b981]/10 border-[#10b981]/20'}`}>
             <span className="text-4xl sm:text-5xl font-light text-white tracking-tighter text-right overflow-hidden">{data.amount}</span>
-            <span className={`text-xs font-bold mt-2 absolute bottom-5 right-6 uppercase ${data.type === 'expense' ? 'text-[#f43f5e]' : 'text-[#10b981]'}`}>USD</span>
+            <span className={`text-xs font-bold mt-2 absolute bottom-5 right-6 uppercase ${data.type === 'expense' ? 'text-[#D4AF37]' : 'text-[#10b981]'}`}>USD</span>
           </div>
           <ChevronRight size={24} className="text-slate-500" />
           <div className="flex-1 h-36 rounded-[24px] bg-white/[0.02] border border-white/5 flex flex-col items-end justify-center p-6 relative">
@@ -47,9 +47,9 @@ export const Numpad: React.FC<Props> = ({ data, onClose, onPress, onDelete, onSu
       {data.type === 'expense' && data.destination && (
         <div className="flex items-center px-4 py-3 gap-3 bg-[#111] shrink-0 border-t border-white/5 overflow-x-auto hide-scrollbar">
           {(data.destination as Category).tags.map(t => (
-            <button 
-              key={t} 
-              onClick={() => onTagSelect(t)} 
+            <button
+              key={t}
+              onClick={() => onTagSelect(t)}
               className={`px-4 py-1.5 rounded-full uppercase text-[10px] font-black whitespace-nowrap ${data.tag === t ? "bg-[#10b981] text-white" : "bg-white/5 text-slate-500"}`}
             >
               {t}
@@ -72,10 +72,10 @@ export const Numpad: React.FC<Props> = ({ data, onClose, onPress, onDelete, onSu
             {Array(8).fill(0).map((_, i) => <button key={i} className="h-[72px] flex items-center justify-center text-slate-500 hover:bg-white/5"><MessageCircle size={22} /></button>)}
           </div>
         </div>
-        <div className={`flex h-14 ${data.type === 'expense' ? 'bg-[#f43f5e]' : 'bg-[#10b981]'}`}>
-          <button className="flex-1 text-white text-xs font-bold uppercase">Вчера</button>
-          <button onClick={onSubmit} className="flex-1 text-white text-xs font-bold uppercase bg-black/10">Сегодня</button>
-          <button className="w-[72px] flex items-center justify-center text-white border-l border-white/10"><CalendarDays size={20} /></button>
+        <div className={`flex h-14 ${data.type === 'expense' ? 'bg-[#D4AF37]' : 'bg-[#10b981]'}`}>
+          <button className={`flex-1 text-xs font-bold uppercase ${data.type === 'expense' ? 'text-black font-extrabold' : 'text-white'}`}>Вчера</button>
+          <button onClick={onSubmit} className={`flex-1 text-xs font-bold uppercase bg-black/10 ${data.type === 'expense' ? 'text-black font-extrabold' : 'text-white'}`}>Сегодня</button>
+          <button className={`w-[72px] flex items-center justify-center border-l border-white/10 ${data.type === 'expense' ? 'text-black' : 'text-white'}`}><CalendarDays size={20} /></button>
         </div>
       </div>
     </div>

@@ -41,3 +41,27 @@ export interface NumpadData {
   amount: string;
   tag: string | null;
 }
+
+export type DragItemType = "account" | "category" | "income";
+
+// Push-only sync payloads (discriminated union)
+export type SyncPayload =
+  | {
+    action: "addTransaction";
+    targetSheet: "Transactions";
+    date: string;
+    type: TransactionType;
+    sourceName: string;
+    destinationName: string;
+    tagName: string;
+    amount: number;
+    // allAccounts removed from here to stop bloating Transactions tab
+  }
+  | {
+    action: "syncSettings";
+    targetSheet: "Configs";
+    accounts: Account[];
+    categories: Category[];
+    incomes: IncomeSource[];
+    timestamp: string; // Added for state snapshots
+  };

@@ -1,5 +1,5 @@
-@import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import "tailwindcss";
 
 :root {
   --bg-color: #050505;
@@ -63,6 +63,7 @@ body {
   justify-content: center;
   transition: all 0.2s ease;
 }
+
 .glass-icon-btn:active {
   transform: scale(0.92);
   background: rgba(255, 255, 255, 0.1);
@@ -71,6 +72,7 @@ body {
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
 .hide-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -99,6 +101,7 @@ body {
   border-radius: 20px;
   transition: background 0.1s;
 }
+
 .numpad-btn:active {
   background: rgba(255, 255, 255, 0.1);
 }
@@ -110,6 +113,7 @@ body {
   font-weight: 600;
   transition: opacity 0.2s;
 }
+
 .numpad-action:active {
   opacity: 0.8;
 }
@@ -119,7 +123,7 @@ body {
   width: 64px;
   height: 64px;
   border-radius: 32px;
-  background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02));
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02));
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border: 1px solid var(--glass-border-highlight);
@@ -129,6 +133,23 @@ body {
   justify-content: center;
   cursor: grab;
 }
+
 .draggable-coin:active {
   cursor: grabbing;
+}
+
+.coin-target-glow {
+  background: rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.2) !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+  transform: scale(1.10) !important;
+}
+
+/* Premium iOS-style Grab effect */
+.grabbed-elevation {
+  transform: scale(1.1);
+  box-shadow: 0 16px 32px -8px rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+  filter: brightness(1.1);
+  transition: transform 0.2s cubic-bezier(0.2, 0, 0.2, 1);
 }
