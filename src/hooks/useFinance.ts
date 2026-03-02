@@ -150,6 +150,20 @@ export const useFinance = () => {
     await pushSettings(updated, categories, incomes);
   };
 
+  const saveIncome = async (income: Partial<IncomeSource>) => {
+    const updated = income.id
+      ? incomes.map((i) => (i.id === income.id ? { ...i, ...income } : i))
+      : [...incomes, { ...income, id: `inc-${Date.now()}` } as IncomeSource];
+    setIncomes(updated);
+    await pushSettings(accounts, categories, updated);
+  };
+
+  const deleteIncome = async (id: string) => {
+    const updated = incomes.filter((i) => i.id !== id);
+    setIncomes(updated);
+    await pushSettings(accounts, categories, updated);
+  };
+
   return {
     accounts, setAccounts,
     categories, setCategories,
@@ -159,6 +173,8 @@ export const useFinance = () => {
     addTransaction,
     saveAccount,
     deleteAccount,
+    saveIncome,
+    deleteIncome,
     syncCategories,
     syncIncomes,
     syncAccountsOrder,

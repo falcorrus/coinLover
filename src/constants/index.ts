@@ -19,6 +19,7 @@ export const IconMap: Record<string, React.FC<any>> = {
 
 export const COLORS = ["#6d5dfc", "#10b981", "#f43f5e", "#f59e0b", "#06b6d4"];
 export const ACCOUNT_ICONS = ["wallet", "card", "savings", "business", "laptop", "bitcoin"];
+export const INCOME_ICONS = ["business", "laptop", "gift", "trendingUp", "activity", "wallet"];
 
 /** Default initial accounts — used only if localStorage is empty */
 export const INITIAL_ACCOUNTS: Account[] = [

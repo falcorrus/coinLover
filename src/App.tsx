@@ -27,6 +27,7 @@ import { CategoryItem } from "./components/CategoryItem";
 import { Numpad } from "./components/Numpad";
 import { AccountModal } from "./components/AccountModal";
 import { DraggableIncomeItem } from "./components/DraggableIncomeItem";
+import { IncomeModal } from "./components/IncomeModal";
 
 export default function App() {
   const {
@@ -35,6 +36,7 @@ export default function App() {
     incomes, setIncomes,
     transactions, syncStatus,
     addTransaction, saveAccount, deleteAccount,
+    saveIncome, deleteIncome,
     syncCategories, syncIncomes, syncAccountsOrder,
   } = useFinance();
 
@@ -62,6 +64,10 @@ export default function App() {
 
   const [accountModal, setAccountModal] = React.useState<{ isOpen: boolean; account: Account | null }>({
     isOpen: false, account: null
+  });
+
+  const [incomeModal, setIncomeModal] = React.useState<{ isOpen: boolean; income: IncomeSource | null }>({
+    isOpen: false, income: null
   });
 
   const [confirmDelete, setConfirmDelete] = React.useState<{ isOpen: boolean; onConfirm: () => void }>({
@@ -93,6 +99,9 @@ export default function App() {
   // Open account edit modal — called directly by AccountItem on long-press
   const openAccountModal = (account: Account) =>
     setAccountModal({ isOpen: true, account });
+
+  const openIncomeModal = (income: IncomeSource) =>
+    setIncomeModal({ isOpen: true, income });
 
   // Vertical pull-down (>30px) activates action mode
   const handleDragMove = (e: DragOverEvent) => {
@@ -206,6 +215,18 @@ export default function App() {
     });
   };
 
+  const handleIncomeDeleteTrigger = () => {
+    if (!incomeModal.income) return;
+    setConfirmDelete({
+      isOpen: true,
+      onConfirm: () => {
+        deleteIncome(incomeModal.income!.id);
+        setIncomeModal({ isOpen: false, income: null });
+        setConfirmDelete({ isOpen: false, onConfirm: () => { } });
+      }
+    });
+  };
+
   const totalBalance = accounts.reduce((s, a) => s + a.balance, 0);
   const totalSpent = transactions.filter(t => t.type === "expense").reduce((s, t) => s + t.amount, 0);
   const activeItemData = activeDragType === "account"
@@ -227,12 +248,12 @@ export default function App() {
       </div>
 
       {/* Header */}
-      <header className="px-6 py-8 flex flex-col gap-6 text-center shrink-0">
-        <div className="flex justify-between items-center">
+      <header className="px-6 py-8 flex flex-col gap-2 text-center shrink-0">
+        <div className="flex justify-between items-center mb-2">
           <div className="glass-icon-btn w-10 h-10"><CircleDollarSign size={20} className="text-[#6d5dfc]" /></div>
+          <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] pt-1">Total Balance</p>
           <div className="glass-icon-btn w-10 h-10 text-slate-500"><Settings size={20} /></div>
         </div>
-        <p className="text-sm font-medium text-slate-500 uppercase tracking-wide">Total Balance</p>
         <h1 className="text-5xl font-extrabold tracking-tight">${totalBalance.toLocaleString()}</h1>
         <div className="mt-2 mx-auto px-4 py-1.5 rounded-full bg-white/5 border border-white/10 flex items-center gap-2 w-fit">
           <TrendingDown size={14} className="text-[#D4AF37]" />
@@ -279,12 +300,19 @@ export default function App() {
               <ChevronRight size={14} className="text-slate-500 rotate-90" />
               <h2 className="text-[10px] font-black text-slate-500 uppercase group-hover:text-white">Доходы</h2>
             </div>
-            <button className="text-slate-500 hover:text-white"><Plus size={14} /></button>
+            <button onClick={() => setIncomeModal({ isOpen: true, income: null })} className="text-slate-500 hover:text-white"><Plus size={14} /></button>
           </div>
           <SortableContext items={incomes.map(i => i.id)} strategy={horizontalListSortingStrategy}>
             <div className="flex gap-4 overflow-x-auto hide-scrollbar px-6 pb-4 pt-2">
               {incomes.map(inc => (
-                <DraggableIncomeItem key={inc.id} income={inc} isDragging={activeDragId === inc.id} onSortingMode={() => setIsSortingMode(true)} isSortingMode={isSortingMode} />
+                <DraggableIncomeItem
+                  key={inc.id}
+                  income={inc}
+                  isDragging={activeDragId === inc.id}
+                  onSortingMode={() => setIsSortingMode(true)}
+                  isSortingMode={isSortingMode}
+                  onLongPress={openIncomeModal}
+                />
               ))}
             </div>
           </SortableContext>
@@ -426,6 +454,17 @@ export default function App() {
           setAccountModal({ isOpen: false, account: null });
         }}
         onDelete={handleDeleteTrigger}
+      />
+
+      <IncomeModal
+        isOpen={incomeModal.isOpen}
+        income={incomeModal.income}
+        onClose={() => setIncomeModal({ isOpen: false, income: null })}
+        onSave={(name: string, icon: string, color: string) => {
+          saveIncome({ ...incomeModal.income, name, icon, color });
+          setIncomeModal({ isOpen: false, income: null });
+        }}
+        onDelete={handleIncomeDeleteTrigger}
       />
 
       {confirmDelete.isOpen && (
