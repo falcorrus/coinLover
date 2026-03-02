@@ -2,6 +2,7 @@ export interface Account {
   id: string;
   name: string;
   balance: number;
+  currency: string;
   color: string;
   icon: string;
 }
@@ -28,7 +29,8 @@ export interface Transaction {
   type: TransactionType;
   accountId: string;
   targetId: string;
-  amount: number;
+  amount: number; // Amount deducted from source
+  targetAmount?: number; // Amount added to destination (for transfers) or recorded in category
   date: string;
   tag?: string;
 }
@@ -38,8 +40,11 @@ export interface NumpadData {
   type: TransactionType;
   source: Account | IncomeSource | null;
   destination: Account | Category | null;
-  amount: string;
+  amount: string; // Source amount string
+  targetAmount: string; // Destination amount string
+  activeField: "source" | "destination";
   tag: string | null;
+  date?: string;
 }
 
 export type DragItemType = "account" | "category" | "income";
@@ -55,6 +60,7 @@ export type SyncPayload =
     destinationName: string;
     tagName: string;
     amount: number;
+    targetAmount?: number;
     // allAccounts removed from here to stop bloating Transactions tab
   }
   | {

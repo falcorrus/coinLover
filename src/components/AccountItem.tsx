@@ -133,7 +133,7 @@ export const AccountItem: React.FC<Props> = ({
       <div className="flex flex-col items-center text-center leading-tight">
         <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">{account.name}</span>
         <span className="text-[13px] font-bold text-white">
-          ${account.balance.toLocaleString()}
+          {account.balance.toLocaleString()} <span className="text-[10px] opacity-50">{account.currency}</span>
         </span>
       </div>
     </div>

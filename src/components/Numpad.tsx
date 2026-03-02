@@ -1,19 +1,34 @@
 import React from "react";
-import { X, ChevronRight, Check, MessageCircle, CalendarDays, Delete } from "lucide-react";
+import { X, ChevronRight, Check, CalendarDays, Delete, Divide, Plus, Minus, Equal, Percent } from "lucide-react";
 import { NumpadData, Category } from "../types";
 import { IconMap } from "../constants";
+import { CalendarModal } from "./CalendarModal";
 
 interface Props {
   data: NumpadData;
   onClose: () => void;
+  onFieldChange: (field: "source" | "destination") => void;
   onPress: (val: string) => void;
   onDelete: () => void;
-  onSubmit: () => void;
+  onSubmit: (date?: string) => void;
   onTagSelect: (tag: string) => void;
 }
 
-export const Numpad: React.FC<Props> = ({ data, onClose, onPress, onDelete, onSubmit, onTagSelect }) => {
+export const Numpad: React.FC<Props> = ({ data, onClose, onFieldChange, onPress, onDelete, onSubmit, onTagSelect }) => {
+  const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
+
   if (!data.isOpen) return null;
+
+  const handleYesterday = () => {
+    const date = new Date();
+    date.setDate(date.getDate() - 1);
+    onSubmit(date.toISOString());
+  };
+
+  const handleDateSelect = (selectedDate: Date) => {
+    onSubmit(selectedDate.toISOString());
+    setIsCalendarOpen(false);
+  };
 
   return (
     <div className="fixed inset-0 z-[150] flex flex-col bg-[#050505] animate-in slide-in-from-bottom-full duration-300">
@@ -27,19 +42,41 @@ export const Numpad: React.FC<Props> = ({ data, onClose, onPress, onDelete, onSu
             {data.tag && <span className="text-[9px] text-[#10b981] font-black uppercase mt-1">{data.tag}</span>}
           </div>
         </div>
-        <button onClick={onSubmit} disabled={data.amount === "0"} className="p-2 text-[#10b981] hover:text-white"><Check size={26} /></button>
+        <button onClick={() => onSubmit()} disabled={data.amount === "0"} className="p-2 text-[#10b981] hover:text-white"><Check size={26} /></button>
       </div>
 
       <div className="flex-1 flex flex-col items-center justify-center px-4">
         <div className="w-full flex items-center gap-3">
-          <div className={`flex-1 h-36 rounded-[24px] border flex flex-col items-end justify-center p-6 relative ${data.type === 'expense' ? 'bg-[#D4AF37]/10 border-[#D4AF37]/20' : 'bg-[#10b981]/10 border-[#10b981]/20'}`}>
-            <span className="text-4xl sm:text-5xl font-light text-white tracking-tighter text-right overflow-hidden">{data.amount}</span>
-            <span className={`text-xs font-bold mt-2 absolute bottom-5 right-6 uppercase ${data.type === 'expense' ? 'text-[#D4AF37]' : 'text-[#10b981]'}`}>USD</span>
+          <div
+            onClick={() => onFieldChange("source")}
+            className={`flex-1 h-36 rounded-[24px] border flex flex-col items-end justify-center p-6 relative transition-all duration-300 ${data.activeField === "source"
+              ? (data.type === 'expense' ? 'bg-[#D4AF37]/20 border-[#D4AF37] ring-1 ring-[#D4AF37]/50' : 'bg-[#10b981]/20 border-[#10b981] ring-1 ring-[#10b981]/50')
+              : 'bg-white/[0.02] border-white/5 opacity-50'}`}
+          >
+            <span className={`text-4xl sm:text-5xl font-light tracking-tighter text-right overflow-hidden ${data.activeField === "source" ? "text-white" : "text-slate-500"}`}>{data.amount}</span>
+            <div className="flex items-center gap-1.5 absolute bottom-5 right-6">
+              <span className={`text-[10px] font-black uppercase ${data.activeField === "source" ? (data.type === 'expense' ? 'text-[#D4AF37]' : 'text-[#10b981]') : 'text-slate-500'}`}>
+                {(data.source as any)?.currency || (data.destination as any)?.currency || "USD"}
+              </span>
+              <span className="text-[9px] font-bold text-slate-500 uppercase opacity-40">ОТКУДА</span>
+            </div>
           </div>
-          <ChevronRight size={24} className="text-slate-500" />
-          <div className="flex-1 h-36 rounded-[24px] bg-white/[0.02] border border-white/5 flex flex-col items-end justify-center p-6 relative">
-            <span className="text-4xl sm:text-5xl font-light text-slate-500 tracking-tighter text-right overflow-hidden">{data.amount}</span>
-            <span className="text-xs font-bold text-slate-500 mt-2 absolute bottom-5 right-6 uppercase">BRL</span>
+
+          <ChevronRight size={24} className="text-slate-500 shrink-0" />
+
+          <div
+            onClick={() => onFieldChange("destination")}
+            className={`flex-1 h-36 rounded-[24px] border flex flex-col items-end justify-center p-6 relative transition-all duration-300 ${data.activeField === "destination"
+              ? (data.type === 'expense' ? 'bg-[#D4AF37]/20 border-[#D4AF37] ring-1 ring-[#D4AF37]/50' : 'bg-[#10b981]/20 border-[#10b981] ring-1 ring-[#10b981]/50')
+              : 'bg-white/[0.02] border-white/5 opacity-50'}`}
+          >
+            <span className={`text-4xl sm:text-5xl font-light tracking-tighter text-right overflow-hidden ${data.activeField === "destination" ? "text-white" : "text-slate-500"}`}>{data.targetAmount}</span>
+            <div className="flex items-center gap-1.5 absolute bottom-5 right-6">
+              <span className={`text-[10px] font-black uppercase ${data.activeField === "destination" ? (data.type === 'expense' ? 'text-[#D4AF37]' : 'text-[#10b981]') : 'text-slate-500'}`}>
+                {(data.destination as any)?.currency || (data.source as any)?.currency || "USD"}
+              </span>
+              <span className="text-[9px] font-bold text-slate-500 uppercase opacity-40">КУДА</span>
+            </div>
           </div>
         </div>
       </div>
@@ -69,15 +106,42 @@ export const Numpad: React.FC<Props> = ({ data, onClose, onPress, onDelete, onSu
             <button onClick={onDelete} className="h-[72px] flex items-center justify-center text-slate-500"><Delete size={26} /></button>
           </div>
           <div className="grid grid-cols-2 bg-[#333] gap-[1px]">
-            {Array(8).fill(0).map((_, i) => <button key={i} className="h-[72px] flex items-center justify-center text-slate-500 hover:bg-white/5"><MessageCircle size={22} /></button>)}
+            <button onClick={() => onPress("C")} className="h-[72px] flex items-center justify-center text-[20px] font-bold text-[#D4AF37] hover:bg-white/5">C</button>
+            <button onClick={() => onPress("/")} className="h-[72px] flex items-center justify-center text-slate-400 hover:bg-white/5"><Divide size={22} /></button>
+            <button onClick={() => onPress("*")} className="h-[72px] flex items-center justify-center text-slate-400 hover:bg-white/5"><X size={22} /></button>
+            <button onClick={() => onPress("-")} className="h-[72px] flex items-center justify-center text-slate-400 hover:bg-white/5"><Minus size={22} /></button>
+            <button onClick={() => onPress("+")} className="h-[72px] flex items-center justify-center text-slate-400 hover:bg-white/5"><Plus size={22} /></button>
+            <button onClick={() => onPress("%")} className="h-[72px] flex items-center justify-center text-slate-400 hover:bg-white/5"><Percent size={20} /></button>
+            <button onClick={() => onPress("=")} className="h-[72px] col-span-2 flex items-center justify-center text-white bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20"><Equal size={24} /></button>
           </div>
         </div>
         <div className={`flex h-14 ${data.type === 'expense' ? 'bg-[#D4AF37]' : 'bg-[#10b981]'}`}>
-          <button className={`flex-1 text-xs font-bold uppercase ${data.type === 'expense' ? 'text-black font-extrabold' : 'text-white'}`}>Вчера</button>
-          <button onClick={onSubmit} className={`flex-1 text-xs font-bold uppercase bg-black/10 ${data.type === 'expense' ? 'text-black font-extrabold' : 'text-white'}`}>Сегодня</button>
-          <button className={`w-[72px] flex items-center justify-center border-l border-white/10 ${data.type === 'expense' ? 'text-black' : 'text-white'}`}><CalendarDays size={20} /></button>
+          <button
+            onClick={handleYesterday}
+            className={`flex-1 text-xs font-bold uppercase ${data.type === 'expense' ? 'text-black font-extrabold' : 'text-white'}`}
+          >
+            Вчера
+          </button>
+          <button
+            onClick={() => onSubmit()}
+            className={`flex-1 text-xs font-bold uppercase bg-black/10 ${data.type === 'expense' ? 'text-black font-extrabold' : 'text-white'}`}
+          >
+            Сегодня
+          </button>
+          <button
+            onClick={() => setIsCalendarOpen(true)}
+            className={`w-[72px] flex items-center justify-center border-l border-white/10 ${data.type === 'expense' ? 'text-black' : 'text-white'}`}
+          >
+            <CalendarDays size={20} />
+          </button>
         </div>
       </div>
+
+      <CalendarModal
+        isOpen={isCalendarOpen}
+        onClose={() => setIsCalendarOpen(false)}
+        onSelect={handleDateSelect}
+      />
     </div>
   );
 };

@@ -5,73 +5,85 @@ function doPost(e) {
     
     // Обработка синхронизации настроек (Configs)
     if (data.action === "syncSettings") {
-      let sheet = ss.getSheetByName("Configs");
-      
-      // Создаем лист, если его нет
-      if (!sheet) {
-        sheet = ss.insertSheet("Configs");
-      }
-      
-      // Очищаем существующие данные
+      let sheet = ss.getSheetByName("Configs") || ss.insertSheet("Configs");
       sheet.clear();
-      
-      // Пишем заголовки и данные
-      sheet.appendRow(["Timestamp", data.timestamp]);
-      sheet.appendRow([]); // Пустая строка для отступа
-      
+
+      const rows = [];
+      const colCount = 5; // ID, Name, Balance, Color, Icon
+
+      rows.push(["Updated", data.timestamp, "", "", ""]);
+      rows.push(["", "", "", "", ""]);
+
       // 1. Кошельки (Accounts)
-      sheet.appendRow(["=== WALLETS ==="]);
-      sheet.appendRow(["ID", "Name", "Balance", "Color", "Icon"]);
-      if (data.accounts && data.accounts.length > 0) {
-        const accountRows = data.accounts.map(a => [a.id, a.name, a.balance, a.color, a.icon]);
-        sheet.getRange(sheet.getLastRow() + 1, 1, accountRows.length, accountRows[0].length).setValues(accountRows);
+      rows.push([" === WALLETS ===", "", "", "", ""]);
+      rows.push(["ID", "Name", "Balance", "Color", "Icon"]);
+      if (data.accounts && Array.isArray(data.accounts)) {
+        data.accounts.forEach(a => {
+          rows.push([a.id || "", a.name || "", a.balance || 0, a.color || "", a.icon || ""]);
+        });
       }
-      
-      sheet.appendRow([]); // Пустая строка
-      
+      rows.push(["", "", "", "", ""]);
+
       // 2. Категории (Categories)
-      sheet.appendRow(["=== CATEGORIES ==="]);
-      sheet.appendRow(["ID", "Name", "Color", "Icon", "Tags"]);
-      if (data.categories && data.categories.length > 0) {
-        const categoryRows = data.categories.map(c => [c.id, c.name, c.color, c.icon, c.tags ? c.tags.join(", ") : ""]);
-        sheet.getRange(sheet.getLastRow() + 1, 1, categoryRows.length, categoryRows[0].length).setValues(categoryRows);
+      rows.push([" === CATEGORIES ===", "", "", "", ""]);
+      rows.push(["ID", "Name", "Color", "Icon", "Tags"]);
+      if (data.categories && Array.isArray(data.categories)) {
+        data.categories.forEach(c => {
+          rows.push([c.id || "", c.name || "", c.color || "", c.icon || "", c.tags ? (Array.isArray(c.tags) ? c.tags.join(", ") : c.tags) : ""]);
+        });
       }
-      
-      sheet.appendRow([]); // Пустая строка
-      
+      rows.push(["", "", "", "", ""]);
+
       // 3. Доходы (Incomes)
-      sheet.appendRow(["=== INCOMES ==="]);
-      sheet.appendRow(["ID", "Name", "Color", "Icon"]);
-      if (data.incomes && data.incomes.length > 0) {
-        const incomeRows = data.incomes.map(i => [i.id, i.name, i.color, i.icon]);
-        sheet.getRange(sheet.getLastRow() + 1, 1, incomeRows.length, incomeRows[0].length).setValues(incomeRows);
+      rows.push([" === INCOMES ===", "", "", "", ""]);
+      rows.push(["ID", "Name", "Color", "Icon", ""]);
+      if (data.incomes && Array.isArray(data.incomes)) {
+        data.incomes.forEach(i => {
+          rows.push([i.id || "", i.name || "", i.color || "", i.icon || "", ""]);
+        });
+      }
+
+      // Записываем всё одним махом — это гораздо надежнее
+      if (rows.length > 0) {
+        sheet.getRange(1, 1, rows.length, colCount).setValues(rows);
       }
       
-      // Оформление: автоподбор ширины столбцов
-      sheet.autoResizeColumns(1, 5);
-      
-      return ContentService.createTextOutput(JSON.stringify({ status: "success", message: "Configs saved" })).setMimeType(ContentService.MimeType.JSON);
+      sheet.autoResizeColumns(1, colCount);
+      return ContentService.createTextOutput(JSON.stringify({ status: "success", message: "Configs updated" })).setMimeType(ContentService.MimeType.JSON);
     }
     
     // Обработка транзакций (Transactions)
     if (data.action === "addTransaction") {
       let sheet = ss.getSheetByName("Transactions") || ss.insertSheet("Transactions");
       
-      // Добавляем заголовки, если таблица пустая
-      if (sheet.getLastRow() === 0) {
-        sheet.appendRow(["Date", "Type", "Source", "Destination", "Tag", "Amount"]);
-        sheet.getRange(1, 1, 1, 6).setFontWeight("bold");
+      const defaultHeaders = ["Date", "Type", "Source", "Destination", "Tag", "Amount", "Target Amount"];
+      
+      // ПРИНУДИТЕЛЬНОЕ ОБНОВЛЕНИЕ ЗАГОЛОВКОВ (если их меньше 7)
+      if (sheet.getLastColumn() < 7) {
+        if (sheet.getLastRow() === 0) {
+          sheet.appendRow(defaultHeaders);
+        } else {
+          // Если данные уже есть, но колонок мало — вставляем заголовки в 1-ю строку
+          sheet.getRange(1, 1, 1, defaultHeaders.length).setValues([defaultHeaders]);
+        }
+        sheet.getRange(1, 1, 1, defaultHeaders.length).setFontWeight("bold");
       }
       
-      // Добавляем новую транзакцию
-      sheet.appendRow([
-        data.date,
-        data.type,
-        data.sourceName,
-        data.destinationName,
-        data.tagName || "",
-        data.amount
-      ]);
+      const lastCol = sheet.getLastColumn();
+      const currentHeaders = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+      
+      const fieldMap = {
+        "Date": data.date,
+        "Type": data.type,
+        "Source": data.sourceName,
+        "Destination": data.destinationName,
+        "Tag": data.tagName || "",
+        "Amount": data.amount,
+        "Target Amount": data.targetAmount || data.amount
+      };
+      
+      const rowData = currentHeaders.map(header => fieldMap[header] !== undefined ? fieldMap[header] : "");
+      sheet.appendRow(rowData);
       
       return ContentService.createTextOutput(JSON.stringify({ status: "success", message: "Transaction added" })).setMimeType(ContentService.MimeType.JSON);
     }

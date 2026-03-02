@@ -51,17 +51,6 @@ export default function App() {
 
   const sortingTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const clearSortingTimer = () => {
-    if (sortingTimerRef.current) {
-      clearTimeout(sortingTimerRef.current);
-      sortingTimerRef.current = null;
-    }
-  };
-
-  const [numpad, setNumpad] = React.useState<NumpadData>({
-    isOpen: false, type: "expense", source: null, destination: null, amount: "0", tag: null
-  });
-
   const [accountModal, setAccountModal] = React.useState<{ isOpen: boolean; account: Account | null }>({
     isOpen: false, account: null
   });
@@ -69,6 +58,32 @@ export default function App() {
   const [incomeModal, setIncomeModal] = React.useState<{ isOpen: boolean; income: IncomeSource | null }>({
     isOpen: false, income: null
   });
+
+  const [numpad, setNumpad] = React.useState<NumpadData>({
+    isOpen: false, type: "expense", source: null, destination: null, amount: "0", targetAmount: "0", activeField: "source", tag: null
+  });
+
+  const clearSortingTimer = () => {
+    if (sortingTimerRef.current) {
+      clearTimeout(sortingTimerRef.current);
+      sortingTimerRef.current = null;
+    }
+  };
+
+  const safeEval = (str: string): string => {
+    try {
+      let expr = str.replace(/,/g, '.').replace(/\s/g, '');
+      expr = expr.replace(/(\d+(?:\.\d+)?)%/g, '($1/100)');
+      const sanitized = expr.replace(/[^-+/*0-9.()]/g, '');
+      if (!sanitized) return "0";
+      // eslint-disable-next-line no-new-func
+      const result = new Function(`return ${sanitized}`)();
+      if (typeof result !== 'number' || !isFinite(result)) return "0";
+      return (Math.round(result * 100) / 100).toString();
+    } catch {
+      return str;
+    }
+  };
 
   const [confirmDelete, setConfirmDelete] = React.useState<{ isOpen: boolean; onConfirm: () => void }>({
     isOpen: false, onConfirm: () => { }
@@ -192,13 +207,15 @@ export default function App() {
             source: activeData.account,
             destination: overData.category,
             amount: "0",
+            targetAmount: "0",
+            activeField: "source",
             tag: overData.category.tags?.[0] || null
           });
         } else if (overData?.type === "account" && active.id !== over.id) {
-          setNumpad({ isOpen: true, type: "transfer", source: activeData.account, destination: overData.account, amount: "0", tag: null });
+          setNumpad({ isOpen: true, type: "transfer", source: activeData.account, destination: overData.account, amount: "0", targetAmount: "0", activeField: "source", tag: null });
         }
       } else if (activeData?.type === "income" && overData?.type === "account") {
-        setNumpad({ isOpen: true, type: "income", source: activeData.income, destination: overData.account, amount: "0", tag: null });
+        setNumpad({ isOpen: true, type: "income", source: activeData.income, destination: overData.account, amount: "0", targetAmount: "0", activeField: "source", tag: null });
       }
     }
   };
@@ -436,12 +453,31 @@ export default function App() {
       <Numpad
         data={numpad}
         onClose={() => setNumpad({ ...numpad, isOpen: false })}
-        onPress={(val) => setNumpad(p => ({ ...p, amount: p.amount === "0" ? val : p.amount + val }))}
-        onDelete={() => setNumpad(p => ({ ...p, amount: p.amount.length > 1 ? p.amount.slice(0, -1) : "0" }))}
+        onFieldChange={(field) => setNumpad(p => ({ ...p, activeField: field }))}
+        onPress={(val) => setNumpad(p => {
+          const field = p.activeField;
+          const key = field === "source" ? "amount" : "targetAmount";
+          const curr = p[key];
+
+          if (val === "C") return { ...p, [key]: "0" };
+          if (val === "=") return { ...p, [key]: safeEval(curr) };
+
+          const newVal = curr === "0" && !isNaN(Number(val)) ? val : curr + val;
+          return { ...p, [key]: newVal };
+        })}
+        onDelete={() => setNumpad(p => {
+          const field = p.activeField;
+          const key = field === "source" ? "amount" : "targetAmount";
+          const curr = p[key];
+          const newVal = curr.length > 1 ? curr.slice(0, -1) : "0";
+          return { ...p, [key]: newVal };
+        })}
         onTagSelect={(tag) => setNumpad(p => ({ ...p, tag }))}
-        onSubmit={() => {
-          addTransaction(numpad.type, numpad.source!, numpad.destination!, parseFloat(numpad.amount), numpad.tag || undefined);
-          setNumpad({ ...numpad, isOpen: false, amount: "0" });
+        onSubmit={(date?: string) => {
+          const finalAmount = parseFloat(safeEval(numpad.amount));
+          const finalTarget = parseFloat(safeEval(numpad.targetAmount));
+          addTransaction(numpad.type, numpad.source!, numpad.destination!, finalAmount, finalTarget, numpad.tag || undefined, date);
+          setNumpad({ ...numpad, isOpen: false, amount: "0", targetAmount: "0", activeField: "source" });
         }}
       />
 
@@ -449,8 +485,8 @@ export default function App() {
         isOpen={accountModal.isOpen}
         account={accountModal.account}
         onClose={() => setAccountModal({ isOpen: false, account: null })}
-        onSave={(name: string, balance: number, icon: string, color: string) => {
-          saveAccount({ ...accountModal.account, name, balance, icon, color });
+        onSave={(name: string, balance: number, currency: string, icon: string, color: string) => {
+          saveAccount({ ...accountModal.account, name, balance, currency, icon, color });
           setAccountModal({ isOpen: false, account: null });
         }}
         onDelete={handleDeleteTrigger}

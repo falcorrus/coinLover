@@ -65,27 +65,33 @@ export const useFinance = () => {
     source: Account | IncomeSource,
     destination: Account | Category,
     amount: number,
-    tag?: string
+    targetAmount?: number,
+    tag?: string,
+    customDate?: string
   ) => {
-    const date = new Date().toISOString();
+    const date = customDate || new Date().toISOString();
+
     const newTx: Transaction = {
       id: Date.now().toString(),
       type,
       accountId: type === "income" ? (destination as Account).id : (source as Account).id,
-      targetId: type === "income" ? source.id : destination.id,
+      targetId: type === "income" ? source.id : (destination as Category).id,
       amount,
+      targetAmount: targetAmount ?? amount,
       date,
       tag,
     };
 
     setTransactions((prev) => [newTx, ...prev]);
 
+    const finalTargetAmount = targetAmount ?? amount;
+
     const updatedAccounts = accounts.map((a) => {
       if (type === "expense" && a.id === source.id) return { ...a, balance: a.balance - amount };
-      if (type === "income" && a.id === (destination as Account).id) return { ...a, balance: a.balance + amount };
+      if (type === "income" && a.id === (destination as Account).id) return { ...a, balance: a.balance + (targetAmount ?? amount) };
       if (type === "transfer") {
         if (a.id === source.id) return { ...a, balance: a.balance - amount };
-        if (a.id === destination.id) return { ...a, balance: a.balance + amount };
+        if (a.id === (destination as Account).id) return { ...a, balance: a.balance + finalTargetAmount };
       }
       return a;
     });
@@ -101,6 +107,7 @@ export const useFinance = () => {
       destinationName: destination.name,
       tagName: tag ?? "",
       amount,
+      targetAmount: finalTargetAmount,
     });
 
     // Also background sync updated balances to Configs

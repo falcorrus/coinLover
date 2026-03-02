@@ -1,12 +1,13 @@
 import {
   Wallet, CreditCard, PiggyBank, Utensils, Bus, Coffee, Home,
   PlaySquare, ShoppingBag, HeartPulse, MoreHorizontal, Briefcase,
-  Gift, TrendingUp, Laptop, Baby, Activity, Bitcoin
+  Gift, TrendingUp, Laptop, Baby, Activity, Bitcoin,
+  DollarSign, Euro, RussianRuble, Coins, Banknote
 } from "lucide-react";
 import React from "react";
 import { Account, Category, IncomeSource } from "../types";
 
-export const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxxFaSrGy178NM1AJ3ay0ySCIVdvN6gb82hkuXoJCZt12TH3zMxqur00YTLXnEZO8_L/exec";
+export const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbydKng2JT3FsTYd5nWbsjEd4u0gUxKQQ1cpI4O1AoW7bIx1ZAM0obfOO736615sLMvG/exec";
 
 export const IconMap: Record<string, React.FC<any>> = {
   wallet: Wallet, card: CreditCard, savings: PiggyBank,
@@ -14,18 +15,19 @@ export const IconMap: Record<string, React.FC<any>> = {
   rent: Home, subs: PlaySquare, shop: ShoppingBag,
   health: HeartPulse, more: MoreHorizontal, business: Briefcase,
   gift: Gift, trendingUp: TrendingUp, laptop: Laptop,
-  baby: Baby, activity: Activity, bitcoin: Bitcoin
+  baby: Baby, activity: Activity, bitcoin: Bitcoin,
+  usd: DollarSign, eur: Euro, rub: RussianRuble, brl: Coins, ars: Banknote
 };
 
 export const COLORS = ["#6d5dfc", "#10b981", "#f43f5e", "#f59e0b", "#06b6d4"];
-export const ACCOUNT_ICONS = ["wallet", "card", "savings", "business", "laptop", "bitcoin"];
+export const ACCOUNT_ICONS = ["wallet", "card", "savings", "business", "laptop", "bitcoin", "usd", "eur", "rub", "brl", "ars"];
 export const INCOME_ICONS = ["business", "laptop", "gift", "trendingUp", "activity", "wallet"];
 
 /** Default initial accounts — used only if localStorage is empty */
 export const INITIAL_ACCOUNTS: Account[] = [
-  { id: "acc-1", name: "Main Card", balance: 2450, color: "#6d5dfc", icon: "card" },
-  { id: "acc-2", name: "Cash", balance: 320, color: "#10b981", icon: "wallet" },
-  { id: "acc-3", name: "Savings", balance: 10500, color: "#8b5cf6", icon: "savings" },
+  { id: "acc-1", name: "Основная карта", balance: 2450, currency: "USD", color: "#6d5dfc", icon: "card" },
+  { id: "acc-2", name: "Наличные", balance: 320, currency: "RUB", color: "#10b981", icon: "wallet" },
+  { id: "acc-3", name: "Сбережения", balance: 10500, currency: "BRL", color: "#8b5cf6", icon: "savings" },
 ];
 
 export const DEFAULT_CATEGORIES: Category[] = [
@@ -40,8 +42,8 @@ export const DEFAULT_CATEGORIES: Category[] = [
 ];
 
 export const INITIAL_INCOMES: IncomeSource[] = [
-  { id: "inc-1", name: "Salary", color: "#10b981", icon: "business" },
-  { id: "inc-2", name: "Freelance", color: "#3b82f6", icon: "laptop" },
-  { id: "inc-3", name: "Gifts", color: "#f43f5e", icon: "gift" },
-  { id: "inc-4", name: "Dividends", color: "#8b5cf6", icon: "trendingUp" },
+  { id: "inc-1", name: "Зарплата", color: "#10b981", icon: "business" },
+  { id: "inc-2", name: "Фриланс", color: "#3b82f6", icon: "laptop" },
+  { id: "inc-3", name: "Подарки", color: "#f43f5e", icon: "gift" },
+  { id: "inc-4", name: "Дивиденды", color: "#8b5cf6", icon: "trendingUp" },
 ];
