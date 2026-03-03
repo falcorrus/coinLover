@@ -744,6 +744,7 @@ export default function App() {
         isOpen={analyticsModal.isOpen}
         onClose={() => setAnalyticsModal({ isOpen: false })}
         categories={categories}
+        globalTransactions={transactions}
         onItemClick={(item, type, monthTx) => {
           let entity = item;
           if (type === "category") {

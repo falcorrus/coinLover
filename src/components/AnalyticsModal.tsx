@@ -8,9 +8,10 @@ interface AnalyticsModalProps {
     isOpen: boolean;
     onClose: () => void;
     categories: Category[];
+    globalTransactions: Transaction[];
     onItemClick?: (entity: any, type: "category" | "tag", transactions: Transaction[]) => void;
 }
-export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose, categories, onItemClick }) => {
+export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose, categories, globalTransactions, onItemClick }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -37,10 +38,28 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose,
         const loadData = async () => {
             const monthStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
 
-            // Return cached data immediately if available
+            // 1. Check local modal cache first
             if (monthCache.current.has(monthStr)) {
                 setTransactions(monthCache.current.get(monthStr) || []);
                 return;
+            }
+
+            const now = new Date();
+            const isCurrentMonth = currentDate.getFullYear() === now.getFullYear() && currentDate.getMonth() === now.getMonth();
+
+            // 2. Optimization: If current month and globalTransactions present, use them
+            if (isCurrentMonth && globalTransactions.length > 0) {
+                // Confirm it has transactions for this month specifically
+                const monthTx = globalTransactions.filter(t => {
+                    const txDate = new Date(t.date.replace(/-/g, '/').replace('T', ' '));
+                    return txDate.getFullYear() === currentDate.getFullYear() && txDate.getMonth() === currentDate.getMonth();
+                });
+
+                if (monthTx.length > 0) {
+                    monthCache.current.set(monthStr, globalTransactions);
+                    setTransactions(globalTransactions);
+                    return;
+                }
             }
 
             setIsLoading(true);
