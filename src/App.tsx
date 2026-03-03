@@ -15,7 +15,8 @@ import {
 } from "@dnd-kit/core";
 import { arrayMove, SortableContext, horizontalListSortingStrategy, rectSortingStrategy } from "@dnd-kit/sortable";
 import {
-  Plus, Settings, CircleDollarSign, TrendingDown, ChevronRight, TrendingUp, AlertTriangle, Wallet, RefreshCcw
+  Plus, Settings, CircleDollarSign, TrendingDown, ChevronRight, TrendingUp, AlertTriangle, Wallet, RefreshCcw,
+  Heart, MousePointer2
 } from "lucide-react";
 
 // Modules
@@ -44,15 +45,20 @@ export default function App() {
   const [isSplashVisible, setIsSplashVisible] = React.useState(true);
 
   React.useEffect(() => {
-    // Background check on startup
-    checkConflicts();
-
-    // Splash screen timer
-    const timer = setTimeout(() => {
+    // Splash screen: minimal duration for brand feel, then immediate interactivity
+    const splashTimer = setTimeout(() => {
       setIsSplashVisible(false);
-    }, 2000);
+    }, 600);
 
-    return () => clearTimeout(timer);
+    // DEFERRED Background check: let the UI render and stabilize first
+    const conflictTimer = setTimeout(() => {
+      checkConflicts();
+    }, 1500);
+
+    return () => {
+      clearTimeout(splashTimer);
+      clearTimeout(conflictTimer);
+    };
   }, [checkConflicts]);
 
   const [mode, setMode] = React.useState<"expense" | "income">("expense");
@@ -272,19 +278,31 @@ export default function App() {
     <div className="min-h-screen flex flex-col max-w-md mx-auto relative shadow-2xl overflow-hidden bg-[#050505] text-white font-sans select-none text-left">
       <style>{`body { overflow: hidden; overscroll-behavior: none; } * { -webkit-tap-highlight-color: transparent; }`}</style>
 
-      {/* Splash Screen */}
+      {/* Splash Screen (Vector Mode) */}
       {isSplashVisible && (
         <div className="fixed inset-0 z-[1000] bg-[#050505] flex items-center justify-center animate-in fade-in duration-500">
-          <div className="relative w-48 h-48 animate-pulse">
-            <img
-              src="/Gemini_mid.png"
-              alt="CoinLover Loading"
-              className="w-full h-full object-contain drop-shadow-[0_0_25px_rgba(109,93,252,0.4)]"
-            />
+          <div className="relative animate-pulse flex flex-col items-center gap-6">
+            <div className="relative w-32 h-32 rounded-full bg-gradient-to-br from-amber-300 via-amber-500 to-amber-600 shadow-[0_0_50px_rgba(217,119,6,0.3)] flex items-center justify-center border-4 border-amber-200/20">
+              {/* Coin Reflection Effect */}
+              <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.4),transparent)]" />
+
+              {/* Main Icon */}
+              <Heart size={64} fill="white" className="text-white drop-shadow-lg relative z-10" />
+
+              {/* Pointer Icon */}
+              <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-2.5 shadow-2xl border-2 border-amber-600 z-20 scale-110">
+                <MousePointer2 size={24} className="text-amber-600 fill-amber-600" />
+              </div>
+            </div>
+
+            {/* App Name */}
+            <div className="flex flex-col items-center gap-1">
+              <span className="text-amber-500 font-black tracking-[0.4em] uppercase text-sm ml-[0.4em]">CoinLover</span>
+              <div className="h-0.5 w-12 bg-amber-500/30 rounded-full" />
+            </div>
           </div>
         </div>
       )}
-
       {/* Sync Status dot */}
       <div className="absolute top-4 right-4 z-50">
         <div className={`w-2 h-2 rounded-full transition-all duration-500 ${syncStatus === "loading" ? "bg-amber-400 animate-pulse" :
@@ -302,7 +320,6 @@ export default function App() {
           <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] pt-1">Total Balance</p>
           <div className="glass-icon-btn w-10 h-10 text-slate-500"><Settings size={20} /></div>
         </div>
-        <h1 className="text-5xl font-extrabold tracking-tight">${totalBalance.toLocaleString()}</h1>
         <button
           onClick={() => setPillMode(p => p === "expense" ? "balance" : "expense")}
           className="mt-2 mx-auto px-4 py-1.5 rounded-full bg-white/5 border border-white/10 flex items-center gap-2 w-fit hover:bg-white/10 transition-colors cursor-pointer"
@@ -383,12 +400,6 @@ export default function App() {
           <div className="px-6 mb-3 flex justify-between items-center">
             <div className="flex items-center gap-2">
               <h2 className="text-[10px] font-black text-slate-500 uppercase">Кошельки</h2>
-              <button
-                onClick={toggleIncome}
-                className={`w-6 h-6 rounded-full flex items-center justify-center transition-all ${mode === "income" ? "bg-[#10b981] text-white shadow-lg" : "bg-white/10 text-slate-500"}`}
-              >
-                <TrendingUp size={12} strokeWidth={3} />
-              </button>
             </div>
             <button onClick={() => setAccountModal({ isOpen: true, account: null })} className="text-slate-500 hover:text-white">
               <Plus size={16} />
