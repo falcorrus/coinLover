@@ -66,11 +66,12 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                 counterpartId = tx.targetId;
                 isOutflow = true;
             } else if (tx.type === "income") {
-                counterpartId = tx.targetId;
+                counterpartId = tx.accountId;
                 isOutflow = false;
             } else {
+                // Transfer
                 counterpartId = tx.targetId;
-                isOutflow = true;
+                isOutflow = true; // Relative to source account
             }
         }
 
@@ -96,7 +97,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
             if (tx.type === "expense") {
                 counterpartItem = categories.find(c => c.id === tx.targetId);
             } else if (tx.type === "income") {
-                counterpartItem = accounts.find(a => a.id === tx.targetId);
+                counterpartItem = incomes.find(i => i.id === tx.targetId);
             } else if (tx.type === "transfer") {
                 counterpartItem = accounts.find(a => a.id === tx.targetId);
             }
@@ -143,7 +144,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                     color: "text-[#D4AF37]"
                 };
             } else if (tx.type === "income") {
-                const destAcc = accounts.find(a => a.id === tx.targetId);
+                const destAcc = accounts.find(a => a.id === tx.targetId); // Income goes into targetId account
                 const currency = destAcc?.currency || "USD";
                 return {
                     amount: `+${amount} ${currency}`,
@@ -151,12 +152,13 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                     color: "text-emerald-500"
                 };
             } else {
-                const destAcc = accounts.find(a => a.id === tx.targetId);
-                const currency = destAcc?.currency || "USD";
+                // Transfer: Neutral or Blue
+                const sourceAcc = accounts.find(a => a.id === tx.accountId); // Transfers are from source account
+                const currency = sourceAcc?.currency || "USD";
                 return {
                     amount: `-${amount} ${currency}`,
                     usdAmount: usdAmount ? `-$${usdAmount}` : null,
-                    color: "text-slate-300"
+                    color: "text-slate-400"
                 };
             }
         } else {
@@ -205,7 +207,22 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                                 const { item, isOutflow } = getCounterpartInfo(tx);
                                 const Icon = item ? (IconMap[(item as any).icon] || Wallet) : Wallet;
                                 const amountInfo = getAmountStr(tx, isOutflow);
-                                const displayName = item?.name || "Unknown";
+                                let displayName = item?.name || "Unknown";
+                                if (entityType === "feed") {
+                                    if (tx.type === "transfer") {
+                                        const sourceAcc = accounts.find(a => a.id === tx.accountId);
+                                        const destAcc = accounts.find(a => a.id === tx.targetId);
+                                        displayName = `${sourceAcc?.name || "?"} → ${destAcc?.name || "?"}`;
+                                    } else if (tx.type === "income") {
+                                        const sourceInc = incomes.find(i => i.id === tx.targetId);
+                                        const destAcc = accounts.find(a => a.id === tx.accountId);
+                                        displayName = `${sourceInc?.name || "?"} → ${destAcc?.name || "?"}`;
+                                    } else if (tx.type === "expense") {
+                                        const sourceAcc = accounts.find(a => a.id === tx.accountId);
+                                        const destCat = categories.find(c => c.id === tx.targetId);
+                                        displayName = `${sourceAcc?.name || "?"} → ${destCat?.name || "?"}`;
+                                    }
+                                }
                                 const displayColor = (item as any)?.color || "#6b7280";
 
                                 return (

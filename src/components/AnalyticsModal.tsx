@@ -23,14 +23,50 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose,
     // Swipe handlers for changing month
     const touchStartX = React.useRef(0);
 
+    // Background fetching of all transactions
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const loadAllHistory = async () => {
+            const data = await googleSheetsService.fetchMonthData("all");
+            if (data && data.transactions) {
+                const allTx = data.transactions as Transaction[];
+                // Group transactions by month and populate cache
+                const monthGroups = new Map<string, Transaction[]>();
+                allTx.forEach(t => {
+                    const txDate = new Date(t.date.replace(/-/g, '/').replace('T', ' '));
+                    const key = `${txDate.getFullYear()}-${String(txDate.getMonth() + 1).padStart(2, '0')}`;
+                    if (!monthGroups.has(key)) monthGroups.set(key, []);
+                    monthGroups.get(key)!.push(t);
+                });
+
+                // Update monthCache for each month found in history
+                monthGroups.forEach((txs, key) => {
+                    if (!monthCache.current.has(key)) {
+                        monthCache.current.set(key, txs);
+                    }
+                });
+
+                // If CURRENTLY selected month doesn't have transactions in its specific cache yet,
+                // and we just loaded it from the 'all' batch, update the displayed state.
+                const currentKey = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+                if (transactions.length === 0 && monthGroups.has(currentKey)) {
+                    setTransactions(monthGroups.get(currentKey)!);
+                }
+            }
+        };
+
+        // Delay pre-fetching slightly to prioritize initial month render
+        const timer = setTimeout(loadAllHistory, 1500);
+        return () => clearTimeout(timer);
+    }, [isOpen]);
+
     // Clear cache when modal closes to ensure fresh data on next open
     useEffect(() => {
         if (!isOpen) {
             monthCache.current.clear();
         }
-    }, [isOpen]);
-
-    // Fetch data when date changes
+    }, [isOpen]);    // Fetch data when date changes
     useEffect(() => {
         if (!isOpen) return;
 

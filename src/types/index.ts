@@ -21,6 +21,7 @@ export interface IncomeSource {
   name: string;
   color: string;
   icon: string;
+  balanceUSD?: number;
 }
 
 export type TransactionType = "expense" | "income" | "transfer";

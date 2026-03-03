@@ -8,6 +8,16 @@ function doGet(e) {
     }
     
     const rows = sheet.getDataRange().getValues();
+    
+    // Detect column format for Wallets
+    let hasUSDCol = false;
+    for (let i = 0; i < rows.length; i++) {
+      if (String(rows[i][0]).includes("ID") && String(rows[i][3]).includes("USD")) {
+        hasUSDCol = true;
+        break;
+      }
+    }
+
     const data = {
       accounts: [],
       categories: [],
@@ -42,28 +52,32 @@ function doGet(e) {
       if (!firstCol || firstCol === "ID" || firstCol === "Name") continue;
       
       if (currentSection === "accounts") {
+        const row = rows[i];
         data.accounts.push({
-          id: rows[i][0],
-          name: rows[i][1],
-          balance: Number(rows[i][2]),
-          color: rows[i][3],
-          icon: rows[i][4] || "wallet",
-          currency: rows[i][5] || ""
+          id: String(row[0]),
+          name: String(row[1]),
+          balance: Number(row[2]),
+          balanceUSD: hasUSDCol ? (row[3] ? Number(row[3]) : undefined) : undefined,
+          color: hasUSDCol ? row[4] : row[3],
+          icon: (hasUSDCol ? row[5] : row[4]) || "wallet",
+          currency: (hasUSDCol ? row[6] : row[5]) || ""
         });
       } else if (currentSection === "categories") {
+        const row = rows[i];
         data.categories.push({
-          id: rows[i][0],
-          name: rows[i][1],
-          color: rows[i][2],
-          icon: rows[i][3] || "more",
-          tags: rows[i][4] ? String(rows[i][4]).split(",").map(t => t.trim()) : []
+          id: String(row[0]),
+          name: String(row[1]),
+          color: row[2],
+          icon: row[3] || "more",
+          tags: row[4] ? String(row[4]).split(",").map(t => t.trim()) : []
         });
       } else if (currentSection === "incomes") {
+        const row = rows[i];
         data.incomes.push({
-          id: rows[i][0],
-          name: rows[i][1],
-          color: rows[i][2],
-          icon: rows[i][3] || "business"
+          id: String(row[0]),
+          name: String(row[1]),
+          color: row[2],
+          icon: row[3] || "business"
         });
       }
     }
@@ -80,9 +94,14 @@ function doGet(e) {
         headers.forEach((h, i) => { col[h] = i; });
 
         let now = new Date();
+        let filterAll = false;
         if (e && e.parameter && e.parameter.month) {
-          const parts = e.parameter.month.split("-");
-          now = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, 1);
+          if (e.parameter.month === "all") {
+            filterAll = true;
+          } else {
+            const parts = e.parameter.month.split("-");
+            now = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, 1);
+          }
         }
         const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
         const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
@@ -115,7 +134,7 @@ function doGet(e) {
           }
 
           if (isNaN(txDate.getTime())) continue;
-          if (txDate < monthStart || txDate >= monthEnd) continue;
+          if (!filterAll && (txDate < monthStart || txDate >= monthEnd)) continue;
 
           // Standardize date to ISO string for the frontend
           const isoDate = Utilities.formatDate(txDate, ss.getSpreadsheetTimeZone(), "yyyy-MM-dd'T'HH:mm:ss");
@@ -185,45 +204,55 @@ function doPost(e) {
     
     // Обработка синхронизации настроек (Configs)
     if (data.action === "syncSettings") {
+      // Safety: Never clear if data is empty (likely an app initialization bug)
+      if (!data.accounts || data.accounts.length === 0) {
+        return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "Refusing to save empty configuration" })).setMimeType(ContentService.MimeType.JSON);
+      }
+
       let sheet = ss.getSheetByName("Configs") || ss.insertSheet("Configs");
       sheet.clear();
 
       const rows = [];
-      const colCount = 6; // ID, Name, Balance, Color, Icon, Currency
+      const colCount = 7; // ID, Name, Balance, Balance USD, Color, Icon, Currency
+      
+      const pushRow = (arr) => {
+        const row = new Array(colCount).fill("");
+        for (let i = 0; i < Math.min(arr.length, colCount); i++) row[i] = arr[i];
+        rows.push(row);
+      };
 
-      rows.push(["Updated", data.timestamp, "", "", "", ""]);
-      rows.push(["", "", "", "", "", ""]);
+      pushRow(["Updated", data.timestamp]);
+      pushRow([""]);
 
       // 1. Кошельки (Accounts)
-      rows.push([" === WALLETS ===", "", "", "", "", ""]);
-      rows.push(["ID", "Name", "Balance", "Color", "Icon", "Currency"]);
+      pushRow([" === WALLETS ==="]);
+      pushRow(["ID", "Name", "Balance", "Balance USD", "Color", "Icon", "Currency"]);
       if (data.accounts && Array.isArray(data.accounts)) {
         data.accounts.forEach(a => {
-          rows.push([a.id || "", a.name || "", a.balance || 0, a.color || "", a.icon || "", a.currency || ""]);
+          pushRow([a.id || "", a.name || "", a.balance || 0, a.balanceUSD || "", a.color || "", a.icon || "", a.currency || ""]);
         });
       }
-      rows.push(["", "", "", "", "", ""]);
+      pushRow([""]);
 
       // 2. Категории (Categories)
-      rows.push([" === CATEGORIES ===", "", "", "", "", ""]);
-      rows.push(["ID", "Name", "Color", "Icon", "Tags", ""]);
+      pushRow([" === CATEGORIES ==="]);
+      pushRow(["ID", "Name", "Color", "Icon", "Tags"]);
       if (data.categories && Array.isArray(data.categories)) {
         data.categories.forEach(c => {
-          rows.push([c.id || "", c.name || "", c.color || "", c.icon || "", c.tags ? (Array.isArray(c.tags) ? c.tags.join(", ") : c.tags) : "", ""]);
+          pushRow([c.id || "", c.name || "", c.color || "", c.icon || "", c.tags ? (Array.isArray(c.tags) ? c.tags.join(", ") : c.tags) : ""]);
         });
       }
-      rows.push(["", "", "", "", "", ""]);
+      pushRow([""]);
 
       // 3. Доходы (Incomes)
-      rows.push([" === INCOMES ===", "", "", "", "", ""]);
-      rows.push(["ID", "Name", "Color", "Icon", "", ""]);
+      pushRow([" === INCOMES ==="]);
+      pushRow(["ID", "Name", "Color", "Icon"]);
       if (data.incomes && Array.isArray(data.incomes)) {
         data.incomes.forEach(i => {
-          rows.push([i.id || "", i.name || "", i.color || "", i.icon || "", "", ""]);
+          pushRow([i.id || "", i.name || "", i.color || "", i.icon || ""]);
         });
       }
 
-      // Записываем всё одним махом — это гораздо надежнее
       if (rows.length > 0) {
         sheet.getRange(1, 1, rows.length, colCount).setValues(rows);
       }
