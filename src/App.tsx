@@ -27,6 +27,7 @@ import { AccountItem } from "./components/AccountItem";
 import { CategoryItem } from "./components/CategoryItem";
 import { Numpad } from "./components/Numpad";
 import { AccountModal } from "./components/AccountModal";
+import { CategoryModal } from "./components/CategoryModal";
 import { DraggableIncomeItem } from "./components/DraggableIncomeItem";
 import { IncomeModal } from "./components/IncomeModal";
 
@@ -37,6 +38,7 @@ export default function App() {
     incomes, setIncomes,
     transactions, syncStatus,
     addTransaction, saveAccount, deleteAccount,
+    saveCategory, deleteCategory,
     saveIncome, deleteIncome,
     syncCategories, syncIncomes, syncAccountsOrder,
     pullSettings, checkConflicts, conflictData, updateLocalFromRemote, pushSettings
@@ -81,8 +83,13 @@ export default function App() {
     isOpen: false, income: null
   });
 
+  const [categoryModal, setCategoryModal] = React.useState<{ isOpen: boolean; category: Category | null }>({
+    isOpen: false, category: null
+  });
+
   const [numpad, setNumpad] = React.useState<NumpadData>({
-    isOpen: false, type: "expense", source: null, destination: null, amount: "0", targetAmount: "0", activeField: "source", tag: null
+    isOpen: false, type: "expense", source: null, destination: null,
+    amount: "0", targetAmount: "0", targetLinked: true, activeField: "source", tag: null, comment: ""
   });
 
   const clearSortingTimer = () => {
@@ -139,6 +146,9 @@ export default function App() {
 
   const openIncomeModal = (income: IncomeSource) =>
     setIncomeModal({ isOpen: true, income });
+
+  const openCategoryModal = (category: Category) =>
+    setCategoryModal({ isOpen: true, category });
 
   // Vertical pull-down (>30px) activates action mode
   const handleDragMove = (e: DragOverEvent) => {
@@ -230,14 +240,28 @@ export default function App() {
             destination: overData.category,
             amount: "0",
             targetAmount: "0",
+            targetLinked: true,
             activeField: "source",
-            tag: overData.category.tags?.[0] || null
+            tag: overData.category.tags?.[0] || null,
+            comment: ""
           });
         } else if (overData?.type === "account" && active.id !== over.id) {
-          setNumpad({ isOpen: true, type: "transfer", source: activeData.account, destination: overData.account, amount: "0", targetAmount: "0", activeField: "source", tag: null });
+          const isSameCurrency = activeData.account.currency === overData.account.currency;
+          setNumpad({
+            isOpen: true,
+            type: "transfer",
+            source: activeData.account,
+            destination: overData.account,
+            amount: "0",
+            targetAmount: "0",
+            targetLinked: isSameCurrency,
+            activeField: "source",
+            tag: null,
+            comment: ""
+          });
         }
       } else if (activeData?.type === "income" && overData?.type === "account") {
-        setNumpad({ isOpen: true, type: "income", source: activeData.income, destination: overData.account, amount: "0", targetAmount: "0", activeField: "source", tag: null });
+        setNumpad({ isOpen: true, type: "income", source: activeData.income, destination: overData.account, amount: "0", targetAmount: "0", targetLinked: true, activeField: "source", tag: null, comment: "" });
       }
     }
   };
@@ -261,6 +285,18 @@ export default function App() {
       onConfirm: () => {
         deleteIncome(incomeModal.income!.id);
         setIncomeModal({ isOpen: false, income: null });
+        setConfirmDelete({ isOpen: false, onConfirm: () => { } });
+      }
+    });
+  };
+
+  const handleCategoryDeleteTrigger = () => {
+    if (!categoryModal.category) return;
+    setConfirmDelete({
+      isOpen: true,
+      onConfirm: () => {
+        deleteCategory(categoryModal.category!.id);
+        setCategoryModal({ isOpen: false, category: null });
         setConfirmDelete({ isOpen: false, onConfirm: () => { } });
       }
     });
@@ -440,6 +476,7 @@ export default function App() {
                       onSortingMode={() => setIsSortingMode(true)}
                       isSortingMode={isSortingMode}
                       isOver={overId === cat.id}
+                      onLongPress={openCategoryModal}
                     />
                   );
                 })}
@@ -497,32 +534,54 @@ export default function App() {
 
       <Numpad
         data={numpad}
-        onClose={() => setNumpad({ ...numpad, isOpen: false })}
-        onFieldChange={(field) => setNumpad(p => ({ ...p, activeField: field }))}
+        onClose={() => setNumpad({ ...numpad, isOpen: false, targetLinked: true })}
+        onFieldChange={(field) => setNumpad(p => ({
+          ...p,
+          activeField: field,
+          // Tapping the destination field breaks the mirror link
+          targetLinked: field === "destination" ? false : p.targetLinked,
+        }))}
         onPress={(val) => setNumpad(p => {
-          const field = p.activeField;
-          const key = field === "source" ? "amount" : "targetAmount";
+          const isSource = p.activeField === "source";
+          const key = isSource ? "amount" : "targetAmount";
           const curr = p[key];
 
-          if (val === "C") return { ...p, [key]: "0" };
-          if (val === "=") return { ...p, [key]: safeEval(curr) };
+          if (val === "C") {
+            // Clear active field; if linked also clear target
+            return p.targetLinked
+              ? { ...p, amount: "0", targetAmount: "0" }
+              : { ...p, [key]: "0" };
+          }
+          if (val === "=") {
+            const evaluated = safeEval(curr);
+            return p.targetLinked && isSource
+              ? { ...p, amount: evaluated, targetAmount: evaluated }
+              : { ...p, [key]: evaluated };
+          }
 
           const newVal = curr === "0" && !isNaN(Number(val)) ? val : curr + val;
-          return { ...p, [key]: newVal };
+          // If linked and editing source — mirror to targetAmount too
+          return p.targetLinked && isSource
+            ? { ...p, amount: newVal, targetAmount: newVal }
+            : { ...p, [key]: newVal };
         })}
         onDelete={() => setNumpad(p => {
-          const field = p.activeField;
-          const key = field === "source" ? "amount" : "targetAmount";
+          const isSource = p.activeField === "source";
+          const key = isSource ? "amount" : "targetAmount";
           const curr = p[key];
           const newVal = curr.length > 1 ? curr.slice(0, -1) : "0";
-          return { ...p, [key]: newVal };
+          // If linked and editing source — mirror delete to targetAmount too
+          return p.targetLinked && isSource
+            ? { ...p, amount: newVal, targetAmount: newVal }
+            : { ...p, [key]: newVal };
         })}
         onTagSelect={(tag) => setNumpad(p => ({ ...p, tag }))}
+        onCommentChange={(comment) => setNumpad(p => ({ ...p, comment }))}
         onSubmit={(date?: string) => {
           const finalAmount = parseFloat(safeEval(numpad.amount));
           const finalTarget = parseFloat(safeEval(numpad.targetAmount));
-          addTransaction(numpad.type, numpad.source!, numpad.destination!, finalAmount, finalTarget, numpad.tag || undefined, date);
-          setNumpad({ ...numpad, isOpen: false, amount: "0", targetAmount: "0", activeField: "source" });
+          addTransaction(numpad.type, numpad.source!, numpad.destination!, finalAmount, finalTarget, numpad.tag || undefined, date, numpad.comment || undefined);
+          setNumpad({ ...numpad, isOpen: false, amount: "0", targetAmount: "0", targetLinked: true, activeField: "source", comment: "" });
         }}
       />
 
@@ -546,6 +605,17 @@ export default function App() {
           setIncomeModal({ isOpen: false, income: null });
         }}
         onDelete={handleIncomeDeleteTrigger}
+      />
+
+      <CategoryModal
+        isOpen={categoryModal.isOpen}
+        category={categoryModal.category}
+        onClose={() => setCategoryModal({ isOpen: false, category: null })}
+        onSave={(cat) => {
+          saveCategory(cat);
+          setCategoryModal({ isOpen: false, category: null });
+        }}
+        onDelete={handleCategoryDeleteTrigger}
       />
 
       {/* CONFLICT RESOLUTION MODAL */}

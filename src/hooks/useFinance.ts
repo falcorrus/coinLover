@@ -89,7 +89,8 @@ export const useFinance = () => {
     amount: number,
     targetAmount?: number,
     tag?: string,
-    customDate?: string
+    customDate?: string,
+    comment?: string
   ) => {
     const date = customDate ? getLocalTimeString(customDate) : getLocalTimeString();
 
@@ -102,6 +103,7 @@ export const useFinance = () => {
       targetAmount: targetAmount ?? amount,
       date,
       tag,
+      comment: comment || undefined,
     };
 
     setTransactions((prev) => [newTx, ...prev]);
@@ -130,6 +132,7 @@ export const useFinance = () => {
       tagName: tag ?? "",
       amount,
       targetAmount: finalTargetAmount,
+      comment: comment || undefined,
     });
 
     // Also background sync updated balances to Configs
@@ -168,6 +171,20 @@ export const useFinance = () => {
   // ── Settings: categories & incomes ────────────────────────────────────────
   /** Called from App when categories order/content changes via D&D or edit */
   const syncCategories = async (updated: Category[]) => {
+    setCategories(updated);
+    await pushSettings(accounts, updated, incomes);
+  };
+
+  const saveCategory = async (category: Partial<Category>) => {
+    const updated = category.id
+      ? categories.map((c) => (c.id === category.id ? { ...c, ...category } : c))
+      : [...categories, { ...category, id: `cat-${Date.now()}`, tags: category.tags ?? [] } as Category];
+    setCategories(updated);
+    await pushSettings(accounts, updated, incomes);
+  };
+
+  const deleteCategory = async (id: string) => {
+    const updated = categories.filter((c) => c.id !== id);
     setCategories(updated);
     await pushSettings(accounts, updated, incomes);
   };
@@ -232,6 +249,8 @@ export const useFinance = () => {
     addTransaction,
     saveAccount,
     deleteAccount,
+    saveCategory,
+    deleteCategory,
     saveIncome,
     deleteIncome,
     syncCategories,

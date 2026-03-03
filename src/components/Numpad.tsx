@@ -1,5 +1,5 @@
 import React from "react";
-import { X, ChevronRight, Check, CalendarDays, Delete, Divide, Plus, Minus, Equal, Percent } from "lucide-react";
+import { X, ChevronRight, Check, CalendarDays, Delete, Divide, Plus, Minus, Equal, Percent, MessageSquare, Link2 } from "lucide-react";
 import { NumpadData, Category } from "../types";
 import { IconMap } from "../constants";
 import { CalendarModal } from "./CalendarModal";
@@ -11,11 +11,18 @@ interface Props {
   onPress: (val: string) => void;
   onDelete: () => void;
   onSubmit: (date?: string) => void;
-  onTagSelect: (tag: string) => void;
+  onTagSelect: (tag: string | null) => void;
+  onCommentChange: (comment: string) => void;
 }
 
-export const Numpad: React.FC<Props> = ({ data, onClose, onFieldChange, onPress, onDelete, onSubmit, onTagSelect }) => {
+export const Numpad: React.FC<Props> = ({ data, onClose, onFieldChange, onPress, onDelete, onSubmit, onTagSelect, onCommentChange }) => {
   const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
+  const [isCommentOpen, setIsCommentOpen] = React.useState(false);
+  const [commentDraft, setCommentDraft] = React.useState("");
+
+  React.useEffect(() => {
+    if (isCommentOpen) setCommentDraft(data.comment);
+  }, [isCommentOpen]);
 
   if (!data.isOpen) return null;
 
@@ -29,6 +36,18 @@ export const Numpad: React.FC<Props> = ({ data, onClose, onFieldChange, onPress,
     onSubmit(selectedDate.toISOString());
     setIsCalendarOpen(false);
   };
+
+  const handleTagClick = (t: string) => {
+    // Toggle: clicking the active tag deselects it
+    onTagSelect(data.tag === t ? null : t);
+  };
+
+  const handleCommentSave = () => {
+    onCommentChange(commentDraft.trim());
+    setIsCommentOpen(false);
+  };
+
+  const hasComment = data.comment.trim().length > 0;
 
   return (
     <div className="fixed inset-0 z-[150] flex flex-col bg-[#050505] animate-in slide-in-from-right duration-500 ease-in-out">
@@ -62,7 +81,12 @@ export const Numpad: React.FC<Props> = ({ data, onClose, onFieldChange, onPress,
             </div>
           </div>
 
-          <ChevronRight size={24} className="text-slate-500 shrink-0" />
+          <div className="shrink-0 flex flex-col items-center gap-1">
+            {data.targetLinked
+              ? <Link2 size={18} className={data.type === 'expense' ? "text-[#D4AF37]" : "text-[#10b981]"} />
+              : <ChevronRight size={18} className="text-slate-600" />
+            }
+          </div>
 
           <div
             onClick={() => onFieldChange("destination")}
@@ -81,17 +105,35 @@ export const Numpad: React.FC<Props> = ({ data, onClose, onFieldChange, onPress,
         </div>
       </div>
 
+      {/* Tags + Comment bar */}
       {data.type === 'expense' && data.destination && (
-        <div className="flex items-center px-4 py-3 gap-3 bg-[#111] shrink-0 border-t border-white/5 overflow-x-auto hide-scrollbar">
-          {(data.destination as Category).tags.map(t => (
-            <button
-              key={t}
-              onClick={() => onTagSelect(t)}
-              className={`px-4 py-1.5 rounded-full uppercase text-[10px] font-black whitespace-nowrap ${data.tag === t ? "bg-[#10b981] text-white" : "bg-white/5 text-slate-500"}`}
-            >
-              {t}
-            </button>
-          ))}
+        <div className="flex items-center px-4 py-3 gap-3 bg-[#111] shrink-0 border-t border-white/5">
+          {/* Tags scrollable area */}
+          <div className="flex-1 flex items-center gap-2 overflow-x-auto hide-scrollbar">
+            {(data.destination as Category).tags.map(t => (
+              <button
+                key={t}
+                onClick={() => handleTagClick(t)}
+                className={`px-4 py-1.5 rounded-full uppercase text-[10px] font-black whitespace-nowrap transition-all duration-200 ${data.tag === t
+                  ? "bg-[#10b981] text-white scale-105"
+                  : "bg-white/5 text-slate-500 hover:bg-white/10"
+                  }`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+
+          {/* Comment icon button */}
+          <button
+            onClick={() => setIsCommentOpen(true)}
+            className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 ${hasComment
+              ? "bg-[#6d5dfc]/20 text-[#6d5dfc]"
+              : "bg-white/5 text-slate-500 hover:text-white"
+              }`}
+          >
+            <MessageSquare size={14} />
+          </button>
         </div>
       )}
 
@@ -142,6 +184,45 @@ export const Numpad: React.FC<Props> = ({ data, onClose, onFieldChange, onPress,
         onClose={() => setIsCalendarOpen(false)}
         onSelect={handleDateSelect}
       />
+
+      {/* Comment Modal */}
+      {isCommentOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[300] flex items-end justify-center animate-in fade-in duration-300">
+          <div className="w-full max-w-md bg-[#1a1a1a] border border-white/10 rounded-t-3xl p-6 flex flex-col gap-4 animate-in slide-in-from-bottom duration-300">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <MessageSquare size={16} className="text-[#6d5dfc]" />
+                <h3 className="text-sm font-bold uppercase">Комментарий</h3>
+              </div>
+              <button onClick={() => setIsCommentOpen(false)} className="p-1 text-slate-500"><X size={20} /></button>
+            </div>
+
+            <textarea
+              autoFocus
+              value={commentDraft}
+              onChange={e => setCommentDraft(e.target.value)}
+              placeholder="Заметка к транзакции..."
+              rows={3}
+              className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none text-white resize-none text-sm focus:border-[#6d5dfc]/50"
+            />
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setCommentDraft(""); onCommentChange(""); setIsCommentOpen(false); }}
+                className="flex-1 h-12 rounded-xl bg-white/5 border border-white/10 text-slate-500 font-bold text-sm"
+              >
+                ОЧИСТИТЬ
+              </button>
+              <button
+                onClick={handleCommentSave}
+                className="flex-1 h-12 rounded-xl bg-[#6d5dfc] text-white font-bold shadow-lg text-sm"
+              >
+                СОХРАНИТЬ
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -33,6 +33,7 @@ export interface Transaction {
   targetAmount?: number; // Amount added to destination (for transfers) or recorded in category
   date: string;
   tag?: string;
+  comment?: string;
 }
 
 export interface NumpadData {
@@ -42,8 +43,10 @@ export interface NumpadData {
   destination: Account | Category | null;
   amount: string; // Source amount string
   targetAmount: string; // Destination amount string
+  targetLinked: boolean; // true = targetAmount mirrors amount automatically
   activeField: "source" | "destination";
   tag: string | null;
+  comment: string;
   date?: string;
 }
 
@@ -61,6 +64,7 @@ export type SyncPayload =
     tagName: string;
     amount: number;
     targetAmount?: number;
+    comment?: string;
     // allAccounts removed from here to stop bloating Transactions tab
   }
   | {

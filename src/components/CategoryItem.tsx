@@ -13,10 +13,11 @@ interface Props {
   onSortingMode?: () => void;
   isSortingMode: boolean;
   isOver?: boolean;
+  onLongPress?: (category: Category) => void;
 }
 
 export const CategoryItem: React.FC<Props> = ({
-  category, spent, isDragging, isSortingMode, isOver, onSortingMode
+  category, spent, isDragging, isSortingMode, isOver, onSortingMode, onLongPress
 }) => {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id: category.id,
@@ -27,6 +28,7 @@ export const CategoryItem: React.FC<Props> = ({
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startPosRef = useRef({ x: 0, y: 0 });
   const didMoveRef = useRef(false);
+  const longPressFireRef = useRef(false);
 
   const clearTimer = useCallback(() => {
     if (timerRef.current) {
@@ -40,11 +42,14 @@ export const CategoryItem: React.FC<Props> = ({
     setIsPressing(true);
     startPosRef.current = { x: e.clientX, y: e.clientY };
     didMoveRef.current = false;
+    longPressFireRef.current = false;
 
-    // Сортировка - 500мс
+    // Сортировка + LongPress — 500мс
     timerRef.current = setTimeout(() => {
       if (!didMoveRef.current) {
+        longPressFireRef.current = true;
         onSortingMode?.();
+        onLongPress?.(category);
         if (navigator.vibrate) navigator.vibrate(50);
       }
     }, 500);
