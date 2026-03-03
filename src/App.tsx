@@ -217,8 +217,16 @@ export default function App() {
     const { active, over } = e;
     setOverId(over?.id as string || null);
 
+    if (!over) return;
+
+    // If we are hovering over a DIFFERENT type (e.g. Account over Category), 
+    // it's definitely a transaction, not a sort. Kill the sorting timer immediately.
+    if (active.data.current?.type !== over.data.current?.type) {
+      clearSortingTimer();
+    }
+
     if (!isSortingMode || isActionMode) return;
-    if (!over || active.id === over.id) return;
+    if (active.id === over.id) return;
 
     if (active.data.current?.type === "account" && over.data.current?.type === "account") {
       setAccounts((items) => arrayMove(items, items.findIndex(i => i.id === active.id), items.findIndex(i => i.id === over.id)));
@@ -436,24 +444,43 @@ export default function App() {
       <DndContext
         sensors={sensors}
         collisionDetection={(args) => {
-          if (!isSortingMode) {
-            // Standard pointerWithin detection, filtering self
-            const collisions = pointerWithin(args);
-            const filtered = collisions.filter(c => c.id !== args.active.id);
-            
-            // If pointerWithin fails (common on mobile during lift), fallback to rectIntersection
-            if (filtered.length === 0) {
-              const rectCollisions = rectIntersection(args);
-              return rectCollisions.filter(c => c.id !== args.active.id);
-            }
-            
-            return filtered;
+          // 1. If we are in sorting mode, use closestCenter for smooth reordering
+          if (isSortingMode) {
+            return closestCenter(args);
           }
-          return closestCenter(args);
+
+          // 2. For Transactions (Expense/Transfer/Income), use rectIntersection
+          // It's much more generous than pointerWithin, especially on mobile.
+          const collisions = rectIntersection(args);
+          const filtered = collisions.filter(c => c.id !== args.active.id);
+
+          // If dragging account over categories, prioritize categories
+          if (activeDragType === "account") {
+            const catCollision = filtered.find(c => {
+              const target = args.droppableContainers.find(dc => dc.id === c.id);
+              return target?.data.current?.type === "category";
+            });
+            if (catCollision) return [catCollision];
+          }
+
+          return filtered;
         }}
         onDragStart={handleDragStart}
         onDragMove={handleDragMove}
-        onDragOver={handleDragOver}
+        onDragOver={(e) => {
+          const { active, over } = e;
+          setOverId(over?.id as string || null);
+
+          if (!over) return;
+
+          // CRITICAL: If we are hovering over a DIFFERENT type (e.g. Account over Category),
+          // disable sorting mode timer. We are doing a transaction, not sorting.
+          if (active.data.current?.type !== over.data.current?.type) {
+            clearSortingTimer();
+          }
+
+          handleDragOver(e);
+        }}
         onDragEnd={handleDragEnd}
         onDragCancel={() => {
           clearSortingTimer();

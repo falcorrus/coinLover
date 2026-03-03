@@ -88,7 +88,7 @@ export const CategoryItem: React.FC<Props> = ({
   }, [isDragging, clearTimers]);
 
   const Icon = IconMap[category.icon] || ShoppingBag;
-  const isTarget = isOver && !isDragging && !isSortingMode;
+  const isTarget = isOver && !isDragging;
 
   const style = {
     transform: isSortingMode ? CSS.Translate.toString(transform) : undefined,

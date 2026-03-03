@@ -90,7 +90,7 @@ export const AccountItem: React.FC<Props> = ({
   }, [isDragging, clearTimers]);
 
   const Icon = IconMap[account.icon] || Wallet;
-  const isTargetOver = isOver && activeDragType === "account" && !isDragging && !isSortingMode;
+  const isTargetOver = isOver && activeDragType === "account" && !isDragging;
   const isIncomeTarget = isOver && activeDragType === "income";
 
   const style = {
