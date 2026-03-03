@@ -7,7 +7,7 @@ interface HistoryModalProps {
     isOpen: boolean;
     onClose: () => void;
     entity: Account | Category | IncomeSource | null;
-    entityType: "account" | "category" | "income" | null;
+    entityType: "account" | "category" | "income" | "orphaned" | null;
     transactions: Transaction[];
     accounts: Account[];
     categories: Category[];
@@ -17,15 +17,27 @@ interface HistoryModalProps {
 export const HistoryModal: React.FC<HistoryModalProps> = ({
     isOpen, onClose, entity, entityType, transactions, accounts, categories, incomes
 }) => {
-    if (!isOpen || !entity || !entityType) return null;
+    if (!isOpen || !entityType) return null;
+    // For non-orphaned modes we also need an entity
+    if (entityType !== "orphaned" && !entity) return null;
 
     let filteredTransactions: Transaction[] = [];
     if (entityType === "account") {
-        filteredTransactions = transactions.filter(t => t.accountId === entity.id || t.targetId === entity.id);
+        filteredTransactions = transactions.filter(t => t.accountId === entity!.id || t.targetId === entity!.id);
     } else if (entityType === "category") {
-        filteredTransactions = transactions.filter(t => t.targetId === entity.id);
+        filteredTransactions = transactions.filter(t => t.targetId === entity!.id);
     } else if (entityType === "income") {
-        filteredTransactions = transactions.filter(t => t.accountId === entity.id);
+        filteredTransactions = transactions.filter(t => t.accountId === entity!.id);
+    } else if (entityType === "orphaned") {
+        // Transactions with broken/unresolved IDs (raw name strings instead of proper IDs)
+        const allAccountIds = new Set(accounts.map(a => a.id));
+        const allCategoryIds = new Set(categories.map(c => c.id));
+        const allIncomeIds = new Set(incomes.map(i => i.id));
+        filteredTransactions = transactions.filter(t => {
+            const sourceOk = allAccountIds.has(t.accountId) || allIncomeIds.has(t.accountId);
+            const destOk = allAccountIds.has(t.targetId) || allCategoryIds.has(t.targetId) || allIncomeIds.has(t.targetId);
+            return !sourceOk || !destOk;
+        });
     }
 
     // Sort descending by date (newest first)
@@ -35,6 +47,11 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
 
     // Find counterpart for a transaction relative to the currently viewed entity
     const getCounterpartInfo = (tx: Transaction) => {
+        if (entityType === "orphaned") {
+            // For orphaned, we have no real item — use the raw ID strings directly
+            return { item: null, rawSource: tx.accountId, rawDest: tx.targetId, isOutflow: true };
+        }
+
         let counterpartId = "";
         let isOutflow = true; // relative to the currently viewed entity
 
@@ -76,7 +93,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
             counterpartItem = accounts.find(a => a.id === counterpartId);
         }
 
-        return { item: counterpartItem, isOutflow };
+        return { item: counterpartItem, rawSource: undefined, rawDest: undefined, isOutflow };
     };
 
     const getAmountStr = (tx: Transaction, isOutflow: boolean) => {
@@ -90,6 +107,14 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
         }
 
         // Determine the color / sign based on the perspective view:
+        if (entityType === "orphaned") {
+            return {
+                amount: `${amount}`,
+                usdAmount: usdAmount ? `$${usdAmount}` : null,
+                color: "text-slate-400"
+            };
+        }
+
         if (entityType === "account") {
             const acc = entity as Account;
             return {
@@ -119,19 +144,21 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
         }
     };
 
-    const EntityIcon = IconMap[entity.icon] || Wallet;
+    const EntityIcon = entityType === "orphaned" ? (IconMap["more"] || Wallet) : (IconMap[(entity as any).icon] || Wallet);
+    const entityName = entityType === "orphaned" ? "Несвязанные" : (entity as any).name;
+    const entityColor = entityType === "orphaned" ? "#f43f5e" : (entity as any).color;
 
     return (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[200] flex flex-col items-center justify-end p-4 animate-in fade-in slide-in-from-bottom-10" onClick={onClose}>
             <div className="glass-panel w-full max-w-sm max-h-[80vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
                 <div className="flex justify-between items-center p-6 border-b border-white/5 shrink-0">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-[0_0_15px_currentColor]" style={{ color: entity.color }}>
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-[0_0_15px_currentColor]" style={{ color: entityColor }}>
                             <EntityIcon size={20} />
                         </div>
                         <div className="flex flex-col">
-                            <h2 className="text-sm font-black text-white uppercase tracking-wider">{entity.name}</h2>
-                            <span className="text-[10px] text-slate-500 uppercase tracking-widest">История</span>
+                            <h2 className="text-sm font-black text-white uppercase tracking-wider">{entityName}</h2>
+                            <span className="text-[10px] text-slate-500 uppercase tracking-widest">{entityType === "orphaned" ? "Без привязки" : "История"}</span>
                         </div>
                     </div>
                     <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-slate-500 hover:text-white transition-colors">
@@ -148,15 +175,19 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                     ) : (
                         <div className="flex flex-col gap-5">
                             {sortedTransactions.map(tx => {
-                                const { item, isOutflow } = getCounterpartInfo(tx);
-                                const Icon = item ? (IconMap[item.icon] || Wallet) : Wallet;
+                                const counterpart = getCounterpartInfo(tx);
+                                const { item, rawSource, rawDest, isOutflow } = counterpart;
+                                const Icon = item ? (IconMap[(item as any).icon] || Wallet) : Wallet;
                                 const amountInfo = getAmountStr(tx, isOutflow);
+                                // For orphaned: show the raw name strings
+                                const displayName = item?.name || rawDest || rawSource || "Unknown";
+                                const displayColor = (item as any)?.color || "#6b7280";
 
                                 return (
                                     <div key={tx.id} className="flex justify-between items-center bg-white/[0.02] p-3 -mx-3 rounded-2xl cursor-default hover:bg-white/[0.04] transition-colors">
                                         <div className="flex items-center gap-3">
                                             {/* Counterpart Icon */}
-                                            <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center relative shadow-inner shrink-0" style={{ color: item?.color || "#fff" }}>
+                                            <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center relative shadow-inner shrink-0" style={{ color: displayColor }}>
                                                 <Icon size={18} />
 
                                                 {/* Tiny direction indicator for Account view transfers */}
@@ -179,7 +210,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
 
                                             <div className="flex flex-col overflow-hidden max-w-[150px]">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="text-sm font-semibold text-white truncate">{item?.name || "Unknown"}</span>
+                                                    <span className="text-sm font-semibold text-white truncate">{displayName}</span>
                                                     {tx.tag && <span className="text-[9px] px-1.5 py-0.5 bg-white/5 rounded text-slate-400 font-bold uppercase shrink-0">{tx.tag}</span>}
                                                     {tx.type === "transfer" && <span className="text-[9px] px-1.5 py-0.5 bg-[#6d5dfc]/20 rounded text-[#6d5dfc] font-bold uppercase shrink-0">Трансфер</span>}
                                                 </div>

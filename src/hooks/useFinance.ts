@@ -46,6 +46,21 @@ export const useFinance = () => {
     if (data.categories) setCategories(data.categories);
     if (data.incomes) setIncomes(data.incomes);
     if (data.timestamp) localStorage.setItem("cl_last_sync", data.timestamp);
+
+    // Merge current month transactions from cloud with local ones
+    if (data.transactions && Array.isArray(data.transactions) && data.transactions.length > 0) {
+      setTransactions(prev => {
+        const existingIds = new Set(prev.map(t => t.id));
+        const newFromCloud = data.transactions.filter((t: any) => !existingIds.has(t.id));
+        if (newFromCloud.length === 0) return prev;
+        // Merge and sort descending by date
+        const merged = [...prev, ...newFromCloud].sort(
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
+        return merged;
+      });
+    }
+
     setConflictData(null);
   }, []);
 

@@ -94,7 +94,7 @@ export default function App() {
   const [historyModal, setHistoryModal] = React.useState<{
     isOpen: boolean;
     entity: Account | Category | IncomeSource | null;
-    type: "account" | "category" | "income" | null;
+    type: "account" | "category" | "income" | "orphaned" | null;
   }>({
     isOpen: false, entity: null, type: null
   });
@@ -316,6 +316,18 @@ export default function App() {
 
   const totalBalance = accounts.reduce((s, a) => s + a.balance, 0);
   const totalSpent = transactions.filter(t => t.type === "expense").reduce((s, t) => s + t.amount, 0);
+
+  // Detect orphaned transactions (IDs that don't match any known entity)
+  const orphanedCount = React.useMemo(() => {
+    const allAccountIds = new Set(accounts.map(a => a.id));
+    const allCategoryIds = new Set(categories.map(c => c.id));
+    const allIncomeIds = new Set(incomes.map(i => i.id));
+    return transactions.filter(t => {
+      const sourceOk = allAccountIds.has(t.accountId) || allIncomeIds.has(t.accountId);
+      const destOk = allAccountIds.has(t.targetId) || allCategoryIds.has(t.targetId) || allIncomeIds.has(t.targetId);
+      return !sourceOk || !destOk;
+    }).length;
+  }, [transactions, accounts, categories, incomes]);
   const activeItemData = activeDragType === "account"
     ? accounts.find(a => a.id === activeDragId)
     : activeDragType === "income"
@@ -449,6 +461,15 @@ export default function App() {
           <div className="px-6 mb-3 flex justify-between items-center">
             <div className="flex items-center gap-2">
               <h2 className="text-[10px] font-black text-slate-500 uppercase">Кошельки</h2>
+              {orphanedCount > 0 && (
+                <button
+                  onClick={() => setHistoryModal({ isOpen: true, entity: null, type: "orphaned" })}
+                  className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-400 text-[9px] font-black uppercase hover:bg-rose-500/20 transition-colors"
+                >
+                  <span>⚠</span>
+                  <span>{orphanedCount} несвяз.</span>
+                </button>
+              )}
             </div>
             <button onClick={() => setAccountModal({ isOpen: true, account: null })} className="text-slate-500 hover:text-white">
               <Plus size={16} />

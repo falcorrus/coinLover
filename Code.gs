@@ -11,7 +11,8 @@ function doGet(e) {
     const data = {
       accounts: [],
       categories: [],
-      incomes: []
+      incomes: [],
+      transactions: []
     };
     
     let currentSection = "";
@@ -65,6 +66,88 @@ function doGet(e) {
           icon: rows[i][3] || "business"
         });
       }
+    }
+
+    // === Read current month transactions ===
+    try {
+      const txSheet = ss.getSheetByName("Transactions");
+      if (txSheet && txSheet.getLastRow() > 1) {
+        const txData = txSheet.getDataRange().getValues();
+        const headers = txData[0].map(h => String(h).trim());
+
+        // Map header names to column indices
+        const col = {};
+        headers.forEach((h, i) => { col[h] = i; });
+
+        const now = new Date();
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+        // Build lookup maps for name → id
+        const accountByName = {};
+        data.accounts.forEach(a => { accountByName[a.name] = a.id; });
+
+        const categoryByName = {};
+        data.categories.forEach(c => { categoryByName[c.name] = c.id; });
+
+        const incomeByName = {};
+        data.incomes.forEach(i => { incomeByName[i.name] = i.id; });
+
+        for (let i = 1; i < txData.length; i++) {
+          const row = txData[i];
+          const dateStr = String(row[col["Date"]] || "").trim();
+          if (!dateStr) continue;
+
+          const txDate = new Date(dateStr);
+          if (isNaN(txDate.getTime())) continue;
+          if (txDate < monthStart || txDate >= monthEnd) continue;
+
+          const type = String(row[col["Type"]] || "").trim();
+          const sourceName = String(row[col["Source"]] || "").trim();
+          const destinationName = String(row[col["Destination"]] || "").trim();
+          const amount = parseFloat(row[col["Amount"]] || 0) || 0;
+          const amountUSD = col["Amount USD"] !== undefined ? (parseFloat(row[col["Amount USD"]] || "") || undefined) : undefined;
+          const targetAmount = col["Target Amount"] !== undefined ? (parseFloat(row[col["Target Amount"]] || "") || amount) : amount;
+          const targetAmountUSD = col["Target USD"] !== undefined ? (parseFloat(row[col["Target USD"]] || "") || undefined) : undefined;
+          const tag = col["Tag"] !== undefined ? String(row[col["Tag"]] || "").trim() || undefined : undefined;
+          const comment = col["Comment"] !== undefined ? String(row[col["Comment"]] || "").trim() || undefined : undefined;
+
+          // Reconstruct accountId and targetId from names
+          let accountId = "";
+          let targetId = "";
+
+          if (type === "expense") {
+            accountId = accountByName[sourceName] || sourceName;
+            targetId = categoryByName[destinationName] || destinationName;
+          } else if (type === "income") {
+            accountId = incomeByName[sourceName] || sourceName;
+            targetId = accountByName[destinationName] || destinationName;
+          } else if (type === "transfer") {
+            accountId = accountByName[sourceName] || sourceName;
+            targetId = accountByName[destinationName] || destinationName;
+          }
+
+          // Use dateStr + amount as a stable pseudo-ID for deduplication
+          const pseudoId = `${dateStr}_${sourceName}_${destinationName}_${amount}`;
+
+          data.transactions.push({
+            id: pseudoId,
+            type,
+            accountId,
+            targetId,
+            amount,
+            amountUSD,
+            targetAmount,
+            targetAmountUSD,
+            date: dateStr,
+            tag,
+            comment
+          });
+        }
+      }
+    } catch (txErr) {
+      // Non-fatal: just return empty transactions if any error
+      console.error("Transaction fetch error:", txErr);
     }
     
     return ContentService.createTextOutput(JSON.stringify({ status: "success", data })).setMimeType(ContentService.MimeType.JSON);
