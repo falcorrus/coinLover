@@ -23,6 +23,7 @@ import {
 import { Account, IncomeSource, Category, NumpadData, DragItemType } from "./types";
 import { IconMap } from "./constants";
 import { useFinance } from "./hooks/useFinance";
+import { RatesService } from "./services/RatesService";
 import { AccountItem } from "./components/AccountItem";
 import { CategoryItem } from "./components/CategoryItem";
 import { Numpad } from "./components/Numpad";
@@ -48,6 +49,8 @@ export default function App() {
   const [isSplashVisible, setIsSplashVisible] = React.useState(true);
 
   React.useEffect(() => {
+    RatesService.syncRatesInBackground();
+
     // Splash screen: minimal duration for brand feel, then immediate interactivity
     const splashTimer = setTimeout(() => {
       setIsSplashVisible(false);
@@ -263,7 +266,7 @@ export default function App() {
             destination: overData.account,
             amount: "0",
             targetAmount: "0",
-            targetLinked: isSameCurrency,
+            targetLinked: true,
             activeField: "source",
             tag: null,
             comment: ""
@@ -471,7 +474,7 @@ export default function App() {
         <section className={`px-0 flex-1 pt-4 pb-8 overflow-y-auto hide-scrollbar z-10 relative transition-all duration-500 ${mode === "income" ? "opacity-30 pointer-events-none grayscale" : "opacity-100"}`}>
           <div className="px-6 py-2">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-[10px] font-black text-slate-500 uppercase">Категории</h2>
+              <h2 className="text-[10px] font-black text-slate-500 uppercase">Расходы</h2>
               <button className="text-slate-500 hover:text-white"><Settings size={14} /></button>
             </div>
             <SortableContext items={categories.map(c => c.id)} strategy={rectSortingStrategy}>
@@ -520,6 +523,16 @@ export default function App() {
           const key = isSource ? "amount" : "targetAmount";
           const curr = p[key];
 
+          const computeTarget = (newAmountStr: string): string => {
+            const fromCur = (p.source as any)?.currency || "USD";
+            const toCur = (p.destination as any)?.currency || "USD";
+            if (fromCur === toCur) return newAmountStr;
+            const evalAmt = parseFloat(safeEval(newAmountStr));
+            if (isNaN(evalAmt) || evalAmt === 0) return "0";
+            const converted = RatesService.convert(evalAmt, fromCur, toCur);
+            return (Math.round(converted * 100) / 100).toString();
+          };
+
           if (val === "C") {
             // Clear active field; if linked also clear target
             return p.targetLinked
@@ -529,14 +542,14 @@ export default function App() {
           if (val === "=") {
             const evaluated = safeEval(curr);
             return p.targetLinked && isSource
-              ? { ...p, amount: evaluated, targetAmount: evaluated }
+              ? { ...p, amount: evaluated, targetAmount: computeTarget(evaluated) }
               : { ...p, [key]: evaluated };
           }
 
           const newVal = curr === "0" && !isNaN(Number(val)) ? val : curr + val;
           // If linked and editing source — mirror to targetAmount too
           return p.targetLinked && isSource
-            ? { ...p, amount: newVal, targetAmount: newVal }
+            ? { ...p, amount: newVal, targetAmount: computeTarget(newVal) }
             : { ...p, [key]: newVal };
         })}
         onDelete={() => setNumpad(p => {
@@ -544,9 +557,20 @@ export default function App() {
           const key = isSource ? "amount" : "targetAmount";
           const curr = p[key];
           const newVal = curr.length > 1 ? curr.slice(0, -1) : "0";
+
+          const computeTarget = (newAmountStr: string): string => {
+            const fromCur = (p.source as any)?.currency || "USD";
+            const toCur = (p.destination as any)?.currency || "USD";
+            if (fromCur === toCur) return newAmountStr;
+            const evalAmt = parseFloat(safeEval(newAmountStr));
+            if (isNaN(evalAmt) || evalAmt === 0) return "0";
+            const converted = RatesService.convert(evalAmt, fromCur, toCur);
+            return (Math.round(converted * 100) / 100).toString();
+          };
+
           // If linked and editing source — mirror delete to targetAmount too
           return p.targetLinked && isSource
-            ? { ...p, amount: newVal, targetAmount: newVal }
+            ? { ...p, amount: newVal, targetAmount: computeTarget(newVal) }
             : { ...p, [key]: newVal };
         })}
         onTagSelect={(tag) => setNumpad(p => ({ ...p, tag }))}

@@ -6,16 +6,31 @@ REMOTE_HOST="server.reloto.ru"
 REPO_URL="https://github.com/falcorrus/coinLover.git"
 
 # Define Environments
-# Format: NAME|DIR|BRANCH|PORT|CONTAINER
-ENV_MAIN="main|/root/MyProjects/coinLover|main|8010|coinlover"
-ENV_DEV="dev|/root/MyProjects/coinlover-dev|preview|8011|coinlover-dev"
+# Format: NAME|DIR|BRANCH|PORT_FRONT|PORT_BACK|CONTAINER_PREFIX
+ENV_MAIN="main|/root/MyProjects/coinLover|main|8010|8000|coinlover"
+ENV_DEV="dev|/root/MyProjects/coinlover-dev|preview|8011|8001|coinlover-dev"
+
+# 1. Automatic push of changes
+echo "📤 Committing and pushing local changes to GitHub..."
+git add .
+git commit -m "Auto-deploy: update backend and frontend configuration" || echo "Nothing to commit"
+git push origin $(git rev-parse --abbrev-ref HEAD)
 
 deploy_env() {
   local IFS="|"
-  read -r name dir branch port container <<< "$1"
+  read -r name dir branch port_front port_back container_prefix <<< "$1"
   
+  # Determine backend URL for frontend (on reloto.ru we'll assume standard naming)
+  local backend_url=""
+  if [ "$name" == "main" ]; then
+    backend_url="https://coin.reloto.ru/api/rates/rub"
+  else
+    backend_url="https://coinlover-dev.reloto.ru/api/rates/rub"
+  fi
+
   echo "------------------------------------------"
-  echo "🚀 Deploying to $name ($branch branch) on port $port..."
+  echo "🚀 Deploying to $name ($branch branch)..."
+  echo "Front: $port_front | Back: $port_back"
   echo "------------------------------------------"
 
   ssh $REMOTE_USER@$REMOTE_HOST << EOF
@@ -34,11 +49,26 @@ deploy_env() {
     # Generate docker-compose on the fly
     cat > docker-compose.yml << EOT
 services:
-  coinlover:
-    build: .
-    container_name: $container
+  frontend:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: ${container_prefix}-frontend
     ports:
-      - "$port:80"
+      - "$port_front:80"
+    restart: always
+    environment:
+      - VITE_PY_BACKEND_URL=${backend_url}
+    depends_on:
+      - backend
+
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ${container_prefix}-backend
+    ports:
+      - "$port_back:8000"
     restart: always
 EOT
 
@@ -53,8 +83,8 @@ TARGET=$1
 
 if [ -z "$TARGET" ]; then
   echo "Where to deploy?"
-  echo "1) Dev (https://coinlover-dev.reloto.ru or port 8011)"
-  echo "2) Main (https://coin.reloto.ru or port 8010)"
+  echo "1) Dev (https://coinlover-dev.reloto.ru)"
+  echo "2) Main (https://coin.reloto.ru)"
   echo "3) Both"
   read -p "Choose option (1-3): " choice
   case $choice in

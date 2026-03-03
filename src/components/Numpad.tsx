@@ -3,6 +3,7 @@ import { X, ChevronRight, Check, CalendarDays, Delete, Divide, Plus, Minus, Equa
 import { NumpadData, Category } from "../types";
 import { IconMap } from "../constants";
 import { CalendarModal } from "./CalendarModal";
+import { RatesService } from "../services/RatesService";
 
 interface Props {
   data: NumpadData;
@@ -86,6 +87,20 @@ export const Numpad: React.FC<Props> = ({ data, onClose, onFieldChange, onPress,
               ? <Link2 size={18} className={data.type === 'expense' ? "text-[#D4AF37]" : "text-[#10b981]"} />
               : <ChevronRight size={18} className="text-slate-600" />
             }
+            {(() => {
+              const fromCur = (data.source as any)?.currency || "USD";
+              const toCur = (data.destination as any)?.currency || "USD";
+              if (fromCur !== toCur) {
+                const rates = RatesService.getCachedRates() || { USD: 1 };
+                return (
+                  <div className="text-[8px] text-slate-500 font-bold whitespace-nowrap mt-1 flex flex-col items-center opacity-80">
+                    {fromCur !== "USD" && <span>1 USD = {rates[fromCur]?.toFixed(2) || '?'} {fromCur}</span>}
+                    {toCur !== "USD" && <span>1 USD = {rates[toCur]?.toFixed(2) || '?'} {toCur}</span>}
+                  </div>
+                );
+              }
+              return null;
+            })()}
           </div>
 
           <div
