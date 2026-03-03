@@ -78,39 +78,45 @@ export const CategoryModal: React.FC<Props> = ({ isOpen, category, onClose, onSa
                     />
                 </div>
 
-                {/* Icon */}
-                <div className="flex flex-col gap-2">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase">Иконка</label>
-                    <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-1">
-                        {CATEGORY_ICONS.map(i => (
-                            <button
-                                key={i}
-                                onClick={() => setIcon(i)}
-                                className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border-2 transition-all duration-300 ${icon === i ? "border-[#6d5dfc] bg-[#6d5dfc]/10" : "border-white/5"}`}
-                                style={{ color: icon === i ? color : "#64748b" }}
-                            >
-                                {React.createElement(IconMap[i] || ShoppingBag, { size: 20 })}
-                            </button>
-                        ))}
+                {/* Icon & Color Section */}
+                <div className="flex flex-col gap-5">
+                    {/* Icon */}
+                    <div className="flex flex-col gap-2">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase">Иконка</label>
+                        <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-1">
+                            {CATEGORY_ICONS.map(i => (
+                                <button
+                                    key={i}
+                                    onClick={() => setIcon(i)}
+                                    className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border-2 transition-all duration-300 ${icon === i ? "border-[#6d5dfc] bg-[#6d5dfc]/10" : "border-white/5"}`}
+                                    style={{ color: icon === i ? color : "#64748b" }}
+                                >
+                                    {React.createElement(IconMap[i] || ShoppingBag, { size: 20 })}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Color */}
+                    <div className="flex flex-col gap-2">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase">Цвет</label>
+                        <div className="flex justify-between">
+                            {COLORS.map(c => (
+                                <button
+                                    key={c}
+                                    onClick={() => setColor(c)}
+                                    className={`w-8 h-8 rounded-full border-2 transition-all duration-300 ${color === c ? "border-white scale-110" : "border-transparent opacity-50"}`}
+                                    style={{ backgroundColor: c }}
+                                />
+                            ))}
+                        </div>
                     </div>
                 </div>
 
-                {/* Color */}
-                <div className="flex flex-col gap-2">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase">Цвет</label>
-                    <div className="flex justify-between">
-                        {COLORS.map(c => (
-                            <button
-                                key={c}
-                                onClick={() => setColor(c)}
-                                className={`w-8 h-8 rounded-full border-2 transition-all duration-300 ${color === c ? "border-white scale-110" : "border-transparent opacity-50"}`}
-                                style={{ backgroundColor: c }}
-                            />
-                        ))}
-                    </div>
-                </div>
+                {/* Divider */}
+                <div className="h-px bg-white/5 w-full -my-2" />
 
-                {/* Tags */}
+                {/* Tags Section */}
                 <div className="flex flex-col gap-3">
                     <div className="flex items-center gap-2">
                         <Tag size={12} className="text-slate-500" />

@@ -173,36 +173,38 @@ export const Numpad: React.FC<Props> = ({ data, onClose, onFieldChange, onPress,
             <button onClick={() => onPress("=")} className="h-[72px] col-span-2 flex items-center justify-center text-white bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20"><Equal size={24} /></button>
           </div>
         </div>
-        <div className={`flex h-14 ${data.type === 'expense' ? 'bg-[#D4AF37]' : 'bg-[#10b981]'}`}>
-          {isEditing ? (
-            <button
-              onClick={() => onSubmit()}
-              className={`flex-1 text-sm font-black uppercase tracking-widest ${data.type === 'expense' ? 'text-black' : 'text-white'}`}
-            >
-              ✓ Сохранить изменения
-            </button>
-          ) : (
-            <>
-              <button
-                onClick={handleYesterday}
-                className={`flex-1 text-xs font-bold uppercase ${data.type === 'expense' ? 'text-black font-extrabold' : 'text-white'}`}
-              >
-                Вчера
-              </button>
+        <div className="px-4 pb-8 pt-4 bg-[#1e1e1e]">
+          <div className="flex h-14 bg-[#050505] rounded-full p-1.5 border border-white/5 shadow-2xl mx-auto w-full max-w-[360px] gap-1">
+            {isEditing ? (
               <button
                 onClick={() => onSubmit()}
-                className={`flex-1 text-xs font-bold uppercase bg-black/10 ${data.type === 'expense' ? 'text-black font-extrabold' : 'text-white'}`}
+                className="flex-1 rounded-full text-sm font-black uppercase text-white bg-[#6d5dfc] shadow-lg"
               >
-                Сегодня
+                ✓ Сохранить изменения
               </button>
-              <button
-                onClick={() => setIsCalendarOpen(true)}
-                className={`w-[72px] flex items-center justify-center border-l border-white/10 ${data.type === 'expense' ? 'text-black' : 'text-white'}`}
-              >
-                <CalendarDays size={20} />
-              </button>
-            </>
-          )}
+            ) : (
+              <>
+                <button
+                  onClick={handleYesterday}
+                  className="flex-[1] rounded-full text-[10px] font-bold uppercase text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
+                >
+                  Вчера
+                </button>
+                <button
+                  onClick={() => onSubmit()}
+                  className="flex-[2] rounded-full text-[11px] font-black uppercase text-white bg-[#10b981] shadow-[0_4px_20px_rgba(16,185,129,0.3)] scale-[1.02] active:scale-[0.98] transition-all tracking-wider"
+                >
+                  Сегодня
+                </button>
+                <button
+                  onClick={() => setIsCalendarOpen(true)}
+                  className="flex-[1] rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 transition-colors relative"
+                >
+                  <CalendarDays size={18} />
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </div>
 

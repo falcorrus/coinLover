@@ -15,6 +15,19 @@ export const googleSheetsService = {
     }
   },
 
+  async fetchMonthData(month: string): Promise<any> {
+    try {
+      const url = `${GOOGLE_SCRIPT_URL}?month=${month}`;
+      const response = await fetch(url);
+      const result = await response.json();
+      if (result.status === "success") return result.data;
+      throw new Error(result.message);
+    } catch (error) {
+      console.error("Fetch month data failed:", error);
+      return null;
+    }
+  },
+
   async syncToSheets(data: SyncPayload): Promise<boolean> {
     try {
       await fetch(GOOGLE_SCRIPT_URL, {

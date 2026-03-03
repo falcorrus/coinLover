@@ -16,7 +16,7 @@ import {
 import { arrayMove, SortableContext, horizontalListSortingStrategy, rectSortingStrategy } from "@dnd-kit/sortable";
 import {
   Plus, Settings, CircleDollarSign, TrendingDown, ChevronRight, TrendingUp, AlertTriangle, Wallet, RefreshCcw,
-  Heart, MousePointer2
+  Heart, MousePointer2, PieChart
 } from "lucide-react";
 
 // Modules
@@ -32,6 +32,7 @@ import { CategoryModal } from "./components/CategoryModal";
 import { DraggableIncomeItem } from "./components/DraggableIncomeItem";
 import { IncomeModal } from "./components/IncomeModal";
 import { HistoryModal } from "./components/HistoryModal";
+import { AnalyticsModal } from "./components/AnalyticsModal";
 
 export default function App() {
   const {
@@ -98,6 +99,8 @@ export default function App() {
   }>({
     isOpen: false, entity: null, type: null
   });
+
+  const [analyticsModal, setAnalyticsModal] = React.useState({ isOpen: false });
 
   const [numpad, setNumpad] = React.useState<NumpadData>({
     isOpen: false, type: "expense", source: null, destination: null,
@@ -480,7 +483,21 @@ export default function App() {
           <div className="px-6 py-2">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-[10px] font-black text-slate-500 uppercase">Расходы</h2>
-              <button className="text-slate-500 hover:text-white"><Settings size={14} /></button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setAnalyticsModal({ isOpen: true })}
+                  className="w-7 h-7 rounded-full bg-[#6d5dfc]/10 text-[#6d5dfc] flex items-center justify-center hover:bg-[#6d5dfc]/20 transition-colors shadow-[0_0_10px_rgba(109,93,252,0.15)]"
+                  title="Аналитика"
+                >
+                  <PieChart size={14} />
+                </button>
+                <button
+                  onClick={() => setCategoryModal({ isOpen: true, category: null })}
+                  className="text-slate-500 hover:text-white"
+                >
+                  <Plus size={16} />
+                </button>
+              </div>
             </div>
             <SortableContext items={categories.map(c => c.id)} strategy={rectSortingStrategy}>
               <div className="grid grid-cols-4 gap-y-6 gap-x-2 pb-4">
@@ -665,6 +682,12 @@ export default function App() {
             comment: tx.comment ?? "",
           });
         }}
+      />
+
+      <AnalyticsModal
+        isOpen={analyticsModal.isOpen}
+        onClose={() => setAnalyticsModal({ isOpen: false })}
+        categories={categories}
       />
 
       {/* CONFLICT RESOLUTION MODAL */}

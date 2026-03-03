@@ -79,7 +79,11 @@ function doGet(e) {
         const col = {};
         headers.forEach((h, i) => { col[h] = i; });
 
-        const now = new Date();
+        let now = new Date();
+        if (e && e.parameter && e.parameter.month) {
+          const parts = e.parameter.month.split("-");
+          now = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, 1);
+        }
         const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
         const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
 
