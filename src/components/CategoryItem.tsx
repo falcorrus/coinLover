@@ -77,7 +77,8 @@ export const CategoryItem: React.FC<Props> = ({
       clearTimer();
 
       const elapsed = Date.now() - startTimeRef.current;
-      if (!didMoveRef.current && elapsed < 500) {
+      // On mobile, taps can be slightly longer. Allow up to 700ms if no movement occurred.
+      if (!didMoveRef.current && elapsed < 700 && !isSortingMode) {
         onClick?.(category);
       }
 
