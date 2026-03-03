@@ -5,6 +5,7 @@ export interface Account {
   currency: string;
   color: string;
   icon: string;
+  balanceUSD?: number;
 }
 
 export interface Category {

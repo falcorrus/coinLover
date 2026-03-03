@@ -337,7 +337,7 @@ export default function App() {
     });
   };
 
-  const totalBalance = accounts.reduce((s, a) => s + a.balance, 0);
+  const totalBalance = Math.round(accounts.reduce((s, a) => s + RatesService.convert(a.balance, a.currency || "USD", "USD"), 0));
   const totalSpent = transactions.filter(t => t.type === "expense").reduce((s, t) => s + t.amount, 0);
 
 

@@ -5,7 +5,6 @@ import { CSS } from "@dnd-kit/utilities";
 import { Wallet } from "lucide-react";
 import { Account, DragItemType } from "../types";
 import { IconMap } from "../constants";
-
 const LONG_PRESS_MS = 1500; // 1.5 seconds for edit modal (more deliberate)
 const MOVE_THRESHOLD = 20;   // px
 

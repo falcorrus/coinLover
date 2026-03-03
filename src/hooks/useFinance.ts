@@ -13,6 +13,13 @@ const getLocalTimeString = (dateInput?: string) => {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 };
 
+const enrichAccountsWithUSD = (accs: Account[]): Account[] => {
+  return accs.map(a => ({
+    ...a,
+    balanceUSD: Math.round(RatesService.convert(a.balance, a.currency || "USD", "USD") * 100) / 100
+  }));
+};
+
 export const useFinance = () => {
   // ── State ─────────────────────────────────────────────────────────────────
   const [accounts, setAccounts] = useState<Account[]>(() => {
@@ -76,7 +83,7 @@ export const useFinance = () => {
       const ok = await googleSheetsService.syncToSheets({
         action: "syncSettings",
         targetSheet: "Configs",
-        accounts: latestAccounts,
+        accounts: enrichAccountsWithUSD(latestAccounts),
         categories: latestCategories,
         incomes: latestIncomes,
         timestamp,
@@ -161,7 +168,7 @@ export const useFinance = () => {
     const configsOk = await googleSheetsService.syncToSheets({
       action: "syncSettings",
       targetSheet: "Configs",
-      accounts: updatedAccounts,
+      accounts: enrichAccountsWithUSD(updatedAccounts),
       categories,
       incomes,
       timestamp: date,
@@ -261,7 +268,7 @@ export const useFinance = () => {
     const configsOk = await googleSheetsService.syncToSheets({
       action: "syncSettings",
       targetSheet: "Configs",
-      accounts: updatedAccounts,
+      accounts: enrichAccountsWithUSD(updatedAccounts),
       categories,
       incomes,
       timestamp: date,
@@ -304,7 +311,7 @@ export const useFinance = () => {
     const configsOk = await googleSheetsService.syncToSheets({
       action: "syncSettings",
       targetSheet: "Configs",
-      accounts: updatedAccounts,
+      accounts: enrichAccountsWithUSD(updatedAccounts),
       categories,
       incomes,
       timestamp,
