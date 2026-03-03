@@ -273,15 +273,7 @@ export default function App() {
       {/* Header */}
       <header className="px-6 py-8 flex flex-col gap-2 text-center shrink-0">
         <div className="flex justify-between items-center mb-2">
-          <div className="flex gap-2">
-            <div className="glass-icon-btn w-10 h-10"><CircleDollarSign size={20} className="text-[#6d5dfc]" /></div>
-            <button
-              onClick={() => pullSettings()}
-              className={`glass-icon-btn w-10 h-10 ${syncStatus === 'loading' ? 'animate-spin' : ''}`}
-            >
-              <RefreshCcw size={18} className={syncStatus === 'error' ? 'text-rose-500' : (syncStatus === 'success' ? 'text-emerald-500' : 'text-slate-400')} />
-            </button>
-          </div>
+          <div className="glass-icon-btn w-10 h-10"><CircleDollarSign size={20} className="text-[#6d5dfc]" /></div>
           <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] pt-1">Total Balance</p>
           <div className="glass-icon-btn w-10 h-10 text-slate-500"><Settings size={20} /></div>
         </div>
