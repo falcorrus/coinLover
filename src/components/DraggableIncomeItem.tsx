@@ -13,11 +13,12 @@ interface Props {
   isDragging: boolean;
   onSortingMode?: () => void;
   onLongPress: (income: IncomeSource) => void;
+  onClick?: (income: IncomeSource) => void;
   isSortingMode: boolean;
 }
 
 export const DraggableIncomeItem: React.FC<Props> = ({
-  income, isDragging, isSortingMode, onLongPress, onSortingMode
+  income, isDragging, isSortingMode, onLongPress, onClick, onSortingMode
 }) => {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id: income.id,
@@ -29,6 +30,7 @@ export const DraggableIncomeItem: React.FC<Props> = ({
   const sortingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startPosRef = useRef({ x: 0, y: 0 });
   const didMoveRef = useRef(false);
+  const startTimeRef = useRef(0);
 
   const clearTimers = useCallback(() => {
     if (timerRef.current) {
@@ -47,6 +49,7 @@ export const DraggableIncomeItem: React.FC<Props> = ({
     setIsPressing(true);
     startPosRef.current = { x: e.clientX, y: e.clientY };
     didMoveRef.current = false;
+    startTimeRef.current = Date.now();
 
     // 1. Sorting trigger - 500ms
     sortingTimerRef.current = setTimeout(() => {
@@ -75,6 +78,12 @@ export const DraggableIncomeItem: React.FC<Props> = ({
     const onPointerUp = () => {
       setIsPressing(false);
       clearTimers();
+
+      const elapsed = Date.now() - startTimeRef.current;
+      if (!didMoveRef.current && elapsed < 500) {
+        onClick?.(income);
+      }
+
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerup", onPointerUp);
     };

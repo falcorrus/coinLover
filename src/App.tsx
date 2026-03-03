@@ -30,6 +30,7 @@ import { AccountModal } from "./components/AccountModal";
 import { CategoryModal } from "./components/CategoryModal";
 import { DraggableIncomeItem } from "./components/DraggableIncomeItem";
 import { IncomeModal } from "./components/IncomeModal";
+import { HistoryModal } from "./components/HistoryModal";
 
 export default function App() {
   const {
@@ -85,6 +86,14 @@ export default function App() {
 
   const [categoryModal, setCategoryModal] = React.useState<{ isOpen: boolean; category: Category | null }>({
     isOpen: false, category: null
+  });
+
+  const [historyModal, setHistoryModal] = React.useState<{
+    isOpen: boolean;
+    entity: Account | Category | IncomeSource | null;
+    type: "account" | "category" | "income" | null;
+  }>({
+    isOpen: false, entity: null, type: null
   });
 
   const [numpad, setNumpad] = React.useState<NumpadData>({
@@ -425,6 +434,7 @@ export default function App() {
                   onSortingMode={() => setIsSortingMode(true)}
                   isSortingMode={isSortingMode}
                   onLongPress={openIncomeModal}
+                  onClick={(income) => setHistoryModal({ isOpen: true, entity: income, type: "income" })}
                 />
               ))}
             </div>
@@ -448,6 +458,7 @@ export default function App() {
                   key={acc.id} account={acc} isDragging={activeDragId === acc.id}
                   onSortingMode={() => setIsSortingMode(true)}
                   onLongPress={openAccountModal}
+                  onClick={(account) => setHistoryModal({ isOpen: true, entity: account, type: "account" })}
                   activeDragType={activeDragType} isSortingMode={isSortingMode}
                   isOver={overId === acc.id}
                 />
@@ -457,14 +468,14 @@ export default function App() {
         </section>
 
         {/* CATEGORIES GRID */}
-        <section className={`px-6 flex-1 pt-4 pb-8 overflow-y-auto hide-scrollbar z-10 relative transition-all duration-500 ${mode === "income" ? "opacity-30 pointer-events-none grayscale" : "opacity-100"}`}>
-          <div className="glass-panel p-6">
+        <section className={`px-0 flex-1 pt-4 pb-8 overflow-y-auto hide-scrollbar z-10 relative transition-all duration-500 ${mode === "income" ? "opacity-30 pointer-events-none grayscale" : "opacity-100"}`}>
+          <div className="px-6 py-2">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-[10px] font-black text-slate-500 uppercase">Категории</h2>
               <button className="text-slate-500 hover:text-white"><Settings size={14} /></button>
             </div>
             <SortableContext items={categories.map(c => c.id)} strategy={rectSortingStrategy}>
-              <div className="grid grid-cols-4 gap-y-6 gap-x-2">
+              <div className="grid grid-cols-4 gap-y-6 gap-x-2 pb-4">
                 {categories.map(cat => {
                   const spent = transactions
                     .filter(t => t.type === "expense" && t.targetId === cat.id)
@@ -477,50 +488,13 @@ export default function App() {
                       isSortingMode={isSortingMode}
                       isOver={overId === cat.id}
                       onLongPress={openCategoryModal}
+                      onClick={(category) => setHistoryModal({ isOpen: true, entity: category, type: "category" })}
                     />
                   );
                 })}
               </div>
             </SortableContext>
           </div>
-
-          {transactions.length > 0 && (
-            <div className="mt-6 glass-card p-5 mb-4">
-              <h2 className="text-[10px] font-black text-slate-500 uppercase mb-4">Recent</h2>
-              <div className="flex flex-col gap-4">
-                {transactions.slice(0, 5).map(tx => {
-                  const isExp = tx.type === "expense";
-                  const isTrans = tx.type === "transfer";
-                  const item = isExp
-                    ? categories.find(c => c.id === tx.targetId)
-                    : isTrans
-                      ? accounts.find(a => a.id === tx.targetId)
-                      : incomes.find(i => i.id === tx.targetId);
-                  const Icon = item ? IconMap[item.icon] : Wallet;
-                  return (
-                    <div key={tx.id} className="flex justify-between items-center">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center" style={{ color: item?.color }}>
-                          <Icon size={18} />
-                        </div>
-                        <div className="flex flex-col">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-semibold">{item?.name}</span>
-                            {tx.tag && <span className="text-[9px] px-1.5 py-0.5 bg-white/5 rounded text-slate-500 font-bold uppercase">{tx.tag}</span>}
-                            {isTrans && <span className="text-[9px] px-1.5 py-0.5 bg-emerald-500/10 rounded text-emerald-500 font-bold uppercase">Transfer</span>}
-                          </div>
-                          <span className="text-xs text-slate-500">{new Date(tx.date).toLocaleDateString()}</span>
-                        </div>
-                      </div>
-                      <span className={`text-sm font-bold ${isExp ? "text-[#D4AF37]" : "text-[#10b981]"}`}>
-                        {isExp ? "-" : isTrans ? "⇄" : "+"}${tx.amount}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
         </section>
 
         <DragOverlay dropAnimation={{ duration: 200, easing: "ease-out" }}>
@@ -616,6 +590,17 @@ export default function App() {
           setCategoryModal({ isOpen: false, category: null });
         }}
         onDelete={handleCategoryDeleteTrigger}
+      />
+
+      <HistoryModal
+        isOpen={historyModal.isOpen}
+        onClose={() => setHistoryModal({ isOpen: false, entity: null, type: null })}
+        entity={historyModal.entity}
+        entityType={historyModal.type}
+        transactions={transactions}
+        accounts={accounts}
+        categories={categories}
+        incomes={incomes}
       />
 
       {/* CONFLICT RESOLUTION MODAL */}

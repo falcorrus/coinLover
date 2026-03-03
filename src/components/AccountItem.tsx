@@ -14,13 +14,14 @@ interface Props {
   isDragging: boolean;
   onSortingMode?: () => void;
   onLongPress: (account: Account) => void;
+  onClick?: (account: Account) => void;
   activeDragType: DragItemType | null;
   isSortingMode: boolean;
   isOver?: boolean;
 }
 
 export const AccountItem: React.FC<Props> = ({
-  account, isDragging, onLongPress, activeDragType, isSortingMode, onSortingMode
+  account, isDragging, onLongPress, onClick, activeDragType, isSortingMode, onSortingMode, isOver
 }) => {
   const {
     attributes, listeners, setNodeRef: setSortRef, transform, transition,
@@ -39,6 +40,7 @@ export const AccountItem: React.FC<Props> = ({
   const sortingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startPosRef = useRef({ x: 0, y: 0 });
   const didMoveRef = useRef(false);
+  const startTimeRef = useRef(0);
 
   const clearTimers = useCallback(() => {
     if (timerRef.current) {
@@ -52,14 +54,13 @@ export const AccountItem: React.FC<Props> = ({
   }, []);
 
   const handlePointerDown = (e: React.PointerEvent) => {
-    // Only handle primary pointer interactions
     if (e.button !== 0) return;
 
     setIsPressing(true);
     startPosRef.current = { x: e.clientX, y: e.clientY };
     didMoveRef.current = false;
+    startTimeRef.current = Date.now();
 
-    // 1. Сортировка - срабатывает через 500мс
     sortingTimerRef.current = setTimeout(() => {
       if (!didMoveRef.current) {
         onSortingMode?.();
@@ -67,9 +68,7 @@ export const AccountItem: React.FC<Props> = ({
       }
     }, 500);
 
-    // 2. Редактирование - срабатывает через 1.5с
     timerRef.current = setTimeout(() => {
-      // If user holds still for 1.5s without moving -> definitely editing
       if (!didMoveRef.current) {
         onLongPress(account);
         if (navigator.vibrate) navigator.vibrate(50);
@@ -80,13 +79,19 @@ export const AccountItem: React.FC<Props> = ({
       const dist = Math.hypot(ev.clientX - startPosRef.current.x, ev.clientY - startPosRef.current.y);
       if (dist > MOVE_THRESHOLD) {
         didMoveRef.current = true;
-        clearTimers(); // User moved -> cancelled "edit" mode intention
+        clearTimers();
       }
     };
 
     const onPointerUp = () => {
       setIsPressing(false);
       clearTimers();
+
+      const elapsed = Date.now() - startTimeRef.current;
+      if (!didMoveRef.current && elapsed < 500) {
+        onClick?.(account);
+      }
+
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerup", onPointerUp);
     };
@@ -99,7 +104,6 @@ export const AccountItem: React.FC<Props> = ({
 
   const Icon = IconMap[account.icon] || Wallet;
 
-  // Highlights for transfer/income drops - only when hovering DIRECTLY over the coin circle
   const isTargetOver = isDropOver && activeDragType === "account" && !isDragging && !isSortingMode;
   const isIncomeTarget = isDropOver && activeDragType === "income";
 
@@ -124,11 +128,11 @@ export const AccountItem: React.FC<Props> = ({
         style={{ touchAction: "none" }}
         className={`draggable-coin transition-all duration-300 ${isDragging ? "grabbed-elevation" :
           isPressing ? "scale-90 brightness-75 border-white/40" : ""
-          } ${(isTargetOver || isIncomeTarget) ? "coin-target-glow" : ""
+          } ${(isTargetOver || isIncomeTarget) || isOver ? "coin-target-glow bg-white/20 shadow-[0_0_20px_rgba(255,255,255,0.2)] scale-110" : ""
           } ${isSortingMode && isDragging ? "shadow-2xl border-[#6d5dfc] ring-4 ring-[#6d5dfc]/20" : ""
           }`}
       >
-        <Icon size={26} color={(isTargetOver || isIncomeTarget) ? "#fff" : account.color} />
+        <Icon size={26} color={(isTargetOver || isIncomeTarget || isOver) ? "#fff" : account.color} />
       </div>
       <div className="flex flex-col items-center text-center leading-tight">
         <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">{account.name}</span>
