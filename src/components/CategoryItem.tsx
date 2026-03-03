@@ -72,8 +72,7 @@ export const CategoryItem: React.FC<Props> = ({
   const style = {
     transform: isSortingMode ? CSS.Translate.toString(transform) : undefined,
     transition,
-    zIndex: isDragging ? 100 : 1,
-    touchAction: "none"
+    zIndex: isDragging ? 100 : 1
   };
 
   return (
@@ -87,8 +86,9 @@ export const CategoryItem: React.FC<Props> = ({
         {...listeners}
         onPointerDown={handlePointerDown}
         onContextMenu={e => e.preventDefault()}
+        style={{ touchAction: "none" }}
         className={`w-[52px] h-[52px] rounded-[20px] flex items-center justify-center mb-2 transition-all duration-300 ${isDragging ? "grabbed-elevation" :
-            isPressing ? "scale-90 brightness-75 border-white/40" : ""
+          isPressing ? "scale-90 brightness-75 border-white/40" : ""
           } ${isTarget ? "bg-white/20 shadow-[0_0_20px_rgba(255,255,255,0.2)] border border-white/40 scale-110" : "bg-white/5 border border-white/5"
           } ${isSortingMode && isDragging ? "shadow-2xl border-[#6d5dfc] ring-2 ring-[#6d5dfc]/20" : ""
           }`}

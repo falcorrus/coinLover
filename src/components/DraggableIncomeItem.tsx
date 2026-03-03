@@ -90,23 +90,23 @@ export const DraggableIncomeItem: React.FC<Props> = ({
   const style = {
     transform: isSortingMode ? CSS.Translate.toString(transform) : undefined,
     transition,
-    zIndex: isDragging ? 100 : 1,
-    touchAction: "none"
+    zIndex: isDragging ? 100 : 1
   };
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
-      onPointerDown={handlePointerDown}
-      onContextMenu={e => e.preventDefault()}
-      className={`flex flex-col items-center justify-start transition-opacity shrink-0 ${isDragging ? "opacity-30" : "opacity-100"}`}
+      className={`flex flex-col items-center justify-start transition-opacity w-[64px] shrink-0 ${isDragging ? "opacity-30" : "opacity-100"}`}
     >
       <div
+        {...attributes}
+        {...listeners}
+        onPointerDown={handlePointerDown}
+        onContextMenu={e => e.preventDefault()}
+        style={{ touchAction: "none" }}
         className={`draggable-coin w-[52px] h-[52px] mb-2 border border-[#10b981]/30 bg-[#10b981]/10 transition-all duration-300 ${isDragging ? "grabbed-elevation" :
-            isPressing ? "scale-90 brightness-75 border-[#10b981]/50" : ""
+          isPressing ? "scale-90 brightness-75 border-[#10b981]/50" : ""
           } ${isSortingMode && isDragging ? "shadow-2xl border-[#6d5dfc] ring-2 ring-[#6d5dfc]/20" : ""}`}
       >
         <Icon size={22} color={income.color} />

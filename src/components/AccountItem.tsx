@@ -106,22 +106,22 @@ export const AccountItem: React.FC<Props> = ({
   const style = {
     transform: isSortingMode ? CSS.Translate.toString(transform) : undefined,
     transition,
-    zIndex: isDragging ? 100 : 1,
-    touchAction: "none"
+    zIndex: isDragging ? 100 : 1
   };
 
   return (
     <div
       ref={setSortRef}
       style={style}
-      {...attributes}
-      {...listeners}
-      onPointerDown={handlePointerDown}
-      onContextMenu={e => e.preventDefault()}
-      className={`flex flex-col items-center gap-2 justify-start transition-opacity w-full ${isDragging ? "opacity-30" : "opacity-100"}`}
+      className={`flex flex-col items-center gap-2 justify-start transition-opacity w-[76px] shrink-0 ${isDragging ? "opacity-30" : "opacity-100"}`}
     >
       <div
         ref={setDropRef}
+        {...attributes}
+        {...listeners}
+        onPointerDown={handlePointerDown}
+        onContextMenu={e => e.preventDefault()}
+        style={{ touchAction: "none" }}
         className={`draggable-coin transition-all duration-300 ${isDragging ? "grabbed-elevation" :
           isPressing ? "scale-90 brightness-75 border-white/40" : ""
           } ${(isTargetOver || isIncomeTarget) ? "coin-target-glow" : ""

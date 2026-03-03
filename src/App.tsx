@@ -41,12 +41,22 @@ export default function App() {
     pullSettings, checkConflicts, conflictData, updateLocalFromRemote, pushSettings
   } = useFinance();
 
+  const [isSplashVisible, setIsSplashVisible] = React.useState(true);
+
   React.useEffect(() => {
     // Background check on startup
     checkConflicts();
+
+    // Splash screen timer
+    const timer = setTimeout(() => {
+      setIsSplashVisible(false);
+    }, 2000);
+
+    return () => clearTimeout(timer);
   }, [checkConflicts]);
 
   const [mode, setMode] = React.useState<"expense" | "income">("expense");
+  const [pillMode, setPillMode] = React.useState<"expense" | "balance">("expense");
   const [isIncomeCollapsed, setIsIncomeCollapsed] = React.useState(true);
   const [activeDragId, setActiveDragId] = React.useState<string | null>(null);
   const [activeDragType, setActiveDragType] = React.useState<DragItemType | null>(null);
@@ -259,8 +269,21 @@ export default function App() {
       : categories.find(c => c.id === activeDragId);
 
   return (
-    <div className="min-h-screen flex flex-col max-w-md mx-auto relative shadow-2xl overflow-hidden bg-[#050505] text-white font-sans touch-none select-none text-left">
+    <div className="min-h-screen flex flex-col max-w-md mx-auto relative shadow-2xl overflow-hidden bg-[#050505] text-white font-sans select-none text-left">
       <style>{`body { overflow: hidden; overscroll-behavior: none; } * { -webkit-tap-highlight-color: transparent; }`}</style>
+
+      {/* Splash Screen */}
+      {isSplashVisible && (
+        <div className="fixed inset-0 z-[1000] bg-[#050505] flex items-center justify-center animate-in fade-in duration-500">
+          <div className="relative w-48 h-48 animate-pulse">
+            <img
+              src="/Gemini_mid.png"
+              alt="CoinLover Loading"
+              className="w-full h-full object-contain drop-shadow-[0_0_25px_rgba(109,93,252,0.4)]"
+            />
+          </div>
+        </div>
+      )}
 
       {/* Sync Status dot */}
       <div className="absolute top-4 right-4 z-50">
@@ -273,15 +296,29 @@ export default function App() {
       {/* Header */}
       <header className="px-6 py-8 flex flex-col gap-2 text-center shrink-0">
         <div className="flex justify-between items-center mb-2">
-          <div className="glass-icon-btn w-10 h-10"><CircleDollarSign size={20} className="text-[#6d5dfc]" /></div>
+          <button onClick={toggleIncome} className="glass-icon-btn w-10 h-10 hover:bg-white/10 transition-colors">
+            <CircleDollarSign size={20} className="text-[#10b981]" />
+          </button>
           <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] pt-1">Total Balance</p>
           <div className="glass-icon-btn w-10 h-10 text-slate-500"><Settings size={20} /></div>
         </div>
         <h1 className="text-5xl font-extrabold tracking-tight">${totalBalance.toLocaleString()}</h1>
-        <div className="mt-2 mx-auto px-4 py-1.5 rounded-full bg-white/5 border border-white/10 flex items-center gap-2 w-fit">
-          <TrendingDown size={14} className="text-[#D4AF37]" />
-          <span className="text-xs font-medium text-[#D4AF37]">-${totalSpent.toLocaleString()} this month</span>
-        </div>
+        <button
+          onClick={() => setPillMode(p => p === "expense" ? "balance" : "expense")}
+          className="mt-2 mx-auto px-4 py-1.5 rounded-full bg-white/5 border border-white/10 flex items-center gap-2 w-fit hover:bg-white/10 transition-colors cursor-pointer"
+        >
+          {pillMode === "expense" ? (
+            <>
+              <TrendingDown size={14} className="text-[#D4AF37]" />
+              <span className="text-xs font-medium text-[#D4AF37]">-${totalSpent.toLocaleString()} this month</span>
+            </>
+          ) : (
+            <>
+              <Wallet size={14} className="text-[#10b981]" />
+              <span className="text-xs font-medium text-[#10b981]">Общий баланс: ${totalBalance.toLocaleString()}</span>
+            </>
+          )}
+        </button>
       </header>
 
       <DndContext
@@ -357,8 +394,8 @@ export default function App() {
               <Plus size={16} />
             </button>
           </div>
-          <SortableContext items={accounts.map(a => a.id)} strategy={rectSortingStrategy}>
-            <div className="px-6 grid grid-cols-4 gap-y-6 gap-x-2 pb-8 pt-2 items-start">
+          <SortableContext items={accounts.map(a => a.id)} strategy={horizontalListSortingStrategy}>
+            <div className="flex gap-4 overflow-x-auto hide-scrollbar px-6 pb-4 pt-2">
               {accounts.map(acc => (
                 <AccountItem
                   key={acc.id} account={acc} isDragging={activeDragId === acc.id}
@@ -368,15 +405,6 @@ export default function App() {
                   isOver={overId === acc.id}
                 />
               ))}
-              <div
-                onClick={() => setAccountModal({ isOpen: true, account: null })}
-                className="flex flex-col items-center gap-2 cursor-pointer group"
-              >
-                <div className="w-16 h-16 rounded-full border border-dashed border-white/10 flex items-center justify-center text-white/20 group-hover:bg-white/5 transition-all">
-                  <Plus size={24} />
-                </div>
-                <span className="text-[10px] font-bold text-slate-500 uppercase mt-1">Add</span>
-              </div>
             </div>
           </SortableContext>
         </section>
