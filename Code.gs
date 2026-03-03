@@ -46,7 +46,8 @@ function doGet(e) {
           name: rows[i][1],
           balance: Number(rows[i][2]),
           color: rows[i][3],
-          icon: rows[i][4] || "wallet"
+          icon: rows[i][4] || "wallet",
+          currency: rows[i][5] || ""
         });
       } else if (currentSection === "categories") {
         data.categories.push({
@@ -84,37 +85,37 @@ function doPost(e) {
       sheet.clear();
 
       const rows = [];
-      const colCount = 5; // ID, Name, Balance, Color, Icon
+      const colCount = 6; // ID, Name, Balance, Color, Icon, Currency
 
-      rows.push(["Updated", data.timestamp, "", "", ""]);
-      rows.push(["", "", "", "", ""]);
+      rows.push(["Updated", data.timestamp, "", "", "", ""]);
+      rows.push(["", "", "", "", "", ""]);
 
       // 1. Кошельки (Accounts)
-      rows.push([" === WALLETS ===", "", "", "", ""]);
-      rows.push(["ID", "Name", "Balance", "Color", "Icon"]);
+      rows.push([" === WALLETS ===", "", "", "", "", ""]);
+      rows.push(["ID", "Name", "Balance", "Color", "Icon", "Currency"]);
       if (data.accounts && Array.isArray(data.accounts)) {
         data.accounts.forEach(a => {
-          rows.push([a.id || "", a.name || "", a.balance || 0, a.color || "", a.icon || ""]);
+          rows.push([a.id || "", a.name || "", a.balance || 0, a.color || "", a.icon || "", a.currency || ""]);
         });
       }
-      rows.push(["", "", "", "", ""]);
+      rows.push(["", "", "", "", "", ""]);
 
       // 2. Категории (Categories)
-      rows.push([" === CATEGORIES ===", "", "", "", ""]);
-      rows.push(["ID", "Name", "Color", "Icon", "Tags"]);
+      rows.push([" === CATEGORIES ===", "", "", "", "", ""]);
+      rows.push(["ID", "Name", "Color", "Icon", "Tags", ""]);
       if (data.categories && Array.isArray(data.categories)) {
         data.categories.forEach(c => {
-          rows.push([c.id || "", c.name || "", c.color || "", c.icon || "", c.tags ? (Array.isArray(c.tags) ? c.tags.join(", ") : c.tags) : ""]);
+          rows.push([c.id || "", c.name || "", c.color || "", c.icon || "", c.tags ? (Array.isArray(c.tags) ? c.tags.join(", ") : c.tags) : "", ""]);
         });
       }
-      rows.push(["", "", "", "", ""]);
+      rows.push(["", "", "", "", "", ""]);
 
       // 3. Доходы (Incomes)
-      rows.push([" === INCOMES ===", "", "", "", ""]);
-      rows.push(["ID", "Name", "Color", "Icon", ""]);
+      rows.push([" === INCOMES ===", "", "", "", "", ""]);
+      rows.push(["ID", "Name", "Color", "Icon", "", ""]);
       if (data.incomes && Array.isArray(data.incomes)) {
         data.incomes.forEach(i => {
-          rows.push([i.id || "", i.name || "", i.color || "", i.icon || "", ""]);
+          rows.push([i.id || "", i.name || "", i.color || "", i.icon || "", "", ""]);
         });
       }
 
