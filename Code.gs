@@ -170,3 +170,30 @@ function doPost(e) {
   }
 }
 
+function backupConfigsDaily() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sourceSheet = ss.getSheetByName("Configs");
+  if (!sourceSheet) return;
+  
+  let targetSheet = ss.getSheetByName("ConfigsArch");
+  if (!targetSheet) {
+    targetSheet = ss.insertSheet("ConfigsArch");
+  } else {
+    targetSheet.clear();
+  }
+  
+  const dataRange = sourceSheet.getDataRange();
+  const values = dataRange.getValues();
+  const backgrounds = dataRange.getBackgrounds();
+  const fontColors = dataRange.getFontColors();
+  const fontWeights = dataRange.getFontWeights();
+  
+  if (values.length > 0) {
+    const targetRange = targetSheet.getRange(1, 1, values.length, values[0].length);
+    targetRange.setValues(values);
+    targetRange.setBackgrounds(backgrounds);
+    targetRange.setFontColors(fontColors);
+    targetRange.setFontWeights(fontWeights);
+    targetSheet.autoResizeColumns(1, values[0].length);
+  }
+}

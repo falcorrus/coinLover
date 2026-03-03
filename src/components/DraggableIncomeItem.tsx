@@ -105,7 +105,7 @@ export const DraggableIncomeItem: React.FC<Props> = ({
         onPointerDown={handlePointerDown}
         onContextMenu={e => e.preventDefault()}
         style={{ touchAction: "none" }}
-        className={`draggable-coin w-[52px] h-[52px] mb-2 border border-[#10b981]/30 bg-[#10b981]/10 transition-all duration-300 ${isDragging ? "grabbed-elevation" :
+        className={`draggable-coin w-[52px] h-[52px] mb-2 border border-[#10b981]/30 bg-[#10b981]/10 transition-all duration-150 ${isDragging ? "grabbed-elevation" :
           isPressing ? "scale-90 brightness-75 border-[#10b981]/50" : ""
           } ${isSortingMode && isDragging ? "shadow-2xl border-[#6d5dfc] ring-2 ring-[#6d5dfc]/20" : ""}`}
       >

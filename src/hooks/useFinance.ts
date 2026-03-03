@@ -6,6 +6,12 @@ import { INITIAL_ACCOUNTS } from "../constants";
 
 export type SyncStatus = "idle" | "loading" | "error" | "success";
 
+const getLocalTimeString = (dateInput?: string) => {
+  const d = dateInput ? new Date(dateInput) : new Date();
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+};
+
 export const useFinance = () => {
   // ── State ─────────────────────────────────────────────────────────────────
   const [accounts, setAccounts] = useState<Account[]>(() => {
@@ -55,7 +61,7 @@ export const useFinance = () => {
       latestIncomes: IncomeSource[]
     ) => {
       setSyncStatus("loading");
-      const timestamp = new Date().toISOString();
+      const timestamp = getLocalTimeString();
       const ok = await googleSheetsService.syncToSheets({
         action: "syncSettings",
         targetSheet: "Configs",
@@ -85,7 +91,7 @@ export const useFinance = () => {
     tag?: string,
     customDate?: string
   ) => {
-    const date = customDate || new Date().toISOString();
+    const date = customDate ? getLocalTimeString(customDate) : getLocalTimeString();
 
     const newTx: Transaction = {
       id: Date.now().toString(),

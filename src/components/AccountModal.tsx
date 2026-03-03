@@ -78,7 +78,7 @@ export const AccountModal: React.FC<Props> = ({ isOpen, account, onClose, onSave
               <button
                 key={curr}
                 onClick={() => setCurrency(curr)}
-                className={`px-3 py-1.5 rounded-lg text-[10px] font-black border transition-all ${currency === curr ? "bg-white text-black border-white" : "bg-white/5 border-white/10 text-slate-400"}`}
+                className={`px-3 py-1.5 rounded-lg text-[10px] font-black border transition-all duration-150 ${currency === curr ? "bg-white text-black border-white" : "bg-white/5 border-white/10 text-slate-400"}`}
               >
                 {curr}
               </button>
@@ -92,7 +92,7 @@ export const AccountModal: React.FC<Props> = ({ isOpen, account, onClose, onSave
                 <button
                   key={i}
                   onClick={() => setIcon(i)}
-                  className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border-2 transition-all ${icon === i ? "border-[#6d5dfc] bg-[#6d5dfc]/10" : "border-white/5"}`}
+                  className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border-2 transition-all duration-150 ${icon === i ? "border-[#6d5dfc] bg-[#6d5dfc]/10" : "border-white/5"}`}
                 >
                   {React.createElement(IconMap[i] || Wallet, { size: 20 })}
                 </button>
@@ -107,7 +107,7 @@ export const AccountModal: React.FC<Props> = ({ isOpen, account, onClose, onSave
                 <button
                   key={c}
                   onClick={() => setColor(c)}
-                  className={`w-8 h-8 rounded-full border-2 transition-all ${color === c ? "border-white scale-110" : "border-transparent opacity-50"}`}
+                  className={`w-8 h-8 rounded-full border-2 transition-all duration-150 ${color === c ? "border-white scale-110" : "border-transparent opacity-50"}`}
                   style={{ backgroundColor: c }}
                 />
               ))}

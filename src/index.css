@@ -46,7 +46,7 @@ body {
   -webkit-backdrop-filter: blur(10px);
   border: 1px solid var(--glass-border);
   border-radius: 16px;
-  transition: all 0.2s ease;
+  transition: all 0.1s ease;
 }
 
 .glass-item:active {
@@ -61,7 +61,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  transition: all 0.1s ease;
 }
 
 .glass-icon-btn:active {
@@ -111,7 +111,7 @@ body {
   color: white;
   border-radius: 20px;
   font-weight: 600;
-  transition: opacity 0.2s;
+  transition: opacity 0.1s;
 }
 
 .numpad-action:active {
@@ -151,5 +151,5 @@ body {
   box-shadow: 0 16px 32px -8px rgba(0, 0, 0, 0.5);
   z-index: 9999;
   filter: brightness(1.1);
-  transition: transform 0.2s cubic-bezier(0.2, 0, 0.2, 1);
+  transition: transform 0.1s cubic-bezier(0.2, 0, 0.2, 1);
 }

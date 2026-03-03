@@ -31,7 +31,7 @@ export const Numpad: React.FC<Props> = ({ data, onClose, onFieldChange, onPress,
   };
 
   return (
-    <div className="fixed inset-0 z-[150] flex flex-col bg-[#050505] animate-in slide-in-from-bottom-full duration-300">
+    <div className="fixed inset-0 z-[150] flex flex-col bg-[#050505] animate-in slide-in-from-bottom-full duration-150">
       <div className="flex justify-between items-center px-4 py-4 bg-[#121212] border-b border-white/5 text-left text-white">
         <button onClick={onClose} className="p-2 text-slate-500 hover:text-white"><X size={24} /></button>
         <div className="flex items-center gap-3 text-sm font-semibold tracking-wide text-left text-white">
@@ -49,7 +49,7 @@ export const Numpad: React.FC<Props> = ({ data, onClose, onFieldChange, onPress,
         <div className="w-full flex items-center gap-3">
           <div
             onClick={() => onFieldChange("source")}
-            className={`flex-1 h-36 rounded-[24px] border flex flex-col items-end justify-center p-6 relative transition-all duration-300 ${data.activeField === "source"
+            className={`flex-1 h-36 rounded-[24px] border flex flex-col items-end justify-center p-6 relative transition-all duration-150 ${data.activeField === "source"
               ? (data.type === 'expense' ? 'bg-[#D4AF37]/20 border-[#D4AF37] ring-1 ring-[#D4AF37]/50' : 'bg-[#10b981]/20 border-[#10b981] ring-1 ring-[#10b981]/50')
               : 'bg-white/[0.02] border-white/5 opacity-50'}`}
           >
@@ -66,7 +66,7 @@ export const Numpad: React.FC<Props> = ({ data, onClose, onFieldChange, onPress,
 
           <div
             onClick={() => onFieldChange("destination")}
-            className={`flex-1 h-36 rounded-[24px] border flex flex-col items-end justify-center p-6 relative transition-all duration-300 ${data.activeField === "destination"
+            className={`flex-1 h-36 rounded-[24px] border flex flex-col items-end justify-center p-6 relative transition-all duration-150 ${data.activeField === "destination"
               ? (data.type === 'expense' ? 'bg-[#D4AF37]/20 border-[#D4AF37] ring-1 ring-[#D4AF37]/50' : 'bg-[#10b981]/20 border-[#10b981] ring-1 ring-[#10b981]/50')
               : 'bg-white/[0.02] border-white/5 opacity-50'}`}
           >

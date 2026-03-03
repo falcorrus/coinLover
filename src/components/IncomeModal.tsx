@@ -43,7 +43,7 @@ export const IncomeModal: React.FC<Props> = ({ isOpen, income, onClose, onSave, 
                         <label className="text-[10px] font-bold text-slate-500 uppercase">Icon</label>
                         <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-1 text-white text-left">
                             {INCOME_ICONS.map(i => (
-                                <button key={i} onClick={() => setIcon(i)} className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border-2 transition-all ${icon === i ? "border-[#10b981] bg-[#10b981]/10" : "border-white/5"}`}>
+                                <button key={i} onClick={() => setIcon(i)} className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border-2 transition-all duration-150 ${icon === i ? "border-[#10b981] bg-[#10b981]/10" : "border-white/5"}`}>
                                     {React.createElement(IconMap[i] || Briefcase, { size: 20 })}
                                 </button>
                             ))}
@@ -53,7 +53,7 @@ export const IncomeModal: React.FC<Props> = ({ isOpen, income, onClose, onSave, 
                         <label className="text-[10px] font-bold text-slate-500 uppercase text-left text-white">Color</label>
                         <div className="flex justify-between text-white">
                             {COLORS.map(c => (
-                                <button key={c} onClick={() => setColor(c)} className={`w-8 h-8 rounded-full border-2 transition-all ${color === c ? "border-white scale-110" : "border-transparent opacity-50"}`} style={{ backgroundColor: c }} />
+                                <button key={c} onClick={() => setColor(c)} className={`w-8 h-8 rounded-full border-2 transition-all duration-150 ${color === c ? "border-white scale-110" : "border-transparent opacity-50"}`} style={{ backgroundColor: c }} />
                             ))}
                         </div>
                     </div>
