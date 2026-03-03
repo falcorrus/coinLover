@@ -33,8 +33,8 @@ export const AccountModal: React.FC<Props> = ({ isOpen, account, onClose, onSave
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[200] flex items-center justify-center p-6 animate-in fade-in">
-      <div className="glass-panel w-full max-w-sm p-8 flex flex-col gap-6 shadow-2xl animate-in zoom-in-95 text-white text-left overflow-y-auto max-h-[90vh] hide-scrollbar">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[200] flex items-center justify-center p-6 animate-in fade-in duration-500">
+      <div className="glass-panel w-full max-w-sm p-8 flex flex-col gap-6 shadow-2xl animate-in zoom-in-95 duration-500 text-white text-left overflow-y-auto max-h-[90vh] hide-scrollbar">
         <div className="flex justify-between items-center text-white">
           <h3 className="text-lg font-bold uppercase text-white">{account ? "Изменить кошелек" : "Новый кошелек"}</h3>
           <button onClick={onClose} className="p-2 -mr-2 text-white"><X size={24} /></button>
@@ -78,7 +78,7 @@ export const AccountModal: React.FC<Props> = ({ isOpen, account, onClose, onSave
               <button
                 key={curr}
                 onClick={() => setCurrency(curr)}
-                className={`px-3 py-1.5 rounded-lg text-[10px] font-black border transition-all duration-150 ${currency === curr ? "bg-white text-black border-white" : "bg-white/5 border-white/10 text-slate-400"}`}
+                className={`px-3 py-1.5 rounded-lg text-[10px] font-black border transition-all duration-300 ${currency === curr ? "bg-white text-black border-white" : "bg-white/5 border-white/10 text-slate-400"}`}
               >
                 {curr}
               </button>
@@ -92,7 +92,7 @@ export const AccountModal: React.FC<Props> = ({ isOpen, account, onClose, onSave
                 <button
                   key={i}
                   onClick={() => setIcon(i)}
-                  className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border-2 transition-all duration-150 ${icon === i ? "border-[#6d5dfc] bg-[#6d5dfc]/10" : "border-white/5"}`}
+                  className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border-2 transition-all duration-300 ${icon === i ? "border-[#6d5dfc] bg-[#6d5dfc]/10" : "border-white/5"}`}
                 >
                   {React.createElement(IconMap[i] || Wallet, { size: 20 })}
                 </button>
@@ -107,7 +107,7 @@ export const AccountModal: React.FC<Props> = ({ isOpen, account, onClose, onSave
                 <button
                   key={c}
                   onClick={() => setColor(c)}
-                  className={`w-8 h-8 rounded-full border-2 transition-all duration-150 ${color === c ? "border-white scale-110" : "border-transparent opacity-50"}`}
+                  className={`w-8 h-8 rounded-full border-2 transition-all duration-300 ${color === c ? "border-white scale-110" : "border-transparent opacity-50"}`}
                   style={{ backgroundColor: c }}
                 />
               ))}

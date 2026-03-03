@@ -280,7 +280,7 @@ export default function App() {
 
       {/* Splash Screen (Vector Mode) */}
       {isSplashVisible && (
-        <div className="fixed inset-0 z-[1000] bg-[#050505] flex items-center justify-center animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-[1000] bg-[#050505] flex items-center justify-center animate-in fade-in duration-500">
           <div className="relative animate-pulse flex flex-col items-center gap-6">
             <div className="relative w-32 h-32 rounded-full bg-gradient-to-br from-amber-300 via-amber-500 to-amber-600 shadow-[0_0_50px_rgba(217,119,6,0.3)] flex items-center justify-center border-4 border-amber-200/20">
               {/* Coin Reflection Effect */}
@@ -305,7 +305,7 @@ export default function App() {
       )}
       {/* Sync Status dot */}
       <div className="absolute top-4 right-4 z-50">
-        <div className={`w-2 h-2 rounded-full transition-all duration-150 ${syncStatus === "loading" ? "bg-amber-400 animate-pulse" :
+        <div className={`w-2 h-2 rounded-full transition-all duration-500 ${syncStatus === "loading" ? "bg-amber-400 animate-pulse" :
           syncStatus === "success" ? "bg-emerald-500/50" :
             syncStatus === "error" ? "bg-rose-500" : "bg-white/10"
           }`} />
@@ -371,7 +371,7 @@ export default function App() {
       >
 
         {/* INCOME STRIPE */}
-        <section className={`px-0 overflow-hidden transition-all duration-150 bg-white/[0.01] shrink-0 ${isIncomeCollapsed ? "max-h-0 opacity-0 border-none" : "max-h-[160px] opacity-100 border-b border-white/5 py-1"}`}>
+        <section className={`px-0 overflow-hidden transition-all duration-500 bg-white/[0.01] shrink-0 ${isIncomeCollapsed ? "max-h-0 opacity-0 border-none" : "max-h-[160px] opacity-100 border-b border-white/5 py-1"}`}>
           <div onClick={toggleIncome} className="px-6 py-2 flex justify-between items-center cursor-pointer hover:bg-white/5 group">
             <div className="flex items-center gap-2">
               <ChevronRight size={14} className="text-slate-500 rotate-90" />
@@ -421,7 +421,7 @@ export default function App() {
         </section>
 
         {/* CATEGORIES GRID */}
-        <section className={`px-6 flex-1 pt-4 pb-8 overflow-y-auto hide-scrollbar z-10 relative transition-all duration-150 ${mode === "income" ? "opacity-30 pointer-events-none grayscale" : "opacity-100"}`}>
+        <section className={`px-6 flex-1 pt-4 pb-8 overflow-y-auto hide-scrollbar z-10 relative transition-all duration-500 ${mode === "income" ? "opacity-30 pointer-events-none grayscale" : "opacity-100"}`}>
           <div className="glass-panel p-6">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-[10px] font-black text-slate-500 uppercase">Категории</h2>
@@ -486,7 +486,7 @@ export default function App() {
           )}
         </section>
 
-        <DragOverlay dropAnimation={{ duration: 150, easing: "ease-out" }}>
+        <DragOverlay dropAnimation={{ duration: 200, easing: "ease-out" }}>
           {activeDragId ? (
             <div className="draggable-coin grabbed-elevation pointer-events-none">
               {React.createElement(IconMap[(activeItemData as Account | IncomeSource | Category)?.icon] || Wallet, { size: 28, color: (activeItemData as Account | IncomeSource | Category)?.color })}
@@ -550,7 +550,7 @@ export default function App() {
 
       {/* CONFLICT RESOLUTION MODAL */}
       {conflictData && (
-        <div className="fixed inset-0 bg-black/95 backdrop-blur-3xl z-[400] flex items-center justify-center p-6 animate-in fade-in zoom-in duration-150">
+        <div className="fixed inset-0 bg-black/95 backdrop-blur-3xl z-[400] flex items-center justify-center p-6 animate-in fade-in zoom-in duration-500">
           <div className="glass-panel w-full max-w-sm p-8 flex flex-col items-center gap-8 text-center border-amber-500/20 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.8)]">
             <div className="w-20 h-20 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500 shadow-[0_0_40px_rgba(245,158,11,0.1)] relative">
               <RefreshCcw size={40} className="animate-spin-slow opacity-20 absolute" />
@@ -572,9 +572,9 @@ export default function App() {
             <div className="grid grid-cols-1 w-full gap-4">
               <button
                 onClick={() => updateLocalFromRemote(conflictData)}
-                className="group relative h-16 rounded-2xl bg-[#6d5dfc] font-black text-white shadow-xl shadow-[#6d5dfc]/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-150 overflow-hidden"
+                className="group relative h-16 rounded-2xl bg-[#6d5dfc] font-black text-white shadow-xl shadow-[#6d5dfc]/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-500 overflow-hidden"
               >
-                <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-0 transition-transform duration-150" />
+                <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-0 transition-transform duration-500" />
                 <span className="relative">RESTORE FROM CLOUD</span>
               </button>
 
@@ -584,7 +584,7 @@ export default function App() {
                   localStorage.setItem("cl_last_sync", conflictData.timestamp); // Acknowledge this remote but stay local
                   updateLocalFromRemote({ ...conflictData, accounts, categories, incomes }); // This clears the modal and updates timestamp
                 }}
-                className="h-14 rounded-2xl bg-white/5 border border-white/10 font-bold text-slate-500 hover:text-white hover:bg-white/10 transition-all duration-150 text-xs tracking-widest"
+                className="h-14 rounded-2xl bg-white/5 border border-white/10 font-bold text-slate-500 hover:text-white hover:bg-white/10 transition-all duration-500 text-xs tracking-widest"
               >
                 KEEP LOCAL VERSION
               </button>

@@ -83,7 +83,7 @@ export const CalendarModal: React.FC<Props> = ({ isOpen, onClose, onSelect }) =>
                             {day ? (
                                 <button
                                     onClick={() => handleDateClick(day)}
-                                    className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm transition-all duration-150
+                                    className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm transition-all duration-300
                     ${isToday(day)
                                             ? "bg-[#6d5dfc] text-white font-bold shadow-lg shadow-[#6d5dfc]/30"
                                             : "hover:bg-white/10 text-white"
