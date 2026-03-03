@@ -7,7 +7,7 @@ REPO_URL="https://github.com/falcorrus/coinLover.git"
 
 # Define Environments
 # Format: NAME|DIR|BRANCH|PORT_FRONT|PORT_BACK|CONTAINER_PREFIX
-ENV_MAIN="main|/root/MyProjects/coinLover|main|8010|8000|coinlover"
+ENV_MAIN="main|/root/MyProjects/coinLover|main|8010|8002|coinlover"
 ENV_DEV="dev|/root/MyProjects/coinlover-dev|preview|8011|8001|coinlover-dev"
 
 # 1. Automatic push of changes
