@@ -1,8 +1,20 @@
 import { GOOGLE_SCRIPT_URL } from "../constants";
 import { SyncPayload } from "../types";
 
-// Push-only sync service. No getData() — app is the single source of truth.
+// Push & Pull sync service.
 export const googleSheetsService = {
+  async fetchSettings(): Promise<any> {
+    try {
+      const response = await fetch(GOOGLE_SCRIPT_URL);
+      const result = await response.json();
+      if (result.status === "success") return result.data;
+      throw new Error(result.message);
+    } catch (error) {
+      console.error("Fetch from Sheets failed:", error);
+      return null;
+    }
+  },
+
   async syncToSheets(data: SyncPayload): Promise<boolean> {
     try {
       await fetch(GOOGLE_SCRIPT_URL, {

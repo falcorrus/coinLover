@@ -15,7 +15,7 @@ import {
 } from "@dnd-kit/core";
 import { arrayMove, SortableContext, horizontalListSortingStrategy, rectSortingStrategy } from "@dnd-kit/sortable";
 import {
-  Plus, Settings, CircleDollarSign, TrendingDown, ChevronRight, TrendingUp, AlertTriangle, Wallet
+  Plus, Settings, CircleDollarSign, TrendingDown, ChevronRight, TrendingUp, AlertTriangle, Wallet, RefreshCcw
 } from "lucide-react";
 
 // Modules
@@ -38,7 +38,13 @@ export default function App() {
     addTransaction, saveAccount, deleteAccount,
     saveIncome, deleteIncome,
     syncCategories, syncIncomes, syncAccountsOrder,
+    pullSettings, checkConflicts, conflictData, updateLocalFromRemote, pushSettings
   } = useFinance();
+
+  React.useEffect(() => {
+    // Background check on startup
+    checkConflicts();
+  }, [checkConflicts]);
 
   const [mode, setMode] = React.useState<"expense" | "income">("expense");
   const [isIncomeCollapsed, setIsIncomeCollapsed] = React.useState(true);
@@ -267,7 +273,15 @@ export default function App() {
       {/* Header */}
       <header className="px-6 py-8 flex flex-col gap-2 text-center shrink-0">
         <div className="flex justify-between items-center mb-2">
-          <div className="glass-icon-btn w-10 h-10"><CircleDollarSign size={20} className="text-[#6d5dfc]" /></div>
+          <div className="flex gap-2">
+            <div className="glass-icon-btn w-10 h-10"><CircleDollarSign size={20} className="text-[#6d5dfc]" /></div>
+            <button
+              onClick={() => pullSettings()}
+              className={`glass-icon-btn w-10 h-10 ${syncStatus === 'loading' ? 'animate-spin' : ''}`}
+            >
+              <RefreshCcw size={18} className={syncStatus === 'error' ? 'text-rose-500' : (syncStatus === 'success' ? 'text-emerald-500' : 'text-slate-400')} />
+            </button>
+          </div>
           <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] pt-1">Total Balance</p>
           <div className="glass-icon-btn w-10 h-10 text-slate-500"><Settings size={20} /></div>
         </div>
@@ -502,6 +516,55 @@ export default function App() {
         }}
         onDelete={handleIncomeDeleteTrigger}
       />
+
+      {/* CONFLICT RESOLUTION MODAL */}
+      {conflictData && (
+        <div className="fixed inset-0 bg-black/95 backdrop-blur-3xl z-[400] flex items-center justify-center p-6 animate-in fade-in zoom-in duration-300">
+          <div className="glass-panel w-full max-w-sm p-8 flex flex-col items-center gap-8 text-center border-amber-500/20 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.8)]">
+            <div className="w-20 h-20 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500 shadow-[0_0_40px_rgba(245,158,11,0.1)] relative">
+              <RefreshCcw size={40} className="animate-spin-slow opacity-20 absolute" />
+              <div className="w-full h-full flex items-center justify-center scale-110">
+                <RefreshCcw size={32} strokeWidth={2.5} />
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <h3 className="text-2xl font-black tracking-tight text-white uppercase">Data Conflict</h3>
+              <p className="text-sm text-slate-400 leading-relaxed">
+                Found a newer version in the Cloud from
+                <span className="text-amber-400 block font-mono mt-1 text-xs bg-white/5 py-1 rounded-lg">
+                  {new Date(conflictData.timestamp).toLocaleString()}
+                </span>
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 w-full gap-4">
+              <button
+                onClick={() => updateLocalFromRemote(conflictData)}
+                className="group relative h-16 rounded-2xl bg-[#6d5dfc] font-black text-white shadow-xl shadow-[#6d5dfc]/20 hover:scale-[1.02] active:scale-[0.98] transition-all overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-0 transition-transform duration-500" />
+                <span className="relative">RESTORE FROM CLOUD</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  pushSettings();
+                  localStorage.setItem("cl_last_sync", conflictData.timestamp); // Acknowledge this remote but stay local
+                  updateLocalFromRemote({ ...conflictData, accounts, categories, incomes }); // This clears the modal and updates timestamp
+                }}
+                className="h-14 rounded-2xl bg-white/5 border border-white/10 font-bold text-slate-500 hover:text-white hover:bg-white/10 transition-all text-xs tracking-widest"
+              >
+                KEEP LOCAL VERSION
+              </button>
+            </div>
+
+            <p className="text-[9px] text-slate-600 uppercase font-black tracking-[0.2em]">
+              Choose carefully to avoid losing progress
+            </p>
+          </div>
+        </div>
+      )}
 
       {confirmDelete.isOpen && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-[300] flex items-center justify-center p-6 animate-in fade-in">

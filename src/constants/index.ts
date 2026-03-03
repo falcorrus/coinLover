@@ -7,7 +7,7 @@ import {
 import React from "react";
 import { Account, Category, IncomeSource } from "../types";
 
-export const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbydKng2JT3FsTYd5nWbsjEd4u0gUxKQQ1cpI4O1AoW7bIx1ZAM0obfOO736615sLMvG/exec";
+export const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxlf7dNPFoUo5xnjCeHP0IC0rzfGF-ALBl-UPrnM8A9pE2P1SjBD2uwR3ojYg-1vNZQ/exec";
 
 export const IconMap: Record<string, React.FC<any>> = {
   wallet: Wallet, card: CreditCard, savings: PiggyBank,

@@ -31,6 +31,16 @@ export const useFinance = () => {
   });
 
   const [syncStatus, setSyncStatus] = useState<SyncStatus>("idle");
+  const [conflictData, setConflictData] = useState<any | null>(null);
+
+  // ── Sync Helpers ────────────────────────────────────────────────────────
+  const updateLocalFromRemote = useCallback((data: any) => {
+    if (data.accounts) setAccounts(data.accounts);
+    if (data.categories) setCategories(data.categories);
+    if (data.incomes) setIncomes(data.incomes);
+    if (data.timestamp) localStorage.setItem("cl_last_sync", data.timestamp);
+    setConflictData(null);
+  }, []);
 
   // ── Auto-save to localStorage ─────────────────────────────────────────────
   useEffect(() => { localStorage.setItem("cl_accounts", JSON.stringify(accounts)); }, [accounts]);
@@ -54,7 +64,13 @@ export const useFinance = () => {
         incomes: latestIncomes,
         timestamp,
       });
-      setSyncStatus(ok ? "success" : "error");
+
+      if (ok) {
+        localStorage.setItem("cl_last_sync", timestamp);
+        setSyncStatus("success");
+      } else {
+        setSyncStatus("error");
+      }
     },
     []
   );
@@ -111,7 +127,7 @@ export const useFinance = () => {
     });
 
     // Also background sync updated balances to Configs
-    await googleSheetsService.syncToSheets({
+    const configsOk = await googleSheetsService.syncToSheets({
       action: "syncSettings",
       targetSheet: "Configs",
       accounts: updatedAccounts,
@@ -120,7 +136,12 @@ export const useFinance = () => {
       timestamp: date,
     });
 
-    setSyncStatus(ok ? "success" : "error");
+    if (ok && configsOk) {
+      localStorage.setItem("cl_last_sync", date);
+      setSyncStatus("success");
+    } else {
+      setSyncStatus("error");
+    }
   };
 
   // ── Accounts ───────────────────────────────────────────────────────────────
@@ -171,6 +192,31 @@ export const useFinance = () => {
     await pushSettings(accounts, categories, updated);
   };
 
+  const pullSettings = useCallback(async () => {
+    setSyncStatus("loading");
+    const data = await googleSheetsService.fetchSettings();
+    if (data) {
+      updateLocalFromRemote(data);
+      setSyncStatus("success");
+      return true;
+    }
+    setSyncStatus("error");
+    return false;
+  }, [updateLocalFromRemote]);
+
+  const checkConflicts = useCallback(async () => {
+    const remote = await googleSheetsService.fetchSettings();
+    if (!remote || !remote.timestamp) return;
+
+    const localLastSync = localStorage.getItem("cl_last_sync");
+
+    if (localLastSync && remote.timestamp !== localLastSync) {
+      setConflictData(remote);
+    } else if (!localLastSync) {
+      updateLocalFromRemote(remote);
+    }
+  }, [updateLocalFromRemote]);
+
   return {
     accounts, setAccounts,
     categories, setCategories,
@@ -185,5 +231,10 @@ export const useFinance = () => {
     syncCategories,
     syncIncomes,
     syncAccountsOrder,
+    pullSettings,
+    checkConflicts,
+    conflictData,
+    updateLocalFromRemote,
+    pushSettings: () => pushSettings(accounts, categories, incomes)
   };
 };

@@ -1,3 +1,78 @@
+function doGet(e) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName("Configs");
+    
+    if (!sheet) {
+      return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "Configs sheet not found" })).setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    const rows = sheet.getDataRange().getValues();
+    const data = {
+      accounts: [],
+      categories: [],
+      incomes: []
+    };
+    
+    let currentSection = "";
+    
+    for (let i = 0; i < rows.length; i++) {
+      const firstCol = String(rows[i][0]).trim();
+      
+      if (firstCol.startsWith("Updated")) {
+        data.timestamp = firstCol.split("Updated")[1]?.trim() || rows[i][1];
+        continue;
+      }
+      
+      if (firstCol.includes("=== WALLETS ===")) {
+        currentSection = "accounts";
+        continue;
+      }
+      if (firstCol.includes("=== CATEGORIES ===")) {
+        currentSection = "categories";
+        continue;
+      }
+      if (firstCol.includes("=== INCOMES ===")) {
+        currentSection = "incomes";
+        continue;
+      }
+      
+      // Skip headers and empty rows
+      if (!firstCol || firstCol === "ID" || firstCol === "Name") continue;
+      
+      if (currentSection === "accounts") {
+        data.accounts.push({
+          id: rows[i][0],
+          name: rows[i][1],
+          balance: Number(rows[i][2]),
+          color: rows[i][3],
+          icon: rows[i][4] || "wallet"
+        });
+      } else if (currentSection === "categories") {
+        data.categories.push({
+          id: rows[i][0],
+          name: rows[i][1],
+          color: rows[i][2],
+          icon: rows[i][3] || "more",
+          tags: rows[i][4] ? String(rows[i][4]).split(",").map(t => t.trim()) : []
+        });
+      } else if (currentSection === "incomes") {
+        data.incomes.push({
+          id: rows[i][0],
+          name: rows[i][1],
+          color: rows[i][2],
+          icon: rows[i][3] || "business"
+        });
+      }
+    }
+    
+    return ContentService.createTextOutput(JSON.stringify({ status: "success", data })).setMimeType(ContentService.MimeType.JSON);
+    
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ status: "error", message: err.toString() })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
 function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents);
@@ -94,3 +169,4 @@ function doPost(e) {
     return ContentService.createTextOutput(JSON.stringify({ status: "error", message: err.toString() })).setMimeType(ContentService.MimeType.JSON);
   }
 }
+
