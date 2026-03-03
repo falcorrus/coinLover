@@ -72,8 +72,12 @@ services:
     restart: always
 EOT
 
+    # Stop and clear port to avoid "port already allocated" errors
+    docker compose down
+    fuser -k $port_back/tcp || true
+    
     # Restart containers
-    docker compose up -d --build
+    docker compose up -d --build --remove-orphans
 EOF
   echo "✅ Finished $name deployment!"
 }

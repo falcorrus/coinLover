@@ -93,4 +93,10 @@ export type SyncPayload =
     categories: Category[];
     incomes: IncomeSource[];
     timestamp: string; // Added for state snapshots
+  }
+  | {
+    action: "deleteTransaction";
+    targetSheet: "Transactions";
+    id: string;
+    timestamp: string;
   };

@@ -8,9 +8,9 @@ import { RatesService } from "../services/RatesService";
 export type SyncStatus = "idle" | "loading" | "error" | "success";
 
 const getLocalTimeString = (dateInput?: string) => {
-  const d = dateInput ? new Date(dateInput) : new Date();
+  const d = dateInput ? new Date(dateInput.replace(/-/g, '/').replace('T', ' ')) : new Date();
   const pad = (n: number) => n.toString().padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 };
 
 export const useFinance = () => {
@@ -51,7 +51,7 @@ export const useFinance = () => {
     if (data.transactions && Array.isArray(data.transactions)) {
       setTransactions(
         [...data.transactions].sort(
-          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+          (a, b) => new Date(b.date.replace(/-/g, '/').replace('T', ' ')).getTime() - new Date(a.date.replace(/-/g, '/').replace('T', ' ')).getTime()
         )
       );
     }
@@ -274,6 +274,50 @@ export const useFinance = () => {
     }
   };
 
+  const deleteTransaction = async (txId: string) => {
+    const tx = transactions.find((t) => t.id === txId);
+    if (!tx) return;
+
+    setTransactions((prev) => prev.filter((t) => t.id !== txId));
+
+    const updatedAccounts = accounts.map((a) => {
+      let balance = a.balance;
+      if (tx.type === "expense" && a.id === tx.accountId) balance += tx.amount;
+      if (tx.type === "income" && a.id === tx.targetId) balance -= tx.targetAmount ?? tx.amount;
+      if (tx.type === "transfer") {
+        if (a.id === tx.accountId) balance += tx.amount;
+        if (a.id === tx.targetId) balance -= tx.targetAmount ?? tx.amount;
+      }
+      return a.balance !== balance ? { ...a, balance } : a;
+    });
+    setAccounts(updatedAccounts);
+
+    setSyncStatus("loading");
+    const timestamp = getLocalTimeString();
+    const txOk = await googleSheetsService.syncToSheets({
+      action: "deleteTransaction",
+      targetSheet: "Transactions",
+      id: txId,
+      timestamp,
+    });
+
+    const configsOk = await googleSheetsService.syncToSheets({
+      action: "syncSettings",
+      targetSheet: "Configs",
+      accounts: updatedAccounts,
+      categories,
+      incomes,
+      timestamp,
+    });
+
+    if (txOk && configsOk) {
+      localStorage.setItem("cl_last_sync", timestamp);
+      setSyncStatus("success");
+    } else {
+      setSyncStatus("error");
+    }
+  };
+
   // ── Accounts ───────────────────────────────────────────────────────────────
   const saveAccount = async (account: Partial<Account>) => {
     const updated = account.id
@@ -369,6 +413,7 @@ export const useFinance = () => {
     syncStatus,
     addTransaction,
     updateTransaction,
+    deleteTransaction,
     saveAccount,
     deleteAccount,
     saveCategory,

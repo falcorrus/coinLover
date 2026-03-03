@@ -16,11 +16,11 @@ import {
 import { arrayMove, SortableContext, horizontalListSortingStrategy, rectSortingStrategy } from "@dnd-kit/sortable";
 import {
   Plus, Settings, CircleDollarSign, TrendingDown, ChevronRight, TrendingUp, AlertTriangle, Wallet, RefreshCcw,
-  Heart, MousePointer2, PieChart
+  Heart, MousePointer2, PieChart, List
 } from "lucide-react";
 
 // Modules
-import { Account, IncomeSource, Category, NumpadData, DragItemType } from "./types";
+import { Account, IncomeSource, Category, NumpadData, DragItemType, Transaction } from "./types";
 import { IconMap } from "./constants";
 import { useFinance } from "./hooks/useFinance";
 import { RatesService } from "./services/RatesService";
@@ -33,6 +33,7 @@ import { DraggableIncomeItem } from "./components/DraggableIncomeItem";
 import { IncomeModal } from "./components/IncomeModal";
 import { HistoryModal } from "./components/HistoryModal";
 import { AnalyticsModal } from "./components/AnalyticsModal";
+import { ConfirmModal } from "./components/ConfirmModal";
 
 export default function App() {
   const {
@@ -40,7 +41,7 @@ export default function App() {
     categories, setCategories,
     incomes, setIncomes,
     transactions, syncStatus,
-    addTransaction, updateTransaction, saveAccount, deleteAccount,
+    addTransaction, updateTransaction, deleteTransaction, saveAccount, deleteAccount,
     saveCategory, deleteCategory,
     saveIncome, deleteIncome,
     syncCategories, syncIncomes, syncAccountsOrder,
@@ -94,11 +95,14 @@ export default function App() {
 
   const [historyModal, setHistoryModal] = React.useState<{
     isOpen: boolean;
-    entity: Account | Category | IncomeSource | null;
-    type: "account" | "category" | "income" | null;
+    entity: any;
+    type: "account" | "category" | "income" | "tag" | null;
+    customTransactions?: Transaction[];
   }>({
     isOpen: false, entity: null, type: null
   });
+
+  const [isSettingsMenuOpen, setIsSettingsMenuOpen] = React.useState(false);
 
   const [analyticsModal, setAnalyticsModal] = React.useState({ isOpen: false });
 
@@ -131,8 +135,16 @@ export default function App() {
     }
   };
 
-  const [confirmDelete, setConfirmDelete] = React.useState<{ isOpen: boolean; onConfirm: () => void }>({
-    isOpen: false, onConfirm: () => { }
+  const [confirmDelete, setConfirmDelete] = React.useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => { }
   });
 
   // distance:15 → quick drags activate immediately (transfer / expense).
@@ -287,10 +299,12 @@ export default function App() {
     if (!accountModal.account) return;
     setConfirmDelete({
       isOpen: true,
+      title: "Удалить кошелек?",
+      message: `Это действие навсегда удалит кошелек "${accountModal.account.name}" и все связанные данные.`,
       onConfirm: () => {
         deleteAccount(accountModal.account!.id);
         setAccountModal({ isOpen: false, account: null });
-        setConfirmDelete({ isOpen: false, onConfirm: () => { } });
+        setConfirmDelete(p => ({ ...p, isOpen: false }));
       }
     });
   };
@@ -299,10 +313,12 @@ export default function App() {
     if (!incomeModal.income) return;
     setConfirmDelete({
       isOpen: true,
+      title: "Удалить доход?",
+      message: `Вы уверены, что хотите удалить источник "${incomeModal.income.name}"?`,
       onConfirm: () => {
         deleteIncome(incomeModal.income!.id);
         setIncomeModal({ isOpen: false, income: null });
-        setConfirmDelete({ isOpen: false, onConfirm: () => { } });
+        setConfirmDelete(p => ({ ...p, isOpen: false }));
       }
     });
   };
@@ -311,10 +327,12 @@ export default function App() {
     if (!categoryModal.category) return;
     setConfirmDelete({
       isOpen: true,
+      title: "Удалить категорию?",
+      message: `Это действие удалит категорию "${categoryModal.category.name}". Статистика по этой категории может измениться.`,
       onConfirm: () => {
         deleteCategory(categoryModal.category!.id);
         setCategoryModal({ isOpen: false, category: null });
-        setConfirmDelete({ isOpen: false, onConfirm: () => { } });
+        setConfirmDelete(p => ({ ...p, isOpen: false }));
       }
     });
   };
@@ -374,7 +392,28 @@ export default function App() {
             <CircleDollarSign size={20} className="text-[#10b981]" />
           </button>
           <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] pt-1">Total Balance</p>
-          <div className="glass-icon-btn w-10 h-10 text-slate-500"><Settings size={20} /></div>
+          <div className="relative">
+            <button onClick={() => setIsSettingsMenuOpen(!isSettingsMenuOpen)} className="glass-icon-btn w-10 h-10 text-slate-500 hover:text-white transition-colors">
+              <Settings size={20} />
+            </button>
+            {isSettingsMenuOpen && (
+              <>
+                <div className="fixed inset-0 z-[200]" onClick={() => setIsSettingsMenuOpen(false)} />
+                <div className="absolute top-12 right-0 w-48 glass-panel flex flex-col z-[201] p-2 animate-in fade-in zoom-in-95 origin-top-right">
+                  <button
+                    onClick={() => {
+                      setIsSettingsMenuOpen(false);
+                      setHistoryModal({ isOpen: true, entity: { name: "Лента", icon: "list" }, type: "feed" });
+                    }}
+                    className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-white/10 transition-colors text-left"
+                  >
+                    <List size={16} className="text-[#6d5dfc]" />
+                    <span className="text-sm font-black text-white uppercase tracking-wider">Лента</span>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
         <button
           onClick={() => setPillMode(p => p === "expense" ? "balance" : "expense")}
@@ -601,6 +640,21 @@ export default function App() {
         })}
         onTagSelect={(tag) => setNumpad(p => ({ ...p, tag }))}
         onCommentChange={(comment) => setNumpad(p => ({ ...p, comment }))}
+        onRemove={() => {
+          if (editingTxId) {
+            setConfirmDelete({
+              isOpen: true,
+              title: "Удалить операцию?",
+              message: "Эта транзакция будет удалена, а балансы кошельков будут скорректированы автоматически.",
+              onConfirm: () => {
+                deleteTransaction(editingTxId);
+                setEditingTxId(null);
+                setNumpad(p => ({ ...p, isOpen: false, amount: "0", targetAmount: "0", comment: "" }));
+                setConfirmDelete(p => ({ ...p, isOpen: false }));
+              }
+            });
+          }
+        }}
         onSubmit={(date?: string) => {
           const finalAmount = parseFloat(safeEval(numpad.amount));
           const finalTarget = parseFloat(safeEval(numpad.targetAmount));
@@ -652,7 +706,7 @@ export default function App() {
         onClose={() => setHistoryModal({ isOpen: false, entity: null, type: null })}
         entity={historyModal.entity}
         entityType={historyModal.type}
-        transactions={transactions}
+        transactions={historyModal.customTransactions || transactions}
         accounts={accounts}
         categories={categories}
         incomes={incomes}
@@ -665,7 +719,9 @@ export default function App() {
           const destination =
             tx.type === "expense"
               ? categories.find(c => c.id === tx.targetId) ?? null
-              : accounts.find(a => a.id === tx.targetId) ?? null;
+              : tx.type === "income"
+                ? accounts.find(a => a.id === tx.accountId) ?? null
+                : accounts.find(a => a.id === tx.targetId) ?? null;
           if (!source || !destination) return;
           setEditingTxId(tx.id);
           setHistoryModal({ isOpen: false, entity: null, type: null });
@@ -688,6 +744,20 @@ export default function App() {
         isOpen={analyticsModal.isOpen}
         onClose={() => setAnalyticsModal({ isOpen: false })}
         categories={categories}
+        onItemClick={(item, type, monthTx) => {
+          let entity = item;
+          if (type === "category") {
+            const cat = categories.find(c => c.id === item.id);
+            if (cat) entity = cat;
+          }
+          setAnalyticsModal({ isOpen: false });
+          setHistoryModal({
+            isOpen: true,
+            entity,
+            type,
+            customTransactions: monthTx
+          });
+        }}
       />
 
       {/* CONFLICT RESOLUTION MODAL */}
@@ -706,7 +776,7 @@ export default function App() {
               <p className="text-sm text-slate-400 leading-relaxed">
                 Found a newer version in the Cloud from
                 <span className="text-amber-400 block font-mono mt-1 text-xs bg-white/5 py-1 rounded-lg">
-                  {new Date(conflictData.timestamp).toLocaleString()}
+                  {new Date(conflictData.timestamp.replace(/-/g, '/').replace('T', ' ')).toLocaleString()}
                 </span>
               </p>
             </div>
@@ -739,23 +809,13 @@ export default function App() {
         </div>
       )}
 
-      {confirmDelete.isOpen && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-[300] flex items-center justify-center p-6 animate-in fade-in">
-          <div className="glass-panel w-full max-w-xs p-8 flex flex-col items-center gap-6 text-center border-[#f43f5e]/20">
-            <div className="w-16 h-16 rounded-full bg-[#f43f5e]/10 flex items-center justify-center text-[#f43f5e]">
-              <AlertTriangle size={32} />
-            </div>
-            <div>
-              <h3 className="text-xl font-bold">Are you sure?</h3>
-              <p className="text-sm text-slate-500 text-center">This will permanently delete your wallet.</p>
-            </div>
-            <div className="flex w-full gap-3 mt-2">
-              <button onClick={() => setConfirmDelete({ isOpen: false, onConfirm: () => { } })} className="flex-1 h-12 rounded-xl bg-white/5 border border-white/10 font-bold">CANCEL</button>
-              <button onClick={confirmDelete.onConfirm} className="flex-1 h-12 rounded-xl bg-[#f43f5e] font-bold shadow-lg">DELETE</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        isOpen={confirmDelete.isOpen}
+        title={confirmDelete.title}
+        message={confirmDelete.message}
+        onConfirm={confirmDelete.onConfirm}
+        onCancel={() => setConfirmDelete(p => ({ ...p, isOpen: false }))}
+      />
     </div>
   );
 }

@@ -8,8 +8,9 @@ interface AnalyticsModalProps {
     isOpen: boolean;
     onClose: () => void;
     categories: Category[];
+    onItemClick?: (entity: any, type: "category" | "tag", transactions: Transaction[]) => void;
 }
-export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose, categories }) => {
+export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose, categories, onItemClick }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -71,7 +72,8 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose,
     const expenses = transactions.filter(t => {
         if (t.type !== "expense") return false;
 
-        const txDate = new Date(t.date);
+        // Ensure date is properly parsed even if it is an older format (Safari fallback)
+        const txDate = new Date(t.date.replace(/-/g, '/').replace('T', ' '));
         const txYear = txDate.getFullYear();
         const txMonth = txDate.getMonth();
 
@@ -85,18 +87,18 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose,
     if (tab === "categories") {
         const catMap = new Map<string, number>();
         expenses.forEach(t => {
-            const catId = t.targetId;
-            catMap.set(catId, (catMap.get(catId) || 0) + (t.amountUSD ?? t.amount));
+            const destId = t.targetId;
+            catMap.set(destId, (catMap.get(destId) || 0) + (t.amountUSD ?? t.amount));
         });
 
-        catMap.forEach((amount, catId) => {
-            const cat = categories.find(c => c.id === catId);
+        catMap.forEach((amount, destId) => {
+            const cat = categories.find(c => c.id === destId);
             const name = cat ? cat.name : "Удаленная категория";
             const icon = cat ? (IconMap[cat.icon] || MoreHorizontal) : MoreHorizontal;
             const color = cat ? cat.color : "#6b7280";
             const percent = totalUSD > 0 ? (amount / totalUSD) * 100 : 0;
 
-            listItems.push({ id: catId, name, icon, color, amount, percent });
+            listItems.push({ id: destId, name, icon, color, amount, percent });
         });
     } else {
         const tagMap = new Map<string, number>();
@@ -193,7 +195,19 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose,
                     ) : (
                         <div className="flex flex-col gap-4">
                             {listItems.map(item => (
-                                <div key={item.id} className="flex flex-col gap-1.5">
+                                <div
+                                    key={item.id}
+                                    className="flex flex-col gap-1.5 cursor-pointer hover:bg-white/5 p-2 rounded-xl transition-colors -mx-2"
+                                    onClick={() => {
+                                        if (onItemClick) {
+                                            onItemClick(
+                                                item,
+                                                tab === "categories" ? "category" : "tag",
+                                                expenses // pass the filtered month expenses
+                                            );
+                                        }
+                                    }}
+                                >
                                     <div className="flex justify-between items-center">
                                         <div className="flex items-center gap-3">
                                             <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-inner text-white bg-white/5" style={{ color: item.color }}>

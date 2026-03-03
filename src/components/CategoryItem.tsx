@@ -58,7 +58,7 @@ export const CategoryItem: React.FC<Props> = ({
     }, 500);
 
     const onPointerMove = (ev: PointerEvent) => {
-      if (Math.hypot(ev.clientX - startPosRef.current.x, ev.clientY - startPosRef.current.y) > 10) {
+      if (Math.hypot(ev.clientX - startPosRef.current.x, ev.clientY - startPosRef.current.y) > 20) {
         didMoveRef.current = true;
         clearTimer();
       }
@@ -74,9 +74,20 @@ export const CategoryItem: React.FC<Props> = ({
 
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("pointercancel", onPointerCancel);
     };
+
+    const onPointerCancel = () => {
+      setIsPressing(false);
+      clearTimer();
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("pointercancel", onPointerCancel);
+    };
+
     window.addEventListener("pointermove", onPointerMove);
     window.addEventListener("pointerup", onPointerUp);
+    window.addEventListener("pointercancel", onPointerCancel);
     listeners?.onPointerDown?.(e);
   };
 

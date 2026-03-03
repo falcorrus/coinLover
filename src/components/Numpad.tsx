@@ -1,5 +1,5 @@
 import React from "react";
-import { X, ChevronRight, Check, CalendarDays, Delete, Divide, Plus, Minus, Equal, Percent, MessageSquare, Link2 } from "lucide-react";
+import { X, ChevronRight, Check, CalendarDays, Delete, Divide, Plus, Minus, Equal, Percent, MessageSquare, Link2, Trash2 } from "lucide-react";
 import { NumpadData, Category } from "../types";
 import { IconMap } from "../constants";
 import { CalendarModal } from "./CalendarModal";
@@ -14,10 +14,11 @@ interface Props {
   onSubmit: (date?: string) => void;
   onTagSelect: (tag: string | null) => void;
   onCommentChange: (comment: string) => void;
+  onRemove?: () => void;
   isEditing?: boolean;
 }
 
-export const Numpad: React.FC<Props> = ({ data, onClose, onFieldChange, onPress, onDelete, onSubmit, onTagSelect, onCommentChange, isEditing }) => {
+export const Numpad: React.FC<Props> = ({ data, onClose, onFieldChange, onPress, onDelete, onSubmit, onTagSelect, onCommentChange, onRemove, isEditing }) => {
   const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
   const [isCommentOpen, setIsCommentOpen] = React.useState(false);
   const [commentDraft, setCommentDraft] = React.useState("");
@@ -54,7 +55,14 @@ export const Numpad: React.FC<Props> = ({ data, onClose, onFieldChange, onPress,
   return (
     <div className="fixed inset-0 z-[150] flex flex-col bg-[#050505] animate-in slide-in-from-right duration-500 ease-in-out">
       <div className="flex justify-between items-center px-4 py-4 bg-[#121212] border-b border-white/5 text-left text-white">
-        <button onClick={onClose} className="p-2 text-slate-500 hover:text-white"><X size={24} /></button>
+        <div className="flex items-center gap-1">
+          <button onClick={onClose} className="p-2 text-slate-500 hover:text-white"><X size={24} /></button>
+          {isEditing && onRemove && (
+            <button onClick={onRemove} className="p-2 text-rose-500 hover:text-rose-400 transition-colors">
+              <Trash2 size={20} />
+            </button>
+          )}
+        </div>
         <div className="flex items-center gap-3 text-sm font-semibold tracking-wide text-left text-white">
           <span className="text-slate-500 uppercase">{data.source?.name}</span>
           <ChevronRight size={16} className={data.type === 'expense' ? "text-[#D4AF37]" : "text-[#10b981]"} />

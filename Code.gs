@@ -99,12 +99,26 @@ function doGet(e) {
 
         for (let i = 1; i < txData.length; i++) {
           const row = txData[i];
-          const dateStr = String(row[col["Date"]] || "").trim();
-          if (!dateStr) continue;
+          let rawDate = row[col["Date"]];
+          if (!rawDate) continue;
 
-          const txDate = new Date(dateStr);
+          let txDate;
+          if (rawDate instanceof Date) {
+            txDate = rawDate;
+          } else {
+            // Support multiple formats when reading from string
+            let dateStr = String(rawDate).trim();
+            if (!dateStr) continue;
+            // Safari/ISO fix: replace dashes with slashes if needed for parsing in some environments, 
+            // but here we are in Apps Script (V8), so new Date() is quite robust.
+            txDate = new Date(dateStr);
+          }
+
           if (isNaN(txDate.getTime())) continue;
           if (txDate < monthStart || txDate >= monthEnd) continue;
+
+          // Standardize date to ISO string for the frontend
+          const isoDate = Utilities.formatDate(txDate, ss.getSpreadsheetTimeZone(), "yyyy-MM-dd'T'HH:mm:ss");
 
           const type = String(row[col["Type"]] || "").trim();
           const sourceName = String(row[col["Source"]] || "").trim();
@@ -135,7 +149,7 @@ function doGet(e) {
           const idColIdx = col["ID"];
           const rowId = (idColIdx !== undefined && row[idColIdx])
             ? String(row[idColIdx]).trim()
-            : `${dateStr}_${sourceName}_${destinationName}_${amount}`;
+            : `${isoDate}_${sourceName}_${destinationName}_${amount}`;
 
           data.transactions.push({
             id: rowId,
@@ -146,7 +160,7 @@ function doGet(e) {
             amountUSD,
             targetAmount,
             targetAmountUSD,
-            date: dateStr,
+            date: isoDate,
             tag,
             comment
           });
@@ -261,7 +275,7 @@ function doPost(e) {
       }
 
       const fieldMap = {
-        "Date": data.date,
+        "Date": parseDateSafe(data.date),
         "Type": data.type,
         "Source": data.sourceName,
         "Destination": data.destinationName,
@@ -322,7 +336,7 @@ function doPost(e) {
       // Build updated row using only known header columns
       const fieldMap = {
         "ID": data.id || "",
-        "Date": data.date,
+        "Date": parseDateSafe(data.date),
         "Type": data.type,
         "Source": data.sourceName,
         "Destination": data.destinationName,
@@ -344,10 +358,52 @@ function doPost(e) {
       return ContentService.createTextOutput(JSON.stringify({ status: "success", message: "Transaction updated at row " + foundRow })).setMimeType(ContentService.MimeType.JSON);
     }
 
+    // Удаление транзакции
+    if (data.action === "deleteTransaction") {
+      const sheet = ss.getSheetByName("Transactions");
+      if (!sheet || sheet.getLastRow() <= 1) {
+        return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "No transactions found" })).setMimeType(ContentService.MimeType.JSON);
+      }
+
+      const allData = sheet.getRange(1, 1, sheet.getLastRow(), sheet.getLastColumn()).getValues();
+      const headers = allData[0].map(h => String(h).trim());
+      const idColIdx = headers.indexOf("ID");
+
+      if (idColIdx === -1) {
+        return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "ID column not found" })).setMimeType(ContentService.MimeType.JSON);
+      }
+
+      let deleted = false;
+      for (let i = allData.length - 1; i >= 1; i--) {
+        if (String(allData[i][idColIdx]).trim() === String(data.id)) {
+          sheet.deleteRow(i + 1);
+          deleted = true;
+          // Don't break if there might be duplicates (though there shouldn't be)
+        }
+      }
+
+      return ContentService.createTextOutput(JSON.stringify({ 
+        status: deleted ? "success" : "error", 
+        message: deleted ? "Transaction deleted" : "Transaction not found" 
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
     return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "Unknown action" })).setMimeType(ContentService.MimeType.JSON);
-    
   } catch (err) {
     return ContentService.createTextOutput(JSON.stringify({ status: "error", message: err.toString() })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// Вспомогательная функция для парсинга даты в doPost
+function parseDateSafe(dateStr) {
+  if (!dateStr) return new Date();
+  try {
+    // Превращаем ISO (2026-03-03T14:33:14) в формат, который Apps Script (V8) понимает стабильно
+    const safeStr = String(dateStr).replace('T', ' ').replace(/-/g, '/');
+    const d = new Date(safeStr);
+    return isNaN(d.getTime()) ? new Date() : d;
+  } catch (e) {
+    return new Date();
   }
 }
 

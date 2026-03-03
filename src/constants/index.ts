@@ -2,12 +2,12 @@ import {
   Wallet, CreditCard, PiggyBank, Utensils, Bus, Coffee, Home,
   PlaySquare, ShoppingBag, HeartPulse, MoreHorizontal, Briefcase,
   Gift, TrendingUp, Laptop, Baby, Activity, Bitcoin,
-  DollarSign, Euro, RussianRuble, Coins, Banknote
+  DollarSign, Euro, RussianRuble, Coins, Banknote, List
 } from "lucide-react";
 import React from "react";
 import { Account, Category, IncomeSource } from "../types";
 
-export const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxxXF0q1qtWQvWbYO0xrIqvsLouQs9gHg4Gu-GpxS-3yIwWkk_4kKYlfAwh5Uk3cjev/exec";
+export const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyPDS-urTC2XKwNqdFEEjsJNRtVeMrx7l5ubE_Vpl77OGVGnc4KWGqXoY-TaNG4MKfY/exec";
 
 export const IconMap: Record<string, React.FC<any>> = {
   wallet: Wallet, card: CreditCard, savings: PiggyBank,
@@ -16,7 +16,8 @@ export const IconMap: Record<string, React.FC<any>> = {
   health: HeartPulse, more: MoreHorizontal, business: Briefcase,
   gift: Gift, trendingUp: TrendingUp, laptop: Laptop,
   baby: Baby, activity: Activity, bitcoin: Bitcoin,
-  usd: DollarSign, eur: Euro, rub: RussianRuble, brl: Coins, ars: Banknote
+  usd: DollarSign, eur: Euro, rub: RussianRuble, brl: Coins, ars: Banknote,
+  list: List
 };
 
 export const COLORS = ["#6d5dfc", "#10b981", "#f43f5e", "#f59e0b", "#06b6d4"];

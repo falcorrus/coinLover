@@ -1,13 +1,13 @@
 import React from "react";
-import { X, ArrowDownLeft, ArrowUpRight, ArrowRight, Wallet, Pencil } from "lucide-react";
+import { X, ArrowDownLeft, ArrowUpRight, ArrowRight, Wallet, Pencil, Tag } from "lucide-react";
 import { Transaction, Account, Category, IncomeSource } from "../types";
 import { IconMap } from "../constants";
 
 interface HistoryModalProps {
     isOpen: boolean;
     onClose: () => void;
-    entity: Account | Category | IncomeSource | null;
-    entityType: "account" | "category" | "income" | null;
+    entity: any;
+    entityType: "account" | "category" | "income" | "tag" | "feed" | null;
     transactions: Transaction[];
     accounts: Account[];
     categories: Category[];
@@ -27,11 +27,15 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
         filteredTransactions = transactions.filter(t => t.targetId === entity.id);
     } else if (entityType === "income") {
         filteredTransactions = transactions.filter(t => t.accountId === entity.id);
+    } else if (entityType === "tag") {
+        filteredTransactions = transactions.filter(t => t.tag === entity.name && t.type === "expense");
+    } else if (entityType === "feed") {
+        filteredTransactions = transactions;
     }
 
     // Sort descending by date (newest first)
     const sortedTransactions = [...filteredTransactions].sort((a, b) =>
-        new Date(b.date).getTime() - new Date(a.date).getTime()
+        new Date(b.date.replace(/-/g, '/').replace('T', ' ')).getTime() - new Date(a.date.replace(/-/g, '/').replace('T', ' ')).getTime()
     );
 
     // Find counterpart for a transaction relative to the currently viewed entity
@@ -49,20 +53,31 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                 counterpartId = tx.accountId;
                 isOutflow = false;
             }
-        } else if (entityType === "category") {
-            // Category is always destination (outflow from account into category) -> but relative to the category it's an inflow of funds/expenses.
-            // Usually users just want to see the account it was paid from.
+        } else if (entityType === "category" || entityType === "tag") {
+            // Category/tag is destination for expenses, but for history view we want to show the source account
             counterpartId = tx.accountId;
-            isOutflow = false; // it came *into* this category 
+            isOutflow = false; // it came *into* this category/tag
+
         } else if (entityType === "income") {
             counterpartId = tx.targetId;
             isOutflow = true; // went *out* of income into account
+        } else if (entityType === "feed") {
+            if (tx.type === "expense") {
+                counterpartId = tx.targetId;
+                isOutflow = true;
+            } else if (tx.type === "income") {
+                counterpartId = tx.targetId;
+                isOutflow = false;
+            } else {
+                counterpartId = tx.targetId;
+                isOutflow = true;
+            }
         }
 
         let counterpartItem: Account | Category | IncomeSource | undefined;
 
         if (tx.type === "expense") {
-            if (entityType === "category") {
+            if (entityType === "category" || entityType === "tag") {
                 counterpartItem = accounts.find(a => a.id === tx.accountId);
             } else {
                 counterpartItem = categories.find(c => c.id === tx.targetId);
@@ -75,6 +90,16 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
             }
         } else if (tx.type === "transfer") {
             counterpartItem = accounts.find(a => a.id === counterpartId);
+        }
+
+        if (entityType === "feed") {
+            if (tx.type === "expense") {
+                counterpartItem = categories.find(c => c.id === tx.targetId);
+            } else if (tx.type === "income") {
+                counterpartItem = accounts.find(a => a.id === tx.targetId);
+            } else if (tx.type === "transfer") {
+                counterpartItem = accounts.find(a => a.id === tx.targetId);
+            }
         }
 
         return { item: counterpartItem, isOutflow };
@@ -98,7 +123,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                 usdAmount: usdAmount ? `${isOutflow ? "-" : "+"}$${usdAmount}` : null,
                 color: isOutflow ? "text-rose-500" : "text-emerald-500"
             };
-        } else if (entityType === "category") {
+        } else if (entityType === "category" || entityType === "tag") {
             // Category shows negative total logically, but we can just show the expense amount
             // Find the source account to get the currency
             const sourceAcc = accounts.find(a => a.id === tx.accountId);
@@ -108,6 +133,32 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                 usdAmount: usdAmount ? `-$${usdAmount}` : null,
                 color: "text-[#D4AF37]"
             };
+        } else if (entityType === "feed") {
+            if (tx.type === "expense") {
+                const sourceAcc = accounts.find(a => a.id === tx.accountId);
+                const currency = sourceAcc?.currency || "USD";
+                return {
+                    amount: `-${amount} ${currency}`,
+                    usdAmount: usdAmount ? `-$${usdAmount}` : null,
+                    color: "text-[#D4AF37]"
+                };
+            } else if (tx.type === "income") {
+                const destAcc = accounts.find(a => a.id === tx.targetId);
+                const currency = destAcc?.currency || "USD";
+                return {
+                    amount: `+${amount} ${currency}`,
+                    usdAmount: usdAmount ? `+$${usdAmount}` : null,
+                    color: "text-emerald-500"
+                };
+            } else {
+                const destAcc = accounts.find(a => a.id === tx.targetId);
+                const currency = destAcc?.currency || "USD";
+                return {
+                    amount: `-${amount} ${currency}`,
+                    usdAmount: usdAmount ? `-$${usdAmount}` : null,
+                    color: "text-slate-300"
+                };
+            }
         } else {
             // Income 
             const destAcc = accounts.find(a => a.id === tx.targetId);
@@ -120,9 +171,9 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
         }
     };
 
-    const EntityIcon = IconMap[entity.icon] || Wallet;
+    const EntityIcon = entityType === "tag" ? Tag : (IconMap[entity.icon] || Wallet);
     const entityName = entity.name;
-    const entityColor = entity.color;
+    const entityColor = entity.color || "#6d5dfc";
 
     return (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[200] flex flex-col items-center justify-end p-4 animate-in fade-in slide-in-from-bottom-10" onClick={onClose}>
@@ -192,7 +243,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                                                     {tx.tag && <span className="text-[9px] px-1.5 py-0.5 bg-white/5 rounded text-slate-400 font-bold uppercase shrink-0">{tx.tag}</span>}
                                                     {tx.type === "transfer" && <span className="text-[9px] px-1.5 py-0.5 bg-[#6d5dfc]/20 rounded text-[#6d5dfc] font-bold uppercase shrink-0">Трансфер</span>}
                                                 </div>
-                                                <span className="text-[10px] text-slate-500 uppercase font-medium">{new Date(tx.date).toLocaleDateString()}</span>
+                                                <span className="text-[10px] text-slate-500 uppercase font-medium">{new Date(tx.date.replace(/-/g, '/').replace('T', ' ')).toLocaleDateString()}</span>
                                                 {tx.comment && <span className="text-xs text-slate-400 mt-1 italic truncate">{tx.comment}</span>}
                                             </div>
                                         </div>

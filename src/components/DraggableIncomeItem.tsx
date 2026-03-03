@@ -6,7 +6,7 @@ import { IncomeSource } from "../types";
 import { IconMap } from "../constants";
 
 const LONG_PRESS_MS = 1500; // 1.5 seconds for edit modal
-const MOVE_THRESHOLD = 10;   // px
+const MOVE_THRESHOLD = 20;   // px
 
 interface Props {
   income: IncomeSource;
@@ -86,10 +86,20 @@ export const DraggableIncomeItem: React.FC<Props> = ({
 
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("pointercancel", onPointerCancel);
+    };
+
+    const onPointerCancel = () => {
+      setIsPressing(false);
+      clearTimers();
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("pointercancel", onPointerCancel);
     };
 
     window.addEventListener("pointermove", onPointerMove);
     window.addEventListener("pointerup", onPointerUp);
+    window.addEventListener("pointercancel", onPointerCancel);
 
     listeners?.onPointerDown?.(e);
   };
