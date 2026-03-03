@@ -115,11 +115,11 @@ export const CategoryItem: React.FC<Props> = ({
       ref={setNodeRef}
       style={style}
       className={`flex flex-col items-center gap-2 justify-start transition-opacity ${isDragging ? "opacity-30" : "opacity-100"}`}
+      onPointerDown={handlePointerDown}
     >
       <div
         {...attributes}
         {...listeners}
-        onPointerDown={handlePointerDown}
         onContextMenu={e => e.preventDefault()}
         style={{ touchAction: "none" }}
         className={`w-[64px] h-[64px] rounded-[32px] flex items-center justify-center transition-all duration-300 ${isDragging ? "grabbed-elevation" :
@@ -130,7 +130,7 @@ export const CategoryItem: React.FC<Props> = ({
       >
         <Icon size={26} color={isTarget ? "#fff" : category.color} />
       </div>
-      <div className="flex flex-col items-center pb-2">
+      <div className="flex flex-col items-center pb-2 pointer-events-none">
         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center truncate w-full max-w-[70px] leading-tight break-words whitespace-pre-wrap">{category.name}</span>
         {spent > 0 && <span className="text-[11px] font-bold text-[#D4AF37] mt-0.5">-${spent.toLocaleString()}</span>}
       </div>
