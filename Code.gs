@@ -125,8 +125,26 @@ function doPost(e) {
       }
       
       sheet.autoResizeColumns(1, colCount);
+
+      // Автоматический бэкап каждые 10 записей (вместо триггера)
+      try {
+        const props = PropertiesService.getScriptProperties();
+        let syncCount = parseInt(props.getProperty("syncCount") || "0", 10);
+        syncCount++;
+        
+        if (syncCount >= 10) {
+          backupConfigs(); // Создаем архив
+          props.setProperty("syncCount", "0"); // Сбрасываем счетчик
+        } else {
+          props.setProperty("syncCount", syncCount.toString());
+        }
+      } catch (e) {
+        // Игнорируем ошибки свойств, чтобы не ломать главную синхронизацию
+      }
+
       return ContentService.createTextOutput(JSON.stringify({ status: "success", message: "Configs updated" })).setMimeType(ContentService.MimeType.JSON);
     }
+
     
     // Обработка транзакций (Transactions)
     if (data.action === "addTransaction") {
@@ -171,7 +189,7 @@ function doPost(e) {
   }
 }
 
-function backupConfigsDaily() {
+function backupConfigs() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sourceSheet = ss.getSheetByName("Configs");
   if (!sourceSheet) return;
