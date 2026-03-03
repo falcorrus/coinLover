@@ -82,26 +82,38 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
     const getAmountStr = (tx: Transaction, isOutflow: boolean) => {
         // If it's a transfer between accounts, show the correct amount format
         let amount = tx.amount;
+        let usdAmount = tx.amountUSD;
+
         if (!isOutflow && tx.targetAmount !== undefined && tx.targetAmount > 0) {
             amount = tx.targetAmount;
+            usdAmount = tx.targetAmountUSD;
         }
 
         // Determine the color / sign based on the perspective view:
         if (entityType === "account") {
+            const acc = entity as Account;
             return {
-                amount: `${isOutflow ? "-" : "+"}$${amount}`,
+                amount: `${isOutflow ? "-" : "+"}${amount} ${acc.currency}`,
+                usdAmount: usdAmount ? `${isOutflow ? "-" : "+"}$${usdAmount}` : null,
                 color: isOutflow ? "text-rose-500" : "text-emerald-500"
             };
         } else if (entityType === "category") {
             // Category shows negative total logically, but we can just show the expense amount
+            // Find the source account to get the currency
+            const sourceAcc = accounts.find(a => a.id === tx.accountId);
+            const currency = sourceAcc?.currency || "USD";
             return {
-                amount: `-$${amount}`,
+                amount: `-${amount} ${currency}`,
+                usdAmount: usdAmount ? `-$${usdAmount}` : null,
                 color: "text-[#D4AF37]"
             };
         } else {
             // Income 
+            const destAcc = accounts.find(a => a.id === tx.targetId);
+            const currency = destAcc?.currency || "USD";
             return {
-                amount: `+$${amount}`,
+                amount: `+${amount} ${currency}`,
+                usdAmount: usdAmount ? `+$${usdAmount}` : null,
                 color: "text-emerald-500"
             };
         }
@@ -176,9 +188,16 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                                             </div>
                                         </div>
 
-                                        <span className={`text-sm font-black ${amountInfo.color} tracking-tight shrink-0 pl-2`}>
-                                            {amountInfo.amount}
-                                        </span>
+                                        <div className="flex flex-col items-end shrink-0 pl-2">
+                                            <span className={`text-sm font-black ${amountInfo.color} tracking-tight`}>
+                                                {amountInfo.amount}
+                                            </span>
+                                            {amountInfo.usdAmount && !amountInfo.amount.includes("USD") && (
+                                                <span className="text-[10px] font-bold text-slate-500 opacity-60">
+                                                    {amountInfo.usdAmount}
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
                                 );
                             })}

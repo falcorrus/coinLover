@@ -150,10 +150,10 @@ function doPost(e) {
     if (data.action === "addTransaction") {
       let sheet = ss.getSheetByName("Transactions") || ss.insertSheet("Transactions");
       
-      const defaultHeaders = ["Date", "Type", "Source", "Destination", "Tag", "Amount", "Target Amount", "Comment"];
+      const defaultHeaders = ["Date", "Type", "Source", "Destination", "Tag", "Amount", "Amount USD", "Target Amount", "Target USD", "Comment"];
       
-      // ПРИНУДИТЕЛЬНОЕ ОБНОВЛЕНИЕ ЗАГОЛОВКОВ (если их меньше 8)
-      if (sheet.getLastColumn() < 8) {
+      // ПРИНУДИТЕЛЬНОЕ ОБНОВЛЕНИЕ ЗАГОЛОВКОВ (если их меньше 10)
+      if (sheet.getLastColumn() < 10) {
         if (sheet.getLastRow() === 0) {
           sheet.appendRow(defaultHeaders);
         } else {
@@ -173,7 +173,9 @@ function doPost(e) {
         "Destination": data.destinationName,
         "Tag": data.tagName || "",
         "Amount": data.amount,
+        "Amount USD": data.amountUSD || "",
         "Target Amount": data.targetAmount || data.amount,
+        "Target USD": data.targetAmountUSD || "",
         "Comment": data.comment || ""
       };
       

@@ -30,7 +30,9 @@ export interface Transaction {
   accountId: string;
   targetId: string;
   amount: number; // Amount deducted from source
+  amountUSD?: number; // USD equivalent of source amount
   targetAmount?: number; // Amount added to destination (for transfers) or recorded in category
+  targetAmountUSD?: number; // USD equivalent of target amount
   date: string;
   tag?: string;
   comment?: string;
@@ -63,7 +65,9 @@ export type SyncPayload =
     destinationName: string;
     tagName: string;
     amount: number;
+    amountUSD?: number;
     targetAmount?: number;
+    targetAmountUSD?: number;
     comment?: string;
     // allAccounts removed from here to stop bloating Transactions tab
   }

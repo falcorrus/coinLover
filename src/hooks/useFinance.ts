@@ -3,6 +3,7 @@ import { Account, Transaction, Category, IncomeSource, TransactionType } from ".
 import { googleSheetsService } from "../services/googleSheets";
 import { DEFAULT_CATEGORIES, INITIAL_INCOMES } from "../constants";
 import { INITIAL_ACCOUNTS } from "../constants";
+import { RatesService } from "../services/RatesService";
 
 export type SyncStatus = "idle" | "loading" | "error" | "success";
 
@@ -94,21 +95,29 @@ export const useFinance = () => {
   ) => {
     const date = customDate ? getLocalTimeString(customDate) : getLocalTimeString();
 
+    // Calculate USD equivalents
+    const sourceCurrency = (source as any).currency || "USD";
+    const destCurrency = (destination as any).currency || (source as any).currency || "USD";
+
+    const amountUSD = sourceCurrency === "USD" ? amount : RatesService.convert(amount, sourceCurrency, "USD");
+    const finalTargetAmount = targetAmount ?? amount;
+    const targetAmountUSD = destCurrency === "USD" ? finalTargetAmount : RatesService.convert(finalTargetAmount, destCurrency, "USD");
+
     const newTx: Transaction = {
       id: Date.now().toString(),
       type,
       accountId: type === "income" ? (destination as Account).id : (source as Account).id,
       targetId: type === "income" ? source.id : (destination as Category).id,
       amount,
-      targetAmount: targetAmount ?? amount,
+      amountUSD: Math.round(amountUSD * 100) / 100,
+      targetAmount: finalTargetAmount,
+      targetAmountUSD: Math.round(targetAmountUSD * 100) / 100,
       date,
       tag,
       comment: comment || undefined,
     };
 
     setTransactions((prev) => [newTx, ...prev]);
-
-    const finalTargetAmount = targetAmount ?? amount;
 
     const updatedAccounts = accounts.map((a) => {
       if (type === "expense" && a.id === source.id) return { ...a, balance: a.balance - amount };
@@ -131,7 +140,9 @@ export const useFinance = () => {
       destinationName: destination.name,
       tagName: tag ?? "",
       amount,
+      amountUSD: newTx.amountUSD,
       targetAmount: finalTargetAmount,
+      targetAmountUSD: newTx.targetAmountUSD,
       comment: comment || undefined,
     });
 
