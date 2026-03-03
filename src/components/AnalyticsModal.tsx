@@ -11,110 +11,88 @@ interface AnalyticsModalProps {
     globalTransactions: Transaction[];
     onItemClick?: (entity: any, type: "category" | "tag", transactions: Transaction[]) => void;
 }
+// Persistent cache outside component to avoid refetching during same session
+const globalAnalyticsCache = new Map<string, Transaction[]>();
+
 export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose, categories, globalTransactions, onItemClick }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [tab, setTab] = useState<"categories" | "tags">("categories");
 
-    // Cache to prevent refetching the same month while the modal is open
-    const monthCache = React.useRef(new Map<string, Transaction[]>());
-
     // Swipe handlers for changing month
     const touchStartX = React.useRef(0);
 
-    // Background fetching of all transactions
-    useEffect(() => {
-        if (!isOpen) return;
-
-        const loadAllHistory = async () => {
-            const data = await googleSheetsService.fetchMonthData("all");
-            if (data && data.transactions) {
-                const allTx = data.transactions as Transaction[];
-                // Group transactions by month and populate cache
-                const monthGroups = new Map<string, Transaction[]>();
-                allTx.forEach(t => {
-                    const txDate = new Date(t.date.replace(/-/g, '/').replace('T', ' '));
-                    const key = `${txDate.getFullYear()}-${String(txDate.getMonth() + 1).padStart(2, '0')}`;
-                    if (!monthGroups.has(key)) monthGroups.set(key, []);
-                    monthGroups.get(key)!.push(t);
-                });
-
-                // Update monthCache for each month found in history
-                monthGroups.forEach((txs, key) => {
-                    if (!monthCache.current.has(key)) {
-                        monthCache.current.set(key, txs);
-                    }
-                });
-
-                // If CURRENTLY selected month doesn't have transactions in its specific cache yet,
-                // and we just loaded it from the 'all' batch, update the displayed state.
-                const currentKey = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
-                if (transactions.length === 0 && monthGroups.has(currentKey)) {
-                    setTransactions(monthGroups.get(currentKey)!);
-                }
-            }
-        };
-
-        // Delay pre-fetching slightly to prioritize initial month render
-        const timer = setTimeout(loadAllHistory, 1500);
-        return () => clearTimeout(timer);
-    }, [isOpen]);
-
-    // Clear cache when modal closes to ensure fresh data on next open
-    useEffect(() => {
-        if (!isOpen) {
-            monthCache.current.clear();
-        }
-    }, [isOpen]);    // Fetch data when date changes
+    // Fetch data when date changes
     useEffect(() => {
         if (!isOpen) return;
 
         let isMounted = true;
         const loadData = async () => {
-            const monthStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+            const yearStr = currentDate.getFullYear();
+            const monthStr = String(currentDate.getMonth() + 1).padStart(2, '0');
+            const cacheKey = `${yearStr}-${monthStr}`;
 
-            // 1. Check local modal cache first
-            if (monthCache.current.has(monthStr)) {
-                setTransactions(monthCache.current.get(monthStr) || []);
+            // 1. Check persistent caching first
+            if (globalAnalyticsCache.has(cacheKey)) {
+                setTransactions(globalAnalyticsCache.get(cacheKey)!);
                 return;
             }
 
-            const now = new Date();
-            const isCurrentMonth = currentDate.getFullYear() === now.getFullYear() && currentDate.getMonth() === now.getMonth();
+            // 2. Check globalTransactions for ANY month if not cached
+            const monthTx = globalTransactions.filter(t => {
+                const txDate = new Date(t.date.replace(/-/g, '/').replace('T', ' '));
+                return txDate.getFullYear() === yearStr && (txDate.getMonth() + 1) === Number(monthStr);
+            });
 
-            // 2. Optimization: If current month and globalTransactions present, use them
-            if (isCurrentMonth && globalTransactions.length > 0) {
-                // Confirm it has transactions for this month specifically
-                const monthTx = globalTransactions.filter(t => {
-                    const txDate = new Date(t.date.replace(/-/g, '/').replace('T', ' '));
-                    return txDate.getFullYear() === currentDate.getFullYear() && txDate.getMonth() === currentDate.getMonth();
-                });
+            if (monthTx.length > 0) {
+                // Have some local data, use it instantly to avoid spinner
+                setTransactions(globalTransactions);
+                globalAnalyticsCache.set(cacheKey, globalTransactions);
 
-                if (monthTx.length > 0) {
-                    monthCache.current.set(monthStr, globalTransactions);
-                    setTransactions(globalTransactions);
-                    return;
-                }
+                // Background refresh just this month in case of discrepancy
+                googleSheetsService.fetchMonthData(cacheKey).then(data => {
+                    if (isMounted && data && data.transactions) {
+                        globalAnalyticsCache.set(cacheKey, data.transactions);
+                        setTransactions(data.transactions);
+                    }
+                }).catch(() => { });
+                return;
             }
 
+            // 3. If no local data, show loader and fetch this specific month
             setIsLoading(true);
-            const data = await googleSheetsService.fetchMonthData(monthStr);
-
-            if (isMounted) {
-                const fetchedTx = (data && data.transactions) ? data.transactions : [];
-                monthCache.current.set(monthStr, fetchedTx);
-                setTransactions(fetchedTx);
-                setIsLoading(false);
+            try {
+                const data = await googleSheetsService.fetchMonthData(cacheKey);
+                if (isMounted) {
+                    const fetchedTx = (data && data.transactions) ? data.transactions : [];
+                    globalAnalyticsCache.set(cacheKey, fetchedTx);
+                    setTransactions(fetchedTx);
+                }
+            } catch (err) {
+                console.error("Failed to load month data", err);
+            } finally {
+                if (isMounted) setIsLoading(false);
             }
         };
 
         loadData();
 
+        // Background pre-fetch previous month for faster swiping backward
+        const prevD = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+        const prevKey = `${prevD.getFullYear()}-${String(prevD.getMonth() + 1).padStart(2, '0')}`;
+        if (!globalAnalyticsCache.has(prevKey)) {
+            googleSheetsService.fetchMonthData(prevKey).then(data => {
+                if (data && data.transactions) {
+                    globalAnalyticsCache.set(prevKey, data.transactions);
+                }
+            }).catch(() => { });
+        }
+
         return () => {
             isMounted = false;
         };
-    }, [isOpen, currentDate]);
+    }, [isOpen, currentDate, globalTransactions]);
 
     if (!isOpen) return null;
 
