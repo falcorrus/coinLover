@@ -444,23 +444,22 @@ export default function App() {
       <DndContext
         sensors={sensors}
         collisionDetection={(args) => {
-          // 1. If we are in sorting mode, use closestCenter for smooth reordering
-          if (isSortingMode) {
-            return closestCenter(args);
-          }
+          // 1. If sorting mode is active, use closestCenter for smooth reordering
+          if (isSortingMode) return closestCenter(args);
 
-          // 2. For Transactions (Expense/Transfer/Income), use rectIntersection
-          // It's much more generous than pointerWithin, especially on mobile.
+          // 2. For Actions (Expense/Transfer/Income), use rectIntersection.
+          // It's the most stable and 'sticky' algorithm for mobile.
           const collisions = rectIntersection(args);
           const filtered = collisions.filter(c => c.id !== args.active.id);
 
-          // If dragging account over categories, prioritize categories
-          if (activeDragType === "account") {
-            const catCollision = filtered.find(c => {
-              const target = args.droppableContainers.find(dc => dc.id === c.id);
-              return target?.data.current?.type === "category";
-            });
-            if (catCollision) return [catCollision];
+          // If multiple targets are hit, prioritize based on drag type
+          if (filtered.length > 1) {
+            const activeType = args.active.data.current?.type;
+            if (activeType === "account") {
+              // Prioritize categories over other accounts when dragging a wallet
+              const cat = filtered.find(c => args.droppableContainers.find(dc => dc.id === c.id)?.data.current?.type === "category");
+              if (cat) return [cat];
+            }
           }
 
           return filtered;
@@ -471,12 +470,14 @@ export default function App() {
           const { active, over } = e;
           setOverId(over?.id as string || null);
 
-          if (!over) return;
+          if (over) {
+            const activeType = active.data.current?.type;
+            const overType = over.data.current?.type;
 
-          // CRITICAL: If we are hovering over a DIFFERENT type (e.g. Account over Category),
-          // disable sorting mode timer. We are doing a transaction, not sorting.
-          if (active.data.current?.type !== over.data.current?.type) {
-            clearSortingTimer();
+            // Just kill the timer, don't force state change to avoid flickers
+            if (overType === "category" || (activeType === "account" && overType === "account" && active.id !== over.id)) {
+              clearSortingTimer();
+            }
           }
 
           handleDragOver(e);
@@ -579,6 +580,7 @@ export default function App() {
                       isOver={overId === cat.id}
                       onLongPress={openCategoryModal}
                       onClick={(category) => setHistoryModal({ isOpen: true, entity: category, type: "category" })}
+                      activeDragType={activeDragType}
                     />
                   );
                 })}

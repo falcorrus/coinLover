@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { ShoppingBag, Wallet } from "lucide-react";
-import { Category } from "../types";
+import { Category, DragItemType } from "../types";
 import { IconMap } from "../constants";
 import { CSS } from "@dnd-kit/utilities";
 
@@ -14,10 +14,11 @@ interface Props {
   isOver?: boolean;
   onLongPress?: (category: Category) => void;
   onClick?: (category: Category) => void;
+  activeDragType: DragItemType | null;
 }
 
 export const CategoryItem: React.FC<Props> = ({
-  category, spent, isDragging, isSortingMode, isOver, onSortingMode, onLongPress, onClick
+  category, spent, isDragging, isSortingMode, isOver, onSortingMode, onLongPress, onClick, activeDragType
 }) => {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id: category.id,
@@ -38,17 +39,12 @@ export const CategoryItem: React.FC<Props> = ({
   }, []);
 
   const handlePointerDown = (e: React.PointerEvent) => {
-    // Only handle left mouse button or touch
     if (e.button !== 0) return;
-    
-    // IMPORTANT: Call dnd-kit's listener to initiate drag
     listeners?.onPointerDown?.(e);
-
     setIsPressing(true);
     didMoveRef.current = false;
     startPosRef.current = { x: e.clientX, y: e.clientY };
 
-    // Trigger Sorting Mode after 500ms
     sortingTimerRef.current = setTimeout(() => {
       if (!didMoveRef.current) {
         onSortingMode?.();
@@ -56,7 +52,6 @@ export const CategoryItem: React.FC<Props> = ({
       }
     }, 500);
 
-    // Trigger Edit Modal after 1500ms (Long Press)
     longPressTimerRef.current = setTimeout(() => {
       if (!didMoveRef.current) {
         onLongPress?.(category);
@@ -79,7 +74,6 @@ export const CategoryItem: React.FC<Props> = ({
     clearTimers();
   };
 
-  // Prevent Long Press from firing if dnd-kit starts dragging
   React.useEffect(() => {
     if (isDragging) {
       clearTimers();
@@ -88,7 +82,9 @@ export const CategoryItem: React.FC<Props> = ({
   }, [isDragging, clearTimers]);
 
   const Icon = IconMap[category.icon] || ShoppingBag;
-  const isTarget = isOver && !isDragging;
+  
+  // Highlight only when dragging an Account (Expense action)
+  const isTarget = isOver && activeDragType === "account" && !isDragging;
 
   const style = {
     transform: isSortingMode ? CSS.Translate.toString(transform) : undefined,
@@ -101,26 +97,25 @@ export const CategoryItem: React.FC<Props> = ({
     <div
       ref={setNodeRef}
       style={style}
-      className={`flex flex-col items-center gap-2 justify-start transition-opacity cursor-pointer ${isDragging ? "opacity-30" : "opacity-100"}`}
-      onClick={(e) => {
-        // If it was a drag or sorting mode just started, don't trigger history
+      {...attributes}
+      {...listeners}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+      onContextMenu={e => e.preventDefault()}
+      className={`flex flex-col items-center gap-2 justify-start transition-all duration-300 cursor-pointer ${isDragging ? "opacity-30" : "opacity-100"}`}
+      onClick={() => {
         if (!didMoveRef.current && !isSortingMode) {
           onClick?.(category);
         }
       }}
     >
       <div
-        {...attributes}
-        {...listeners}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
-        onContextMenu={e => e.preventDefault()}
-        className={`w-[64px] h-[64px] rounded-[32px] flex items-center justify-center transition-all duration-300 ${
+        className={`w-[64px] h-[64px] rounded-[32px] flex items-center justify-center transition-all duration-300 pointer-events-none ${
           isDragging ? "grabbed-elevation" : 
           isPressing ? "scale-90 brightness-75" : ""
-        } ${isTarget ? "bg-white/20 shadow-[0_0_20px_rgba(255,255,255,0.2)] scale-110" : "bg-gradient-to-br from-white/10 to-white/[0.02] border border-white/5"
+        } ${isTarget ? "coin-target-glow bg-white/20 shadow-[0_0_20px_rgba(255,255,255,0.2)]" : "bg-gradient-to-br from-white/10 to-white/[0.02] border border-white/5"
         } ${isSortingMode && isDragging ? "shadow-2xl border-[#6d5dfc] ring-4 ring-[#6d5dfc]/20" : ""}`}
       >
         <Icon size={26} color={isTarget ? "#fff" : category.color} />

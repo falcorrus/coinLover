@@ -104,7 +104,14 @@ export const AccountItem: React.FC<Props> = ({
     <div
       ref={setNodeRef}
       style={style}
-      className={`flex flex-col items-center gap-2 justify-start transition-opacity w-[76px] shrink-0 cursor-pointer ${isDragging ? "opacity-30" : "opacity-100"}`}
+      {...attributes}
+      {...listeners}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+      onContextMenu={e => e.preventDefault()}
+      className={`flex flex-col items-center gap-2 justify-start transition-all duration-300 w-[76px] shrink-0 cursor-pointer ${isDragging ? "opacity-30" : "opacity-100"}`}
       onClick={() => {
         if (!didMoveRef.current && !isSortingMode) {
           onClick?.(account);
@@ -112,18 +119,10 @@ export const AccountItem: React.FC<Props> = ({
       }}
     >
       <div
-        {...attributes}
-        {...listeners}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
-        onContextMenu={e => e.preventDefault()}
-        className={`draggable-coin transition-all duration-300 ${
-          isDragging ? "grabbed-elevation" : 
-          isPressing ? "scale-90 brightness-75 border-white/40" : ""
-        } ${(isTargetOver || isIncomeTarget || isOver) ? "coin-target-glow bg-white/20 shadow-[0_0_20px_rgba(255,255,255,0.2)] scale-110" : ""
-        } ${isSortingMode && isDragging ? "shadow-2xl border-[#6d5dfc] ring-4 ring-[#6d5dfc]/20" : ""}`}
+        className={`draggable-coin transition-all duration-300 pointer-events-none ${isDragging ? "grabbed-elevation" :
+            isPressing ? "scale-90 brightness-75 border-white/40" : ""
+          } ${(isTargetOver || isIncomeTarget || isOver) ? "coin-target-glow" : ""
+          } ${isSortingMode && isDragging ? "shadow-2xl border-[#6d5dfc] ring-4 ring-[#6d5dfc]/20" : ""}`}
       >
         <Icon size={26} color={(isTargetOver || isIncomeTarget || isOver) ? "#fff" : account.color} />
       </div>

@@ -41,7 +41,55 @@
 
 ---
 
-## 3. Правила «Золотого кода»
+## 3. Анимация подсветки цели (Target Glow)
+
+### Проблема
+При перетаскивании кошелька над **категорией** подсветка мгновенно мигала и пропадала — в отличие от стабильной анимации при наведении на другой **кошелёк**.
+
+### Причина
+Кошельки (`AccountItem`) использовали CSS-класс `.coin-target-glow` с `transition`, а категории (`CategoryItem`) — инлайновые Tailwind-классы (`bg-white/20 scale-110`) **без плавного перехода**. Кроме того, в `CategoryItem` не проверялся тип перетаскиваемого объекта, из-за чего подсветка срабатывала неправильно.
+
+### Решение
+
+**1. `index.css`** — добавлен `transition` в `.coin-target-glow`:
+```css
+.coin-target-glow {
+  background: rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.2) !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+  transform: scale(1.10) !important;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.25s ease,
+              background 0.25s ease !important;
+}
+```
+
+**2. `CategoryItem.tsx`** — добавлен пропс `activeDragType` и заменены инлайн-классы на `.coin-target-glow`:
+```tsx
+// Props:
+activeDragType?: DragItemType | null;
+
+// Условие подсветки — ТОЛЬКО когда тащат кошелёк:
+const isTarget = isOver && activeDragType === "account" && !isDragging;
+
+// CSS-класс вместо Tailwind-инлайна:
+className={`... ${isTarget ? "coin-target-glow" : "bg-gradient-to-br from-white/10 ..."}  ...`}
+```
+
+**3. `App.tsx`** — передаём `activeDragType` в `CategoryItem`:
+```tsx
+<CategoryItem
+  ...
+  activeDragType={activeDragType}
+/>
+```
+
+### Правило
+> Все интерактивные drop-цели должны использовать CSS-класс `.coin-target-glow` (а не инлайн Tailwind) и фильтровать `activeDragType`, чтобы подсветка срабатывала строго для нужного типа источника.
+
+---
+
+## 4. Правила «Золотого кода»
 
 Если нужно изменить поведение иконок:
 
@@ -50,3 +98,5 @@
 3. **Всегда** вызывайте `listeners.onPointerDown(e)` в начале кастомного `onPointerDown`, иначе перетаскивание не начнется.
 4. **Порог движения**: Используйте `15px` для Android. Этого достаточно, чтобы отличить дрожание пальца от намеренного свайпа.
 5. **Сброс при Drag**: Обязательно добавляйте `useEffect`, который вызывает `clearTimers()`, если `isDragging` становится `true`. Это предотвратит открытие окна редактирования во время совершения транзакции.
+6. **Listeners на внешний контейнер**: Всегда вешайте `{...listeners}`, `{...attributes}` и pointer-обработчики на **внешний** (`ref={setNodeRef}`) контейнер, а не на вложенную иконку. Иначе зона захвата/цели dnd будет ограничена только иконкой — верхняя часть элемента перестанет реагировать на наведение. Внутренняя иконка должна иметь `pointer-events-none`.
+7. **Единообразие структуры**: `AccountItem`, `CategoryItem`, `DraggableIncomeItem` должны иметь **одинаковую** структуру обёрток (listeners снаружи). Расхождение структуры между компонентами создаёт асимметричное поведение targeting.
