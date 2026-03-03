@@ -45,6 +45,9 @@ export const AccountItem: React.FC<Props> = ({
   const handlePointerDown = (e: React.PointerEvent) => {
     if (e.button !== 0) return;
 
+    // IMPORTANT: Call dnd-kit's listener to initiate drag
+    listeners?.onPointerDown?.(e);
+
     setIsPressing(true);
     didMoveRef.current = false;
     startPosRef.current = { x: e.clientX, y: e.clientY };

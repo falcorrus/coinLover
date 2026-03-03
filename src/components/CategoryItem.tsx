@@ -41,6 +41,9 @@ export const CategoryItem: React.FC<Props> = ({
     // Only handle left mouse button or touch
     if (e.button !== 0) return;
     
+    // IMPORTANT: Call dnd-kit's listener to initiate drag
+    listeners?.onPointerDown?.(e);
+
     setIsPressing(true);
     didMoveRef.current = false;
     startPosRef.current = { x: e.clientX, y: e.clientY };
