@@ -27,15 +27,19 @@ export const CategoryItem: React.FC<Props> = ({
 
   const [isPressing, setIsPressing] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sortingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startPosRef = useRef({ x: 0, y: 0 });
   const didMoveRef = useRef(false);
-  const longPressFireRef = useRef(false);
   const startTimeRef = useRef(0);
 
   const clearTimer = useCallback(() => {
     if (timerRef.current) {
       clearTimeout(timerRef.current);
       timerRef.current = null;
+    }
+    if (sortingTimerRef.current) {
+      clearTimeout(sortingTimerRef.current);
+      sortingTimerRef.current = null;
     }
   }, []);
 
@@ -44,18 +48,23 @@ export const CategoryItem: React.FC<Props> = ({
     setIsPressing(true);
     startPosRef.current = { x: e.clientX, y: e.clientY };
     didMoveRef.current = false;
-    longPressFireRef.current = false;
     startTimeRef.current = Date.now();
 
-    // Сортировка + LongPress — 500мс
-    timerRef.current = setTimeout(() => {
+    // Сортировка — 500мс
+    sortingTimerRef.current = setTimeout(() => {
       if (!didMoveRef.current) {
-        longPressFireRef.current = true;
         onSortingMode?.();
-        onLongPress?.(category);
         if (navigator.vibrate) navigator.vibrate(50);
       }
     }, 500);
+
+    // LongPress — 1500мс
+    timerRef.current = setTimeout(() => {
+      if (!didMoveRef.current) {
+        onLongPress?.(category);
+        if (navigator.vibrate) navigator.vibrate(50);
+      }
+    }, 1500);
 
     const onPointerMove = (ev: PointerEvent) => {
       if (Math.hypot(ev.clientX - startPosRef.current.x, ev.clientY - startPosRef.current.y) > 20) {
@@ -68,7 +77,7 @@ export const CategoryItem: React.FC<Props> = ({
       clearTimer();
 
       const elapsed = Date.now() - startTimeRef.current;
-      if (!didMoveRef.current && !longPressFireRef.current && elapsed < 500) {
+      if (!didMoveRef.current && elapsed < 500) {
         onClick?.(category);
       }
 

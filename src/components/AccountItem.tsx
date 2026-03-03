@@ -1,6 +1,5 @@
 import React, { useRef, useState, useCallback } from "react";
 import { useSortable } from "@dnd-kit/sortable";
-import { useDroppable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { Wallet } from "lucide-react";
 import { Account, DragItemType } from "../types";
@@ -23,13 +22,8 @@ export const AccountItem: React.FC<Props> = ({
   account, isDragging, onLongPress, onClick, activeDragType, isSortingMode, onSortingMode, isOver
 }) => {
   const {
-    attributes, listeners, setNodeRef: setSortRef, transform, transition,
+    attributes, listeners, setNodeRef, transform, transition,
   } = useSortable({
-    id: account.id,
-    data: { type: "account", account }
-  });
-
-  const { setNodeRef: setDropRef, isOver: isDropOver } = useDroppable({
     id: account.id,
     data: { type: "account", account }
   });
@@ -113,8 +107,8 @@ export const AccountItem: React.FC<Props> = ({
 
   const Icon = IconMap[account.icon] || Wallet;
 
-  const isTargetOver = isDropOver && activeDragType === "account" && !isDragging && !isSortingMode;
-  const isIncomeTarget = isDropOver && activeDragType === "income";
+  const isTargetOver = isOver && activeDragType === "account" && !isDragging && !isSortingMode;
+  const isIncomeTarget = isOver && activeDragType === "income";
 
   const style = {
     transform: isSortingMode ? CSS.Translate.toString(transform) : undefined,
@@ -124,12 +118,11 @@ export const AccountItem: React.FC<Props> = ({
 
   return (
     <div
-      ref={setSortRef}
+      ref={setNodeRef}
       style={style}
       className={`flex flex-col items-center gap-2 justify-start transition-opacity w-[76px] shrink-0 ${isDragging ? "opacity-30" : "opacity-100"}`}
     >
       <div
-        ref={setDropRef}
         {...attributes}
         {...listeners}
         onPointerDown={handlePointerDown}
