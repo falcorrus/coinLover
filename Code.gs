@@ -235,25 +235,28 @@ function doPost(e) {
     // Обработка транзакций (Transactions)
     if (data.action === "addTransaction") {
       let sheet = ss.getSheetByName("Transactions") || ss.insertSheet("Transactions");
-      
-      const defaultHeaders = ["ID", "Date", "Type", "Source", "Destination", "Tag", "Amount", "Amount USD", "Target Amount", "Target USD", "Comment"];
-      
-      // ПРИНУДИТЕЛЬНОЕ ОБНОВЛЕНИЕ ЗАГОЛОВКОВ (если их меньше 11 — добавляем колонку ID)
-      if (sheet.getLastColumn() < 11) {
-        if (sheet.getLastRow() === 0) {
-          sheet.appendRow(defaultHeaders);
-        } else {
-          // Обновляем заголовки в 1-й строке
-          sheet.getRange(1, 1, 1, defaultHeaders.length).setValues([defaultHeaders]);
-        }
-        sheet.getRange(1, 1, 1, defaultHeaders.length).setFontWeight("bold");
+
+      const baseHeaders = ["Date", "Type", "Source", "Destination", "Tag", "Amount", "Amount USD", "Target Amount", "Target USD", "Comment"];
+
+      // Initialize headers if sheet is empty
+      if (sheet.getLastRow() === 0) {
+        const fullHeaders = [...baseHeaders, "ID"];
+        sheet.appendRow(fullHeaders);
+        sheet.getRange(1, 1, 1, fullHeaders.length).setFontWeight("bold");
       }
-      
+
+      // Read current headers (ID may be in any position, or missing)
       const lastCol = sheet.getLastColumn();
-      const currentHeaders = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
-      
+      const currentHeaders = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(h => String(h).trim());
+
+      // If "ID" column is not yet in the sheet — add it as last column (non-breaking for existing data)
+      if (!currentHeaders.includes("ID")) {
+        const idColNum = lastCol + 1;
+        sheet.getRange(1, idColNum).setValue("ID").setFontWeight("bold");
+        currentHeaders.push("ID");
+      }
+
       const fieldMap = {
-        "ID": data.id || "",
         "Date": data.date,
         "Type": data.type,
         "Source": data.sourceName,
@@ -263,28 +266,25 @@ function doPost(e) {
         "Amount USD": data.amountUSD || "",
         "Target Amount": data.targetAmount || data.amount,
         "Target USD": data.targetAmountUSD || "",
-        "Comment": data.comment || ""
+        "Comment": data.comment || "",
+        "ID": data.id || ""
       };
-      
+
       const rowData = currentHeaders.map(header => fieldMap[header] !== undefined ? fieldMap[header] : "");
       sheet.appendRow(rowData);
-      
+
       return ContentService.createTextOutput(JSON.stringify({ status: "success", message: "Transaction added" })).setMimeType(ContentService.MimeType.JSON);
     }
     
     // Обновление существующей транзакции в Transactions
     if (data.action === "updateTransaction") {
       const sheet = ss.getSheetByName("Transactions");
-      if (!sheet) {
-        return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "Transactions sheet not found" })).setMimeType(ContentService.MimeType.JSON);
+      if (!sheet || sheet.getLastRow() <= 1) {
+        return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "No transactions found" })).setMimeType(ContentService.MimeType.JSON);
       }
 
       const lastRow = sheet.getLastRow();
       const lastCol = sheet.getLastColumn();
-      if (lastRow <= 1) {
-        return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "No transactions found" })).setMimeType(ContentService.MimeType.JSON);
-      }
-
       const allData = sheet.getRange(1, 1, lastRow, lastCol).getValues();
       const headers = allData[0].map(h => String(h).trim());
       const col = {};
@@ -292,37 +292,30 @@ function doPost(e) {
 
       let foundRow = -1;
 
-      // === Primary: find by ID column ===
+      // Primary: search by ID column (fast, exact)
       if (data.id && col["ID"] !== undefined) {
         for (let i = 1; i < allData.length; i++) {
-          const rowId = String(allData[i][col["ID"]] || "").trim();
-          if (rowId === data.id) {
-            foundRow = i + 1; // 1-indexed
-            break;
-          }
-        }
-      }
-
-      // === Fallback: find by date+source+destination+amount (old rows without ID) ===
-      if (foundRow === -1) {
-        for (let i = 1; i < allData.length; i++) {
-          const row = allData[i];
-          const rowDate = String(row[col["Date"]] || "").trim();
-          const rowSource = String(row[col["Source"]] || "").trim();
-          const rowDest = String(row[col["Destination"]] || "").trim();
-          const rowAmt = parseFloat(row[col["Amount"]] || 0);
-          if (
-            rowDate === data.oldDate &&
-            rowSource === data.oldSourceName &&
-            rowDest === data.oldDestinationName &&
-            Math.abs(rowAmt - data.oldAmount) < 0.001
-          ) {
+          if (String(allData[i][col["ID"]] || "").trim() === String(data.id)) {
             foundRow = i + 1;
             break;
           }
         }
       }
 
+      // Fallback: search by date + source + amount (for rows without ID)
+      if (foundRow === -1 && col["Date"] !== undefined) {
+        for (let i = 1; i < allData.length; i++) {
+          const rowDate = String(allData[i][col["Date"]] || "").trim();
+          const rowSource = String(allData[i][col["Source"]] || "").trim();
+          const rowAmt = parseFloat(allData[i][col["Amount"]] || 0);
+          if (rowDate === data.date && rowSource === data.sourceName && Math.abs(rowAmt - data.amount) < 0.001) {
+            foundRow = i + 1;
+            break;
+          }
+        }
+      }
+
+      // Build updated row using only known header columns
       const fieldMap = {
         "ID": data.id || "",
         "Date": data.date,
@@ -339,13 +332,12 @@ function doPost(e) {
       const rowData = headers.map(header => fieldMap[header] !== undefined ? fieldMap[header] : "");
 
       if (foundRow === -1) {
-        // Not found — append as new row
         sheet.appendRow(rowData);
-        return ContentService.createTextOutput(JSON.stringify({ status: "success", message: "Transaction not found, appended as new" })).setMimeType(ContentService.MimeType.JSON);
+        return ContentService.createTextOutput(JSON.stringify({ status: "success", message: "Not found, appended as new" })).setMimeType(ContentService.MimeType.JSON);
       }
 
       sheet.getRange(foundRow, 1, 1, lastCol).setValues([rowData]);
-      return ContentService.createTextOutput(JSON.stringify({ status: "success", message: "Transaction updated" })).setMimeType(ContentService.MimeType.JSON);
+      return ContentService.createTextOutput(JSON.stringify({ status: "success", message: "Transaction updated at row " + foundRow })).setMimeType(ContentService.MimeType.JSON);
     }
 
     return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "Unknown action" })).setMimeType(ContentService.MimeType.JSON);
