@@ -150,10 +150,10 @@ function doPost(e) {
     if (data.action === "addTransaction") {
       let sheet = ss.getSheetByName("Transactions") || ss.insertSheet("Transactions");
       
-      const defaultHeaders = ["Date", "Type", "Source", "Destination", "Tag", "Amount", "Target Amount"];
+      const defaultHeaders = ["Date", "Type", "Source", "Destination", "Tag", "Amount", "Target Amount", "Comment"];
       
-      // ПРИНУДИТЕЛЬНОЕ ОБНОВЛЕНИЕ ЗАГОЛОВКОВ (если их меньше 7)
-      if (sheet.getLastColumn() < 7) {
+      // ПРИНУДИТЕЛЬНОЕ ОБНОВЛЕНИЕ ЗАГОЛОВКОВ (если их меньше 8)
+      if (sheet.getLastColumn() < 8) {
         if (sheet.getLastRow() === 0) {
           sheet.appendRow(defaultHeaders);
         } else {
@@ -173,7 +173,8 @@ function doPost(e) {
         "Destination": data.destinationName,
         "Tag": data.tagName || "",
         "Amount": data.amount,
-        "Target Amount": data.targetAmount || data.amount
+        "Target Amount": data.targetAmount || data.amount,
+        "Comment": data.comment || ""
       };
       
       const rowData = currentHeaders.map(header => fieldMap[header] !== undefined ? fieldMap[header] : "");
