@@ -113,7 +113,6 @@ export const CategoryItem: React.FC<Props> = ({
   return (
     <div
       ref={setNodeRef}
-      style={style}
       {...attributes}
       {...listeners}
       onPointerDown={handlePointerDown}
