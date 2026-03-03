@@ -113,8 +113,11 @@ export const useFinance = () => {
     const date = customDate ? getLocalTimeString(customDate) : getLocalTimeString();
 
     // Calculate USD equivalents
-    const sourceCurrency = (source as any).currency || "USD";
-    const destCurrency = (destination as any).currency || (source as any).currency || "USD";
+    const wallet = type === "income" ? (destination as Account) : (source as Account);
+    const walletCurrency = wallet.currency || "USD";
+
+    const sourceCurrency = (source as any).currency || walletCurrency;
+    const destCurrency = type === "expense" ? "USD" : ((destination as any).currency || walletCurrency);
 
     const amountUSD = sourceCurrency === "USD" ? amount : RatesService.convert(amount, sourceCurrency, "USD");
     const finalTargetAmount = targetAmount ?? amount;
@@ -200,8 +203,11 @@ export const useFinance = () => {
     const date = customDate ? getLocalTimeString(customDate) : oldTx.date;
 
     // Calculate USD equivalents
-    const sourceCurrency = (source as any).currency || "USD";
-    const destCurrency = (destination as any).currency || (source as any).currency || "USD";
+    const wallet = type === "income" ? (destination as Account) : (source as Account);
+    const walletCurrency = wallet.currency || "USD";
+
+    const sourceCurrency = (source as any).currency || walletCurrency;
+    const destCurrency = type === "expense" ? "USD" : ((destination as any).currency || walletCurrency);
     const amountUSD = sourceCurrency === "USD" ? amount : RatesService.convert(amount, sourceCurrency, "USD");
     const finalTargetAmount = targetAmount ?? amount;
     const targetAmountUSD = destCurrency === "USD" ? finalTargetAmount : RatesService.convert(finalTargetAmount, destCurrency, "USD");
@@ -329,7 +335,7 @@ export const useFinance = () => {
   const saveAccount = async (account: Partial<Account>) => {
     const updated = account.id
       ? accounts.map((a) => (a.id === account.id ? { ...a, ...account } : a))
-      : [...accounts, { ...account, id: `acc-${Date.now()}` } as Account];
+      : [...accounts, { ...account, id: `acc - ${Date.now()} ` } as Account];
     setAccounts(updated);
     await pushSettings(updated, categories, incomes);
   };
@@ -350,7 +356,7 @@ export const useFinance = () => {
   const saveCategory = async (category: Partial<Category>) => {
     const updated = category.id
       ? categories.map((c) => (c.id === category.id ? { ...c, ...category } : c))
-      : [...categories, { ...category, id: `cat-${Date.now()}`, tags: category.tags ?? [] } as Category];
+      : [...categories, { ...category, id: `cat - ${Date.now()} `, tags: category.tags ?? [] } as Category];
     setCategories(updated);
     await pushSettings(accounts, updated, incomes);
   };
@@ -376,7 +382,7 @@ export const useFinance = () => {
   const saveIncome = async (income: Partial<IncomeSource>) => {
     const updated = income.id
       ? incomes.map((i) => (i.id === income.id ? { ...i, ...income } : i))
-      : [...incomes, { ...income, id: `inc-${Date.now()}` } as IncomeSource];
+      : [...incomes, { ...income, id: `inc - ${Date.now()} ` } as IncomeSource];
     setIncomes(updated);
     await pushSettings(accounts, categories, updated);
   };

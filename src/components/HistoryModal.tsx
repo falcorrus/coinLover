@@ -45,11 +45,12 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
 
         if (entityType === "account") {
             if (tx.accountId === entity.id) {
-                // We are the source, so look at the destination
                 counterpartId = tx.targetId;
-                isOutflow = true;
+                // For income, if accountId is our wallet, it's an INFLOW. 
+                // For expense/transfer, if accountId is our wallet, it's an OUTFLOW.
+                isOutflow = tx.type !== "income";
             } else {
-                // We are the destination, so look at the source
+                // This only happens for transfers where we are the targetId
                 counterpartId = tx.accountId;
                 isOutflow = false;
             }
@@ -85,9 +86,11 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
             }
         } else if (tx.type === "income") {
             if (entityType === "income") {
-                counterpartItem = accounts.find(a => a.id === tx.targetId);
+                // We are the income source, counterpart is the destination wallet
+                counterpartItem = accounts.find(a => a.id === tx.accountId);
             } else {
-                counterpartItem = incomes.find(i => i.id === tx.accountId);
+                // We are the wallet (or other), counterpart is the income source
+                counterpartItem = incomes.find(i => i.id === tx.targetId);
             }
         } else if (tx.type === "transfer") {
             counterpartItem = accounts.find(a => a.id === counterpartId);
@@ -111,7 +114,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
         let amount = tx.amount;
         let usdAmount = tx.amountUSD;
 
-        if (!isOutflow && tx.targetAmount !== undefined && tx.targetAmount > 0) {
+        if (!isOutflow && tx.type !== "expense" && tx.targetAmount !== undefined && tx.targetAmount > 0) {
             amount = tx.targetAmount;
             usdAmount = tx.targetAmountUSD;
         }
@@ -144,7 +147,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                     color: "text-[#D4AF37]"
                 };
             } else if (tx.type === "income") {
-                const destAcc = accounts.find(a => a.id === tx.targetId); // Income goes into targetId account
+                const destAcc = accounts.find(a => a.id === tx.accountId); // Income goes into accountId wallet
                 const currency = destAcc?.currency || "USD";
                 return {
                     amount: `+${amount} ${currency}`,
@@ -162,8 +165,8 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                 };
             }
         } else {
-            // Income 
-            const destAcc = accounts.find(a => a.id === tx.targetId);
+            // Viewing an Income source
+            const destAcc = accounts.find(a => a.id === tx.accountId);
             const currency = destAcc?.currency || "USD";
             return {
                 amount: `+${amount} ${currency}`,

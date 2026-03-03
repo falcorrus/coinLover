@@ -589,7 +589,7 @@ export default function App() {
           </div>
         </section>
 
-        <DragOverlay dropAnimation={{ duration: 200, easing: "ease-out" }}>
+        <DragOverlay dropAnimation={null}>
           {activeDragId ? (
             <div className="draggable-coin grabbed-elevation pointer-events-none">
               {React.createElement(IconMap[(activeItemData as Account | IncomeSource | Category)?.icon] || Wallet, { size: 28, color: (activeItemData as Account | IncomeSource | Category)?.color })}
