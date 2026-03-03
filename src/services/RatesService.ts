@@ -52,7 +52,7 @@ export class RatesService {
     }
 
     static async syncRatesInBackground(): Promise<void> {
-        if (!this.shouldSyncRates()) return;
+        // if (!this.shouldSyncRates()) return; // Временно отключаем для отладки
 
         try {
             // Инициализируем объект курсов (USD всегда 1)
@@ -91,11 +91,13 @@ export class RatesService {
                 }
             }
 
-            // 3. RUB (Tinkoff) через Python Backend (предполагается, что он на порту 8000 или доступен по относительному пути)
-            // Можно выставить переменную окружения, чтобы в проде был нужный URL
+            // 3. RUB (Tinkoff) через Python Backend
             try {
-                const rubBaseUrl = (import.meta as any).env?.VITE_PY_BACKEND_URL || "http://localhost:8000";
-                const rubRes = await fetch(`${rubBaseUrl}/api/rates/rub`);
+                // В проде лучше использовать относительный путь /api/rates/rub
+                const envUrl = (import.meta as any).env?.VITE_PY_BACKEND_URL;
+                const rubUrl = envUrl ? `${envUrl}/api/rates/rub` : "/api/rates/rub";
+                
+                const rubRes = await fetch(rubUrl);
                 if (rubRes.ok) {
                     const rubData = await rubRes.json();
                     if (rubData && rubData.rate) {
