@@ -98,7 +98,7 @@ export const Numpad: React.FC<Props> = ({ data, onClose, onFieldChange, onPress,
             }
             {(() => {
               const fromCur = (data.source as any)?.currency || "USD";
-              const toCur = (data.destination as any)?.currency || "USD";
+              const toCur = data.type === "expense" ? "USD" : ((data.destination as any)?.currency || "USD");
               if (fromCur !== toCur) {
                 const rates = RatesService.getCachedRates() || { USD: 1 };
                 return (
@@ -121,7 +121,7 @@ export const Numpad: React.FC<Props> = ({ data, onClose, onFieldChange, onPress,
             <span className={`text-4xl sm:text-5xl font-light tracking-tighter text-right overflow-hidden ${data.activeField === "destination" ? "text-white" : "text-slate-500"}`}>{data.targetAmount}</span>
             <div className="flex items-center gap-1.5 absolute bottom-5 right-6">
               <span className={`text-[10px] font-black uppercase ${data.activeField === "destination" ? (data.type === 'expense' ? 'text-[#D4AF37]' : 'text-[#10b981]') : 'text-slate-500'}`}>
-                {(data.destination as any)?.currency || (data.source as any)?.currency || "USD"}
+                {data.type === "expense" ? "USD" : (data.destination as any)?.currency || (data.source as any)?.currency || "USD"}
               </span>
               <span className="text-[9px] font-bold text-slate-500 uppercase opacity-40">КУДА</span>
             </div>

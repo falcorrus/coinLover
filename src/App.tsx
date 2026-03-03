@@ -590,7 +590,7 @@ export default function App() {
 
           const computeTarget = (newAmountStr: string): string => {
             const fromCur = (p.source as any)?.currency || "USD";
-            const toCur = (p.destination as any)?.currency || "USD";
+            const toCur = p.type === "expense" ? "USD" : ((p.destination as any)?.currency || "USD");
             if (fromCur === toCur) return newAmountStr;
             const evalAmt = parseFloat(safeEval(newAmountStr));
             if (isNaN(evalAmt) || evalAmt === 0) return "0";
@@ -625,7 +625,7 @@ export default function App() {
 
           const computeTarget = (newAmountStr: string): string => {
             const fromCur = (p.source as any)?.currency || "USD";
-            const toCur = (p.destination as any)?.currency || "USD";
+            const toCur = p.type === "expense" ? "USD" : ((p.destination as any)?.currency || "USD");
             if (fromCur === toCur) return newAmountStr;
             const evalAmt = parseFloat(safeEval(newAmountStr));
             if (isNaN(evalAmt) || evalAmt === 0) return "0";
