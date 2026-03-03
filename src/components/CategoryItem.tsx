@@ -114,15 +114,15 @@ export const CategoryItem: React.FC<Props> = ({
     <div
       ref={setNodeRef}
       style={style}
-      className={`flex flex-col items-center gap-2 justify-start transition-opacity ${isDragging ? "opacity-30" : "opacity-100"}`}
+      {...attributes}
+      {...listeners}
       onPointerDown={handlePointerDown}
+      onContextMenu={e => e.preventDefault()}
+      className={`flex flex-col items-center gap-2 justify-start transition-opacity cursor-pointer ${isDragging ? "opacity-30" : "opacity-100"}`}
+      style={{ ...style, touchAction: "none" }}
     >
       <div
-        {...attributes}
-        {...listeners}
-        onContextMenu={e => e.preventDefault()}
-        style={{ touchAction: "none" }}
-        className={`w-[64px] h-[64px] rounded-[32px] flex items-center justify-center transition-all duration-300 ${isDragging ? "grabbed-elevation" :
+        className={`w-[64px] h-[64px] rounded-[32px] flex items-center justify-center transition-all duration-300 pointer-events-none ${isDragging ? "grabbed-elevation" :
           isPressing ? "scale-90 brightness-75" : ""
           } ${isTarget ? "bg-white/20 shadow-[0_0_20px_rgba(255,255,255,0.2)] scale-110" : "bg-gradient-to-br from-white/10 to-white/[0.02]"
           } ${isSortingMode && isDragging ? "shadow-2xl border-[#6d5dfc] ring-4 ring-[#6d5dfc]/20" : ""

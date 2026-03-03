@@ -120,15 +120,15 @@ export const AccountItem: React.FC<Props> = ({
     <div
       ref={setNodeRef}
       style={style}
-      className={`flex flex-col items-center gap-2 justify-start transition-opacity w-[76px] shrink-0 ${isDragging ? "opacity-30" : "opacity-100"}`}
+      {...attributes}
+      {...listeners}
+      onPointerDown={handlePointerDown}
+      onContextMenu={e => e.preventDefault()}
+      className={`flex flex-col items-center gap-2 justify-start transition-opacity w-[76px] shrink-0 cursor-pointer ${isDragging ? "opacity-30" : "opacity-100"}`}
+      style={{ ...style, touchAction: "none" }}
     >
       <div
-        {...attributes}
-        {...listeners}
-        onPointerDown={handlePointerDown}
-        onContextMenu={e => e.preventDefault()}
-        style={{ touchAction: "none" }}
-        className={`draggable-coin transition-all duration-300 ${isDragging ? "grabbed-elevation" :
+        className={`draggable-coin transition-all duration-300 pointer-events-none ${isDragging ? "grabbed-elevation" :
           isPressing ? "scale-90 brightness-75 border-white/40" : ""
           } ${(isTargetOver || isIncomeTarget) || isOver ? "coin-target-glow bg-white/20 shadow-[0_0_20px_rgba(255,255,255,0.2)] scale-110" : ""
           } ${isSortingMode && isDragging ? "shadow-2xl border-[#6d5dfc] ring-4 ring-[#6d5dfc]/20" : ""
@@ -136,7 +136,7 @@ export const AccountItem: React.FC<Props> = ({
       >
         <Icon size={26} color={(isTargetOver || isIncomeTarget || isOver) ? "#fff" : account.color} />
       </div>
-      <div className="flex flex-col items-center text-center leading-tight">
+      <div className="flex flex-col items-center text-center leading-tight pointer-events-none">
         <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">{account.name}</span>
         <span className="text-[13px] font-bold text-white">
           {account.balance.toLocaleString()} <span className="text-[10px] opacity-50">{account.currency}</span>
