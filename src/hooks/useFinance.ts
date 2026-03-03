@@ -47,18 +47,13 @@ export const useFinance = () => {
     if (data.incomes) setIncomes(data.incomes);
     if (data.timestamp) localStorage.setItem("cl_last_sync", data.timestamp);
 
-    // Merge current month transactions from cloud with local ones
-    if (data.transactions && Array.isArray(data.transactions) && data.transactions.length > 0) {
-      setTransactions(prev => {
-        const existingIds = new Set(prev.map(t => t.id));
-        const newFromCloud = data.transactions.filter((t: any) => !existingIds.has(t.id));
-        if (newFromCloud.length === 0) return prev;
-        // Merge and sort descending by date
-        const merged = [...prev, ...newFromCloud].sort(
+    // Overwrite local transactions with what came from the cloud
+    if (data.transactions && Array.isArray(data.transactions)) {
+      setTransactions(
+        [...data.transactions].sort(
           (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-        );
-        return merged;
-      });
+        )
+      );
     }
 
     setConflictData(null);
@@ -149,6 +144,7 @@ export const useFinance = () => {
     const ok = await googleSheetsService.syncToSheets({
       action: "addTransaction",
       targetSheet: "Transactions",
+      id: newTx.id,
       date,
       type,
       sourceName: source.name,
@@ -172,6 +168,105 @@ export const useFinance = () => {
     });
 
     if (ok && configsOk) {
+      localStorage.setItem("cl_last_sync", date);
+      setSyncStatus("success");
+    } else {
+      setSyncStatus("error");
+    }
+  };
+
+  // ── Update Transaction ──────────────────────────────────────────────────────
+  const updateTransaction = async (
+    txId: string,
+    type: TransactionType,
+    source: Account | IncomeSource,
+    destination: Account | Category,
+    amount: number,
+    targetAmount?: number,
+    tag?: string,
+    customDate?: string,
+    comment?: string
+  ) => {
+    const oldTx = transactions.find(t => t.id === txId);
+    if (!oldTx) return;
+
+    const date = customDate ? getLocalTimeString(customDate) : oldTx.date;
+
+    // Calculate USD equivalents
+    const sourceCurrency = (source as any).currency || "USD";
+    const destCurrency = (destination as any).currency || (source as any).currency || "USD";
+    const amountUSD = sourceCurrency === "USD" ? amount : RatesService.convert(amount, sourceCurrency, "USD");
+    const finalTargetAmount = targetAmount ?? amount;
+    const targetAmountUSD = destCurrency === "USD" ? finalTargetAmount : RatesService.convert(finalTargetAmount, destCurrency, "USD");
+
+    const updatedTx: Transaction = {
+      ...oldTx,
+      type,
+      accountId: type === "income" ? (destination as Account).id : (source as Account).id,
+      targetId: type === "income" ? source.id : (destination as Category).id,
+      amount,
+      amountUSD: Math.round(amountUSD * 100) / 100,
+      targetAmount: finalTargetAmount,
+      targetAmountUSD: Math.round(targetAmountUSD * 100) / 100,
+      date,
+      tag,
+      comment: comment || undefined,
+    };
+
+    setTransactions(prev => prev.map(t => t.id === txId ? updatedTx : t));
+
+    // Revert old tx effect from balances, then apply new tx effect
+    const updatedAccounts = accounts.map(a => {
+      let balance = a.balance;
+
+      // Revert old transaction
+      if (oldTx.type === "expense" && a.id === oldTx.accountId) balance += oldTx.amount;
+      if (oldTx.type === "income" && a.id === oldTx.targetId) balance -= (oldTx.targetAmount ?? oldTx.amount);
+      if (oldTx.type === "transfer") {
+        if (a.id === oldTx.accountId) balance += oldTx.amount;
+        if (a.id === oldTx.targetId) balance -= (oldTx.targetAmount ?? oldTx.amount);
+      }
+
+      // Apply new transaction
+      if (type === "expense" && a.id === (source as Account).id) balance -= amount;
+      if (type === "income" && a.id === (destination as Account).id) balance += finalTargetAmount;
+      if (type === "transfer") {
+        if (a.id === (source as Account).id) balance -= amount;
+        if (a.id === (destination as Account).id) balance += finalTargetAmount;
+      }
+
+      return a.balance !== balance ? { ...a, balance } : a;
+    });
+    setAccounts(updatedAccounts);
+
+    // Sync updated transaction to Sheets
+    setSyncStatus("loading");
+    const txOk = await googleSheetsService.syncToSheets({
+      action: "updateTransaction",
+      targetSheet: "Transactions",
+      id: txId,
+      date,
+      type,
+      sourceName: source.name,
+      destinationName: destination.name,
+      tagName: tag ?? "",
+      amount,
+      amountUSD: Math.round(amountUSD * 100) / 100,
+      targetAmount: finalTargetAmount,
+      targetAmountUSD: Math.round(targetAmountUSD * 100) / 100,
+      comment: comment || undefined,
+    });
+
+    // Sync balances to Configs
+    const configsOk = await googleSheetsService.syncToSheets({
+      action: "syncSettings",
+      targetSheet: "Configs",
+      accounts: updatedAccounts,
+      categories,
+      incomes,
+      timestamp: date,
+    });
+    if (txOk && configsOk) {
       localStorage.setItem("cl_last_sync", date);
       setSyncStatus("success");
     } else {
@@ -273,6 +368,7 @@ export const useFinance = () => {
     transactions,
     syncStatus,
     addTransaction,
+    updateTransaction,
     saveAccount,
     deleteAccount,
     saveCategory,

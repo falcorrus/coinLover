@@ -59,6 +59,7 @@ export type SyncPayload =
   | {
     action: "addTransaction";
     targetSheet: "Transactions";
+    id: string;
     date: string;
     type: TransactionType;
     sourceName: string;
@@ -69,7 +70,21 @@ export type SyncPayload =
     targetAmount?: number;
     targetAmountUSD?: number;
     comment?: string;
-    // allAccounts removed from here to stop bloating Transactions tab
+  }
+  | {
+    action: "updateTransaction";
+    targetSheet: "Transactions";
+    id: string;          // ID of the transaction to update (find by this)
+    date: string;
+    type: TransactionType;
+    sourceName: string;
+    destinationName: string;
+    tagName: string;
+    amount: number;
+    amountUSD?: number;
+    targetAmount?: number;
+    targetAmountUSD?: number;
+    comment?: string;
   }
   | {
     action: "syncSettings";

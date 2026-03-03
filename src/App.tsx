@@ -39,7 +39,7 @@ export default function App() {
     categories, setCategories,
     incomes, setIncomes,
     transactions, syncStatus,
-    addTransaction, saveAccount, deleteAccount,
+    addTransaction, updateTransaction, saveAccount, deleteAccount,
     saveCategory, deleteCategory,
     saveIncome, deleteIncome,
     syncCategories, syncIncomes, syncAccountsOrder,
@@ -94,7 +94,7 @@ export default function App() {
   const [historyModal, setHistoryModal] = React.useState<{
     isOpen: boolean;
     entity: Account | Category | IncomeSource | null;
-    type: "account" | "category" | "income" | "orphaned" | null;
+    type: "account" | "category" | "income" | null;
   }>({
     isOpen: false, entity: null, type: null
   });
@@ -103,6 +103,8 @@ export default function App() {
     isOpen: false, type: "expense", source: null, destination: null,
     amount: "0", targetAmount: "0", targetLinked: true, activeField: "source", tag: null, comment: ""
   });
+  // ID of the transaction being edited (null = new transaction)
+  const [editingTxId, setEditingTxId] = React.useState<string | null>(null);
 
   const clearSortingTimer = () => {
     if (sortingTimerRef.current) {
@@ -317,17 +319,8 @@ export default function App() {
   const totalBalance = accounts.reduce((s, a) => s + a.balance, 0);
   const totalSpent = transactions.filter(t => t.type === "expense").reduce((s, t) => s + t.amount, 0);
 
-  // Detect orphaned transactions (IDs that don't match any known entity)
-  const orphanedCount = React.useMemo(() => {
-    const allAccountIds = new Set(accounts.map(a => a.id));
-    const allCategoryIds = new Set(categories.map(c => c.id));
-    const allIncomeIds = new Set(incomes.map(i => i.id));
-    return transactions.filter(t => {
-      const sourceOk = allAccountIds.has(t.accountId) || allIncomeIds.has(t.accountId);
-      const destOk = allAccountIds.has(t.targetId) || allCategoryIds.has(t.targetId) || allIncomeIds.has(t.targetId);
-      return !sourceOk || !destOk;
-    }).length;
-  }, [transactions, accounts, categories, incomes]);
+
+
   const activeItemData = activeDragType === "account"
     ? accounts.find(a => a.id === activeDragId)
     : activeDragType === "income"
@@ -461,15 +454,6 @@ export default function App() {
           <div className="px-6 mb-3 flex justify-between items-center">
             <div className="flex items-center gap-2">
               <h2 className="text-[10px] font-black text-slate-500 uppercase">Кошельки</h2>
-              {orphanedCount > 0 && (
-                <button
-                  onClick={() => setHistoryModal({ isOpen: true, entity: null, type: "orphaned" })}
-                  className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-400 text-[9px] font-black uppercase hover:bg-rose-500/20 transition-colors"
-                >
-                  <span>⚠</span>
-                  <span>{orphanedCount} несвяз.</span>
-                </button>
-              )}
             </div>
             <button onClick={() => setAccountModal({ isOpen: true, account: null })} className="text-slate-500 hover:text-white">
               <Plus size={16} />
@@ -532,7 +516,11 @@ export default function App() {
 
       <Numpad
         data={numpad}
-        onClose={() => setNumpad({ ...numpad, isOpen: false, targetLinked: true })}
+        isEditing={!!editingTxId}
+        onClose={() => {
+          setNumpad({ ...numpad, isOpen: false, targetLinked: true });
+          setEditingTxId(null);
+        }}
         onFieldChange={(field) => setNumpad(p => ({
           ...p,
           activeField: field,
@@ -599,7 +587,12 @@ export default function App() {
         onSubmit={(date?: string) => {
           const finalAmount = parseFloat(safeEval(numpad.amount));
           const finalTarget = parseFloat(safeEval(numpad.targetAmount));
-          addTransaction(numpad.type, numpad.source!, numpad.destination!, finalAmount, finalTarget, numpad.tag || undefined, date, numpad.comment || undefined);
+          if (editingTxId) {
+            updateTransaction(editingTxId, numpad.type, numpad.source!, numpad.destination!, finalAmount, finalTarget, numpad.tag || undefined, date, numpad.comment || undefined);
+            setEditingTxId(null);
+          } else {
+            addTransaction(numpad.type, numpad.source!, numpad.destination!, finalAmount, finalTarget, numpad.tag || undefined, date, numpad.comment || undefined);
+          }
           setNumpad({ ...numpad, isOpen: false, amount: "0", targetAmount: "0", targetLinked: true, activeField: "source", comment: "" });
         }}
       />
@@ -646,6 +639,32 @@ export default function App() {
         accounts={accounts}
         categories={categories}
         incomes={incomes}
+        onEditTransaction={(tx) => {
+          // Resolve source and destination entities from the transaction
+          const source =
+            tx.type === "income"
+              ? incomes.find(i => i.id === tx.targetId) ?? null
+              : accounts.find(a => a.id === tx.accountId) ?? null;
+          const destination =
+            tx.type === "expense"
+              ? categories.find(c => c.id === tx.targetId) ?? null
+              : accounts.find(a => a.id === tx.targetId) ?? null;
+          if (!source || !destination) return;
+          setEditingTxId(tx.id);
+          setHistoryModal({ isOpen: false, entity: null, type: null });
+          setNumpad({
+            isOpen: true,
+            type: tx.type,
+            source,
+            destination,
+            amount: String(tx.amount),
+            targetAmount: String(tx.targetAmount ?? tx.amount),
+            targetLinked: false,
+            activeField: "source",
+            tag: tx.tag ?? null,
+            comment: tx.comment ?? "",
+          });
+        }}
       />
 
       {/* CONFLICT RESOLUTION MODAL */}

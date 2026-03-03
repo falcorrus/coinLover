@@ -14,9 +14,10 @@ interface Props {
   onSubmit: (date?: string) => void;
   onTagSelect: (tag: string | null) => void;
   onCommentChange: (comment: string) => void;
+  isEditing?: boolean;
 }
 
-export const Numpad: React.FC<Props> = ({ data, onClose, onFieldChange, onPress, onDelete, onSubmit, onTagSelect, onCommentChange }) => {
+export const Numpad: React.FC<Props> = ({ data, onClose, onFieldChange, onPress, onDelete, onSubmit, onTagSelect, onCommentChange, isEditing }) => {
   const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
   const [isCommentOpen, setIsCommentOpen] = React.useState(false);
   const [commentDraft, setCommentDraft] = React.useState("");
@@ -173,24 +174,35 @@ export const Numpad: React.FC<Props> = ({ data, onClose, onFieldChange, onPress,
           </div>
         </div>
         <div className={`flex h-14 ${data.type === 'expense' ? 'bg-[#D4AF37]' : 'bg-[#10b981]'}`}>
-          <button
-            onClick={handleYesterday}
-            className={`flex-1 text-xs font-bold uppercase ${data.type === 'expense' ? 'text-black font-extrabold' : 'text-white'}`}
-          >
-            Вчера
-          </button>
-          <button
-            onClick={() => onSubmit()}
-            className={`flex-1 text-xs font-bold uppercase bg-black/10 ${data.type === 'expense' ? 'text-black font-extrabold' : 'text-white'}`}
-          >
-            Сегодня
-          </button>
-          <button
-            onClick={() => setIsCalendarOpen(true)}
-            className={`w-[72px] flex items-center justify-center border-l border-white/10 ${data.type === 'expense' ? 'text-black' : 'text-white'}`}
-          >
-            <CalendarDays size={20} />
-          </button>
+          {isEditing ? (
+            <button
+              onClick={() => onSubmit()}
+              className={`flex-1 text-sm font-black uppercase tracking-widest ${data.type === 'expense' ? 'text-black' : 'text-white'}`}
+            >
+              ✓ Сохранить изменения
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={handleYesterday}
+                className={`flex-1 text-xs font-bold uppercase ${data.type === 'expense' ? 'text-black font-extrabold' : 'text-white'}`}
+              >
+                Вчера
+              </button>
+              <button
+                onClick={() => onSubmit()}
+                className={`flex-1 text-xs font-bold uppercase bg-black/10 ${data.type === 'expense' ? 'text-black font-extrabold' : 'text-white'}`}
+              >
+                Сегодня
+              </button>
+              <button
+                onClick={() => setIsCalendarOpen(true)}
+                className={`w-[72px] flex items-center justify-center border-l border-white/10 ${data.type === 'expense' ? 'text-black' : 'text-white'}`}
+              >
+                <CalendarDays size={20} />
+              </button>
+            </>
+          )}
         </div>
       </div>
 
