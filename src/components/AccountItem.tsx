@@ -81,6 +81,14 @@ export const AccountItem: React.FC<Props> = ({
     clearTimers();
   };
 
+  // Prevent Long Press from firing if dnd-kit starts dragging
+  React.useEffect(() => {
+    if (isDragging) {
+      clearTimers();
+      setIsPressing(false);
+    }
+  }, [isDragging, clearTimers]);
+
   const Icon = IconMap[account.icon] || Wallet;
   const isTargetOver = isOver && activeDragType === "account" && !isDragging && !isSortingMode;
   const isIncomeTarget = isOver && activeDragType === "income";

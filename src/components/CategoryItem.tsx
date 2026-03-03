@@ -79,6 +79,14 @@ export const CategoryItem: React.FC<Props> = ({
     clearTimers();
   };
 
+  // Prevent Long Press from firing if dnd-kit starts dragging
+  React.useEffect(() => {
+    if (isDragging) {
+      clearTimers();
+      setIsPressing(false);
+    }
+  }, [isDragging, clearTimers]);
+
   const Icon = IconMap[category.icon] || ShoppingBag;
   const isTarget = isOver && !isDragging && !isSortingMode;
 

@@ -437,18 +437,17 @@ export default function App() {
         sensors={sensors}
         collisionDetection={(args) => {
           if (!isSortingMode) {
-            // Precision collision: Only trigger if pointer is in the top 70px of the item (the icon area)
+            // Standard pointerWithin detection, filtering self
             const collisions = pointerWithin(args);
-            const filtered = collisions.filter(c => {
-              if (c.id === args.active.id) return false;
-              const container = args.droppableContainers.find(dc => dc.id === c.id);
-              const rect = container?.rect.current;
-              if (!rect) return false;
-              const pointerY = args.pointerCoordinates?.y ?? 0;
-              // Hit detection specifically for the top icon area
-              return pointerY >= rect.top && pointerY <= rect.top + 70;
-            });
-            return filtered.length > 0 ? filtered : [];
+            const filtered = collisions.filter(c => c.id !== args.active.id);
+            
+            // If pointerWithin fails (common on mobile during lift), fallback to rectIntersection
+            if (filtered.length === 0) {
+              const rectCollisions = rectIntersection(args);
+              return rectCollisions.filter(c => c.id !== args.active.id);
+            }
+            
+            return filtered;
           }
           return closestCenter(args);
         }}
