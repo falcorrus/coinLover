@@ -52,7 +52,7 @@ export class RatesService {
     }
 
     static async syncRatesInBackground(): Promise<void> {
-        // if (!this.shouldSyncRates()) return; // Временно отключаем для отладки
+        if (!this.shouldSyncRates()) return;
 
         try {
             // Инициализируем объект курсов (USD всегда 1)
