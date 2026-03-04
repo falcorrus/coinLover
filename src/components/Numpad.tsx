@@ -158,61 +158,67 @@ export const Numpad: React.FC<Props> = ({ data, onClose, onFieldChange, onPress,
         </div>
       )}
 
-      <div className="bg-[var(--numpad-bg)] flex flex-col border-t border-[var(--glass-border)]">
-        <div className="flex gap-2 p-3 bg-[var(--numpad-bg)]">
-          {/* Numeric Block */}
-          <div className="flex-[3] grid grid-cols-3 gap-[1px] bg-[var(--glass-border)] rounded-2xl overflow-hidden border border-[var(--glass-border)] shadow-sm">
+      <div className="bg-[var(--numpad-bg)] p-4 pb-8 border-t border-[var(--glass-border)]">
+        <div className="flex gap-3">
+          {/* Numeric Block - 2/3 of width */}
+          <div className="grid grid-cols-3 gap-2 flex-[2]">
             {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
-              <button key={num} onClick={() => onPress(num.toString())} className="h-16 flex items-center justify-center text-3xl font-light text-[var(--text-main)] bg-[var(--bg-color)] hover:bg-[var(--glass-item-bg)] transition-colors active:bg-[var(--glass-item-active)]">{num}</button>
+              <button key={num} onClick={() => onPress(num.toString())} className="h-14 flex items-center justify-center text-3xl font-light text-[var(--text-main)] hover:bg-[var(--glass-item-bg)] rounded-xl transition-all active:scale-95">{num}</button>
             ))}
-            <button onClick={() => onPress(".")} className="h-16 flex items-center justify-center text-3xl font-light text-[var(--text-main)] bg-[var(--bg-color)] hover:bg-[var(--glass-item-bg)] transition-colors active:bg-[var(--glass-item-active)]">,</button>
-            <button onClick={() => onPress("0")} className="h-16 flex items-center justify-center text-3xl font-light text-[var(--text-main)] bg-[var(--bg-color)] hover:bg-[var(--glass-item-bg)] transition-colors active:bg-[var(--glass-item-active)]">0</button>
-            <button onClick={onDelete} className="h-16 flex items-center justify-center text-[var(--text-muted)] bg-[var(--bg-color)] hover:bg-[var(--glass-item-bg)] transition-colors active:bg-[var(--glass-item-active)]"><Delete size={26} /></button>
+            <button onClick={() => onPress(".")} className="h-14 flex items-center justify-center text-3xl font-light text-[var(--text-main)] hover:bg-[var(--glass-item-bg)] rounded-xl transition-all active:scale-95">,</button>
+            <button onClick={() => onPress("0")} className="h-14 flex items-center justify-center text-3xl font-light text-[var(--text-main)] hover:bg-[var(--glass-item-bg)] rounded-xl transition-all active:scale-95">0</button>
+            <button onClick={onDelete} className="h-14 flex items-center justify-center text-[var(--text-muted)] hover:bg-[var(--glass-item-bg)] rounded-xl transition-all active:scale-95">
+              <Delete size={24} />
+            </button>
           </div>
 
-          {/* Operators Block */}
-          <div className="flex-[2] grid grid-cols-2 gap-[1px] bg-[var(--glass-border)] rounded-2xl overflow-hidden border border-[var(--glass-border)] shadow-sm">
-            <button onClick={() => onPress("C")} className="h-16 flex items-center justify-center text-xl font-black text-[#D4AF37] bg-[var(--glass-card-bg)] hover:bg-[var(--glass-item-bg)] transition-colors active:bg-[var(--glass-item-active)]">C</button>
-            <button onClick={() => onPress("/")} className="h-16 flex items-center justify-center text-[var(--text-muted)] bg-[var(--glass-card-bg)] hover:bg-[var(--glass-item-bg)] transition-colors active:bg-[var(--glass-item-active)]"><Divide size={22} /></button>
-            <button onClick={() => onPress("*")} className="h-16 flex items-center justify-center text-[var(--text-muted)] bg-[var(--glass-card-bg)] hover:bg-[var(--glass-item-bg)] transition-colors active:bg-[var(--glass-item-active)]"><X size={22} /></button>
-            <button onClick={() => onPress("-")} className="h-16 flex items-center justify-center text-[var(--text-muted)] bg-[var(--glass-card-bg)] hover:bg-[var(--glass-item-bg)] transition-colors active:bg-[var(--glass-item-active)]"><Minus size={22} /></button>
-            <button onClick={() => onPress("+")} className="h-16 flex items-center justify-center text-[var(--text-muted)] bg-[var(--glass-card-bg)] hover:bg-[var(--glass-item-bg)] transition-colors active:bg-[var(--glass-item-active)]"><Plus size={22} /></button>
-            <button onClick={() => onPress("%")} className="h-16 flex items-center justify-center text-[var(--text-muted)] bg-[var(--glass-card-bg)] hover:bg-[var(--glass-item-bg)] transition-colors active:bg-[var(--glass-item-active)]"><Percent size={20} /></button>
-            <button onClick={() => onPress("=")} className="h-16 col-span-2 flex items-center justify-center text-[var(--text-main)] bg-[var(--primary-color)]/20 hover:bg-[var(--primary-color)]/30 transition-colors active:bg-[var(--primary-color)]/40"><Equal size={24} /></button>
+          {/* Operators Block - 1/3 of width (1/2 of numeric) */}
+          <div className="flex-[1] bg-[var(--panel-bg)] rounded-2xl flex flex-col p-2 gap-2 shadow-inner">
+            <div className="grid grid-cols-2 gap-2 flex-1">
+              <button onClick={() => onPress("C")} className="flex items-center justify-center text-xl font-black text-[#D4AF37] hover:bg-[var(--bg-color)]/50 rounded-xl transition-all active:scale-95">C</button>
+              <button onClick={() => onPress("/")} className="flex items-center justify-center text-2xl font-light text-[var(--text-muted)] hover:bg-[var(--bg-color)]/50 rounded-xl transition-all active:scale-95"><Divide size={20} /></button>
+              <button onClick={() => onPress("*")} className="flex items-center justify-center text-2xl font-light text-[var(--text-muted)] hover:bg-[var(--bg-color)]/50 rounded-xl transition-all active:scale-95"><X size={20} /></button>
+              <button onClick={() => onPress("-")} className="flex items-center justify-center text-2xl font-light text-[var(--text-muted)] hover:bg-[var(--bg-color)]/50 rounded-xl transition-all active:scale-95"><Minus size={20} /></button>
+              <button onClick={() => onPress("+")} className="flex items-center justify-center text-2xl font-light text-[var(--text-muted)] hover:bg-[var(--bg-color)]/50 rounded-xl transition-all active:scale-95"><Plus size={20} /></button>
+              <button onClick={() => onPress("%")} className="flex items-center justify-center text-xl font-light text-[var(--text-muted)] hover:bg-[var(--bg-color)]/50 rounded-xl transition-all active:scale-95"><Percent size={18} /></button>
+            </div>
+            <button onClick={() => onPress("=")} className="h-12 w-full bg-[var(--btn-equals)] rounded-xl flex items-center justify-center text-2xl font-light text-[var(--text-main)] hover:brightness-95 transition-all active:scale-[0.98]">
+              =
+            </button>
           </div>
         </div>
-        <div className="px-4 pb-8 pt-4 bg-[var(--bg-color)]">
-          <div className="flex h-14 bg-[var(--glass-item-bg)] rounded-full p-1.5 border border-[var(--glass-border)] shadow-2xl shadow-[var(--shadow-color)] mx-auto w-full max-w-[360px] gap-1">
-            {isEditing ? (
-              <button
-                onClick={() => onSubmit()}
-                className="flex-1 rounded-full text-sm font-black uppercase text-white bg-[var(--primary-color)] shadow-lg shadow-[var(--primary-color)]/20 transition-all"
+
+        {/* Date Switcher / Action Bar */}
+        <div className="mt-6 flex justify-center">
+          {isEditing ? (
+            <button
+              onClick={() => onSubmit()}
+              className="px-8 py-3 rounded-full text-sm font-black uppercase text-white bg-[var(--primary-color)] shadow-lg shadow-[var(--primary-color)]/20 transition-all active:scale-95 tracking-wider"
+            >
+              ✓ Сохранить изменения
+            </button>
+          ) : (
+            <div className="flex items-center bg-[var(--panel-bg)] rounded-full p-1 shadow-sm border border-[var(--glass-border)]">
+              <button 
+                onClick={handleYesterday}
+                className="px-6 py-2.5 text-xs font-bold tracking-wider text-[var(--text-muted)] rounded-full hover:bg-[var(--glass-item-bg)] transition-all uppercase"
               >
-                ✓ Сохранить изменения
+                Вчера
               </button>
-            ) : (
-              <>
-                <button
-                  onClick={handleYesterday}
-                  className="flex-[1] rounded-full text-[10px] font-bold uppercase text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--glass-item-bg)] transition-colors"
-                >
-                  Вчера
-                </button>
-                <button
-                  onClick={() => onSubmit()}
-                  className="flex-[2] rounded-full text-[11px] font-black uppercase text-white bg-[var(--success-color)] shadow-lg shadow-[var(--success-color)]/20 scale-[1.02] active:scale-[0.98] transition-all tracking-wider"
-                >
-                  Сегодня
-                </button>
-                <button
-                  onClick={() => setIsCalendarOpen(true)}
-                  className="flex-[1] rounded-full flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--glass-item-bg)] transition-colors relative"
-                >
-                  <CalendarDays size={18} />
-                </button>
-              </>
-            )}
-          </div>
+              <button 
+                onClick={() => onSubmit()}
+                className="px-6 py-2.5 bg-[var(--success-color)] text-white text-xs font-bold tracking-wider rounded-full shadow-sm transition-all uppercase active:scale-95"
+              >
+                Сегодня
+              </button>
+              <button 
+                onClick={() => setIsCalendarOpen(true)}
+                className="w-10 h-10 flex items-center justify-center text-[var(--text-muted)] rounded-full hover:bg-[var(--glass-item-bg)] transition-all ml-1"
+              >
+                <CalendarDays size={20} />
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

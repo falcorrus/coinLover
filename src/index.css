@@ -16,25 +16,29 @@
   --glass-border: rgba(255, 255, 255, 0.08);
   --glass-border-highlight: rgba(255, 255, 255, 0.15);
   --numpad-bg: #0a0a0a;
+  --panel-bg: #121212;
+  --btn-equals: rgba(109, 93, 252, 0.3);
   --shadow-color: rgba(0, 0, 0, 0.5);
   --pull-indicator: #334155;
 }
 
 :root.light {
-  /* Light mode - "Stitch Style" */
+  /* Light mode - "Snippet Style" */
   --bg-color: #FFFFFF;
-  --primary-color: #10B981;
+  --primary-color: #3b82f6;
   --danger-color: #f43f5e;
-  --success-color: #10b981;
-  --text-main: #0F172A;
-  --text-muted: #64748B;
-  --glass-bg: #F8FAFC;
+  --success-color: #60b98f;
+  --text-main: #1a1a1a;
+  --text-muted: #94a3b8;
+  --glass-bg: #FFFFFF;
   --glass-card-bg: #FFFFFF;
-  --glass-item-bg: #F1F5F9;
-  --glass-item-active: #E2E8F0;
-  --glass-border: #E2E8F0;
-  --glass-border-highlight: #CBD5E1;
-  --numpad-bg: #FFFFFF;
+  --glass-item-bg: #f1f3f5;
+  --glass-item-active: #e2e8f0;
+  --glass-border: #e2e8f0;
+  --glass-border-highlight: #cbd5e1;
+  --numpad-bg: #f8f9fa;
+  --panel-bg: #f1f3f5;
+  --btn-equals: #d1e7dd;
   --shadow-color: rgba(0, 0, 0, 0.05);
   --pull-indicator: #E2E8F0;
 }
