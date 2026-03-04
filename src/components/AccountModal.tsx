@@ -18,7 +18,7 @@ export const AccountModal: React.FC<Props> = ({ isOpen, account, onClose, onSave
   const [balance, setBalance] = React.useState("0");
   const [currency, setCurrency] = React.useState("USD");
   const [icon, setIcon] = React.useState("wallet");
-  const [color, setColor] = React.useState("#6d5dfc");
+  const [color, setColor] = React.useState("var(--primary-color)");
 
   React.useEffect(() => {
     if (isOpen) {
@@ -26,49 +26,49 @@ export const AccountModal: React.FC<Props> = ({ isOpen, account, onClose, onSave
       setBalance(account?.balance.toString() || "0");
       setCurrency(account?.currency || "USD");
       setIcon(account?.icon || "wallet");
-      setColor(account?.color || "#6d5dfc");
+      setColor(account?.color || "var(--primary-color)");
     }
   }, [isOpen, account]);
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[200] flex items-center justify-center p-6 animate-in fade-in duration-500">
-      <div className="glass-panel w-full max-w-sm p-8 flex flex-col gap-6 shadow-2xl animate-in zoom-in-95 duration-500 text-white text-left overflow-y-auto max-h-[90vh] hide-scrollbar">
-        <div className="flex justify-between items-center text-white">
-          <h3 className="text-lg font-bold uppercase text-white">{account ? "Изменить кошелек" : "Новый кошелек"}</h3>
-          <button onClick={onClose} className="p-2 -mr-2 text-white"><X size={24} /></button>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[200] flex items-center justify-center p-6 animate-in fade-in duration-500">
+      <div className="glass-panel w-full max-w-sm p-8 flex flex-col gap-6 shadow-2xl shadow-[var(--shadow-color)] animate-in zoom-in-95 duration-500 text-[var(--text-main)] text-left overflow-y-auto max-h-[90vh] hide-scrollbar">
+        <div className="flex justify-between items-center text-[var(--text-main)]">
+          <h3 className="text-lg font-bold uppercase text-[var(--text-main)]">{account ? "Изменить кошелек" : "Новый кошелек"}</h3>
+          <button onClick={onClose} className="p-2 -mr-2 text-[var(--text-main)]"><X size={24} /></button>
         </div>
 
-        <div className="flex flex-col gap-4 text-white">
-          <div className="flex flex-col gap-1.5 text-white">
-            <label className="text-[10px] font-bold text-slate-500 uppercase">Название</label>
+        <div className="flex flex-col gap-4 text-[var(--text-main)]">
+          <div className="flex flex-col gap-1.5 text-[var(--text-main)]">
+            <label className="text-[10px] font-bold text-[var(--text-muted)] uppercase">Название</label>
             <input
               type="text"
               value={name}
               onChange={e => setName(e.target.value)}
               placeholder="Напр. Личный"
-              className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none text-white w-full focus:border-[#6d5dfc]/50"
+              className="bg-[var(--glass-item-bg)] border border-[var(--glass-border)] rounded-xl px-4 py-3 outline-none text-[var(--text-main)] w-full focus:border-[var(--primary-color)]/50"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5 text-white">
-              <label className="text-[10px] font-bold text-slate-500 uppercase">Баланс</label>
+            <div className="flex flex-col gap-1.5 text-[var(--text-main)]">
+              <label className="text-[10px] font-bold text-[var(--text-muted)] uppercase">Баланс</label>
               <input
                 type="number"
                 value={balance}
                 onChange={e => setBalance(e.target.value)}
-                className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none text-white w-full"
+                className="bg-[var(--glass-item-bg)] border border-[var(--glass-border)] rounded-xl px-4 py-3 outline-none text-[var(--text-main)] w-full"
               />
             </div>
-            <div className="flex flex-col gap-1.5 text-white">
-              <label className="text-[10px] font-bold text-slate-500 uppercase">Валюта</label>
+            <div className="flex flex-col gap-1.5 text-[var(--text-main)]">
+              <label className="text-[10px] font-bold text-[var(--text-muted)] uppercase">Валюта</label>
               <input
                 type="text"
                 value={currency}
                 onChange={e => setCurrency(e.target.value.toUpperCase())}
-                className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none text-white w-full font-bold"
+                className="bg-[var(--glass-item-bg)] border border-[var(--glass-border)] rounded-xl px-4 py-3 outline-none text-[var(--text-main)] w-full font-bold"
               />
             </div>
           </div>
@@ -78,21 +78,21 @@ export const AccountModal: React.FC<Props> = ({ isOpen, account, onClose, onSave
               <button
                 key={curr}
                 onClick={() => setCurrency(curr)}
-                className={`px-3 py-1.5 rounded-lg text-[10px] font-black border transition-all duration-300 ${currency === curr ? "bg-white text-black border-white" : "bg-white/5 border-white/10 text-slate-400"}`}
+                className={`px-3 py-1.5 rounded-lg text-[10px] font-black border transition-all duration-300 ${currency === curr ? "bg-[var(--text-main)] text-[var(--bg-color)] border-[var(--text-main)]" : "bg-[var(--glass-item-bg)] border-[var(--glass-border)] text-[var(--text-muted)]"}`}
               >
                 {curr}
               </button>
             ))}
           </div>
 
-          <div className="flex flex-col gap-2 text-left text-white">
-            <label className="text-[10px] font-bold text-slate-500 uppercase">Иконка</label>
-            <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-1 text-white text-left">
+          <div className="flex flex-col gap-2 text-left text-[var(--text-main)]">
+            <label className="text-[10px] font-bold text-[var(--text-muted)] uppercase">Иконка</label>
+            <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-1 text-[var(--text-main)] text-left">
               {ACCOUNT_ICONS.map(i => (
                 <button
                   key={i}
                   onClick={() => setIcon(i)}
-                  className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border-2 transition-all duration-300 ${icon === i ? "border-[#6d5dfc] bg-[#6d5dfc]/10" : "border-white/5"}`}
+                  className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border-2 transition-all duration-300 ${icon === i ? "border-[var(--primary-color)] bg-[var(--primary-color)]/10" : "border-[var(--glass-border)]"}`}
                 >
                   {React.createElement(IconMap[i] || Wallet, { size: 20 })}
                 </button>
@@ -100,14 +100,14 @@ export const AccountModal: React.FC<Props> = ({ isOpen, account, onClose, onSave
             </div>
           </div>
 
-          <div className="flex flex-col gap-2 text-left text-white">
-            <label className="text-[10px] font-bold text-slate-500 uppercase text-left text-white">Цвет</label>
-            <div className="flex justify-between text-white">
+          <div className="flex flex-col gap-2 text-left text-[var(--text-main)]">
+            <label className="text-[10px] font-bold text-[var(--text-muted)] uppercase text-left text-[var(--text-main)]">Цвет</label>
+            <div className="flex justify-between text-[var(--text-main)]">
               {COLORS.map(c => (
                 <button
                   key={c}
                   onClick={() => setColor(c)}
-                  className={`w-8 h-8 rounded-full border-2 transition-all duration-300 ${color === c ? "border-white scale-110" : "border-transparent opacity-50"}`}
+                  className={`w-8 h-8 rounded-full border-2 transition-all duration-300 ${color === c ? "border-[var(--text-main)] scale-110" : "border-transparent opacity-50"}`}
                   style={{ backgroundColor: c }}
                 />
               ))}
@@ -115,15 +115,15 @@ export const AccountModal: React.FC<Props> = ({ isOpen, account, onClose, onSave
           </div>
         </div>
 
-        <div className="flex gap-3 mt-4 items-center text-left text-white">
+        <div className="flex gap-3 mt-4 items-center text-left text-[var(--text-main)]">
           {account && (
-            <button onClick={onDelete} className="w-12 h-12 rounded-full bg-white/5 border border-white/10 text-[#f43f5e] flex items-center justify-center text-left">
+            <button onClick={onDelete} className="w-12 h-12 rounded-full bg-[var(--glass-item-bg)] border border-[var(--glass-border)] text-[var(--danger-color)] flex items-center justify-center text-left">
               <Trash2 size={20} />
             </button>
           )}
           <button
             onClick={() => onSave(name, parseFloat(balance), currency, icon, color)}
-            className="flex-1 h-14 rounded-2xl bg-[#6d5dfc] text-white font-bold shadow-lg uppercase text-center"
+            className="flex-1 h-14 rounded-2xl bg-[var(--primary-color)] text-white font-bold shadow-lg shadow-[var(--primary-color)]/20 uppercase text-center"
           >
             СОХРАНИТЬ
           </button>

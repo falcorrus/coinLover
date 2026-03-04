@@ -125,7 +125,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
             return {
                 amount: `${isOutflow ? "-" : "+"}${amount} ${acc.currency}`,
                 usdAmount: usdAmount ? `${isOutflow ? "-" : "+"}$${usdAmount}` : null,
-                color: isOutflow ? "text-rose-500" : "text-emerald-500"
+                color: isOutflow ? "text-[var(--danger-color)]" : "text-[var(--success-color)]"
             };
         } else if (entityType === "category" || entityType === "tag") {
             // Category shows negative total logically, but we can just show the expense amount
@@ -152,7 +152,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                 return {
                     amount: `+${amount} ${currency}`,
                     usdAmount: usdAmount ? `+$${usdAmount}` : null,
-                    color: "text-emerald-500"
+                    color: "text-[var(--success-color)]"
                 };
             } else {
                 // Transfer: Neutral or Blue
@@ -161,7 +161,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                 return {
                     amount: `-${amount} ${currency}`,
                     usdAmount: usdAmount ? `-$${usdAmount}` : null,
-                    color: "text-slate-400"
+                    color: "text-[var(--text-muted)]"
                 };
             }
         } else {
@@ -171,38 +171,38 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
             return {
                 amount: `+${amount} ${currency}`,
                 usdAmount: usdAmount ? `+$${usdAmount}` : null,
-                color: "text-emerald-500"
+                color: "text-[var(--success-color)]"
             };
         }
     };
 
     const EntityIcon = entityType === "tag" ? Tag : (IconMap[entity.icon] || Wallet);
     const entityName = entity.name;
-    const entityColor = entity.color || "#6d5dfc";
+    const entityColor = entity.color || "var(--primary-color)";
 
     return (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-[200] flex flex-col items-center justify-end p-4 animate-in fade-in slide-in-from-bottom-10" onClick={onClose}>
-            <div className="glass-panel bg-[#0a0a0a]/90 w-full max-w-sm max-h-[80vh] flex flex-col overflow-hidden shadow-[0_32px_64px_-12px_rgba(0,0,0,0.8)]" onClick={e => e.stopPropagation()}>
-                <div className="flex justify-between items-center p-6 border-b border-white/5 shrink-0">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[200] flex flex-col items-center justify-end p-4 animate-in fade-in slide-in-from-bottom-10" onClick={onClose}>
+            <div className="glass-panel bg-[var(--bg-color)]/90 w-full max-w-sm max-h-[80vh] flex flex-col overflow-hidden shadow-2xl shadow-[var(--shadow-color)]" onClick={e => e.stopPropagation()}>
+                <div className="flex justify-between items-center p-6 border-b border-[var(--glass-border)] shrink-0">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-[0_0_15px_currentColor]" style={{ color: entityColor }}>
                             <EntityIcon size={20} />
                         </div>
                         <div className="flex flex-col">
-                            <h2 className="text-sm font-black text-white uppercase tracking-wider">{entityName}</h2>
-                            <span className="text-[10px] text-slate-500 uppercase tracking-widest">История</span>
+                            <h2 className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">{entityName}</h2>
+                            <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest">История</span>
                         </div>
                     </div>
-                    <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-slate-500 hover:text-white transition-colors">
+                    <button onClick={onClose} className="w-8 h-8 rounded-full bg-[var(--glass-item-bg)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors">
                         <X size={16} />
                     </button>
                 </div>
 
                 <div className="flex-1 overflow-y-auto hide-scrollbar p-6">
                     {sortedTransactions.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-40 text-slate-500 gap-2">
+                        <div className="flex flex-col items-center justify-center h-40 text-[var(--text-muted)] gap-2">
                             <span className="text-sm font-semibold">Нет записей</span>
-                            <span className="text-xs">Транзакции пока отсутствуют</span>
+                            <span className="text-xs opacity-60">Транзакции пока отсутствуют</span>
                         </div>
                     ) : (
                         <div className="flex flex-col gap-5">
@@ -226,32 +226,32 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                                         displayName = `${sourceAcc?.name || "?"} → ${destCat?.name || "?"}`;
                                     }
                                 }
-                                const displayColor = (item as any)?.color || "#6b7280";
+                                const displayColor = (item as any)?.color || "var(--text-muted)";
 
                                 return (
                                     <div
                                         key={tx.id}
-                                        className={`flex justify-between items-center bg-white/[0.02] p-3 -mx-3 rounded-2xl transition-colors ${onEditTransaction ? 'cursor-pointer hover:bg-white/[0.07] active:bg-white/[0.1]' : 'cursor-default hover:bg-white/[0.04]'}`}
+                                        className={`flex justify-between items-center bg-[var(--glass-item-bg)]/50 p-3 -mx-3 rounded-2xl transition-colors ${onEditTransaction ? 'cursor-pointer hover:bg-[var(--glass-item-active)] active:bg-[var(--glass-item-active)]' : 'cursor-default hover:bg-[var(--glass-item-bg)]'}`}
                                         onClick={() => onEditTransaction?.(tx)}
                                     >
                                         <div className="flex items-center gap-3">
                                             {/* Counterpart Icon */}
-                                            <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center relative shadow-inner shrink-0" style={{ color: displayColor }}>
+                                            <div className="w-10 h-10 rounded-full bg-[var(--glass-item-bg)] flex items-center justify-center relative shadow-inner shrink-0" style={{ color: displayColor }}>
                                                 <Icon size={18} />
 
                                                 {/* Tiny direction indicator for Account view transfers */}
                                                 {entityType === "account" && tx.type === "transfer" && (
-                                                    <div className={`absolute -bottom-1 -right-1 rounded-full p-0.5 border-2 border-[#050505] shadow-lg ${isOutflow ? "bg-rose-500 text-black" : "bg-emerald-500 text-black"}`}>
+                                                    <div className={`absolute -bottom-1 -right-1 rounded-full p-0.5 border-2 border-[var(--bg-color)] shadow-lg ${isOutflow ? "bg-[var(--danger-color)] text-black" : "bg-[var(--success-color)] text-black"}`}>
                                                         {isOutflow ? <ArrowUpRight size={10} strokeWidth={3} /> : <ArrowDownLeft size={10} strokeWidth={3} />}
                                                     </div>
                                                 )}
                                                 {entityType === "account" && tx.type === "expense" && (
-                                                    <div className="absolute -bottom-1 -right-1 rounded-full bg-rose-500 text-black p-0.5 border-2 border-[#050505] shadow-lg">
+                                                    <div className="absolute -bottom-1 -right-1 rounded-full bg-[var(--danger-color)] text-black p-0.5 border-2 border-[var(--bg-color)] shadow-lg">
                                                         <ArrowUpRight size={10} strokeWidth={3} />
                                                     </div>
                                                 )}
                                                 {entityType === "account" && tx.type === "income" && (
-                                                    <div className="absolute -bottom-1 -right-1 rounded-full bg-emerald-500 text-black p-0.5 border-2 border-[#050505] shadow-lg">
+                                                    <div className="absolute -bottom-1 -right-1 rounded-full bg-[var(--success-color)] text-black p-0.5 border-2 border-[var(--bg-color)] shadow-lg">
                                                         <ArrowDownLeft size={10} strokeWidth={3} />
                                                     </div>
                                                 )}
@@ -259,12 +259,12 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
 
                                             <div className="flex flex-col overflow-hidden max-w-[150px]">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="text-sm font-semibold text-white truncate">{displayName}</span>
-                                                    {tx.tag && <span className="text-[9px] px-1.5 py-0.5 bg-white/5 rounded text-slate-400 font-bold uppercase shrink-0">{tx.tag}</span>}
-                                                    {tx.type === "transfer" && <span className="text-[9px] px-1.5 py-0.5 bg-[#6d5dfc]/20 rounded text-[#6d5dfc] font-bold uppercase shrink-0">Трансфер</span>}
+                                                    <span className="text-sm font-semibold text-[var(--text-main)] truncate">{displayName}</span>
+                                                    {tx.tag && <span className="text-[9px] px-1.5 py-0.5 bg-[var(--glass-item-bg)] rounded text-[var(--text-muted)] font-bold uppercase shrink-0">{tx.tag}</span>}
+                                                    {tx.type === "transfer" && <span className="text-[9px] px-1.5 py-0.5 bg-[var(--primary-color)]/20 rounded text-[var(--primary-color)] font-bold uppercase shrink-0">Трансфер</span>}
                                                 </div>
-                                                <span className="text-[10px] text-slate-500 uppercase font-medium">{new Date(tx.date.replace(/-/g, '/').replace('T', ' ')).toLocaleDateString()}</span>
-                                                {tx.comment && <span className="text-xs text-slate-400 mt-1 italic truncate">{tx.comment}</span>}
+                                                <span className="text-[10px] text-[var(--text-muted)] uppercase font-medium">{new Date(tx.date.replace(/-/g, '/').replace('T', ' ')).toLocaleDateString()}</span>
+                                                {tx.comment && <span className="text-xs text-[var(--text-muted)] mt-1 italic truncate opacity-70">{tx.comment}</span>}
                                             </div>
                                         </div>
 
@@ -273,12 +273,12 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                                                 {amountInfo.amount}
                                             </span>
                                             {amountInfo.usdAmount && !amountInfo.amount.includes("USD") && (
-                                                <span className="text-[10px] font-bold text-slate-500 opacity-60">
+                                                <span className="text-[10px] font-bold text-[var(--text-muted)] opacity-60">
                                                     {amountInfo.usdAmount}
                                                 </span>
                                             )}
                                             {onEditTransaction && (
-                                                <span className="text-[9px] text-slate-600 flex items-center gap-0.5 font-bold uppercase">
+                                                <span className="text-[9px] text-[var(--text-muted)] flex items-center gap-0.5 font-bold uppercase opacity-60">
                                                     <Pencil size={9} /> ред.
                                                 </span>
                                             )}

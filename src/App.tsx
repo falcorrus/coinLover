@@ -49,6 +49,33 @@ export default function App() {
   } = useFinance();
 
   const [isSplashVisible, setIsSplashVisible] = React.useState(true);
+  const isDemo = window.localStorage.getItem("coinlover_demo") !== "false";
+
+  React.useEffect(() => {
+    // Check URL parameters or hash to switch modes
+    const params = new URLSearchParams(window.location.search);
+    const hash = window.location.hash.toLowerCase();
+
+    // Links to enter Demo (Redundant as it is default, but keeps it explicit)
+    const setDemoParams = params.get("demo") === "1" || params.get("mode") === "demo" || hash === "#demo";
+
+    // Links to enter Real mode (Secret entrance)
+    const setRealParams = params.get("demo") === "real" || params.get("mode") === "real" || hash === "#real" || params.get("key") === "99";
+
+    const isCurrentlyDemo = window.localStorage.getItem("coinlover_demo") !== "false";
+
+    if (setDemoParams && !isCurrentlyDemo) {
+      window.localStorage.setItem("coinlover_demo", "true");
+      window.location.href = window.location.origin + window.location.pathname;
+      return;
+    }
+
+    if (setRealParams && isCurrentlyDemo) {
+      window.localStorage.setItem("coinlover_demo", "false");
+      window.location.href = window.location.origin + window.location.pathname;
+      return;
+    }
+  }, []);
 
   React.useEffect(() => {
     RatesService.syncRatesInBackground();
@@ -80,6 +107,7 @@ export default function App() {
   const [overId, setOverId] = React.useState<string | null>(null);
 
   const sortingTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const demoPressTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [accountModal, setAccountModal] = React.useState<{ isOpen: boolean; account: Account | null }>({
     isOpen: false, account: null
@@ -105,6 +133,24 @@ export default function App() {
   const [isSettingsMenuOpen, setIsSettingsMenuOpen] = React.useState(false);
 
   const [analyticsModal, setAnalyticsModal] = React.useState({ isOpen: false });
+
+  const [theme, setTheme] = React.useState<"light" | "dark">(() => {
+    return (localStorage.getItem("coinlover_theme") as "light" | "dark") || "dark";
+  });
+
+  React.useEffect(() => {
+    if (theme === "light") {
+      document.documentElement.classList.add("light");
+    } else {
+      document.documentElement.classList.remove("light");
+    }
+    localStorage.setItem("coinlover_theme", theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === "light" ? "dark" : "light");
+    if (navigator.vibrate) navigator.vibrate(50);
+  };
 
   const [numpad, setNumpad] = React.useState<NumpadData>({
     isOpen: false, type: "expense", source: null, destination: null,
@@ -357,12 +403,12 @@ export default function App() {
       : categories.find(c => c.id === activeDragId);
 
   return (
-    <div className="min-h-screen flex flex-col max-w-md mx-auto relative shadow-2xl overflow-hidden bg-[#050505] text-white font-sans select-none text-left">
-      <style>{`body { overflow: hidden; overscroll-behavior: none; } * { -webkit-tap-highlight-color: transparent; }`}</style>
+    <div className="min-h-screen flex flex-col max-w-md mx-auto relative shadow-2xl overflow-hidden bg-[var(--bg-color)] text-[var(--text-main)] font-sans select-none text-left transition-colors duration-300">
+      <style>{`body { overflow: hidden; overscroll-behavior: none; background: var(--bg-color); } * { -webkit-tap-highlight-color: transparent; }`}</style>
 
       {/* Splash Screen (Vector Mode) */}
       {isSplashVisible && (
-        <div className="fixed inset-0 z-[1000] bg-[#050505] flex items-center justify-center animate-in fade-in duration-500">
+        <div className="fixed inset-0 z-[1000] bg-[var(--bg-color)] flex items-center justify-center animate-in fade-in duration-500">
           <div className="relative animate-pulse flex flex-col items-center gap-6">
             <div className="relative w-32 h-32 rounded-full bg-gradient-to-br from-amber-300 via-amber-500 to-amber-600 shadow-[0_0_50px_rgba(217,119,6,0.3)] flex items-center justify-center border-4 border-amber-200/20">
               {/* Coin Reflection Effect */}
@@ -396,12 +442,33 @@ export default function App() {
       {/* Header */}
       <header className="px-6 py-8 flex flex-col gap-2 text-center shrink-0">
         <div className="flex justify-between items-center mb-2">
-          <button onClick={toggleIncome} className="glass-icon-btn w-10 h-10 hover:bg-white/10 transition-colors">
+          <button
+            onClick={toggleIncome}
+            onPointerDown={() => {
+              demoPressTimerRef.current = setTimeout(() => {
+                if (navigator.vibrate) navigator.vibrate(100);
+                const nextDemo = !isDemo;
+                window.localStorage.setItem("coinlover_demo", nextDemo.toString());
+                window.location.reload();
+              }, 700);
+            }}
+            onPointerUp={() => { if (demoPressTimerRef.current) clearTimeout(demoPressTimerRef.current); }}
+            onPointerLeave={() => { if (demoPressTimerRef.current) clearTimeout(demoPressTimerRef.current); }}
+            className="glass-icon-btn w-10 h-10 hover:bg-white/10 transition-colors relative"
+          >
             <CircleDollarSign size={20} className="text-[#10b981]" />
+            {isDemo && (
+              <span className="absolute left-12 top-1/2 -translate-y-1/2 bg-amber-500/10 border border-amber-500/20 text-amber-500 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-[0.1em] animate-pulse whitespace-nowrap shadow-[0_0_15px_rgba(245,158,11,0.1)]">
+                Demo
+              </span>
+            )}
           </button>
-          <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] pt-1">Total Balance</p>
+          <div className="flex flex-col items-center gap-0.5">
+            <div className="pull-indicator mb-1.5"></div>
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Total Balance</p>
+          </div>
           <div className="relative">
-            <button onClick={() => setIsSettingsMenuOpen(!isSettingsMenuOpen)} className="glass-icon-btn w-10 h-10 text-slate-500 hover:text-white transition-colors">
+            <button onClick={() => setIsSettingsMenuOpen(!isSettingsMenuOpen)} className="glass-icon-btn w-10 h-10 text-slate-500 hover:text-[var(--text-main)] transition-colors">
               <Settings size={20} />
             </button>
             {isSettingsMenuOpen && (
@@ -415,14 +482,28 @@ export default function App() {
                     }}
                     className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-white/10 transition-colors text-left"
                   >
-                    <List size={16} className="text-[#6d5dfc]" />
-                    <span className="text-sm font-black text-white uppercase tracking-wider">Лента</span>
+                    <List size={16} className="text-[var(--primary-color)]" />
+                    <span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Лента</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setIsSettingsMenuOpen(false);
+                      toggleTheme();
+                    }}
+                    className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-white/10 transition-colors text-left"
+                  >
+                    {theme === "dark" ? <TrendingUp size={16} className="text-[#10b981]" /> : <PieChart size={16} className="text-[#6d5dfc]" />}
+                    <span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">
+                      {theme === "dark" ? "Light Mode" : "Dark Mode"}
+                    </span>
                   </button>
                 </div>
               </>
             )}
           </div>
         </div>
+
         <button
           onClick={() => setPillMode(p => p === "expense" ? "balance" : "expense")}
           className="mt-2 mx-auto px-4 py-1.5 rounded-full bg-white/5 border border-white/10 flex items-center gap-2 w-fit hover:bg-white/10 transition-colors cursor-pointer"

@@ -78,15 +78,21 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose,
 
         loadData();
 
-        // Background pre-fetch previous month for faster swiping backward
-        const prevD = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
-        const prevKey = `${prevD.getFullYear()}-${String(prevD.getMonth() + 1).padStart(2, '0')}`;
-        if (!globalAnalyticsCache.has(prevKey)) {
-            googleSheetsService.fetchMonthData(prevKey).then(data => {
-                if (data && data.transactions) {
-                    globalAnalyticsCache.set(prevKey, data.transactions);
-                }
-            }).catch(() => { });
+        // Background pre-fetch previous 6 months for faster swiping backward
+        for (let i = 1; i <= 6; i++) {
+            const d = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+            const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            if (!globalAnalyticsCache.has(key)) {
+                setTimeout(() => {
+                    if (!globalAnalyticsCache.has(key)) {
+                        googleSheetsService.fetchMonthData(key).then(data => {
+                            if (data && data.transactions) {
+                                globalAnalyticsCache.set(key, data.transactions);
+                            }
+                        }).catch(() => { });
+                    }
+                }, i * 400); // Stagger requests by 400ms to avoid Google API rate limits
+            }
         }
 
         return () => {
@@ -142,7 +148,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose,
 
         tagMap.forEach((amount, tagName) => {
             const percent = totalUSD > 0 ? (amount / totalUSD) * 100 : 0;
-            listItems.push({ id: tagName, name: tagName, icon: Tag, color: "#6d5dfc", amount, percent });
+            listItems.push({ id: tagName, name: tagName, icon: Tag, color: "var(--primary-color)", amount, percent });
         });
     }
 
@@ -161,51 +167,51 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose,
     };
 
     return (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-[200] flex flex-col items-center justify-center p-4 animate-in fade-in" onClick={onClose}>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[200] flex flex-col items-center justify-center p-4 animate-in fade-in" onClick={onClose}>
             <div
-                className="glass-panel bg-[#0a0a0a]/90 w-full max-w-sm h-[80vh] flex flex-col overflow-hidden relative shadow-[0_32px_64px_-12px_rgba(0,0,0,0.8)]"
+                className="glass-panel bg-[var(--bg-color)]/90 w-full max-w-sm h-[80vh] flex flex-col overflow-hidden relative shadow-2xl shadow-[var(--shadow-color)]"
                 onClick={e => e.stopPropagation()}
                 onTouchStart={onTouchStart}
                 onTouchEnd={onTouchEnd}
             >
                 {/* Header */}
-                <div className="flex justify-between items-center p-6 border-b border-white/5 shrink-0">
+                <div className="flex justify-between items-center p-6 border-b border-[var(--glass-border)] shrink-0">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-[#6d5dfc]/20 text-[#6d5dfc] flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(109,93,252,0.5)]">
+                        <div className="w-10 h-10 rounded-full bg-[var(--primary-color)]/20 text-[var(--primary-color)] flex items-center justify-center shrink-0 shadow-[0_0_15px_var(--primary-color)]">
                             <PieChart size={20} />
                         </div>
                         <div className="flex flex-col">
-                            <h2 className="text-sm font-black text-white uppercase tracking-wider">Аналитика</h2>
-                            <span className="text-[10px] text-slate-500 uppercase tracking-widest leading-none mt-1">Расходы за период</span>
+                            <h2 className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Аналитика</h2>
+                            <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest leading-none mt-1">Расходы за период</span>
                         </div>
                     </div>
-                    <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-slate-500 hover:text-white transition-colors">
+                    <button onClick={onClose} className="w-8 h-8 rounded-full bg-[var(--glass-item-bg)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors">
                         <X size={16} />
                     </button>
                 </div>
 
                 {/* Month Selector */}
-                <div className="flex justify-between items-center px-4 py-3 bg-white/[0.02] shrink-0 border-b border-white/5">
-                    <button onClick={prevMonth} className="p-2 text-slate-400 hover:text-white transition-colors">
+                <div className="flex justify-between items-center px-4 py-3 bg-[var(--glass-item-bg)]/50 shrink-0 border-b border-[var(--glass-border)]">
+                    <button onClick={prevMonth} className="p-2 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors">
                         <ChevronLeft size={20} />
                     </button>
-                    <span className="text-xs font-bold text-white uppercase tracking-widest">{monthName}</span>
-                    <button onClick={nextMonth} className="p-2 text-slate-400 hover:text-white transition-colors">
+                    <span className="text-xs font-bold text-[var(--text-main)] uppercase tracking-widest">{monthName}</span>
+                    <button onClick={nextMonth} className="p-2 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors">
                         <ChevronRight size={20} />
                     </button>
                 </div>
 
                 {/* Tabs */}
-                <div className="flex gap-2 p-4 shrink-0 border-b border-white/5">
+                <div className="flex gap-2 p-4 shrink-0 border-b border-[var(--glass-border)]">
                     <button
                         onClick={() => setTab("categories")}
-                        className={`flex-1 py-2 text-xs font-bold rounded-xl transition-colors ${tab === "categories" ? "bg-white/10 text-white" : "text-slate-500 hover:text-white hover:bg-white/5"}`}
+                        className={`flex-1 py-2 text-xs font-bold rounded-xl transition-colors ${tab === "categories" ? "bg-[var(--glass-item-active)] text-[var(--text-main)]" : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--glass-item-bg)]"}`}
                     >
                         КАТЕГОРИИ
                     </button>
                     <button
                         onClick={() => setTab("tags")}
-                        className={`flex-1 py-2 text-xs font-bold rounded-xl transition-colors ${tab === "tags" ? "bg-white/10 text-white" : "text-slate-500 hover:text-white hover:bg-white/5"}`}
+                        className={`flex-1 py-2 text-xs font-bold rounded-xl transition-colors ${tab === "tags" ? "bg-[var(--glass-item-active)] text-[var(--text-main)]" : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--glass-item-bg)]"}`}
                     >
                         ТЕГИ
                     </button>
@@ -213,8 +219,8 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose,
 
                 {/* Total Summary */}
                 <div className="px-6 py-4 shrink-0 flex flex-col items-center">
-                    <span className="text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1">Всего расходов</span>
-                    <span className="text-3xl font-black text-white">
+                    <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] tracking-widest mb-1">Всего расходов</span>
+                    <span className="text-3xl font-black text-[var(--text-main)]">
                         ${totalUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                 </div>
@@ -222,7 +228,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose,
                 {/* Content List */}
                 <div className="flex-1 overflow-y-auto hide-scrollbar px-6 pb-6 relative">
                     {listItems.length === 0 && !isLoading ? (
-                        <div className="absolute inset-0 flex items-center justify-center text-slate-500 text-xs uppercase font-bold tracking-widest">
+                        <div className="absolute inset-0 flex items-center justify-center text-[var(--text-muted)] text-xs uppercase font-bold tracking-widest">
                             Нет данных
                         </div>
                     ) : (
@@ -230,7 +236,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose,
                             {listItems.map(item => (
                                 <div
                                     key={item.id}
-                                    className="flex flex-col gap-1.5 cursor-pointer hover:bg-white/5 p-2 rounded-xl transition-colors -mx-2"
+                                    className="flex flex-col gap-1.5 cursor-pointer hover:bg-[var(--glass-item-bg)] p-2 rounded-xl transition-colors -mx-2"
                                     onClick={() => {
                                         if (onItemClick) {
                                             onItemClick(
@@ -243,19 +249,19 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose,
                                 >
                                     <div className="flex justify-between items-center">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-inner text-white bg-white/5" style={{ color: item.color }}>
+                                            <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-inner text-[var(--text-main)] bg-[var(--glass-item-bg)]" style={{ color: item.color }}>
                                                 <item.icon size={14} />
                                             </div>
-                                            <span className="text-sm font-semibold text-white">{item.name}</span>
+                                            <span className="text-sm font-semibold text-[var(--text-main)]">{item.name}</span>
                                         </div>
                                         <div className="flex flex-col items-end">
-                                            <span className="text-sm font-bold text-white">
+                                            <span className="text-sm font-bold text-[var(--text-main)]">
                                                 ${item.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                             </span>
-                                            <span className="text-[10px] font-bold text-slate-500">{item.percent.toFixed(1)}%</span>
+                                            <span className="text-[10px] font-bold text-[var(--text-muted)]">{item.percent.toFixed(1)}%</span>
                                         </div>
                                     </div>
-                                    <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
+                                    <div className="w-full bg-[var(--glass-item-bg)] h-1.5 rounded-full overflow-hidden">
                                         <div className="h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${item.percent}%`, backgroundColor: item.color }} />
                                     </div>
                                 </div>
@@ -266,11 +272,11 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose,
 
                 {/* Loading Overlay */}
                 {isLoading && (
-                    <div className="absolute inset-0 bg-[#050505]/60 backdrop-blur-sm z-10 flex flex-col items-center justify-center animate-in fade-in">
+                    <div className="absolute inset-0 bg-[var(--bg-color)]/60 backdrop-blur-sm z-10 flex flex-col items-center justify-center animate-in fade-in">
                         <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500 shadow-[0_0_40px_rgba(245,158,11,0.2)] mb-4">
                             <RefreshCcw size={28} className="animate-spin" />
                         </div>
-                        <span className="text-xs font-black text-white uppercase tracking-widest animate-pulse">Загружаю данные...</span>
+                        <span className="text-xs font-black text-[var(--text-main)] uppercase tracking-widest animate-pulse">Загружаю данные...</span>
                     </div>
                 )}
             </div>

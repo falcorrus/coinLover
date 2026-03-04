@@ -1,10 +1,34 @@
 function doGet(e) {
   try {
+    const isDemo = e && e.parameter && e.parameter.demo === 'true';
+    const configSheetName = isDemo ? "Configs-demo" : "Configs";
+    const txSheetName = isDemo ? "Transactions-demo" : "Transactions";
     const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = ss.getSheetByName("Configs");
+    let sheet = ss.getSheetByName(configSheetName);
     
     if (!sheet) {
-      return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "Configs sheet not found" })).setMimeType(ContentService.MimeType.JSON);
+      if (isDemo) {
+        // Auto-create demo sheets by copying existing ones
+        const origConfig = ss.getSheetByName("Configs");
+        if (origConfig) {
+          sheet = origConfig.copyTo(ss);
+          sheet.setName(configSheetName);
+        } else {
+          sheet = ss.insertSheet(configSheetName);
+        }
+        
+        if (!ss.getSheetByName(txSheetName)) {
+          const origTx = ss.getSheetByName("Transactions");
+          if (origTx) {
+            const txSheet = origTx.copyTo(ss);
+            txSheet.setName(txSheetName);
+          } else {
+            ss.insertSheet(txSheetName);
+          }
+        }
+      } else {
+        return ContentService.createTextOutput(JSON.stringify({ status: "error", message: configSheetName + " sheet not found" })).setMimeType(ContentService.MimeType.JSON);
+      }
     }
     
     const rows = sheet.getDataRange().getValues();
@@ -84,7 +108,7 @@ function doGet(e) {
 
     // === Read current month transactions ===
     try {
-      const txSheet = ss.getSheetByName("Transactions");
+      const txSheet = ss.getSheetByName(txSheetName);
       if (txSheet && txSheet.getLastRow() > 1) {
         const txData = txSheet.getDataRange().getValues();
         const headers = txData[0].map(h => String(h).trim());
@@ -200,6 +224,9 @@ function doGet(e) {
 function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents);
+    const isDemo = data.demo === true;
+    const configSheetName = isDemo ? "Configs-demo" : "Configs";
+    const txSheetName = isDemo ? "Transactions-demo" : "Transactions";
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     
     // Обработка синхронизации настроек (Configs)
@@ -209,7 +236,7 @@ function doPost(e) {
         return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "Refusing to save empty configuration" })).setMimeType(ContentService.MimeType.JSON);
       }
 
-      let sheet = ss.getSheetByName("Configs") || ss.insertSheet("Configs");
+      let sheet = ss.getSheetByName(configSheetName) || ss.insertSheet(configSheetName);
       sheet.clear();
 
       const rows = [];
@@ -281,7 +308,7 @@ function doPost(e) {
     
     // Обработка транзакций (Transactions)
     if (data.action === "addTransaction") {
-      let sheet = ss.getSheetByName("Transactions") || ss.insertSheet("Transactions");
+      let sheet = ss.getSheetByName(txSheetName) || ss.insertSheet(txSheetName);
 
       const baseHeaders = ["Date", "Type", "Source", "Destination", "Tag", "Amount", "Amount USD", "Target Amount", "Target USD", "Comment"];
 
@@ -325,7 +352,7 @@ function doPost(e) {
     
     // Обновление существующей транзакции в Transactions
     if (data.action === "updateTransaction") {
-      const sheet = ss.getSheetByName("Transactions");
+      const sheet = ss.getSheetByName(txSheetName);
       if (!sheet || sheet.getLastRow() <= 1) {
         return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "No transactions found" })).setMimeType(ContentService.MimeType.JSON);
       }
@@ -389,7 +416,7 @@ function doPost(e) {
 
     // Удаление транзакции
     if (data.action === "deleteTransaction") {
-      const sheet = ss.getSheetByName("Transactions");
+      const sheet = ss.getSheetByName(txSheetName);
       if (!sheet || sheet.getLastRow() <= 1) {
         return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "No transactions found" })).setMimeType(ContentService.MimeType.JSON);
       }

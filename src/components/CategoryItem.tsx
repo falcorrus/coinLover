@@ -115,8 +115,8 @@ export const CategoryItem: React.FC<Props> = ({
         style={{ touchAction: "none" }}
         className={`w-[64px] h-[64px] rounded-[32px] flex items-center justify-center transition-all duration-300 pointer-events-none ${isDragging ? "grabbed-elevation" :
           isPressing ? "scale-90 brightness-75" : ""
-          } ${isTarget ? "coin-target-glow bg-white/20 shadow-[0_0_20px_rgba(255,255,255,0.2)]" : "bg-gradient-to-br from-white/10 to-white/[0.02] border border-white/5"
-          } ${isSortingMode && isDragging ? "shadow-2xl border-[#6d5dfc] ring-4 ring-[#6d5dfc]/20" : ""}`}
+          } ${isTarget ? "coin-target-glow shadow-[0_0_20px_var(--shadow-color)]" : "bg-gradient-to-br from-[var(--glass-border-highlight)] to-[var(--glass-item-bg)] border border-[var(--glass-border)]"
+          } ${isSortingMode && isDragging ? "shadow-2xl border-[var(--primary-color)] ring-4 ring-[var(--primary-color)]" : ""}`}
       >
         <Icon size={26} color={isTarget ? "#fff" : category.color} />
       </div>

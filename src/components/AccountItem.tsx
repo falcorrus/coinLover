@@ -121,15 +121,15 @@ export const AccountItem: React.FC<Props> = ({
       <div
         style={{ touchAction: "none" }}
         className={`draggable-coin transition-all duration-300 pointer-events-none ${isDragging ? "grabbed-elevation" :
-          isPressing ? "scale-90 brightness-75 border-white/40" : ""
+          isPressing ? "scale-90 brightness-75 border-[var(--glass-border-highlight)]" : ""
           } ${(isTargetOver || isIncomeTarget || isOver) ? "coin-target-glow" : ""
-          } ${isSortingMode && isDragging ? "shadow-2xl border-[#6d5dfc] ring-4 ring-[#6d5dfc]/20" : ""}`}
+          } ${isSortingMode && isDragging ? "shadow-2xl shadow-[var(--shadow-color)] border-[var(--primary-color)] ring-4 ring-[var(--primary-color)]/20" : ""}`}
       >
-        <Icon size={26} color={(isTargetOver || isIncomeTarget || isOver) ? "#fff" : account.color} />
+        <Icon size={26} color={(isTargetOver || isIncomeTarget || isOver) ? "var(--text-main)" : account.color} />
       </div>
       <div className="flex flex-col items-center text-center leading-tight pointer-events-none select-none">
-        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">{account.name}</span>
-        <span className="text-[13px] font-bold text-white">
+        <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-0.5">{account.name}</span>
+        <span className="text-[13px] font-bold text-[var(--text-main)]">
           {account.balance.toLocaleString()} <span className="text-[10px] opacity-50">{account.currency}</span>
         </span>
       </div>

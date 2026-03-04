@@ -5,7 +5,9 @@ import { SyncPayload } from "../types";
 export const googleSheetsService = {
   async fetchSettings(): Promise<any> {
     try {
-      const response = await fetch(GOOGLE_SCRIPT_URL);
+      const isDemo = window.localStorage.getItem("coinlover_demo") !== "false";
+      const url = isDemo ? `${GOOGLE_SCRIPT_URL}?demo=true` : GOOGLE_SCRIPT_URL;
+      const response = await fetch(url);
       const result = await response.json();
       if (result.status === "success") return result.data;
       throw new Error(result.message);
@@ -17,7 +19,8 @@ export const googleSheetsService = {
 
   async fetchMonthData(month: string): Promise<any> {
     try {
-      const url = `${GOOGLE_SCRIPT_URL}?month=${month}`;
+      const isDemo = window.localStorage.getItem("coinlover_demo") !== "false";
+      const url = `${GOOGLE_SCRIPT_URL}?month=${month}${isDemo ? '&demo=true' : ''}`;
       const response = await fetch(url);
       const result = await response.json();
       if (result.status === "success") return result.data;
@@ -30,11 +33,13 @@ export const googleSheetsService = {
 
   async syncToSheets(data: SyncPayload): Promise<boolean> {
     try {
+      const isDemo = window.localStorage.getItem("coinlover_demo") !== "false";
+      const payload = { ...data, demo: isDemo };
       await fetch(GOOGLE_SCRIPT_URL, {
         method: "POST",
         mode: "no-cors",
         headers: { "Content-Type": "text/plain" },
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       });
       return true;
     } catch (error) {

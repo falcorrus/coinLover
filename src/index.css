@@ -2,6 +2,7 @@
 @import "tailwindcss";
 
 :root {
+  /* Dark mode (default) - "Linear Style" */
   --bg-color: #050505;
   --primary-color: #6d5dfc;
   --danger-color: #f43f5e;
@@ -9,8 +10,33 @@
   --text-main: #ffffff;
   --text-muted: rgba(255, 255, 255, 0.6);
   --glass-bg: rgba(255, 255, 255, 0.07);
+  --glass-card-bg: rgba(255, 255, 255, 0.04);
+  --glass-item-bg: rgba(255, 255, 255, 0.03);
+  --glass-item-active: rgba(255, 255, 255, 0.06);
   --glass-border: rgba(255, 255, 255, 0.08);
   --glass-border-highlight: rgba(255, 255, 255, 0.15);
+  --numpad-bg: #0a0a0a;
+  --shadow-color: rgba(0, 0, 0, 0.5);
+  --pull-indicator: #334155;
+}
+
+:root.light {
+  /* Light mode - "Stitch Style" */
+  --bg-color: #FFFFFF;
+  --primary-color: #10B981;
+  --danger-color: #f43f5e;
+  --success-color: #10b981;
+  --text-main: #0F172A;
+  --text-muted: #64748B;
+  --glass-bg: #F8FAFC;
+  --glass-card-bg: #FFFFFF;
+  --glass-item-bg: #F1F5F9;
+  --glass-item-active: #E2E8F0;
+  --glass-border: #E2E8F0;
+  --glass-border-highlight: #CBD5E1;
+  --numpad-bg: #FFFFFF;
+  --shadow-color: rgba(0, 0, 0, 0.05);
+  --pull-indicator: #E2E8F0;
 }
 
 body {
@@ -21,6 +47,7 @@ body {
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
   user-select: none;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Glassmorphism Classes */
@@ -30,18 +57,20 @@ body {
   -webkit-backdrop-filter: blur(30px);
   border: 1px solid var(--glass-border);
   border-radius: 28px;
+  box-shadow: 0 4px 20px -2px var(--shadow-color);
 }
 
 .glass-card {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--glass-card-bg);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--glass-border);
   border-radius: 20px;
+  box-shadow: 0 2px 10px var(--shadow-color);
 }
 
 .glass-item {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--glass-item-bg);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border: 1px solid var(--glass-border);
@@ -51,22 +80,23 @@ body {
 
 .glass-item:active {
   transform: scale(0.95);
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--glass-item-active);
 }
 
 .glass-icon-btn {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--glass-item-bg);
   border: 1px solid var(--glass-border);
   border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
+  color: var(--text-main);
 }
 
 .glass-icon-btn:active {
   transform: scale(0.92);
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--glass-item-active);
 }
 
 .hide-scrollbar::-webkit-scrollbar {
@@ -86,11 +116,11 @@ body {
 }
 
 .numpad-sheet {
-  background: #0a0a0a;
+  background: var(--numpad-bg);
   border-top: 1px solid var(--glass-border);
   border-top-left-radius: 32px;
   border-top-right-radius: 32px;
-  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 -10px 40px var(--shadow-color);
 }
 
 .numpad-btn {
@@ -103,7 +133,7 @@ body {
 }
 
 .numpad-btn:active {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--glass-item-active);
 }
 
 .numpad-action {
@@ -123,11 +153,11 @@ body {
   width: 64px;
   height: 64px;
   border-radius: 32px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02));
+  background: linear-gradient(135deg, var(--glass-border-highlight), var(--glass-item-bg));
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border: 1px solid var(--glass-border-highlight);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 32px var(--shadow-color);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -139,9 +169,9 @@ body {
 }
 
 .coin-target-glow {
-  background: rgba(255, 255, 255, 0.2) !important;
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.2) !important;
-  border-color: rgba(255, 255, 255, 0.4) !important;
+  background: var(--glass-border-highlight) !important;
+  box-shadow: 0 0 20px var(--glass-border-highlight) !important;
+  border-color: var(--text-muted) !important;
   transform: scale(1.10) !important;
   transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, background 0.25s ease !important;
 }
@@ -149,8 +179,15 @@ body {
 /* Premium iOS-style Grab effect */
 .grabbed-elevation {
   transform: scale(1.1);
-  box-shadow: 0 16px 32px -8px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 16px 32px -8px var(--shadow-color);
   z-index: 9999;
   filter: brightness(1.1);
   transition: transform 0.2s cubic-bezier(0.2, 0, 0.2, 1);
+}
+
+.pull-indicator {
+  width: 40px;
+  height: 4px;
+  background-color: var(--pull-indicator);
+  border-radius: 2px;
 }
