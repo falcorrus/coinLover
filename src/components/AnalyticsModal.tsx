@@ -161,9 +161,9 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose,
     };
 
     return (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[200] flex flex-col items-center justify-center p-4 animate-in fade-in" onClick={onClose}>
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-[200] flex flex-col items-center justify-center p-4 animate-in fade-in" onClick={onClose}>
             <div
-                className="glass-panel w-full max-w-sm h-[80vh] flex flex-col overflow-hidden relative"
+                className="glass-panel bg-[#0a0a0a]/90 w-full max-w-sm h-[80vh] flex flex-col overflow-hidden relative shadow-[0_32px_64px_-12px_rgba(0,0,0,0.8)]"
                 onClick={e => e.stopPropagation()}
                 onTouchStart={onTouchStart}
                 onTouchEnd={onTouchEnd}
