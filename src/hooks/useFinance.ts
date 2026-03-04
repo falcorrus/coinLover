@@ -439,6 +439,7 @@ export const useFinance = () => {
     pullSettings,
     checkConflicts,
     conflictData,
+    setConflictData,
     updateLocalFromRemote,
     pushSettings: () => pushSettings(accounts, categories, incomes)
   };

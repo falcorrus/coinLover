@@ -19,9 +19,15 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose,
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [tab, setTab] = useState<"categories" | "tags">("categories");
+    const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>(null);
 
     // Swipe handlers for changing month
     const touchStartX = React.useRef(0);
+
+    const toggleCategory = (id: string) => {
+        setExpandedCategoryId(expandedCategoryId === id ? null : id);
+        if (navigator.vibrate) navigator.vibrate(10);
+    };
 
     // Fetch data when date changes
     useEffect(() => {
@@ -233,39 +239,93 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose,
                         </div>
                     ) : (
                         <div className="flex flex-col gap-4">
-                            {listItems.map(item => (
-                                <div
-                                    key={item.id}
-                                    className="flex flex-col gap-1.5 cursor-pointer hover:bg-[var(--glass-item-bg)] p-2 rounded-xl transition-colors -mx-2"
-                                    onClick={() => {
-                                        if (onItemClick) {
-                                            onItemClick(
-                                                item,
-                                                tab === "categories" ? "category" : "tag",
-                                                expenses // pass the filtered month expenses
-                                            );
-                                        }
-                                    }}
-                                >
-                                    <div className="flex justify-between items-center">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-inner text-[var(--text-main)] bg-[var(--glass-item-bg)]" style={{ color: item.color }}>
-                                                <item.icon size={14} />
+                            {listItems.map(item => {
+                                const isExpanded = expandedCategoryId === item.id;
+                                
+                                // Calculate tag breakdown for this category if expanded
+                                let categoryTags: { name: string, amount: number, percent: number }[] = [];
+                                if (isExpanded && tab === "categories") {
+                                    const categoryExpenses = expenses.filter(t => t.targetId === item.id);
+                                    const tagMap = new Map<string, number>();
+                                    categoryExpenses.forEach(t => {
+                                        const tagName = t.tag && t.tag.trim() ? t.tag.trim() : "Без тега";
+                                        tagMap.set(tagName, (tagMap.get(tagName) || 0) + (t.amountUSD ?? t.amount));
+                                    });
+                                    tagMap.forEach((amount, name) => {
+                                        categoryTags.push({ name, amount, percent: item.amount > 0 ? (amount / item.amount) * 100 : 0 });
+                                    });
+                                    categoryTags.sort((a, b) => b.amount - a.amount);
+                                }
+
+                                return (
+                                    <div key={item.id} className="flex flex-col">
+                                        <div
+                                            className={`flex flex-col gap-1.5 cursor-pointer hover:bg-[var(--glass-item-bg)] p-2 rounded-xl transition-all -mx-2 ${isExpanded ? 'bg-[var(--glass-item-bg)] shadow-inner' : ''}`}
+                                            onClick={() => {
+                                                if (tab === "categories") {
+                                                    toggleCategory(item.id);
+                                                } else if (onItemClick) {
+                                                    onItemClick(item, "tag", expenses);
+                                                }
+                                            }}
+                                        >
+                                            <div className="flex justify-between items-center">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-inner text-[var(--text-main)] bg-[var(--glass-item-bg)]" style={{ color: item.color }}>
+                                                        <item.icon size={14} />
+                                                    </div>
+                                                    <span className="text-sm font-semibold text-[var(--text-main)]">{item.name}</span>
+                                                </div>
+                                                <div className="flex flex-col items-end">
+                                                    <span className="text-sm font-bold text-[var(--text-main)]">
+                                                        ${item.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                    </span>
+                                                    <div className="flex items-center gap-1">
+                                                        <span className="text-[10px] font-bold text-[var(--text-muted)]">{item.percent.toFixed(1)}%</span>
+                                                        {tab === "categories" && (
+                                                            <ChevronRight size={10} className={`text-[var(--text-muted)] transition-transform duration-300 ${isExpanded ? 'rotate-90' : ''}`} />
+                                                        )}
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <span className="text-sm font-semibold text-[var(--text-main)]">{item.name}</span>
+                                            <div className="w-full bg-[var(--glass-item-bg)] h-1.5 rounded-full overflow-hidden">
+                                                <div className="h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${item.percent}%`, backgroundColor: item.color }} />
+                                            </div>
                                         </div>
-                                        <div className="flex flex-col items-end">
-                                            <span className="text-sm font-bold text-[var(--text-main)]">
-                                                ${item.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                            </span>
-                                            <span className="text-[10px] font-bold text-[var(--text-muted)]">{item.percent.toFixed(1)}%</span>
-                                        </div>
+
+                                        {/* Tag details */}
+                                        {isExpanded && tab === "categories" && (
+                                            <div className="mt-2 ml-11 flex flex-col gap-3 border-l-2 border-[var(--glass-border)] pl-4 animate-in slide-in-from-top-2 duration-300">
+                                                {categoryTags.map(tag => (
+                                                    <div 
+                                                        key={tag.name} 
+                                                        className="flex justify-between items-center cursor-pointer group"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            if (onItemClick) {
+                                                                onItemClick(
+                                                                    { ...item, name: tag.name, id: tag.name }, 
+                                                                    "tag", 
+                                                                    expenses.filter(t => t.targetId === item.id && (t.tag?.trim() || "Без тега") === tag.name)
+                                                                );
+                                                            }
+                                                        }}
+                                                    >
+                                                        <div className="flex items-center gap-2">
+                                                            <Tag size={10} className="text-[var(--text-muted)]" />
+                                                            <span className="text-xs font-medium text-[var(--text-muted)] group-hover:text-[var(--text-main)] transition-colors">{tag.name}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-xs font-bold text-[var(--text-main)]">${tag.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                                            <span className="text-[9px] font-bold text-[var(--text-muted)] w-8 text-right">{tag.percent.toFixed(0)}%</span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
-                                    <div className="w-full bg-[var(--glass-item-bg)] h-1.5 rounded-full overflow-hidden">
-                                        <div className="h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${item.percent}%`, backgroundColor: item.color }} />
-                                    </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     )}
                 </div>

@@ -45,7 +45,7 @@ export default function App() {
     saveCategory, deleteCategory,
     saveIncome, deleteIncome,
     syncCategories, syncIncomes, syncAccountsOrder,
-    pullSettings, checkConflicts, conflictData, updateLocalFromRemote, pushSettings
+    pullSettings, checkConflicts, conflictData, setConflictData, updateLocalFromRemote, pushSettings
   } = useFinance();
 
   const [isSplashVisible, setIsSplashVisible] = React.useState(true);
@@ -192,6 +192,53 @@ export default function App() {
     message: "",
     onConfirm: () => { }
   });
+
+  // Handle browser back button/gesture to close modals
+  const anyModalOpen = 
+    accountModal.isOpen || 
+    incomeModal.isOpen || 
+    categoryModal.isOpen || 
+    historyModal.isOpen || 
+    analyticsModal.isOpen || 
+    numpad.isOpen || 
+    confirmDelete.isOpen || 
+    isSettingsMenuOpen ||
+    !!conflictData;
+
+  // Track if we pushed a state to history
+  const historyPushedRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (anyModalOpen && !historyPushedRef.current) {
+      window.history.pushState({ modal: true }, "");
+      historyPushedRef.current = true;
+    } else if (!anyModalOpen && historyPushedRef.current) {
+      // If modals closed manually, pop the state from history to keep it clean
+      window.history.back();
+      historyPushedRef.current = false;
+    }
+  }, [anyModalOpen]);
+
+  React.useEffect(() => {
+    const handlePopState = (e: PopStateEvent) => {
+      if (historyPushedRef.current) {
+        historyPushedRef.current = false;
+        // Close all modals
+        setAccountModal(p => ({ ...p, isOpen: false }));
+        setIncomeModal(p => ({ ...p, isOpen: false }));
+        setCategoryModal(p => ({ ...p, isOpen: false }));
+        setHistoryModal(p => ({ ...p, isOpen: false }));
+        setAnalyticsModal({ isOpen: false });
+        setNumpad(p => ({ ...p, isOpen: false }));
+        setConfirmDelete(p => ({ ...p, isOpen: false }));
+        setIsSettingsMenuOpen(false);
+        setConflictData(null);
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   // distance:15 → quick drags activate immediately (transfer / expense).
   // Long-press (1000ms) is handled inside AccountItem component directly.
