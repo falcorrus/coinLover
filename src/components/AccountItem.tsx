@@ -119,6 +119,7 @@ export const AccountItem: React.FC<Props> = ({
       }}
     >
       <div
+        style={{ touchAction: "none" }}
         className={`draggable-coin transition-all duration-300 pointer-events-none ${isDragging ? "grabbed-elevation" :
           isPressing ? "scale-90 brightness-75 border-white/40" : ""
           } ${(isTargetOver || isIncomeTarget || isOver) ? "coin-target-glow" : ""
