@@ -82,7 +82,7 @@ export const CategoryItem: React.FC<Props> = ({
   }, [isDragging, clearTimers]);
 
   const Icon = IconMap[category.icon] || ShoppingBag;
-  
+
   // Highlight only when dragging an Account (Expense action)
   const isTarget = isOver && activeDragType === "account" && !isDragging;
 
@@ -90,7 +90,7 @@ export const CategoryItem: React.FC<Props> = ({
     transform: isSortingMode ? CSS.Translate.toString(transform) : undefined,
     transition,
     zIndex: isDragging ? 100 : 1,
-    touchAction: "none"
+    touchAction: isSortingMode ? "none" : "pan-y"
   };
 
   return (
@@ -112,11 +112,10 @@ export const CategoryItem: React.FC<Props> = ({
       }}
     >
       <div
-        className={`w-[64px] h-[64px] rounded-[32px] flex items-center justify-center transition-all duration-300 pointer-events-none ${
-          isDragging ? "grabbed-elevation" : 
-          isPressing ? "scale-90 brightness-75" : ""
-        } ${isTarget ? "coin-target-glow bg-white/20 shadow-[0_0_20px_rgba(255,255,255,0.2)]" : "bg-gradient-to-br from-white/10 to-white/[0.02] border border-white/5"
-        } ${isSortingMode && isDragging ? "shadow-2xl border-[#6d5dfc] ring-4 ring-[#6d5dfc]/20" : ""}`}
+        className={`w-[64px] h-[64px] rounded-[32px] flex items-center justify-center transition-all duration-300 pointer-events-none ${isDragging ? "grabbed-elevation" :
+            isPressing ? "scale-90 brightness-75" : ""
+          } ${isTarget ? "coin-target-glow bg-white/20 shadow-[0_0_20px_rgba(255,255,255,0.2)]" : "bg-gradient-to-br from-white/10 to-white/[0.02] border border-white/5"
+          } ${isSortingMode && isDragging ? "shadow-2xl border-[#6d5dfc] ring-4 ring-[#6d5dfc]/20" : ""}`}
       >
         <Icon size={26} color={isTarget ? "#fff" : category.color} />
       </div>
