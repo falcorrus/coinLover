@@ -406,6 +406,9 @@ export default function App() {
     <div className="min-h-screen flex flex-col max-w-md mx-auto relative shadow-2xl overflow-hidden bg-[var(--bg-color)] text-[var(--text-main)] font-sans select-none text-left transition-colors duration-300">
       <style>{`body { overflow: hidden; overscroll-behavior: none; background: var(--bg-color); } * { -webkit-tap-highlight-color: transparent; }`}</style>
 
+      {/* SEO H1 Header */}
+      <h1 className="sr-only">CoinLover — Геймифицированное управление личными финансами</h1>
+
       {/* Splash Screen (Vector Mode) */}
       {isSplashVisible && (
         <div className="fixed inset-0 z-[1000] bg-[var(--bg-color)] flex items-center justify-center animate-in fade-in duration-500">
