@@ -464,7 +464,6 @@ export default function App() {
             )}
           </button>
           <div className="flex flex-col items-center gap-0.5">
-            <div className="pull-indicator mb-1.5"></div>
             <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Total Balance</p>
           </div>
           <div className="relative">
@@ -506,17 +505,17 @@ export default function App() {
 
         <button
           onClick={() => setPillMode(p => p === "expense" ? "balance" : "expense")}
-          className="mt-2 mx-auto px-4 py-1.5 rounded-full bg-white/5 border border-white/10 flex items-center gap-2 w-fit hover:bg-white/10 transition-colors cursor-pointer"
+          className="mt-2 mx-auto px-5 py-2 rounded-full bg-[var(--glass-item-bg)] border border-[var(--glass-border)] flex items-center gap-2 w-fit hover:bg-[var(--glass-item-active)] transition-all cursor-pointer shadow-sm active:scale-95"
         >
           {pillMode === "expense" ? (
             <>
-              <TrendingDown size={14} className="text-[#D4AF37]" />
-              <span className="text-xs font-medium text-[#D4AF37]">-${totalSpent.toLocaleString()} this month</span>
+              <TrendingDown size={14} className="text-[#cda434]" />
+              <span className="text-xs font-bold text-[#cda434]">-${totalSpent.toLocaleString()} в этом месяце</span>
             </>
           ) : (
             <>
               <Wallet size={14} className="text-[#10b981]" />
-              <span className="text-xs font-medium text-[#10b981]">Общий баланс: ${totalBalance.toLocaleString()}</span>
+              <span className="text-xs font-bold text-[#10b981]">Общий баланс: ${totalBalance.toLocaleString()}</span>
             </>
           )}
         </button>
