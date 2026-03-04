@@ -20,6 +20,12 @@ interface Props {
 
 export const Numpad: React.FC<Props> = ({ data, onClose, onFieldChange, onPress, onDelete, onSubmit, onTagSelect, onCommentChange, onRemove, isEditing }) => {
   const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
+  const [isCommentOpen, setIsCommentOpen] = React.useState(false);
+  const [commentDraft, setCommentDraft] = React.useState("");
+
+  React.useEffect(() => {
+    if (isCommentOpen) setCommentDraft(data.comment);
+  }, [isCommentOpen, data.comment]);
 
   if (!data.isOpen) return null;
 
@@ -37,6 +43,13 @@ export const Numpad: React.FC<Props> = ({ data, onClose, onFieldChange, onPress,
   const handleTagClick = (t: string) => {
     onTagSelect(data.tag === t ? null : t);
   };
+
+  const handleCommentSave = () => {
+    onCommentChange(commentDraft.trim());
+    setIsCommentOpen(false);
+  };
+
+  const hasComment = data.comment.trim().length > 0;
 
   return (
     <div className="fixed inset-0 z-[150] flex flex-col bg-[var(--bg-color)] animate-in slide-in-from-right duration-500 ease-in-out">
@@ -99,41 +112,36 @@ export const Numpad: React.FC<Props> = ({ data, onClose, onFieldChange, onPress,
             </div>
           </div>
         </div>
-
-        {/* Comment Strip (Note input) */}
-        <div className="mt-8 w-full max-w-[280px]">
-          <div className="relative group">
-            <input
-              type="text"
-              value={data.comment}
-              onChange={(e) => onCommentChange(e.target.value)}
-              className="w-full bg-transparent border-none focus:ring-0 text-center text-[var(--text-muted)] hover:text-[var(--text-main)] focus:text-[var(--text-main)] font-medium py-2 text-lg transition-colors placeholder:text-slate-400/50"
-              placeholder="Добавить заметку..."
-            />
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-0.5 bg-[var(--glass-border)] rounded-full group-focus-within:w-full group-focus-within:bg-[var(--primary-color)] transition-all duration-500"></div>
-          </div>
-        </div>
       </div>
 
-      {/* Tags Bar - Only for expenses */}
-      {data.type === 'expense' && data.destination && (data.destination as Category).tags && (data.destination as Category).tags.length > 0 && (
-        <div className="flex items-center px-4 py-3 gap-3 bg-[var(--glass-bg)] shrink-0 border-t border-[var(--glass-border)] overflow-hidden">
-          <div className="flex-1 flex items-center gap-2 overflow-x-auto hide-scrollbar">
-            {(data.destination as Category).tags.map(t => (
-              <button
-                key={t}
-                onClick={() => handleTagClick(t)}
-                className={`px-4 py-1.5 rounded-full uppercase text-[10px] font-black whitespace-nowrap transition-all duration-200 ${data.tag === t
-                  ? "bg-[var(--success-color)] text-white scale-105 shadow-md shadow-[var(--success-color)]/20"
-                  : "bg-[var(--glass-item-bg)] text-[var(--text-muted)] border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)]"
-                  }`}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
+      {/* Tags + Comment bar - Visible for both Expense and Transfer */}
+      <div className="flex items-center px-4 py-3 gap-3 bg-[var(--glass-bg)] shrink-0 border-t border-[var(--glass-border)] overflow-hidden">
+        <div className="flex-1 flex items-center gap-2 overflow-x-auto hide-scrollbar">
+          {data.type === 'expense' && data.destination && (data.destination as Category).tags && (data.destination as Category).tags.map(t => (
+            <button
+              key={t}
+              onClick={() => handleTagClick(t)}
+              className={`px-4 py-1.5 rounded-full uppercase text-[10px] font-black whitespace-nowrap transition-all duration-200 ${data.tag === t
+                ? "bg-[var(--success-color)] text-white scale-105 shadow-md shadow-[var(--success-color)]/20"
+                : "bg-[var(--glass-item-bg)] text-[var(--text-muted)] border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)]"
+                }`}
+            >
+              {t}
+            </button>
+          ))}
         </div>
-      )}
+
+        {/* Comment icon button - Now always visible */}
+        <button
+          onClick={() => setIsCommentOpen(true)}
+          className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 ${hasComment
+            ? "bg-[var(--primary-color)]/20 text-[var(--primary-color)]"
+            : "bg-[var(--glass-item-bg)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--glass-border)] shadow-sm"
+            }`}
+        >
+          <MessageSquare size={18} />
+        </button>
+      </div>
 
       <div className="bg-[var(--numpad-bg)] p-4 pb-8 border-t border-[var(--glass-border)]">
         <div className="flex gap-3">
@@ -152,7 +160,7 @@ export const Numpad: React.FC<Props> = ({ data, onClose, onFieldChange, onPress,
           {/* Operators Block - 1/3 of width (1/2 of numeric) */}
           <div className="flex-[1] bg-[var(--panel-bg)] rounded-2xl flex flex-col p-2 gap-2 shadow-inner">
             <div className="grid grid-cols-2 gap-2 flex-1">
-              <button onClick={() => onPress("C")} className="flex items-center justify-center text-xl font-black text-[#D4AF37] hover:bg-[var(--bg-color)]/50 rounded-xl transition-all active:scale-95">C</button>
+              <button onClick={() => onPress("C")} className="flex items-center justify-center text-xl font-bold text-[#D4AF37] hover:bg-[var(--bg-color)]/50 rounded-xl transition-all active:scale-95">C</button>
               <button onClick={() => onPress("/")} className="flex items-center justify-center text-2xl font-light text-[var(--text-muted)] hover:bg-[var(--bg-color)]/50 rounded-xl transition-all active:scale-95"><Divide size={20} /></button>
               <button onClick={() => onPress("*")} className="flex items-center justify-center text-2xl font-light text-[var(--text-muted)] hover:bg-[var(--bg-color)]/50 rounded-xl transition-all active:scale-95"><X size={20} /></button>
               <button onClick={() => onPress("-")} className="flex items-center justify-center text-2xl font-light text-[var(--text-muted)] hover:bg-[var(--bg-color)]/50 rounded-xl transition-all active:scale-95"><Minus size={20} /></button>
@@ -204,6 +212,45 @@ export const Numpad: React.FC<Props> = ({ data, onClose, onFieldChange, onPress,
         onClose={() => setIsCalendarOpen(false)}
         onSelect={handleDateSelect}
       />
+
+      {/* Comment Modal */}
+      {isCommentOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[300] flex items-end justify-center animate-in fade-in duration-300">
+          <div className="w-full max-w-md bg-[var(--bg-color)] border border-[var(--glass-border)] rounded-t-3xl p-6 flex flex-col gap-4 animate-in slide-in-from-bottom duration-300 shadow-2xl shadow-[var(--shadow-color)]">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <MessageSquare size={16} className="text-[var(--primary-color)]" />
+                <h3 className="text-sm font-bold uppercase text-[var(--text-main)]">Комментарий</h3>
+              </div>
+              <button onClick={() => setIsCommentOpen(false)} className="p-1 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"><X size={20} /></button>
+            </div>
+
+            <textarea
+              autoFocus
+              value={commentDraft}
+              onChange={e => setCommentDraft(e.target.value)}
+              placeholder="Заметка к транзакции..."
+              rows={3}
+              className="bg-[var(--glass-item-bg)] border border-[var(--glass-border)] rounded-xl px-4 py-3 outline-none text-[var(--text-main)] resize-none text-sm focus:border-[var(--primary-color)]/50 transition-all"
+            />
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setCommentDraft(""); onCommentChange(""); setIsCommentOpen(false); }}
+                className="flex-1 h-12 rounded-xl bg-[var(--glass-item-bg)] border border-[var(--glass-border)] text-[var(--text-muted)] font-bold text-sm hover:text-[var(--danger-color)] transition-colors"
+              >
+                ОЧИСТИТЬ
+              </button>
+              <button
+                onClick={handleCommentSave}
+                className="flex-1 h-12 rounded-xl bg-[var(--primary-color)] text-white font-bold shadow-lg shadow-[var(--primary-color)]/20 text-sm active:scale-95 transition-all"
+              >
+                СОХРАНИТЬ
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -151,6 +151,7 @@ export const useFinance = () => {
     setAccounts(updatedAccounts);
 
     setSyncStatus("loading");
+    // Combined atomic sync: transaction + updated balances
     const ok = await googleSheetsService.syncToSheets({
       action: "addTransaction",
       targetSheet: "Transactions",
@@ -165,19 +166,14 @@ export const useFinance = () => {
       targetAmount: finalTargetAmount,
       targetAmountUSD: newTx.targetAmountUSD,
       comment: comment || undefined,
-    });
-
-    // Also background sync updated balances to Configs
-    const configsOk = await googleSheetsService.syncToSheets({
-      action: "syncSettings",
-      targetSheet: "Configs",
+      // Include settings for atomic update
       accounts: enrichAccountsWithUSD(updatedAccounts),
       categories,
       incomes,
       timestamp: date,
     });
 
-    if (ok && configsOk) {
+    if (ok) {
       localStorage.setItem("cl_last_sync", date);
       setSyncStatus("success");
     } else {
@@ -254,7 +250,7 @@ export const useFinance = () => {
 
     // Sync updated transaction to Sheets
     setSyncStatus("loading");
-    const txOk = await googleSheetsService.syncToSheets({
+    const ok = await googleSheetsService.syncToSheets({
       action: "updateTransaction",
       targetSheet: "Transactions",
       id: txId,
@@ -268,18 +264,14 @@ export const useFinance = () => {
       targetAmount: finalTargetAmount,
       targetAmountUSD: Math.round(targetAmountUSD * 100) / 100,
       comment: comment || undefined,
-    });
-
-    // Sync balances to Configs
-    const configsOk = await googleSheetsService.syncToSheets({
-      action: "syncSettings",
-      targetSheet: "Configs",
+      // Include settings for atomic update
       accounts: enrichAccountsWithUSD(updatedAccounts),
       categories,
       incomes,
       timestamp: date,
     });
-    if (txOk && configsOk) {
+
+    if (ok) {
       localStorage.setItem("cl_last_sync", date);
       setSyncStatus("success");
     } else {
@@ -307,23 +299,18 @@ export const useFinance = () => {
 
     setSyncStatus("loading");
     const timestamp = getLocalTimeString();
-    const txOk = await googleSheetsService.syncToSheets({
+    const ok = await googleSheetsService.syncToSheets({
       action: "deleteTransaction",
       targetSheet: "Transactions",
       id: txId,
       timestamp,
-    });
-
-    const configsOk = await googleSheetsService.syncToSheets({
-      action: "syncSettings",
-      targetSheet: "Configs",
+      // Include settings for atomic update
       accounts: enrichAccountsWithUSD(updatedAccounts),
       categories,
       incomes,
-      timestamp,
     });
 
-    if (txOk && configsOk) {
+    if (ok) {
       localStorage.setItem("cl_last_sync", timestamp);
       setSyncStatus("success");
     } else {
@@ -406,17 +393,30 @@ export const useFinance = () => {
   }, [updateLocalFromRemote]);
 
   const checkConflicts = useCallback(async () => {
-    const remote = await googleSheetsService.fetchSettings();
-    if (!remote || !remote.timestamp) return;
+    try {
+      const remote = await googleSheetsService.fetchSettings();
+      if (!remote || !remote.timestamp) return;
 
-    const localLastSync = localStorage.getItem("cl_last_sync");
+      const localLastSync = localStorage.getItem("cl_last_sync");
+      const hasLocalTransactions = transactions.length > 0;
 
-    if (localLastSync && remote.timestamp !== localLastSync) {
-      setConflictData(remote);
-    } else if (!localLastSync) {
-      updateLocalFromRemote(remote);
+      // Auto-update if:
+      // 1. No last sync timestamp (first run)
+      // 2. OR remote is different AND we have no local transactions yet (safe to overwrite)
+      if (!localLastSync || (remote.timestamp !== localLastSync && !hasLocalTransactions)) {
+        updateLocalFromRemote(remote);
+        console.log("Auto-updated from remote (clean state)");
+        return;
+      }
+
+      // If we have local transactions and timestamps differ, show conflict modal
+      if (localLastSync && remote.timestamp !== localLastSync) {
+        setConflictData(remote);
+      }
+    } catch (e) {
+      console.error("Conflict check failed:", e);
     }
-  }, [updateLocalFromRemote]);
+  }, [updateLocalFromRemote, transactions.length]);
 
   return {
     accounts, setAccounts,

@@ -222,231 +222,119 @@ function doGet(e) {
 }
 
 function doPost(e) {
+  const lock = LockService.getScriptLock();
   try {
+    // Wait for up to 30 seconds for the lock
+    lock.waitLock(30000);
+    
     const data = JSON.parse(e.postData.contents);
     const isDemo = data.demo === true;
     const configSheetName = isDemo ? "Configs-demo" : "Configs";
     const txSheetName = isDemo ? "Transactions-demo" : "Transactions";
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     
-    // Обработка синхронизации настроек (Configs)
-    if (data.action === "syncSettings") {
-      // Safety: Never clear if data is empty (likely an app initialization bug)
-      if (!data.accounts || data.accounts.length === 0) {
-        return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "Refusing to save empty configuration" })).setMimeType(ContentService.MimeType.JSON);
-      }
+    let responses = [];
 
+    // Helper to sync settings (balances, categories, etc.)
+    const syncSettingsInternal = (settingsData) => {
+      if (!settingsData.accounts || settingsData.accounts.length === 0) return { status: "error", message: "Empty config" };
       let sheet = ss.getSheetByName(configSheetName) || ss.insertSheet(configSheetName);
       sheet.clear();
-
       const rows = [];
-      const colCount = 7; // ID, Name, Balance, Balance USD, Color, Icon, Currency
-      
+      const colCount = 7;
       const pushRow = (arr) => {
         const row = new Array(colCount).fill("");
         for (let i = 0; i < Math.min(arr.length, colCount); i++) row[i] = arr[i];
         rows.push(row);
       };
-
-      pushRow(["Updated", data.timestamp]);
+      pushRow(["Updated", settingsData.timestamp]);
       pushRow([""]);
-
-      // 1. Кошельки (Accounts)
       pushRow([" === WALLETS ==="]);
       pushRow(["ID", "Name", "Balance", "Balance USD", "Color", "Icon", "Currency"]);
-      if (data.accounts && Array.isArray(data.accounts)) {
-        data.accounts.forEach(a => {
-          pushRow([a.id || "", a.name || "", a.balance || 0, a.balanceUSD || "", a.color || "", a.icon || "", a.currency || ""]);
-        });
-      }
+      settingsData.accounts.forEach(a => pushRow([a.id || "", a.name || "", a.balance || 0, a.balanceUSD || "", a.color || "", a.icon || "", a.currency || ""]));
       pushRow([""]);
-
-      // 2. Категории (Categories)
       pushRow([" === CATEGORIES ==="]);
       pushRow(["ID", "Name", "Color", "Icon", "Tags"]);
-      if (data.categories && Array.isArray(data.categories)) {
-        data.categories.forEach(c => {
-          pushRow([c.id || "", c.name || "", c.color || "", c.icon || "", c.tags ? (Array.isArray(c.tags) ? c.tags.join(", ") : c.tags) : ""]);
-        });
-      }
+      if (settingsData.categories) settingsData.categories.forEach(c => pushRow([c.id || "", c.name || "", c.color || "", c.icon || "", c.tags ? (Array.isArray(c.tags) ? c.tags.join(", ") : c.tags) : ""]));
       pushRow([""]);
-
-      // 3. Доходы (Incomes)
       pushRow([" === INCOMES ==="]);
       pushRow(["ID", "Name", "Color", "Icon"]);
-      if (data.incomes && Array.isArray(data.incomes)) {
-        data.incomes.forEach(i => {
-          pushRow([i.id || "", i.name || "", i.color || "", i.icon || ""]);
-        });
-      }
-
-      if (rows.length > 0) {
-        sheet.getRange(1, 1, rows.length, colCount).setValues(rows);
-      }
-      
+      if (settingsData.incomes) settingsData.incomes.forEach(i => pushRow([i.id || "", i.name || "", i.color || "", i.icon || ""]));
+      if (rows.length > 0) sheet.getRange(1, 1, rows.length, colCount).setValues(rows);
       sheet.autoResizeColumns(1, colCount);
+      return { status: "success", message: "Configs updated" };
+    };
 
-      // Автоматический бэкап каждые 10 записей (вместо триггера)
-      try {
-        const props = PropertiesService.getScriptProperties();
-        let syncCount = parseInt(props.getProperty("syncCount") || "0", 10);
-        syncCount++;
-        
-        if (syncCount >= 10) {
-          backupConfigs(); // Создаем архив
-          props.setProperty("syncCount", "0"); // Сбрасываем счетчик
-        } else {
-          props.setProperty("syncCount", syncCount.toString());
-        }
-      } catch (e) {
-        // Игнорируем ошибки свойств, чтобы не ломать главную синхронизацию
+    // 1. Handle Transaction actions
+    if (["addTransaction", "updateTransaction", "deleteTransaction"].includes(data.action)) {
+      let txSheet = ss.getSheetByName(txSheetName) || ss.insertSheet(txSheetName);
+      const baseHeaders = ["Date", "Type", "Source", "Destination", "Tag", "Amount", "Amount USD", "Target Amount", "Target USD", "Comment", "ID"];
+      
+      if (txSheet.getLastRow() === 0) {
+        txSheet.appendRow(baseHeaders);
+        txSheet.getRange(1, 1, 1, baseHeaders.length).setFontWeight("bold");
       }
 
-      return ContentService.createTextOutput(JSON.stringify({ status: "success", message: "Configs updated" })).setMimeType(ContentService.MimeType.JSON);
-    }
-
-    
-    // Обработка транзакций (Transactions)
-    if (data.action === "addTransaction") {
-      let sheet = ss.getSheetByName(txSheetName) || ss.insertSheet(txSheetName);
-
-      const baseHeaders = ["Date", "Type", "Source", "Destination", "Tag", "Amount", "Amount USD", "Target Amount", "Target USD", "Comment"];
-
-      // Initialize headers if sheet is empty
-      if (sheet.getLastRow() === 0) {
-        const fullHeaders = [...baseHeaders, "ID"];
-        sheet.appendRow(fullHeaders);
-        sheet.getRange(1, 1, 1, fullHeaders.length).setFontWeight("bold");
-      }
-
-      // Read current headers (ID may be in any position, or missing)
-      const lastCol = sheet.getLastColumn();
-      const currentHeaders = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(h => String(h).trim());
-
-      // If "ID" column is not yet in the sheet — add it as last column (non-breaking for existing data)
-      if (!currentHeaders.includes("ID")) {
-        const idColNum = lastCol + 1;
-        sheet.getRange(1, idColNum).setValue("ID").setFontWeight("bold");
-        currentHeaders.push("ID");
-      }
-
-      const fieldMap = {
-        "Date": parseDateSafe(data.date),
-        "Type": data.type,
-        "Source": data.sourceName,
-        "Destination": data.destinationName,
-        "Tag": data.tagName || "",
-        "Amount": data.amount,
-        "Amount USD": data.amountUSD || "",
-        "Target Amount": data.targetAmount || data.amount,
-        "Target USD": data.targetAmountUSD || "",
-        "Comment": data.comment || "",
-        "ID": data.id || ""
-      };
-
-      const rowData = currentHeaders.map(header => fieldMap[header] !== undefined ? fieldMap[header] : "");
-      sheet.appendRow(rowData);
-
-      return ContentService.createTextOutput(JSON.stringify({ status: "success", message: "Transaction added" })).setMimeType(ContentService.MimeType.JSON);
-    }
-    
-    // Обновление существующей транзакции в Transactions
-    if (data.action === "updateTransaction") {
-      const sheet = ss.getSheetByName(txSheetName);
-      if (!sheet || sheet.getLastRow() <= 1) {
-        return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "No transactions found" })).setMimeType(ContentService.MimeType.JSON);
-      }
-
-      const lastRow = sheet.getLastRow();
-      const lastCol = sheet.getLastColumn();
-      const allData = sheet.getRange(1, 1, lastRow, lastCol).getValues();
-      const headers = allData[0].map(h => String(h).trim());
+      const currentHeaders = txSheet.getRange(1, 1, 1, txSheet.getLastColumn()).getValues()[0].map(h => String(h).trim());
       const col = {};
-      headers.forEach((h, i) => { col[h] = i; });
+      currentHeaders.forEach((h, i) => col[h] = i);
 
-      let foundRow = -1;
-
-      // Primary: search by ID column (fast, exact)
-      if (data.id && col["ID"] !== undefined) {
-        for (let i = 1; i < allData.length; i++) {
-          if (String(allData[i][col["ID"]] || "").trim() === String(data.id)) {
-            foundRow = i + 1;
-            break;
+      if (data.action === "addTransaction") {
+        const fieldMap = {
+          "Date": parseDateSafe(data.date), "Type": data.type, "Source": data.sourceName, "Destination": data.destinationName,
+          "Tag": data.tagName || "", "Amount": data.amount, "Amount USD": data.amountUSD || "",
+          "Target Amount": data.targetAmount || data.amount, "Target USD": data.targetAmountUSD || "",
+          "Comment": data.comment || "", "ID": data.id || ""
+        };
+        txSheet.appendRow(currentHeaders.map(h => fieldMap[h] !== undefined ? fieldMap[h] : ""));
+        responses.push({ action: "addTransaction", status: "success" });
+      } 
+      else if (data.action === "updateTransaction") {
+        let foundRow = -1;
+        const allTx = txSheet.getDataRange().getValues();
+        const idIdx = currentHeaders.indexOf("ID");
+        if (idIdx !== -1) {
+          for (let i = 1; i < allTx.length; i++) {
+            if (String(allTx[i][idIdx]).trim() === String(data.id)) { foundRow = i + 1; break; }
           }
         }
+        const fieldMap = {
+          "Date": parseDateSafe(data.date), "Type": data.type, "Source": data.sourceName, "Destination": data.destinationName,
+          "Tag": data.tagName || "", "Amount": data.amount, "Amount USD": data.amountUSD || "",
+          "Target Amount": data.targetAmount || data.amount, "Target USD": data.targetAmountUSD || "",
+          "Comment": data.comment || "", "ID": data.id || ""
+        };
+        const rowData = currentHeaders.map(h => fieldMap[h] !== undefined ? fieldMap[h] : "");
+        if (foundRow !== -1) txSheet.getRange(foundRow, 1, 1, currentHeaders.length).setValues([rowData]);
+        else txSheet.appendRow(rowData);
+        responses.push({ action: "updateTransaction", status: "success" });
       }
-
-      // Fallback: search by date + source + amount (for rows without ID)
-      if (foundRow === -1 && col["Date"] !== undefined) {
-        for (let i = 1; i < allData.length; i++) {
-          const rowDate = String(allData[i][col["Date"]] || "").trim();
-          const rowSource = String(allData[i][col["Source"]] || "").trim();
-          const rowAmt = parseFloat(allData[i][col["Amount"]] || 0);
-          if (rowDate === data.date && rowSource === data.sourceName && Math.abs(rowAmt - data.amount) < 0.001) {
-            foundRow = i + 1;
-            break;
+      else if (data.action === "deleteTransaction") {
+        const idIdx = currentHeaders.indexOf("ID");
+        if (idIdx !== -1) {
+          const allTx = txSheet.getDataRange().getValues();
+          for (let i = allTx.length - 1; i >= 1; i--) {
+            if (String(allTx[i][idIdx]).trim() === String(data.id)) txSheet.deleteRow(i + 1);
           }
         }
+        responses.push({ action: "deleteTransaction", status: "success" });
       }
-
-      // Build updated row using only known header columns
-      const fieldMap = {
-        "ID": data.id || "",
-        "Date": parseDateSafe(data.date),
-        "Type": data.type,
-        "Source": data.sourceName,
-        "Destination": data.destinationName,
-        "Tag": data.tagName || "",
-        "Amount": data.amount,
-        "Amount USD": data.amountUSD || "",
-        "Target Amount": data.targetAmount || data.amount,
-        "Target USD": data.targetAmountUSD || "",
-        "Comment": data.comment || ""
-      };
-      const rowData = headers.map(header => fieldMap[header] !== undefined ? fieldMap[header] : "");
-
-      if (foundRow === -1) {
-        sheet.appendRow(rowData);
-        return ContentService.createTextOutput(JSON.stringify({ status: "success", message: "Not found, appended as new" })).setMimeType(ContentService.MimeType.JSON);
-      }
-
-      sheet.getRange(foundRow, 1, 1, lastCol).setValues([rowData]);
-      return ContentService.createTextOutput(JSON.stringify({ status: "success", message: "Transaction updated at row " + foundRow })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    // Удаление транзакции
-    if (data.action === "deleteTransaction") {
-      const sheet = ss.getSheetByName(txSheetName);
-      if (!sheet || sheet.getLastRow() <= 1) {
-        return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "No transactions found" })).setMimeType(ContentService.MimeType.JSON);
-      }
-
-      const allData = sheet.getRange(1, 1, sheet.getLastRow(), sheet.getLastColumn()).getValues();
-      const headers = allData[0].map(h => String(h).trim());
-      const idColIdx = headers.indexOf("ID");
-
-      if (idColIdx === -1) {
-        return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "ID column not found" })).setMimeType(ContentService.MimeType.JSON);
-      }
-
-      let deleted = false;
-      for (let i = allData.length - 1; i >= 1; i--) {
-        if (String(allData[i][idColIdx]).trim() === String(data.id)) {
-          sheet.deleteRow(i + 1);
-          deleted = true;
-          // Don't break if there might be duplicates (though there shouldn't be)
-        }
-      }
-
-      return ContentService.createTextOutput(JSON.stringify({ 
-        status: deleted ? "success" : "error", 
-        message: deleted ? "Transaction deleted" : "Transaction not found" 
-      })).setMimeType(ContentService.MimeType.JSON);
+    // 2. Handle Settings Sync (can be standalone OR combined with transaction)
+    // If settings are present in the payload (even if action is addTransaction), sync them too!
+    if (data.action === "syncSettings" || (data.accounts && data.categories)) {
+      const settingsRes = syncSettingsInternal(data);
+      responses.push({ action: "syncSettings", ...settingsRes });
     }
 
-    return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "Unknown action" })).setMimeType(ContentService.MimeType.JSON);
+    SpreadsheetApp.flush();
+    return ContentService.createTextOutput(JSON.stringify({ status: "success", responses })).setMimeType(ContentService.MimeType.JSON);
+
   } catch (err) {
     return ContentService.createTextOutput(JSON.stringify({ status: "error", message: err.toString() })).setMimeType(ContentService.MimeType.JSON);
+  } finally {
+    lock.releaseLock();
   }
 }
 

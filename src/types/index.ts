@@ -56,9 +56,16 @@ export interface NumpadData {
 
 export type DragItemType = "account" | "category" | "income";
 
-// Push-only sync payloads (discriminated union)
+export interface SyncSettingsFields {
+  accounts: Account[];
+  categories: Category[];
+  incomes: IncomeSource[];
+  timestamp: string;
+}
+
+// Push sync payloads (discriminated union)
 export type SyncPayload =
-  | {
+  | ({
     action: "addTransaction";
     targetSheet: "Transactions";
     id: string;
@@ -72,11 +79,11 @@ export type SyncPayload =
     targetAmount?: number;
     targetAmountUSD?: number;
     comment?: string;
-  }
-  | {
+  } & Partial<SyncSettingsFields>)
+  | ({
     action: "updateTransaction";
     targetSheet: "Transactions";
-    id: string;          // ID of the transaction to update (find by this)
+    id: string;
     date: string;
     type: TransactionType;
     sourceName: string;
@@ -87,18 +94,13 @@ export type SyncPayload =
     targetAmount?: number;
     targetAmountUSD?: number;
     comment?: string;
-  }
-  | {
+  } & Partial<SyncSettingsFields>)
+  | ({
     action: "syncSettings";
     targetSheet: "Configs";
-    accounts: Account[];
-    categories: Category[];
-    incomes: IncomeSource[];
-    timestamp: string; // Added for state snapshots
-  }
-  | {
+  } & SyncSettingsFields)
+  | ({
     action: "deleteTransaction";
     targetSheet: "Transactions";
     id: string;
-    timestamp: string;
-  };
+  } & Partial<SyncSettingsFields>);
