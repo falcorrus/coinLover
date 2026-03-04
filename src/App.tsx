@@ -475,14 +475,14 @@ export default function App() {
             </button>
             {isSettingsMenuOpen && (
               <>
-                <div className="fixed inset-0 z-[200]" onClick={() => setIsSettingsMenuOpen(false)} />
-                <div className="absolute top-12 right-0 w-48 glass-panel flex flex-col z-[201] p-2 animate-in fade-in zoom-in-95 origin-top-right">
+                <div className="fixed inset-0 z-[200] bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-300" onClick={() => setIsSettingsMenuOpen(false)} />
+                <div className="absolute top-12 right-0 w-48 bg-[var(--bg-color)] border border-[var(--glass-border)] rounded-2xl shadow-2xl flex flex-col z-[201] p-2 animate-in fade-in zoom-in-95 origin-top-right">
                   <button
                     onClick={() => {
                       setIsSettingsMenuOpen(false);
                       setHistoryModal({ isOpen: true, entity: { name: "Лента", icon: "list" }, type: "feed" });
                     }}
-                    className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-white/10 transition-colors text-left"
+                    className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"
                   >
                     <List size={16} className="text-[var(--primary-color)]" />
                     <span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Лента</span>
@@ -493,9 +493,9 @@ export default function App() {
                       setIsSettingsMenuOpen(false);
                       toggleTheme();
                     }}
-                    className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-white/10 transition-colors text-left"
+                    className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"
                   >
-                    {theme === "dark" ? <TrendingUp size={16} className="text-[#10b981]" /> : <PieChart size={16} className="text-[#6d5dfc]" />}
+                    {theme === "dark" ? <TrendingUp size={16} className="text-[var(--success-color)]" /> : <PieChart size={16} className="text-[var(--primary-color)]" />}
                     <span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">
                       {theme === "dark" ? "Light Mode" : "Dark Mode"}
                     </span>
@@ -833,7 +833,20 @@ export default function App() {
               : tx.type === "income"
                 ? accounts.find(a => a.id === tx.accountId) ?? null
                 : accounts.find(a => a.id === tx.targetId) ?? null;
-          if (!source || !destination) return;
+
+          if (!source || !destination) {
+            setConfirmDelete({
+              isOpen: true,
+              title: "Удалить операцию?",
+              message: "Данные этой операции были изменены или удалены. Вы можете только удалить эту запись из истории.",
+              onConfirm: () => {
+                deleteTransaction(tx.id);
+                setConfirmDelete(p => ({ ...p, isOpen: false }));
+              }
+            });
+            return;
+          }
+
           setEditingTxId(tx.id);
           setHistoryModal({ isOpen: false, entity: null, type: null });
           setNumpad({
