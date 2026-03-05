@@ -276,7 +276,7 @@ export default function App() {
       </DndContext>
 
       <Numpad
-        data={numpad} availableCurrencies={Array.from(new Set([...accounts.map(a => a.currency), "USD"]))} isEditing={!!editingTxId}
+        data={numpad} availableCurrencies={Array.from(new Set(accounts.map(a => a.currency)))} isEditing={!!editingTxId}
         onClose={() => { setNumpad({ ...numpad, isOpen: false, targetLinked: true }); setEditingTxId(null); }}
         onFieldChange={(f) => setNumpad(p => ({ ...p, activeField: f }))}
         onLinkToggle={() => { setNumpad(p => ({ ...p, targetLinked: !p.targetLinked })); if (navigator.vibrate) navigator.vibrate(10); }}
