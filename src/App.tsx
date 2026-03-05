@@ -78,17 +78,24 @@ export default function App() {
 
   const toggleTheme = () => { setTheme(prev => prev === "light" ? "dark" : "light"); if (navigator.vibrate) navigator.vibrate(50); };
   const toggleMode = (target: 'demo' | 'real') => {
-    // Clear data cache to force reload from the correct sheet
     localStorage.removeItem("cl_accounts");
     localStorage.removeItem("cl_categories");
     localStorage.removeItem("cl_incomes");
     localStorage.removeItem("cl_transactions");
     localStorage.removeItem("cl_last_sync");
-    
     window.localStorage.setItem("coinlover_demo", target === 'demo' ? "true" : "false");
     window.location.reload();
   };
-  const handleDemoClick = () => { demoClickCount.current += 1; if (demoTimerRef.current) clearTimeout(demoTimerRef.current); if (demoClickCount.current >= 5) { toggleMode(isDemo ? 'real' : 'demo'); demoClickCount.current = 0; } else { demoTimerRef.current = setTimeout(() => { demoClickCount.current = 0; }, 2000); } };
+  const handleDemoClick = () => {
+    demoClickCount.current += 1;
+    if (demoTimerRef.current) clearTimeout(demoTimerRef.current);
+    if (demoClickCount.current >= 5) {
+      toggleMode(isDemo ? 'real' : 'demo');
+      demoClickCount.current = 0;
+    } else {
+      demoTimerRef.current = setTimeout(() => { demoClickCount.current = 0; }, 2000);
+    }
+  };
 
   const safeEval = (str: string): string => {
     try {
@@ -101,42 +108,67 @@ export default function App() {
     } catch { return str; }
   };
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 10 } }));
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 15 } }));
   const toggleIncome = () => { const next = !isIncomeCollapsed; setIsIncomeCollapsed(next); setMode(next ? "expense" : "income"); };
 
   const handleDragStart = (e: DragStartEvent) => {
-    setActiveDragId(e.active.id as string); setActiveDragType(e.active.data.current?.type as DragItemType); setHasMovedDuringDrag(false);
-    sortingTimerRef.current = setTimeout(() => { setIsSortingMode(true); if (navigator.vibrate) navigator.vibrate(50); }, 500);
+    setActiveDragId(e.active.id as string);
+    setActiveDragType(e.active.data.current?.type as DragItemType);
+    setHasMovedDuringDrag(false);
+    
+    if (sortingTimerRef.current) clearTimeout(sortingTimerRef.current);
+    sortingTimerRef.current = setTimeout(() => {
+      setIsSortingMode(true);
+      if (navigator.vibrate) navigator.vibrate(50);
+    }, 500);
   };
 
   const handleDragMove = (e: DragMoveEvent) => {
     if (!hasMovedDuringDrag) setHasMovedDuringDrag(true);
     if (sortingTimerRef.current && !isSortingMode) {
       const { delta } = e;
-      if (Math.abs(delta.x) > 30 || Math.abs(delta.y) > 30) { clearTimeout(sortingTimerRef.current); sortingTimerRef.current = null; }
+      if (Math.abs(delta.x) > 30 || Math.abs(delta.y) > 30) {
+        clearTimeout(sortingTimerRef.current);
+        sortingTimerRef.current = null;
+      }
     }
   };
 
   const handleDragOver = (e: DragOverEvent) => {
-    const { active, over } = e; setOverId(over?.id as string || null); if (!over || !isSortingMode || active.id === over.id) return;
-    if (active.data.current?.type === "account") setAccounts((it) => arrayMove(it, it.findIndex(i => i.id === active.id), it.findIndex(i => i.id === over.id)));
-    else if (active.data.current?.type === "category") setCategories((it) => arrayMove(it, it.findIndex(i => i.id === active.id), it.findIndex(i => i.id === over.id)));
-    else if (active.data.current?.type === "income") setIncomes((it) => arrayMove(it, it.findIndex(i => i.id === active.id), it.findIndex(i => i.id === over.id)));
-    setHasMovedDuringDrag(true);
+    const { active, over } = e;
+    setOverId(over?.id as string || null);
+    if (!over || !isSortingMode || active.id === over.id) return;
+
+    if (active.data.current?.type === "account" && over.data.current?.type === "account") {
+      setAccounts((it) => arrayMove(it, it.findIndex(i => i.id === active.id), it.findIndex(i => i.id === over.id)));
+    } else if (active.data.current?.type === "category" && over.data.current?.type === "category") {
+      setCategories((it) => arrayMove(it, it.findIndex(i => i.id === active.id), it.findIndex(i => i.id === over.id)));
+    } else if (active.data.current?.type === "income" && over.data.current?.type === "income") {
+      setIncomes((it) => arrayMove(it, it.findIndex(i => i.id === active.id), it.findIndex(i => i.id === over.id)));
+    }
   };
 
   const handleDragEnd = (e: DragEndEvent) => {
     if (sortingTimerRef.current) clearTimeout(sortingTimerRef.current);
-    const { active, over } = e; const sorting = isSortingMode; const moved = hasMovedDuringDrag;
-    setActiveDragId(null); setActiveDragType(null); setOverId(null); setIsSortingMode(false);
+    const { active, over } = e;
+    const sorting = isSortingMode;
+    const moved = hasMovedDuringDrag;
+    
+    setActiveDragId(null); setActiveDragType(null); setOverId(null);
+    setIsSortingMode(false);
+
     if (sorting && moved) {
       if (active.data.current?.type === "account") syncAccountsOrder(accounts);
       else if (active.data.current?.type === "category") syncCategories(categories);
       else if (active.data.current?.type === "income") syncIncomes(incomes);
       return;
     }
+
     if (!over) return;
-    const activeData = active.data.current; const overData = over.data.current;
+
+    const activeData = active.data.current;
+    const overData = over.data.current;
+
     if (activeData?.type === "account") {
       if (overData?.type === "category") {
         const lastCur = localStorage.getItem("cl_last_currency") || "USD";
@@ -214,9 +246,7 @@ export default function App() {
                   <button onClick={() => { setIsSettingsMenuOpen(false); pullSettings(); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left">
                     <RefreshCcw size={16} className={`text-amber-500 ${syncStatus === 'loading' ? 'animate-spin' : ''}`} /><span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Обновить</span>
                   </button>
-                  <button onClick={() => { setIsSettingsMenuOpen(false); setHistoryModal({ isOpen: true, entity: { name: "Лента", icon: "list" }, type: "feed" }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left">
-                    <List size={16} className="text-[var(--primary-color)]" /><span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Лента</span>
-                  </button>
+                  <button onClick={() => { setIsSettingsMenuOpen(false); setHistoryModal({ isOpen: true, entity: { name: "Лента", icon: "list" }, type: "feed" }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><List size={16} className="text-[var(--primary-color)]" /><span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Лента</span></button>
                   <button onClick={() => { setIsSettingsMenuOpen(false); toggleTheme(); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left">
                     {theme === 'dark' ? <Sun size={16} className="text-amber-400" /> : <Moon size={16} className="text-slate-400" />}
                     <span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">{theme === 'dark' ? "Light Mode" : "Dark Mode"}</span>
@@ -240,7 +270,14 @@ export default function App() {
         </button>
       </header>
 
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragMove={handleDragMove} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
+      <DndContext 
+        sensors={sensors} 
+        collisionDetection={isSortingMode ? closestCenter : pointerWithin} 
+        onDragStart={handleDragStart} 
+        onDragMove={handleDragMove}
+        onDragOver={handleDragOver} 
+        onDragEnd={handleDragEnd}
+      >
         <section className={`px-0 overflow-hidden transition-all duration-500 shrink-0 ${isIncomeCollapsed ? "max-h-0 opacity-0" : "max-h-[160px] opacity-100 py-1"}`}>
           <div className="px-6 py-2 flex justify-between items-center"><div onClick={toggleIncome} className="flex items-center gap-2 cursor-pointer group"><ChevronRight size={14} className="text-slate-500 rotate-90" /><h2 className="text-[10px] font-black text-slate-500 uppercase group-hover:text-white">Доходы</h2></div><div className="flex items-center gap-3"><button onClick={() => setAnalyticsModal({ isOpen: true, type: "income" })} className="w-8 h-8 rounded-full bg-[var(--success-color)]/10 border border-[var(--success-color)]/20 text-[var(--success-color)] flex items-center justify-center hover:bg-[var(--success-color)]/20 transition-all shadow-sm"><PieChart size={14} /></button><button onClick={() => setIncomeModal({ isOpen: true, income: null })} className="w-7 h-7 rounded-full bg-[var(--success-color)]/10 text-[var(--success-color)] flex items-center justify-center hover:bg-[var(--success-color)]/20 transition-colors"><Plus size={14} /></button></div></div>
           <SortableContext items={incomes.map(i => i.id)} strategy={horizontalListSortingStrategy}><div className="flex gap-4 overflow-x-auto hide-scrollbar px-6 pb-4 pt-2">{incomes.map(inc => (<DraggableIncomeItem key={inc.id} income={inc} isDragging={activeDragId === inc.id} onSortingMode={() => setIsSortingMode(true)} isSortingMode={isSortingMode} onLongPress={(i) => setIncomeModal({ isOpen: true, income: i })} onClick={(income) => setHistoryModal({ isOpen: true, entity: income, type: "income" })} activeDragType={activeDragType} />))}</div></SortableContext>
@@ -318,7 +355,7 @@ export default function App() {
       <IncomeModal isOpen={incomeModal.isOpen} income={incomeModal.income} onClose={() => setIncomeModal({ isOpen: false, income: null })} onSave={(name, icon, color) => { saveIncome({ ...incomeModal.income, name, icon, color }); setIncomeModal({ isOpen: false, income: null }); }} onDelete={() => { if (!incomeModal.income) return; setConfirmDelete({ isOpen: true, title: "Удалить доход?", message: `Удалить "${incomeModal.income.name}"?`, onConfirm: () => { deleteIncome(incomeModal.income!.id); setIncomeModal({ isOpen: false, income: null }); setConfirmDelete(p => ({ ...p, isOpen: false })); } }); }} />
       <CategoryModal isOpen={categoryModal.isOpen} category={categoryModal.category} onClose={() => setCategoryModal({ isOpen: false, category: null })} onSave={(cat) => { saveCategory(cat); setCategoryModal({ isOpen: false, category: null }); }} onDelete={() => { if (!categoryModal.category) return; setConfirmDelete({ isOpen: true, title: "Удалить категорию?", message: `Удалить "${categoryModal.category.name}"?`, onConfirm: () => { deleteCategory(categoryModal.category!.id); setCategoryModal({ isOpen: false, category: null }); setConfirmDelete(p => ({ ...p, isOpen: false })); } }); }} />
       <HistoryModal isOpen={historyModal.isOpen} onClose={() => setHistoryModal({ isOpen: false, entity: null, type: null })} entity={historyModal.entity} entityType={historyModal.type} transactions={historyModal.customTransactions || transactions} accounts={accounts} categories={categories} incomes={incomes} onEditTransaction={(tx) => { const source = tx.type === "income" ? incomes.find(i => i.id === tx.targetId) ?? null : accounts.find(a => a.id === tx.accountId) ?? null; const destination = tx.type === "expense" ? categories.find(c => c.id === tx.targetId) ?? null : tx.type === "income" ? accounts.find(a => a.id === tx.accountId) ?? null : accounts.find(a => a.id === tx.targetId) ?? null; if (!source || !destination) return; setEditingTxId(tx.id); setHistoryModal({ isOpen: false, entity: null, type: null }); setNumpad({ isOpen: true, type: tx.type, source, destination, sourceAmount: String(tx.sourceAmount), sourceCurrency: tx.sourceCurrency, targetAmount: String(tx.targetAmount ?? tx.sourceAmount), targetCurrency: tx.targetCurrency, targetLinked: true, activeField: "source", tag: tx.tag ?? null, comment: tx.comment ?? "", }); }} />
-      <AnalyticsModal isOpen={analyticsModal.isOpen} onClose={() => setAnalyticsModal(p => ({ ...p, isOpen: false }))} categories={categories} incomes={incomes} globalTransactions={transactions} initialType={analyticsModal.type} onItemClick={(item, type, monthTx) => { let entity = item; if (type === "category") { const cat = categories.find(c => c.id === item.id); if (cat) entity = cat; } else if (type === "income") { const inc = incomes.find(i => i.id === item.id); if (inc) entity = inc; } setAnalyticsModal(p => ({ ...p, isOpen: false })); setHistoryModal({ isOpen: true, entity, type, customTransactions: monthTx.filter(t => { if (type === "category") return t.targetId === item.id; if (type === "tag") return (t.tag?.trim() || "Без тега") === item.name; if (type === "income") return t.targetId === item.id; return false; }) }); }} />
+      <AnalyticsModal isOpen={analyticsModal.isOpen} onClose={() => setAnalyticsModal(p => ({ ...p, isOpen: false }))} categories={categories} incomes={incomes} accounts={accounts} globalTransactions={transactions} initialType={analyticsModal.type} onItemClick={(item, type, monthTx) => { let entity = item; if (type === "category") { const cat = categories.find(c => c.id === item.id); if (cat) entity = cat; } else if (type === "income") { const inc = incomes.find(i => i.id === item.id); if (inc) entity = inc; } setAnalyticsModal(p => ({ ...p, isOpen: false })); setHistoryModal({ isOpen: true, entity, type, customTransactions: monthTx.filter(t => { if (type === "category") return t.targetId === item.id; if (type === "tag") return (t.tag?.trim() || "Без тега") === item.name; if (type === "income") return t.targetId === item.id; return false; }) }); }} />
       <ConfirmModal isOpen={confirmDelete.isOpen} title={confirmDelete.title} message={confirmDelete.message} onConfirm={confirmDelete.onConfirm} onCancel={() => setConfirmDelete(p => ({ ...p, isOpen: false }))} />
     </div>
   );
