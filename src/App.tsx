@@ -132,7 +132,10 @@ export default function App() {
 
   const [isSettingsMenuOpen, setIsSettingsMenuOpen] = React.useState(false);
 
-  const [analyticsModal, setAnalyticsModal] = React.useState({ isOpen: false });
+  const [analyticsModal, setAnalyticsModal] = React.useState<{ isOpen: boolean; type: "expense" | "income" }>({ 
+    isOpen: false, 
+    type: "expense" 
+  });
 
   const [theme, setTheme] = React.useState<"light" | "dark">(() => {
     return (localStorage.getItem("coinlover_theme") as "light" | "dark") || "dark";
@@ -228,7 +231,7 @@ export default function App() {
         setIncomeModal(p => ({ ...p, isOpen: false }));
         setCategoryModal(p => ({ ...p, isOpen: false }));
         setHistoryModal(p => ({ ...p, isOpen: false }));
-        setAnalyticsModal({ isOpen: false });
+        setAnalyticsModal(p => ({ ...p, isOpen: false }));
         setNumpad(p => ({ ...p, isOpen: false }));
         setConfirmDelete(p => ({ ...p, isOpen: false }));
         setIsSettingsMenuOpen(false);
@@ -438,8 +441,17 @@ export default function App() {
     });
   };
 
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+
+  const currentMonthTransactions = transactions.filter(t => {
+    const txDate = new Date(t.date.replace(/-/g, '/').replace('T', ' '));
+    return txDate.getMonth() === currentMonth && txDate.getFullYear() === currentYear;
+  });
+
   const totalBalance = Math.round(accounts.reduce((s, a) => s + RatesService.convert(a.balance, a.currency || "USD", "USD"), 0));
-  const totalSpent = transactions.filter(t => t.type === "expense").reduce((s, t) => s + t.amount, 0);
+  const totalSpent = Math.round(currentMonthTransactions.filter(t => t.type === "expense").reduce((s, t) => s + (t.amountUSD ?? t.amount), 0));
 
 
 
@@ -624,12 +636,23 @@ export default function App() {
 
         {/* INCOME STRIPE */}
         <section className={`px-0 overflow-hidden transition-all duration-500 bg-white/[0.01] shrink-0 ${isIncomeCollapsed ? "max-h-0 opacity-0 border-none" : "max-h-[160px] opacity-100 border-b border-white/5 py-1"}`}>
-          <div onClick={toggleIncome} className="px-6 py-2 flex justify-between items-center cursor-pointer hover:bg-white/5 group">
-            <div className="flex items-center gap-2">
+          <div className="px-6 py-2 flex justify-between items-center">
+            <div onClick={toggleIncome} className="flex items-center gap-2 cursor-pointer hover:bg-white/5 group rounded-lg px-2 -ml-2 transition-colors">
               <ChevronRight size={14} className="text-slate-500 rotate-90" />
               <h2 className="text-[10px] font-black text-slate-500 uppercase group-hover:text-white">Доходы</h2>
             </div>
-            <button onClick={() => setIncomeModal({ isOpen: true, income: null })} className="text-slate-500 hover:text-white"><Plus size={14} /></button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setAnalyticsModal({ isOpen: true, type: "income" })}
+                className="w-7 h-7 rounded-full bg-[var(--success-color)]/10 text-[var(--success-color)] flex items-center justify-center hover:bg-[var(--success-color)]/20 transition-colors"
+                title="Аналитика доходов"
+              >
+                <PieChart size={14} />
+              </button>
+              <button onClick={() => setIncomeModal({ isOpen: true, income: null })} className="text-slate-500 hover:text-white">
+                <Plus size={14} />
+              </button>
+            </div>
           </div>
           <SortableContext items={incomes.map(i => i.id)} strategy={horizontalListSortingStrategy}>
             <div className="flex gap-4 overflow-x-auto hide-scrollbar px-6 pb-4 pt-2">
@@ -681,9 +704,9 @@ export default function App() {
               <h2 className="text-[10px] font-black text-slate-500 uppercase">Расходы</h2>
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => setAnalyticsModal({ isOpen: true })}
-                  className="w-7 h-7 rounded-full bg-[#6d5dfc]/10 text-[#6d5dfc] flex items-center justify-center hover:bg-[#6d5dfc]/20 transition-colors shadow-[0_0_10px_rgba(109,93,252,0.15)]"
-                  title="Аналитика"
+                  onClick={() => setAnalyticsModal({ isOpen: true, type: "expense" })}
+                  className="w-7 h-7 rounded-full bg-[var(--primary-color)]/10 text-[var(--primary-color)] flex items-center justify-center hover:bg-[var(--primary-color)]/20 transition-colors shadow-[0_0_10px_var(--shadow-color)]"
+                  title="Аналитика расходов"
                 >
                   <PieChart size={14} />
                 </button>
@@ -698,9 +721,9 @@ export default function App() {
             <SortableContext items={categories.map(c => c.id)} strategy={rectSortingStrategy}>
               <div className="grid grid-cols-4 gap-y-6 gap-x-2 pb-4">
                 {categories.map(cat => {
-                  const spent = transactions
+                  const spent = Math.round(currentMonthTransactions
                     .filter(t => t.type === "expense" && t.targetId === cat.id)
-                    .reduce((s, t) => s + t.amount, 0);
+                    .reduce((s, t) => s + (t.amountUSD ?? t.amount), 0));
                   return (
                     <CategoryItem
                       key={cat.id} category={cat} spent={spent}
@@ -913,21 +936,32 @@ export default function App() {
 
       <AnalyticsModal
         isOpen={analyticsModal.isOpen}
-        onClose={() => setAnalyticsModal({ isOpen: false })}
+        onClose={() => setAnalyticsModal(p => ({ ...p, isOpen: false }))}
         categories={categories}
+        incomes={incomes}
         globalTransactions={transactions}
+        initialType={analyticsModal.type}
         onItemClick={(item, type, monthTx) => {
           let entity = item;
           if (type === "category") {
             const cat = categories.find(c => c.id === item.id);
             if (cat) entity = cat;
+          } else if (type === "income") {
+            const inc = incomes.find(i => i.id === item.id);
+            if (inc) entity = inc;
           }
-          setAnalyticsModal({ isOpen: false });
+          
+          setAnalyticsModal(p => ({ ...p, isOpen: false }));
           setHistoryModal({
             isOpen: true,
             entity,
             type,
-            customTransactions: monthTx
+            customTransactions: monthTx.filter(t => {
+              if (type === "category") return t.targetId === item.id;
+              if (type === "tag") return (t.tag?.trim() || "Без тега") === item.name;
+              if (type === "income") return t.sourceId === item.id;
+              return false;
+            })
           });
         }}
       />
