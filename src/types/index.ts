@@ -31,12 +31,12 @@ export interface Transaction {
   type: TransactionType;
   accountId: string;
   targetId: string;
-  sourceAmount: number; // Amount deducted from wallet
-  sourceCurrency: string; // Wallet currency
-  sourceAmountUSD: number; // USD equivalent of source amount
-  targetAmount: number; // Real receipt amount (Local currency)
-  targetCurrency: string; // Local currency code (e.g., BRL)
-  targetAmountUSD: number; // USD equivalent of target amount
+  sourceAmount: number; // Amount from source perspective
+  sourceCurrency: string; 
+  sourceAmountUSD: number; 
+  targetAmount: number; // Amount reaching destination (Wallet for income, Category for expense)
+  targetCurrency: string;
+  targetAmountUSD: number;
   date: string;
   tag?: string;
   comment?: string;
@@ -47,9 +47,10 @@ export interface NumpadData {
   type: TransactionType;
   source: Account | IncomeSource | null;
   destination: Account | Category | null;
-  sourceAmount: string; // Source amount string
-  targetAmount: string; // Target (Local) amount string
-  targetCurrency: string; // Currency for the target amount field
+  sourceAmount: string;
+  sourceCurrency: string;
+  targetAmount: string;
+  targetCurrency: string;
   targetLinked: boolean; 
   activeField: "source" | "destination";
   tag: string | null;
