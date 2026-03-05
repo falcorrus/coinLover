@@ -139,15 +139,15 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
         return txDate.getFullYear() === currentDate.getFullYear() && txDate.getMonth() === currentDate.getMonth();
     });
 
-    const totalUSD = filteredTx.reduce((sum, t) => sum + (t.amountUSD ?? t.amount), 0);
+    const totalUSD = filteredTx.reduce((sum, t) => sum + (t.sourceAmountUSD || t.sourceAmount || 0), 0);
 
     let listItems: { id: string, name: string, icon: any, color: string, amount: number, percent: number }[] = [];
 
     if (tab === "categories" || analysisType === "income") {
         const itemMap = new Map<string, number>();
         filteredTx.forEach(t => {
-            const id = analysisType === "expense" ? t.targetId : t.sourceId;
-            itemMap.set(id, (itemMap.get(id) || 0) + (t.amountUSD ?? t.amount));
+            const id = t.targetId; // Category for expense, IncomeSource for income
+            itemMap.set(id, (itemMap.get(id) || 0) + (t.sourceAmountUSD || t.sourceAmount || 0));
         });
 
         itemMap.forEach((amount, id) => {
@@ -177,7 +177,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
         const tagMap = new Map<string, number>();
         filteredTx.forEach(t => {
             const tagName = t.tag && t.tag.trim() ? t.tag.trim() : "Без тега";
-            tagMap.set(tagName, (tagMap.get(tagName) || 0) + (t.amountUSD ?? t.amount));
+            tagMap.set(tagName, (tagMap.get(tagName) || 0) + (t.sourceAmountUSD || t.sourceAmount || 0));
         });
 
         tagMap.forEach((amount, tagName) => {
@@ -301,17 +301,17 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                                         const tagMap = new Map<string, number>();
                                         catTx.forEach(t => {
                                             const tagName = t.tag && t.tag.trim() ? t.tag.trim() : "Без тега";
-                                            tagMap.set(tagName, (tagMap.get(tagName) || 0) + (t.amountUSD ?? t.amount));
+                                            tagMap.set(tagName, (tagMap.get(tagName) || 0) + (t.sourceAmountUSD || t.sourceAmount || 0));
                                         });
                                         tagMap.forEach((amount, name) => {
                                             itemDetails.push({ name, amount, percent: item.amount > 0 ? (amount / item.amount) * 100 : 0 });
                                         });
                                     } else if (analysisType === "income") {
-                                        const incTx = filteredTx.filter(t => t.sourceId === item.id);
+                                        const incTx = filteredTx.filter(t => t.targetId === item.id);
                                         const tagMap = new Map<string, number>();
                                         incTx.forEach(t => {
                                             const tagName = t.tag && t.tag.trim() ? t.tag.trim() : "Без тега";
-                                            tagMap.set(tagName, (tagMap.get(tagName) || 0) + (t.amountUSD ?? t.amount));
+                                            tagMap.set(tagName, (tagMap.get(tagName) || 0) + (t.sourceAmountUSD || t.sourceAmount || 0));
                                         });
                                         tagMap.forEach((amount, name) => {
                                             itemDetails.push({ name, amount, percent: item.amount > 0 ? (amount / item.amount) * 100 : 0 });
@@ -369,7 +369,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                                                                 onItemClick(
                                                                     { ...item, name: tag.name, id: tag.name }, 
                                                                     "tag", 
-                                                                    filteredTx.filter(t => (analysisType === "expense" ? t.targetId : t.sourceId) === item.id && (t.tag?.trim() || "Без тега") === tag.name)
+                                                                    filteredTx.filter(t => t.targetId === item.id && (t.tag?.trim() || "Без тега") === tag.name)
                                                                 );
                                                             }
                                                         }}
