@@ -1,6 +1,6 @@
 import React from "react";
 import { X, ChevronRight, Check, CalendarDays, Delete, Divide, Plus, Minus, Equal, Percent, MessageSquare, Link2, Trash2, ArrowDown } from "lucide-react";
-import { NumpadData, Category, Account } from "../types";
+import { NumpadData, Category } from "../types";
 import { IconMap } from "../constants";
 import { CalendarModal } from "./CalendarModal";
 import { RatesService } from "../services/RatesService";
@@ -21,6 +21,8 @@ interface Props {
   isEditing?: boolean;
 }
 
+const COMMON_CURRENCIES = ["USD", "BRL", "ARS", "EUR", "RUB", "THB", "IDR", "GEL", "TRY", "KZT", "AMD", "AED"];
+
 export const Numpad: React.FC<Props> = ({ 
   data, availableCurrencies, onClose, onFieldChange, onCurrencyChange, 
   onPress, onDelete, onSubmit, onTagSelect, onCommentChange, onLinkToggle, onRemove, isEditing 
@@ -30,48 +32,32 @@ export const Numpad: React.FC<Props> = ({
   const [currencyPicker, setCurrencyPicker] = React.useState<{ isOpen: boolean; field: "source" | "target" | null }>({ isOpen: false, field: null });
   const [commentDraft, setCommentDraft] = React.useState("");
 
-  React.useEffect(() => {
-    if (isCommentOpen) setCommentDraft(data.comment);
-  }, [isCommentOpen, data.comment]);
+  React.useEffect(() => { if (isCommentOpen) setCommentDraft(data.comment); }, [isCommentOpen, data.comment]);
 
   if (!data.isOpen) return null;
 
-  const handleYesterday = () => {
-    const date = new Date();
-    date.setDate(date.getDate() - 1);
-    onSubmit(date.toISOString());
-  };
-
-  const handleDateSelect = (selectedDate: Date) => {
-    onSubmit(selectedDate.toISOString());
-    setIsCalendarOpen(false);
-  };
-
+  const handleYesterday = () => { const date = new Date(); date.setDate(date.getDate() - 1); onSubmit(date.toISOString()); };
+  const handleDateSelect = (selectedDate: Date) => { onSubmit(selectedDate.toISOString()); setIsCalendarOpen(false); };
   const handleTagClick = (t: string) => { onTagSelect(data.tag === t ? null : t); };
   const handleCommentSave = () => { onCommentChange(commentDraft.trim()); setIsCommentOpen(false); };
   const hasComment = data.comment.trim().length > 0;
 
-  // Calculate dynamic grid columns: if even and small amount, split into exactly 2 rows
+  // Merge wallet currencies with common ones for a better selection
+  const allCurrencies = Array.from(new Set([...availableCurrencies, ...COMMON_CURRENCIES])).sort();
+
   const getGridCols = () => {
-    const count = availableCurrencies.length;
-    if (count === 0) return "grid-cols-1";
-    if (count % 2 === 0 && count <= 8) {
-      if (count === 2) return "grid-cols-1"; // 2 rows of 1
-      if (count === 4) return "grid-cols-2"; // 2 rows of 2
-      if (count === 6) return "grid-cols-3"; // 2 rows of 3
-      if (count === 8) return "grid-cols-4"; // 2 rows of 4
-    }
-    return "grid-cols-3"; // Default
+    const count = allCurrencies.length;
+    if (count % 4 === 0) return "grid-cols-4";
+    return "grid-cols-3";
   };
 
   return (
-    <div className="fixed inset-0 z-[150] flex flex-col bg-[var(--bg-color)] animate-in slide-in-from-right duration-500 ease-in-out">
+    <div className="fixed inset-0 z-[150] flex flex-col bg-[var(--bg-color)] animate-in slide-in-from-right duration-500 ease-in-out font-sans">
+      {/* Header */}
       <div className="flex justify-between items-center px-4 py-4 bg-[var(--glass-bg)] border-b border-[var(--glass-border)] text-[var(--text-main)]">
         <div className="flex items-center gap-1">
           <button onClick={onClose} className="p-2 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"><X size={24} /></button>
-          {isEditing && onRemove && (
-            <button onClick={onRemove} className="p-2 text-[var(--danger-color)] hover:opacity-80 transition-colors"><Trash2 size={20} /></button>
-          )}
+          {isEditing && onRemove && (<button onClick={onRemove} className="p-2 text-[var(--danger-color)] hover:opacity-80 transition-colors"><Trash2 size={20} /></button>)}
         </div>
         <div className="flex items-center gap-3 text-sm font-semibold tracking-wide">
           <span className="text-[var(--text-muted)] uppercase">{data.source?.name}</span>
@@ -86,6 +72,7 @@ export const Numpad: React.FC<Props> = ({
 
       <div className="flex-1 flex flex-col items-center justify-center px-4">
         <div className="w-full flex items-center gap-3">
+          {/* SOURCE FIELD (Left) - Clickable currency if INCOME */}
           <div
             onClick={() => onFieldChange("source")}
             className={`flex-1 h-36 rounded-[24px] border flex flex-col items-end justify-center p-6 relative transition-all duration-300 ${data.activeField === "source"
@@ -94,28 +81,27 @@ export const Numpad: React.FC<Props> = ({
           >
             <span className={`text-4xl sm:text-5xl font-light tracking-tighter text-right overflow-hidden ${data.activeField === "source" ? "text-[var(--text-main)]" : "text-[var(--text-muted)]"}`}>{data.sourceAmount}</span>
             <div className="flex items-center gap-1.5 absolute bottom-5 right-6">
-              <button
-                onClick={(e) => {
-                  if (data.type === 'income') {
-                    e.stopPropagation();
-                    setCurrencyPicker({ isOpen: true, field: "source" });
-                  }
-                }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all duration-300 active:scale-95 ${data.activeField === "source" 
-                  ? (data.type === 'income' ? 'bg-[var(--success-color)] text-white border-[var(--success-color)] shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'bg-[#D4AF37] text-white border-[#D4AF37]') 
-                  : 'bg-[var(--glass-item-bg)] border-[var(--glass-border)] text-[var(--text-muted)] opacity-60'} ${data.type === 'income' ? 'hover:scale-105' : ''}`}
-              >
-                <span className="text-[11px] font-black uppercase tracking-wider">{data.sourceCurrency}</span>
-                {data.type === 'income' && <ChevronRight size={12} className="opacity-60" />}
-              </button>
+              {data.type === 'income' ? (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setCurrencyPicker({ isOpen: true, field: "source" }); }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all duration-300 active:scale-95 ${data.activeField === "source" ? 'bg-[var(--success-color)] text-white border-[var(--success-color)] shadow-lg' : 'bg-[var(--glass-item-bg)] border-[var(--glass-border)] text-[var(--text-muted)]'} hover:scale-105`}
+                >
+                  <span className="text-[11px] font-black uppercase tracking-wider">{data.sourceCurrency}</span>
+                  <ChevronRight size={12} className="opacity-60" />
+                </button>
+              ) : (
+                <span className={`text-[11px] font-black uppercase px-1 py-0.5 ${data.activeField === "source" ? "text-[#D4AF37]" : "text-[var(--text-muted)]"}`}>{data.sourceCurrency}</span>
+              )}
               <span className="text-[9px] font-bold text-[var(--text-muted)] uppercase opacity-40 ml-1">ОТКУДА</span>
             </div>
           </div>
 
+          {/* Link / Action Icon */}
           <button onClick={(e) => { e.stopPropagation(); onLinkToggle?.(); }} className={`shrink-0 w-10 h-10 rounded-full flex flex-col items-center justify-center transition-all duration-300 active:scale-90 ${data.targetLinked ? 'bg-[var(--glass-item-bg)] border border-[var(--glass-border)] shadow-lg' : 'bg-transparent opacity-40 hover:opacity-100'}`}>
             {data.targetLinked ? <Link2 size={20} className={data.type === 'expense' ? "text-[#D4AF37]" : "text-[var(--success-color)]"} /> : <ArrowDown size={20} className="text-[var(--text-muted)]" />}
           </button>
 
+          {/* DESTINATION FIELD (Right) - Clickable currency if EXPENSE */}
           <div
             onClick={() => onFieldChange("destination")}
             className={`flex-1 h-36 rounded-[24px] border flex flex-col items-end justify-center p-6 relative transition-all duration-300 ${data.activeField === "destination"
@@ -124,61 +110,60 @@ export const Numpad: React.FC<Props> = ({
           >
             <span className={`text-4xl sm:text-5xl font-light tracking-tighter text-right overflow-hidden ${data.activeField === "destination" ? "text-[var(--text-main)]" : "text-[var(--text-muted)]"}`}>{data.targetAmount}</span>
             <div className="flex items-center gap-1.5 absolute bottom-5 right-6">
-              <button
-                onClick={(e) => {
-                  if (data.type === 'expense') {
-                    e.stopPropagation();
-                    setCurrencyPicker({ isOpen: true, field: "target" });
-                  }
-                }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all duration-300 active:scale-95 ${data.activeField === "destination" 
-                  ? (data.type === 'expense' ? 'bg-[#D4AF37] text-white border-[#D4AF37] shadow-[0_0_15px_rgba(212,175,55,0.3)]' : 'bg-[var(--success-color)] text-white border-[var(--success-color)]') 
-                  : 'bg-[var(--glass-item-bg)] border-[var(--glass-border)] text-[var(--text-muted)] opacity-60'} ${data.type === 'expense' ? 'hover:scale-105' : ''}`}
-              >
-                <span className="text-[11px] font-black uppercase tracking-wider">{data.targetCurrency}</span>
-                {data.type === 'expense' && <ChevronRight size={12} className="opacity-60" />}
-              </button>
+              {data.type === 'expense' ? (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setCurrencyPicker({ isOpen: true, field: "target" }); }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all duration-300 active:scale-95 ${data.activeField === "destination" ? 'bg-[#D4AF37] text-white border-[#D4AF37] shadow-lg' : 'bg-[var(--glass-item-bg)] border-[var(--glass-border)] text-[var(--text-muted)]'} hover:scale-105`}
+                >
+                  <span className="text-[11px] font-black uppercase tracking-wider">{data.targetCurrency}</span>
+                  <ChevronRight size={12} className="opacity-60" />
+                </button>
+              ) : (
+                <span className={`text-[11px] font-black uppercase px-1 py-0.5 ${data.activeField === "destination" ? "text-[var(--success-color)]" : "text-[var(--text-muted)]"}`}>{data.targetCurrency}</span>
+              )}
               <span className="text-[9px] font-bold text-[var(--text-muted)] uppercase opacity-40 ml-1">КУДА</span>
             </div>
           </div>
         </div>
       </div>
 
+      {/* Tags + Comment bar */}
       <div className="flex items-center px-4 py-3 gap-3 bg-[var(--glass-bg)] shrink-0 border-t border-[var(--glass-border)] overflow-hidden">
         <div className="flex-1 flex items-center gap-2 overflow-x-auto hide-scrollbar">
           {data.type === 'expense' && data.destination && (data.destination as Category).tags && (data.destination as Category).tags.map(t => (
-            <button key={t} onClick={() => handleTagClick(t)} className={`px-4 py-1.5 rounded-full uppercase text-[10px] font-black whitespace-nowrap transition-all duration-200 ${data.tag === t ? "bg-[var(--success-color)] text-white scale-105 shadow-md shadow-[var(--success-color)]/20" : "bg-[var(--glass-item-bg)] text-[var(--text-muted)] border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)]"}`}>{t}</button>
+            <button key={t} onClick={() => handleTagClick(t)} className={`px-4 py-1.5 rounded-full uppercase text-[10px] font-black whitespace-nowrap transition-all duration-200 ${data.tag === t ? "bg-[var(--success-color)] text-white scale-105 shadow-md" : "bg-[var(--glass-item-bg)] text-[var(--text-muted)] border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)]"}`}>{t}</button>
           ))}
         </div>
-        <button onClick={() => setIsCommentOpen(true)} className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 ${hasComment ? "bg-[var(--primary-color)]/20 text-[var(--primary-color)]" : "bg-[var(--glass-item-bg)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--glass-border)] shadow-sm"}`}><MessageSquare size={18} /></button>
+        <button onClick={() => setIsCommentOpen(true)} className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 ${hasComment ? "bg-[var(--primary-color)]/20 text-[var(--primary-color)]" : "bg-[var(--glass-item-bg)] text-[var(--text-muted)] border border-[var(--glass-border)]"}`}><MessageSquare size={18} /></button>
       </div>
 
+      {/* Numerical Pad */}
       <div className="bg-[var(--numpad-bg)] p-4 pb-8 border-t border-[var(--glass-border)]">
         <div className="flex gap-3">
           <div className="grid grid-cols-3 gap-2 flex-[2]">
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (<button key={num} onClick={() => onPress(num.toString())} className="h-14 flex items-center justify-center text-3xl font-light text-[var(--text-main)] hover:bg-[var(--glass-item-bg)] rounded-xl transition-all active:scale-95">{num}</button>))}
-            <button onClick={() => onPress(".")} className="h-14 flex items-center justify-center text-3xl font-light text-[var(--text-main)] hover:bg-[var(--glass-item-bg)] rounded-xl transition-all active:scale-95">,</button>
-            <button onClick={() => onPress("0")} className="h-14 flex items-center justify-center text-3xl font-light text-[var(--text-main)] hover:bg-[var(--glass-item-bg)] rounded-xl transition-all active:scale-95">0</button>
-            <button onClick={onDelete} className="h-14 flex items-center justify-center text-[var(--text-muted)] hover:bg-[var(--glass-item-bg)] rounded-xl transition-all active:scale-95"><Delete size={24} /></button>
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (<button key={num} onClick={() => onPress(num.toString())} className="h-14 flex items-center justify-center text-3xl font-light text-[var(--text-main)] hover:bg-[var(--glass-item-bg)] rounded-xl active:scale-95 transition-all">{num}</button>))}
+            <button onClick={() => onPress(".")} className="h-14 flex items-center justify-center text-3xl font-light text-[var(--text-main)] rounded-xl active:scale-95">,</button>
+            <button onClick={() => onPress("0")} className="h-14 flex items-center justify-center text-3xl font-light text-[var(--text-main)] rounded-xl active:scale-95">0</button>
+            <button onClick={onDelete} className="h-14 flex items-center justify-center text-[var(--text-muted)] rounded-xl active:scale-95"><Delete size={24} /></button>
           </div>
           <div className="flex-[1] bg-[var(--panel-bg)] rounded-2xl flex flex-col p-2 gap-2 shadow-inner">
             <div className="grid grid-cols-2 gap-2 flex-1">
-              <button onClick={() => onPress("C")} className="flex items-center justify-center text-xl font-bold text-[#D4AF37] hover:bg-[var(--bg-color)]/50 rounded-xl transition-all active:scale-95">C</button>
-              <button onClick={() => onPress("/")} className="flex items-center justify-center text-2xl font-light text-[var(--text-muted)] hover:bg-[var(--bg-color)]/50 rounded-xl transition-all active:scale-95"><Divide size={20} /></button>
-              <button onClick={() => onPress("*")} className="flex items-center justify-center text-2xl font-light text-[var(--text-muted)] hover:bg-[var(--bg-color)]/50 rounded-xl transition-all active:scale-95"><X size={20} /></button>
-              <button onClick={() => onPress("-")} className="flex items-center justify-center text-2xl font-light text-[var(--text-muted)] hover:bg-[var(--bg-color)]/50 rounded-xl transition-all active:scale-95"><Minus size={20} /></button>
-              <button onClick={() => onPress("+")} className="flex items-center justify-center text-2xl font-light text-[var(--text-muted)] hover:bg-[var(--bg-color)]/50 rounded-xl transition-all active:scale-95"><Plus size={20} /></button>
-              <button onClick={() => onPress("%")} className="flex items-center justify-center text-xl font-light text-[var(--text-muted)] hover:bg-[var(--bg-color)]/50 rounded-xl transition-all active:scale-95"><Percent size={18} /></button>
+              <button onClick={() => onPress("C")} className="flex items-center justify-center text-xl font-bold text-[#D4AF37] rounded-xl active:scale-95">C</button>
+              <button onClick={() => onPress("/")} className="flex items-center justify-center text-2xl font-light text-[var(--text-muted)] rounded-xl active:scale-95"><Divide size={20} /></button>
+              <button onClick={() => onPress("*")} className="flex items-center justify-center text-2xl font-light text-[var(--text-muted)] rounded-xl active:scale-95"><X size={20} /></button>
+              <button onClick={() => onPress("-")} className="flex items-center justify-center text-2xl font-light text-[var(--text-muted)] rounded-xl active:scale-95"><Minus size={20} /></button>
+              <button onClick={() => onPress("+")} className="flex items-center justify-center text-2xl font-light text-[var(--text-muted)] rounded-xl active:scale-95"><Plus size={20} /></button>
+              <button onClick={() => onPress("%")} className="flex items-center justify-center text-xl font-light text-[var(--text-muted)] rounded-xl active:scale-95"><Percent size={18} /></button>
             </div>
-            <button onClick={() => onPress("=")} className="h-12 w-full bg-[var(--btn-equals)] rounded-xl flex items-center justify-center text-2xl font-light text-[var(--text-main)] hover:brightness-95 transition-all active:scale-[0.98]">=</button>
+            <button onClick={() => onPress("=")} className="h-12 w-full bg-[var(--btn-equals)] rounded-xl flex items-center justify-center text-2xl font-light text-[var(--text-main)] active:scale-95">=</button>
           </div>
         </div>
         <div className="mt-6 flex justify-center">
-          {isEditing ? (<button onClick={() => onSubmit()} className="px-8 py-3 rounded-full text-sm font-black uppercase text-white bg-[var(--primary-color)] shadow-lg transition-all active:scale-95 tracking-wider">✓ Сохранить изменения</button>) : (
-            <div className="flex items-center bg-[var(--panel-bg)] rounded-full p-1 shadow-sm border border-[var(--glass-border)]">
-              <button onClick={handleYesterday} className="px-6 py-2.5 text-xs font-bold tracking-wider text-[var(--text-muted)] rounded-full hover:bg-[var(--glass-item-bg)] transition-all uppercase">Вчера</button>
-              <button onClick={() => onSubmit()} className="px-6 py-2.5 bg-[var(--success-color)] text-white text-xs font-bold tracking-wider rounded-full shadow-sm transition-all uppercase active:scale-95">Сегодня</button>
-              <button onClick={() => setIsCalendarOpen(true)} className="w-10 h-10 flex items-center justify-center text-[var(--text-muted)] rounded-full hover:bg-[var(--glass-item-bg)] transition-all ml-1"><CalendarDays size={20} /></button>
+          {isEditing ? (<button onClick={() => onSubmit()} className="px-8 py-3 rounded-full text-sm font-black uppercase text-white bg-[var(--primary-color)] shadow-lg active:scale-95 tracking-wider">✓ Сохранить</button>) : (
+            <div className="flex items-center bg-[var(--panel-bg)] rounded-full p-1 border border-[var(--glass-border)]">
+              <button onClick={handleYesterday} className="px-6 py-2.5 text-xs font-bold tracking-wider text-[var(--text-muted)] rounded-full active:bg-[var(--glass-item-bg)]">Вчера</button>
+              <button onClick={() => onSubmit()} className="px-6 py-2.5 bg-[var(--success-color)] text-white text-xs font-bold tracking-wider rounded-full shadow-sm active:scale-95">Сегодня</button>
+              <button onClick={() => setIsCalendarOpen(true)} className="w-10 h-10 flex items-center justify-center text-[var(--text-muted)] rounded-full ml-1"><CalendarDays size={20} /></button>
             </div>
           )}
         </div>
@@ -186,12 +171,13 @@ export const Numpad: React.FC<Props> = ({
 
       <CalendarModal isOpen={isCalendarOpen} onClose={() => setIsCalendarOpen(false)} onSelect={handleDateSelect} />
 
+      {/* Currency Picker Modal */}
       {currencyPicker.isOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[300] flex items-end justify-center animate-in fade-in duration-300" onClick={() => setCurrencyPicker({ isOpen: false, field: null })}>
           <div className="w-full max-w-md bg-[var(--bg-color)] border border-[var(--glass-border)] rounded-t-3xl p-6 flex flex-col gap-4 animate-in slide-in-from-bottom duration-300 shadow-2xl" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center"><h3 className="text-sm font-bold uppercase text-[var(--text-main)]">Выберите валюту</h3><button onClick={() => setCurrencyPicker({ isOpen: false, field: null })} className="p-1 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"><X size={20} /></button></div>
+            <div className="flex justify-between items-center"><h3 className="text-sm font-bold uppercase text-[var(--text-main)]">Выберите валюту</h3><button onClick={() => setCurrencyPicker({ isOpen: false, field: null })} className="p-1 text-[var(--text-muted)] hover:text-[var(--text-main)]"><X size={20} /></button></div>
             <div className={`grid ${getGridCols()} gap-2`}>
-              {availableCurrencies.map(curr => (
+              {allCurrencies.map(curr => (
                 <button key={curr} onClick={() => { onCurrencyChange?.(currencyPicker.field!, curr); setCurrencyPicker({ isOpen: false, field: null }); }} className={`h-12 rounded-xl border font-bold text-sm transition-all ${(currencyPicker.field === "source" ? data.sourceCurrency : data.targetCurrency) === curr ? "bg-[#D4AF37] text-white border-[#D4AF37]" : "bg-[var(--glass-item-bg)] border-[var(--glass-border)] text-[var(--text-muted)] hover:bg-[var(--glass-item-active)]"}`}>{curr}</button>
               ))}
             </div>
@@ -199,12 +185,13 @@ export const Numpad: React.FC<Props> = ({
         </div>
       )}
 
+      {/* Comment Modal */}
       {isCommentOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[300] flex items-end justify-center animate-in fade-in duration-300">
           <div className="w-full max-w-md bg-[var(--bg-color)] border border-[var(--glass-border)] rounded-t-3xl p-6 flex flex-col gap-4 animate-in slide-in-from-bottom duration-300 shadow-2xl shadow-[var(--shadow-color)]">
-            <div className="flex justify-between items-center"><div className="flex items-center gap-2"><MessageSquare size={16} className="text-[var(--primary-color)]" /><h3 className="text-sm font-bold uppercase text-[var(--text-main)]">Комментарий</h3></div><button onClick={() => setIsCommentOpen(false)} className="p-1 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"><X size={20} /></button></div>
-            <textarea autoFocus value={commentDraft} onChange={e => setCommentDraft(e.target.value)} placeholder="Заметка к транзакции..." rows={3} className="bg-[var(--glass-item-bg)] border border-[var(--glass-border)] rounded-xl px-4 py-3 outline-none text-[var(--text-main)] resize-none text-sm focus:border-[var(--primary-color)]/50 transition-all" />
-            <div className="flex gap-3"><button onClick={() => { setCommentDraft(""); onCommentChange(""); setIsCommentOpen(false); }} className="flex-1 h-12 rounded-xl bg-[var(--glass-item-bg)] border border-[var(--glass-border)] text-[var(--text-muted)] font-bold text-sm hover:text-[var(--danger-color)] transition-colors">ОЧИСТИТЬ</button><button onClick={handleCommentSave} className="flex-1 h-12 rounded-xl bg-[var(--primary-color)] text-white font-bold shadow-lg text-sm active:scale-95 transition-all">СОХРАНИТЬ</button></div>
+            <div className="flex justify-between items-center"><div className="flex items-center gap-2"><MessageSquare size={16} className="text-[var(--primary-color)]" /><h3 className="text-sm font-bold uppercase text-[var(--text-main)]">Комментарий</h3></div><button onClick={() => setIsCommentOpen(false)} className="p-1 text-[var(--text-muted)] hover:text-[var(--text-main)]"><X size={20} /></button></div>
+            <textarea autoFocus value={commentDraft} onChange={e => setCommentDraft(e.target.value)} placeholder="Заметка..." rows={3} className="bg-[var(--glass-item-bg)] border border-[var(--glass-border)] rounded-xl px-4 py-3 outline-none text-[var(--text-main)] resize-none text-sm focus:border-[var(--primary-color)]/50 transition-all" />
+            <div className="flex gap-3"><button onClick={() => { setCommentDraft(""); onCommentChange(""); setIsCommentOpen(false); }} className="flex-1 h-12 rounded-xl bg-[var(--glass-item-bg)] text-[var(--text-muted)] font-bold text-sm">ОЧИСТИТЬ</button><button onClick={handleCommentSave} className="flex-1 h-12 rounded-xl bg-[var(--primary-color)] text-white font-bold shadow-lg text-sm active:scale-95 transition-all">СОХРАНИТЬ</button></div>
           </div>
         </div>
       )}
