@@ -45,6 +45,7 @@ export const CategoryItem: React.FC<Props> = ({
     didMoveRef.current = false;
     startPosRef.current = { x: e.clientX, y: e.clientY };
 
+    // 600ms Sorting trigger
     sortingTimerRef.current = setTimeout(() => {
       if (!didMoveRef.current) {
         onSortingMode?.();
@@ -98,11 +99,6 @@ export const CategoryItem: React.FC<Props> = ({
       ref={setNodeRef}
       style={style}
       {...attributes}
-      {...listeners}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
       onContextMenu={e => e.preventDefault()}
       className={`flex flex-col items-center gap-2 justify-start transition-all duration-300 cursor-pointer ${isDragging ? "opacity-30" : "opacity-100"}`}
       onClick={() => {
@@ -112,8 +108,13 @@ export const CategoryItem: React.FC<Props> = ({
       }}
     >
       <div
+        {...listeners}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
         style={{ touchAction: "none" }}
-        className={`draggable-coin transition-all duration-300 pointer-events-none ${
+        className={`draggable-coin transition-all duration-300 ${
           isDragging ? "grabbed-elevation" :
           (isPressing && isSortingMode) ? "scale-110 border-[var(--primary-color)] shadow-[0_0_20px_rgba(109,93,252,0.4)] ring-4 ring-[var(--primary-color)]/20" :
           isPressing ? "scale-90 brightness-75 border-[var(--glass-border-highlight)]" : ""
