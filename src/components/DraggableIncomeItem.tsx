@@ -6,7 +6,7 @@ import { IncomeSource } from "../types";
 import { IconMap } from "../constants";
 
 const LONG_PRESS_MS = 2000; // 2 seconds for edit modal
-const MOVE_THRESHOLD = 20;   // px
+const MOVE_THRESHOLD = 10;   // px - lowered to catch scroll faster
 
 interface Props {
   income: IncomeSource;
@@ -77,7 +77,7 @@ export const DraggableIncomeItem: React.FC<Props> = ({
     const dy = e.clientY - startPosRef.current.y;
     const dist = Math.hypot(dx, dy);
 
-    // If movement is significant, clear timers
+    // If movement is significant, clear timers and mark as moved
     if (dist > MOVE_THRESHOLD) {
       didMoveRef.current = true;
       clearTimers();
@@ -87,8 +87,15 @@ export const DraggableIncomeItem: React.FC<Props> = ({
   const handlePointerUp = () => {
     setIsPressing(false);
     clearTimers();
+  };
+
+  const handleContainerClick = (e: React.MouseEvent) => {
     const elapsed = Date.now() - startTimeRef.current;
-    if (!didMoveRef.current && elapsed < 500) {
+    // Only trigger click if:
+    // 1. We didn't move much (didMoveRef is false)
+    // 2. It's not sorting mode
+    // 3. It was a relatively quick tap (< 400ms)
+    if (!didMoveRef.current && !isSortingMode && elapsed < 400) {
       onClick?.(income);
     }
   };
@@ -114,7 +121,8 @@ export const DraggableIncomeItem: React.FC<Props> = ({
       style={style}
       {...attributes}
       onContextMenu={e => e.preventDefault()}
-      className={`flex flex-col items-center justify-start transition-opacity w-[64px] shrink-0 ${isDragging ? "opacity-30" : "opacity-100"}`}
+      onClick={handleContainerClick}
+      className={`flex flex-col items-center justify-start transition-opacity w-[64px] shrink-0 cursor-pointer ${isDragging ? "opacity-30" : "opacity-100"}`}
     >
       <div
         {...listeners}
