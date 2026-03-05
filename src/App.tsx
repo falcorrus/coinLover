@@ -34,7 +34,6 @@ export default function App() {
     pullSettings, checkConflicts, conflictData, setConflictData, updateLocalFromRemote, pushSettings
   } = useFinance();
 
-  // --- ALL STATES AT THE TOP ---
   const [isSplashVisible, setIsSplashVisible] = React.useState(true);
   const [mode, setMode] = React.useState<"expense" | "income">("expense");
   const [pillMode, setPillMode] = React.useState<"expense" | "balance">("expense");
@@ -65,7 +64,6 @@ export default function App() {
   const demoTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const isDemo = window.localStorage.getItem("coinlover_demo") !== "false";
 
-  // --- EFFECTS ---
   React.useEffect(() => {
     RatesService.syncRatesInBackground();
     setTimeout(() => setIsSplashVisible(false), 600);
@@ -78,26 +76,9 @@ export default function App() {
     localStorage.setItem("coinlover_theme", theme);
   }, [theme]);
 
-  const toggleTheme = () => {
-    setTheme(prev => prev === "light" ? "dark" : "light");
-    if (navigator.vibrate) navigator.vibrate(50);
-  };
-
-  const toggleMode = (target: 'demo' | 'real') => {
-    window.localStorage.setItem("coinlover_demo", target === 'demo' ? "true" : "false");
-    window.location.reload();
-  };
-
-  const handleDemoClick = () => {
-    demoClickCount.current += 1;
-    if (demoTimerRef.current) clearTimeout(demoTimerRef.current);
-    if (demoClickCount.current >= 5) {
-      toggleMode(isDemo ? 'real' : 'demo');
-      demoClickCount.current = 0;
-    } else {
-      demoTimerRef.current = setTimeout(() => { demoClickCount.current = 0; }, 2000);
-    }
-  };
+  const toggleTheme = () => { setTheme(prev => prev === "light" ? "dark" : "light"); if (navigator.vibrate) navigator.vibrate(50); };
+  const toggleMode = (target: 'demo' | 'real') => { window.localStorage.setItem("coinlover_demo", target === 'demo' ? "true" : "false"); window.location.reload(); };
+  const handleDemoClick = () => { demoClickCount.current += 1; if (demoTimerRef.current) clearTimeout(demoTimerRef.current); if (demoClickCount.current >= 5) { toggleMode(isDemo ? 'real' : 'demo'); demoClickCount.current = 0; } else { demoTimerRef.current = setTimeout(() => { demoClickCount.current = 0; }, 2000); } };
 
   const safeEval = (str: string): string => {
     try {
@@ -114,30 +95,20 @@ export default function App() {
   const toggleIncome = () => { const next = !isIncomeCollapsed; setIsIncomeCollapsed(next); setMode(next ? "expense" : "income"); };
 
   const handleDragStart = (e: DragStartEvent) => {
-    setActiveDragId(e.active.id as string);
-    setActiveDragType(e.active.data.current?.type as DragItemType);
-    setHasMovedDuringDrag(false);
-    sortingTimerRef.current = setTimeout(() => {
-      setIsSortingMode(true);
-      if (navigator.vibrate) navigator.vibrate(50);
-    }, 500);
+    setActiveDragId(e.active.id as string); setActiveDragType(e.active.data.current?.type as DragItemType); setHasMovedDuringDrag(false);
+    sortingTimerRef.current = setTimeout(() => { setIsSortingMode(true); if (navigator.vibrate) navigator.vibrate(50); }, 500);
   };
 
   const handleDragMove = (e: DragMoveEvent) => {
     if (!hasMovedDuringDrag) setHasMovedDuringDrag(true);
     if (sortingTimerRef.current && !isSortingMode) {
       const { delta } = e;
-      if (Math.abs(delta.x) > 30 || Math.abs(delta.y) > 30) {
-        clearTimeout(sortingTimerRef.current);
-        sortingTimerRef.current = null;
-      }
+      if (Math.abs(delta.x) > 30 || Math.abs(delta.y) > 30) { clearTimeout(sortingTimerRef.current); sortingTimerRef.current = null; }
     }
   };
 
   const handleDragOver = (e: DragOverEvent) => {
-    const { active, over } = e;
-    setOverId(over?.id as string || null);
-    if (!over || !isSortingMode || active.id === over.id) return;
+    const { active, over } = e; setOverId(over?.id as string || null); if (!over || !isSortingMode || active.id === over.id) return;
     if (active.data.current?.type === "account") setAccounts((it) => arrayMove(it, it.findIndex(i => i.id === active.id), it.findIndex(i => i.id === over.id)));
     else if (active.data.current?.type === "category") setCategories((it) => arrayMove(it, it.findIndex(i => i.id === active.id), it.findIndex(i => i.id === over.id)));
     else if (active.data.current?.type === "income") setIncomes((it) => arrayMove(it, it.findIndex(i => i.id === active.id), it.findIndex(i => i.id === over.id)));
@@ -146,9 +117,7 @@ export default function App() {
 
   const handleDragEnd = (e: DragEndEvent) => {
     if (sortingTimerRef.current) clearTimeout(sortingTimerRef.current);
-    const { active, over } = e;
-    const sorting = isSortingMode;
-    const moved = hasMovedDuringDrag;
+    const { active, over } = e; const sorting = isSortingMode; const moved = hasMovedDuringDrag;
     setActiveDragId(null); setActiveDragType(null); setOverId(null); setIsSortingMode(false);
     if (sorting && moved) {
       if (active.data.current?.type === "account") syncAccountsOrder(accounts);
@@ -157,8 +126,7 @@ export default function App() {
       return;
     }
     if (!over) return;
-    const activeData = active.data.current;
-    const overData = over.data.current;
+    const activeData = active.data.current; const overData = over.data.current;
     if (activeData?.type === "account") {
       if (overData?.type === "category") {
         const lastCur = localStorage.getItem("cl_last_currency") || "USD";
@@ -249,18 +217,18 @@ export default function App() {
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragMove={handleDragMove} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
         <section className={`px-0 overflow-hidden transition-all duration-500 shrink-0 ${isIncomeCollapsed ? "max-h-0 opacity-0" : "max-h-[160px] opacity-100 py-1"}`}>
-          <div className="px-6 py-2 flex justify-between items-center"><div onClick={toggleIncome} className="flex items-center gap-2 cursor-pointer group"><ChevronRight size={14} className="text-slate-500 rotate-90" /><h2 className="text-[10px] font-black text-slate-500 uppercase group-hover:text-white">Доходы</h2></div><div className="flex items-center gap-3"><button onClick={() => setAnalyticsModal({ isOpen: true, type: "income" })} className="glass-icon-btn w-7 h-7"><PieChart size={14} /></button><button onClick={() => setIncomeModal({ isOpen: true, income: null })} className="text-slate-500"><Plus size={14} /></button></div></div>
+          <div className="px-6 py-2 flex justify-between items-center"><div onClick={toggleIncome} className="flex items-center gap-2 cursor-pointer group"><ChevronRight size={14} className="text-slate-500 rotate-90" /><h2 className="text-[10px] font-black text-slate-500 uppercase group-hover:text-white">Доходы</h2></div><div className="flex items-center gap-3"><button onClick={() => setAnalyticsModal({ isOpen: true, type: "income" })} className="w-8 h-8 rounded-full bg-[var(--success-color)]/10 border border-[var(--success-color)]/20 text-[var(--success-color)] flex items-center justify-center hover:bg-[var(--success-color)]/20 transition-all shadow-sm"><PieChart size={14} /></button><button onClick={() => setIncomeModal({ isOpen: true, income: null })} className="w-7 h-7 rounded-full bg-[var(--success-color)]/10 text-[var(--success-color)] flex items-center justify-center hover:bg-[var(--success-color)]/20 transition-colors"><Plus size={14} /></button></div></div>
           <SortableContext items={incomes.map(i => i.id)} strategy={horizontalListSortingStrategy}><div className="flex gap-4 overflow-x-auto hide-scrollbar px-6 pb-4 pt-2">{incomes.map(inc => (<DraggableIncomeItem key={inc.id} income={inc} isDragging={activeDragId === inc.id} onSortingMode={() => setIsSortingMode(true)} isSortingMode={isSortingMode} onLongPress={(i) => setIncomeModal({ isOpen: true, income: i })} onClick={(income) => setHistoryModal({ isOpen: true, entity: income, type: "income" })} activeDragType={activeDragType} />))}</div></SortableContext>
         </section>
 
         <section className="px-0 py-2 relative z-20 shrink-0">
-          <div className="px-6 mb-3 flex justify-between items-center"><h2 className="text-[10px] font-black text-slate-500 uppercase">Кошельки</h2><button onClick={() => setAccountModal({ isOpen: true, account: null })} className="text-slate-500"><Plus size={16} /></button></div>
+          <div className="px-6 mb-3 flex justify-between items-center"><h2 className="text-[10px] font-black text-slate-500 uppercase">Кошельки</h2><button onClick={() => setAccountModal({ isOpen: true, account: null })} className="w-8 h-8 rounded-full bg-[var(--glass-item-bg)] border border-[var(--glass-border)] text-[var(--text-main)] flex items-center justify-center hover:bg-[var(--glass-item-active)] transition-all shadow-sm"><Plus size={16} /></button></div>
           <SortableContext items={accounts.map(a => a.id)} strategy={horizontalListSortingStrategy}><div className="flex gap-4 overflow-x-auto hide-scrollbar px-6 pb-4 pt-2">{accounts.map(acc => (<AccountItem key={acc.id} account={acc} isDragging={activeDragId === acc.id} onSortingMode={() => setIsSortingMode(true)} onLongPress={(a) => setAccountModal({ isOpen: true, account: a })} onClick={(account) => setHistoryModal({ isOpen: true, entity: account, type: "account" })} activeDragType={activeDragType} isSortingMode={isSortingMode} isOver={overId === acc.id} />))}</div></SortableContext>
         </section>
 
         <section className={`px-0 flex-1 pt-4 pb-8 overflow-y-auto hide-scrollbar z-10 relative transition-all duration-500 ${mode === "income" ? "opacity-30 pointer-events-none grayscale" : "opacity-100"}`}>
           <div className="px-6 py-2">
-            <div className="flex justify-between items-center mb-6"><h2 className="text-[10px] font-black text-slate-500 uppercase">Расходы</h2><button onClick={() => setAnalyticsModal({ isOpen: true, type: "expense" })} className="glass-icon-btn w-7 h-7"><PieChart size={14} /></button></div>
+            <div className="flex justify-between items-center mb-6"><h2 className="text-[10px] font-black text-slate-500 uppercase">Расходы</h2><div className="flex items-center gap-3"><button onClick={() => setAnalyticsModal({ isOpen: true, type: "expense" })} className="w-8 h-8 rounded-full bg-[var(--primary-color)]/10 border border-[var(--primary-color)]/20 text-[var(--primary-color)] flex items-center justify-center hover:bg-[var(--primary-color)]/20 transition-all shadow-sm"><PieChart size={14} /></button><button onClick={() => setCategoryModal({ isOpen: true, category: null })} className="w-8 h-8 rounded-full bg-[var(--glass-item-bg)] border border-[var(--glass-border)] text-[var(--text-main)] flex items-center justify-center hover:bg-[var(--glass-item-active)] transition-all shadow-sm"><Plus size={16} /></button></div></div>
             <SortableContext items={categories.map(c => c.id)} strategy={rectSortingStrategy}>
               <div className="grid grid-cols-4 gap-y-6 gap-x-2 pb-4">
                 {categories.map(cat => {
@@ -276,7 +244,9 @@ export default function App() {
       </DndContext>
 
       <Numpad
-        data={numpad} availableCurrencies={Array.from(new Set(accounts.map(a => a.currency)))} isEditing={!!editingTxId}
+        data={numpad} 
+        availableCurrencies={Array.from(new Set([...accounts.map(a => a.currency), numpad.sourceCurrency, numpad.targetCurrency]))} 
+        isEditing={!!editingTxId}
         onClose={() => { setNumpad({ ...numpad, isOpen: false, targetLinked: true }); setEditingTxId(null); }}
         onFieldChange={(f) => setNumpad(p => ({ ...p, activeField: f }))}
         onLinkToggle={() => { setNumpad(p => ({ ...p, targetLinked: !p.targetLinked })); if (navigator.vibrate) navigator.vibrate(10); }}

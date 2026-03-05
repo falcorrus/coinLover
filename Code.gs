@@ -124,9 +124,19 @@ function doGet(e) {
           const comment = col["Comment"] !== undefined ? String(row[col["Comment"]] || "").trim() || undefined : undefined;
 
           let accountId = ""; let targetId = "";
-          if (type === "expense") { accountId = accountByName[sourceName] || sourceName; targetId = categoryByName[destinationName] || destinationName; }
-          else if (type === "income") { accountId = incomeByName[sourceName] || sourceName; targetId = accountByName[destinationName] || destinationName; }
-          else if (type === "transfer") { accountId = accountByName[sourceName] || sourceName; targetId = accountByName[destinationName] || destinationName; }
+          if (type === "expense") { 
+            accountId = accountByName[sourceName] || sourceName; 
+            targetId = categoryByName[destinationName] || destinationName; 
+          }
+          else if (type === "income") { 
+            // Correct mapping for income: accountId is Wallet (destination), targetId is IncomeSource (source)
+            accountId = accountByName[destinationName] || destinationName; 
+            targetId = incomeByName[sourceName] || sourceName; 
+          }
+          else if (type === "transfer") { 
+            accountId = accountByName[sourceName] || sourceName; 
+            targetId = accountByName[destinationName] || destinationName; 
+          }
 
           const idColIdx = col["ID"];
           const rowId = (idColIdx !== undefined && row[idColIdx]) ? String(row[idColIdx]).trim() : `${isoDate}_${sourceName}_${destinationName}_${sourceAmount}`;
