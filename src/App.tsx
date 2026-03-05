@@ -79,8 +79,8 @@ export default function App() {
     } catch { return str; }
   };
 
-  // activationConstraint: { distance: 15 } ensures we don't start drag on accidental touch
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 15 } }));
+  // activationConstraint: { distance: 10 } is a sweet spot between responsiveness and safety
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 10 } }));
   const toggleIncome = () => { const next = !isIncomeCollapsed; setIsIncomeCollapsed(next); setMode(next ? "expense" : "income"); };
 
   const handleDragStart = (e: DragStartEvent) => {
