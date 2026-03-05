@@ -7,7 +7,7 @@ import {
 import { arrayMove, SortableContext, horizontalListSortingStrategy, rectSortingStrategy } from "@dnd-kit/sortable";
 import {
   Plus, Settings, CircleDollarSign, TrendingDown, ChevronRight, TrendingUp, Wallet, RefreshCcw,
-  Heart, MousePointer2, PieChart, List
+  Heart, MousePointer2, PieChart, List, Moon, Sun
 } from "lucide-react";
 
 // Modules
@@ -34,6 +34,7 @@ export default function App() {
     pullSettings, checkConflicts, conflictData, setConflictData, updateLocalFromRemote, pushSettings
   } = useFinance();
 
+  // --- ALL STATES AT THE TOP ---
   const [isSplashVisible, setIsSplashVisible] = React.useState(true);
   const [mode, setMode] = React.useState<"expense" | "income">("expense");
   const [pillMode, setPillMode] = React.useState<"expense" | "balance">("expense");
@@ -60,13 +61,43 @@ export default function App() {
   });
 
   const sortingTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const demoClickCount = React.useRef(0);
+  const demoTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const isDemo = window.localStorage.getItem("coinlover_demo") !== "false";
 
+  // --- EFFECTS ---
   React.useEffect(() => {
     RatesService.syncRatesInBackground();
     setTimeout(() => setIsSplashVisible(false), 600);
     setTimeout(() => checkConflicts(), 1500);
   }, [checkConflicts]);
+
+  React.useEffect(() => {
+    if (theme === "light") document.documentElement.classList.add("light");
+    else document.documentElement.classList.remove("light");
+    localStorage.setItem("coinlover_theme", theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === "light" ? "dark" : "light");
+    if (navigator.vibrate) navigator.vibrate(50);
+  };
+
+  const toggleMode = (target: 'demo' | 'real') => {
+    window.localStorage.setItem("coinlover_demo", target === 'demo' ? "true" : "false");
+    window.location.reload();
+  };
+
+  const handleDemoClick = () => {
+    demoClickCount.current += 1;
+    if (demoTimerRef.current) clearTimeout(demoTimerRef.current);
+    if (demoClickCount.current >= 5) {
+      toggleMode(isDemo ? 'real' : 'demo');
+      demoClickCount.current = 0;
+    } else {
+      demoTimerRef.current = setTimeout(() => { demoClickCount.current = 0; }, 2000);
+    }
+  };
 
   const safeEval = (str: string): string => {
     try {
@@ -79,22 +110,13 @@ export default function App() {
     } catch { return str; }
   };
 
-  // activationConstraint: { distance: 10 } is a sweet spot between responsiveness and safety
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 10 } }));
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 15 } }));
   const toggleIncome = () => { const next = !isIncomeCollapsed; setIsIncomeCollapsed(next); setMode(next ? "expense" : "income"); };
 
   const handleDragStart = (e: DragStartEvent) => {
-    const { active } = e;
-    setActiveDragId(active.id as string);
-    setActiveDragType(active.data.current?.type as DragItemType);
+    setActiveDragId(e.active.id as string);
+    setActiveDragType(e.active.data.current?.type as DragItemType);
     setHasMovedDuringDrag(false);
-    
-    // Clear any existing timer
-    if (sortingTimerRef.current) clearTimeout(sortingTimerRef.current);
-
-    // If we are already moving significantly (distance 15 hit), we might NOT want to enable sorting
-    // But the manual says: "Удержание иконки 0.5 сек -> Сортировка"
-    // So we start the timer. If handleDragMove detects significant movement, we will cancel it.
     sortingTimerRef.current = setTimeout(() => {
       setIsSortingMode(true);
       if (navigator.vibrate) navigator.vibrate(50);
@@ -103,12 +125,8 @@ export default function App() {
 
   const handleDragMove = (e: DragMoveEvent) => {
     if (!hasMovedDuringDrag) setHasMovedDuringDrag(true);
-    
-    // If user is moving actively before the sorting timer fires, cancel sorting!
-    // This allows "Action" drag without reordering the list.
     if (sortingTimerRef.current && !isSortingMode) {
       const { delta } = e;
-      // If moved more than 30px total, cancel the sorting intent
       if (Math.abs(delta.x) > 30 || Math.abs(delta.y) > 30) {
         clearTimeout(sortingTimerRef.current);
         sortingTimerRef.current = null;
@@ -119,17 +137,11 @@ export default function App() {
   const handleDragOver = (e: DragOverEvent) => {
     const { active, over } = e;
     setOverId(over?.id as string || null);
-    
-    // SWAPPING only in sorting mode
     if (!over || !isSortingMode || active.id === over.id) return;
-
-    if (active.data.current?.type === "account" && over.data.current?.type === "account") {
-      setAccounts((it) => arrayMove(it, it.findIndex(i => i.id === active.id), it.findIndex(i => i.id === over.id)));
-    } else if (active.data.current?.type === "category" && over.data.current?.type === "category") {
-      setCategories((it) => arrayMove(it, it.findIndex(i => i.id === active.id), it.findIndex(i => i.id === over.id)));
-    } else if (active.data.current?.type === "income" && over.data.current?.type === "income") {
-      setIncomes((it) => arrayMove(it, it.findIndex(i => i.id === active.id), it.findIndex(i => i.id === over.id)));
-    }
+    if (active.data.current?.type === "account") setAccounts((it) => arrayMove(it, it.findIndex(i => i.id === active.id), it.findIndex(i => i.id === over.id)));
+    else if (active.data.current?.type === "category") setCategories((it) => arrayMove(it, it.findIndex(i => i.id === active.id), it.findIndex(i => i.id === over.id)));
+    else if (active.data.current?.type === "income") setIncomes((it) => arrayMove(it, it.findIndex(i => i.id === active.id), it.findIndex(i => i.id === over.id)));
+    setHasMovedDuringDrag(true);
   };
 
   const handleDragEnd = (e: DragEndEvent) => {
@@ -137,24 +149,16 @@ export default function App() {
     const { active, over } = e;
     const sorting = isSortingMode;
     const moved = hasMovedDuringDrag;
-    
-    setActiveDragId(null); setActiveDragType(null); setOverId(null);
-    setIsSortingMode(false);
-
-    // If we were sorting and actually moved things, sync to DB
+    setActiveDragId(null); setActiveDragType(null); setOverId(null); setIsSortingMode(false);
     if (sorting && moved) {
       if (active.data.current?.type === "account") syncAccountsOrder(accounts);
       else if (active.data.current?.type === "category") syncCategories(categories);
       else if (active.data.current?.type === "income") syncIncomes(incomes);
       return;
     }
-
     if (!over) return;
-
     const activeData = active.data.current;
     const overData = over.data.current;
-
-    // ACTION LOGIC (Quick drag or drag to different type)
     if (activeData?.type === "account") {
       if (overData?.type === "category") {
         const lastCur = localStorage.getItem("cl_last_currency") || "USD";
@@ -164,7 +168,6 @@ export default function App() {
           targetLinked: true, activeField: "source", tag: overData.category.tags?.[0] || null, comment: ""
         });
       } else if (overData?.type === "account" && active.id !== over.id && !sorting) {
-        // Only trigger transfer if NOT in sorting mode
         setNumpad({
           isOpen: true, type: "transfer", source: activeData.account, destination: overData.account,
           sourceAmount: "0", sourceCurrency: activeData.account.currency, targetAmount: "0", targetCurrency: overData.account.currency,
@@ -190,7 +193,6 @@ export default function App() {
   const totalSpent = Math.round(currentMonthTransactions.filter(t => t.type === "expense").reduce((s, t) => s + t.sourceAmountUSD, 0));
 
   const anyModalOpen = accountModal.isOpen || incomeModal.isOpen || categoryModal.isOpen || historyModal.isOpen || analyticsModal.isOpen || numpad.isOpen || confirmDelete.isOpen || isSettingsMenuOpen || !!conflictData;
-
   const activeItemData = activeDragId ? (activeDragType === 'account' ? accounts.find(a => a.id === activeDragId) : activeDragType === 'category' ? categories.find(c => c.id === activeDragId) : incomes.find(i => i.id === activeDragId)) : null;
 
   return (
@@ -212,8 +214,18 @@ export default function App() {
 
       <header className="px-6 py-8 flex flex-col gap-2 text-center shrink-0">
         <div className="flex justify-between items-center mb-2">
-          <button onClick={toggleIncome} className="glass-icon-btn w-10 h-10 relative"><CircleDollarSign size={20} className="text-[#10b981]" />{isDemo && <span className="absolute left-12 top-1/2 -translate-y-1/2 bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded-full text-[9px] font-black uppercase animate-pulse">Demo</span>}</button>
-          <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Total Balance</p>
+          <button onClick={toggleIncome} className="glass-icon-btn w-10 h-10 relative">
+            <CircleDollarSign size={20} className="text-[#10b981]" />
+            {isDemo && (
+              <span 
+                onClick={(e) => { e.stopPropagation(); handleDemoClick(); }}
+                className="absolute left-12 top-1/2 -translate-y-1/2 bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded-full text-[9px] font-black uppercase animate-pulse cursor-pointer hover:bg-amber-500/20 transition-colors"
+              >
+                Demo
+              </span>
+            )}
+          </button>
+          <p onClick={() => { if(!isDemo) handleDemoClick(); }} className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] cursor-default">Total Balance</p>
           <div className="relative">
             <button onClick={() => setIsSettingsMenuOpen(!isSettingsMenuOpen)} className="glass-icon-btn w-10 h-10 text-slate-500"><Settings size={20} /></button>
             {isSettingsMenuOpen && (
@@ -221,7 +233,10 @@ export default function App() {
                 <div className="fixed inset-0 z-[200] bg-black/40 backdrop-blur-[2px]" onClick={() => setIsSettingsMenuOpen(false)} />
                 <div className="absolute top-12 right-0 w-48 bg-[var(--bg-color)] border border-[var(--glass-border)] rounded-2xl shadow-2xl flex flex-col z-[201] p-2 animate-in fade-in zoom-in-95 origin-top-right">
                   <button onClick={() => { setIsSettingsMenuOpen(false); setHistoryModal({ isOpen: true, entity: { name: "Лента", icon: "list" }, type: "feed" }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><List size={16} className="text-[var(--primary-color)]" /><span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Лента</span></button>
-                  <button onClick={() => { setIsSettingsMenuOpen(false); setTheme(prev => prev === 'light' ? 'dark' : 'light'); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><TrendingUp size={16} className="text-[var(--success-color)]" /><span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span></button>
+                  <button onClick={() => { setIsSettingsMenuOpen(false); toggleTheme(); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left">
+                    {theme === 'dark' ? <Sun size={16} className="text-amber-400" /> : <Moon size={16} className="text-slate-400" />}
+                    <span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">{theme === 'dark' ? "Light Mode" : "Dark Mode"}</span>
+                  </button>
                 </div>
               </>
             )}
@@ -232,14 +247,7 @@ export default function App() {
         </button>
       </header>
 
-      <DndContext 
-        sensors={sensors} 
-        collisionDetection={isSortingMode ? closestCenter : pointerWithin} 
-        onDragStart={handleDragStart} 
-        onDragMove={handleDragMove}
-        onDragOver={handleDragOver} 
-        onDragEnd={handleDragEnd}
-      >
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragMove={handleDragMove} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
         <section className={`px-0 overflow-hidden transition-all duration-500 shrink-0 ${isIncomeCollapsed ? "max-h-0 opacity-0" : "max-h-[160px] opacity-100 py-1"}`}>
           <div className="px-6 py-2 flex justify-between items-center"><div onClick={toggleIncome} className="flex items-center gap-2 cursor-pointer group"><ChevronRight size={14} className="text-slate-500 rotate-90" /><h2 className="text-[10px] font-black text-slate-500 uppercase group-hover:text-white">Доходы</h2></div><div className="flex items-center gap-3"><button onClick={() => setAnalyticsModal({ isOpen: true, type: "income" })} className="glass-icon-btn w-7 h-7"><PieChart size={14} /></button><button onClick={() => setIncomeModal({ isOpen: true, income: null })} className="text-slate-500"><Plus size={14} /></button></div></div>
           <SortableContext items={incomes.map(i => i.id)} strategy={horizontalListSortingStrategy}><div className="flex gap-4 overflow-x-auto hide-scrollbar px-6 pb-4 pt-2">{incomes.map(inc => (<DraggableIncomeItem key={inc.id} income={inc} isDragging={activeDragId === inc.id} onSortingMode={() => setIsSortingMode(true)} isSortingMode={isSortingMode} onLongPress={(i) => setIncomeModal({ isOpen: true, income: i })} onClick={(income) => setHistoryModal({ isOpen: true, entity: income, type: "income" })} activeDragType={activeDragType} />))}</div></SortableContext>
