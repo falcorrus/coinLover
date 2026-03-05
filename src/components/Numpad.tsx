@@ -1,6 +1,6 @@
 import React from "react";
 import { X, ChevronRight, Check, CalendarDays, Delete, Divide, Plus, Minus, Equal, Percent, MessageSquare, Link2, Trash2, ArrowDown } from "lucide-react";
-import { NumpadData, Category } from "../types";
+import { NumpadData, Category, Account } from "../types";
 import { IconMap } from "../constants";
 import { CalendarModal } from "./CalendarModal";
 import { RatesService } from "../services/RatesService";
@@ -51,6 +51,19 @@ export const Numpad: React.FC<Props> = ({
   const handleCommentSave = () => { onCommentChange(commentDraft.trim()); setIsCommentOpen(false); };
   const hasComment = data.comment.trim().length > 0;
 
+  // Calculate dynamic grid columns: if even and small amount, split into exactly 2 rows
+  const getGridCols = () => {
+    const count = availableCurrencies.length;
+    if (count === 0) return "grid-cols-1";
+    if (count % 2 === 0 && count <= 8) {
+      if (count === 2) return "grid-cols-1"; // 2 rows of 1
+      if (count === 4) return "grid-cols-2"; // 2 rows of 2
+      if (count === 6) return "grid-cols-3"; // 2 rows of 3
+      if (count === 8) return "grid-cols-4"; // 2 rows of 4
+    }
+    return "grid-cols-3"; // Default
+  };
+
   return (
     <div className="fixed inset-0 z-[150] flex flex-col bg-[var(--bg-color)] animate-in slide-in-from-right duration-500 ease-in-out">
       <div className="flex justify-between items-center px-4 py-4 bg-[var(--glass-bg)] border-b border-[var(--glass-border)] text-[var(--text-main)]">
@@ -73,7 +86,6 @@ export const Numpad: React.FC<Props> = ({
 
       <div className="flex-1 flex flex-col items-center justify-center px-4">
         <div className="w-full flex items-center gap-3">
-          {/* SOURCE FIELD (Left) */}
           <div
             onClick={() => onFieldChange("source")}
             className={`flex-1 h-36 rounded-[24px] border flex flex-col items-end justify-center p-6 relative transition-all duration-300 ${data.activeField === "source"
@@ -84,15 +96,14 @@ export const Numpad: React.FC<Props> = ({
             <div className="flex items-center gap-1.5 absolute bottom-5 right-6">
               <button
                 onClick={(e) => {
-                  e.stopPropagation();
-                  // Allow changing source currency for INCOME only
                   if (data.type === 'income') {
+                    e.stopPropagation();
                     setCurrencyPicker({ isOpen: true, field: "source" });
                   }
                 }}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all duration-300 active:scale-95 ${data.activeField === "source" 
                   ? (data.type === 'income' ? 'bg-[var(--success-color)] text-white border-[var(--success-color)] shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'bg-[#D4AF37] text-white border-[#D4AF37]') 
-                  : 'bg-[var(--glass-item-bg)] border-[var(--glass-border)] text-[var(--text-muted)] opacity-60'} ${data.type === 'income' ? 'hover:scale-105 cursor-pointer' : 'cursor-default'}`}
+                  : 'bg-[var(--glass-item-bg)] border-[var(--glass-border)] text-[var(--text-muted)] opacity-60'} ${data.type === 'income' ? 'hover:scale-105' : ''}`}
               >
                 <span className="text-[11px] font-black uppercase tracking-wider">{data.sourceCurrency}</span>
                 {data.type === 'income' && <ChevronRight size={12} className="opacity-60" />}
@@ -105,7 +116,6 @@ export const Numpad: React.FC<Props> = ({
             {data.targetLinked ? <Link2 size={20} className={data.type === 'expense' ? "text-[#D4AF37]" : "text-[var(--success-color)]"} /> : <ArrowDown size={20} className="text-[var(--text-muted)]" />}
           </button>
 
-          {/* DESTINATION FIELD (Right) */}
           <div
             onClick={() => onFieldChange("destination")}
             className={`flex-1 h-36 rounded-[24px] border flex flex-col items-end justify-center p-6 relative transition-all duration-300 ${data.activeField === "destination"
@@ -116,15 +126,14 @@ export const Numpad: React.FC<Props> = ({
             <div className="flex items-center gap-1.5 absolute bottom-5 right-6">
               <button
                 onClick={(e) => {
-                  e.stopPropagation();
-                  // Allow changing target currency for EXPENSE only
                   if (data.type === 'expense') {
+                    e.stopPropagation();
                     setCurrencyPicker({ isOpen: true, field: "target" });
                   }
                 }}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all duration-300 active:scale-95 ${data.activeField === "destination" 
                   ? (data.type === 'expense' ? 'bg-[#D4AF37] text-white border-[#D4AF37] shadow-[0_0_15px_rgba(212,175,55,0.3)]' : 'bg-[var(--success-color)] text-white border-[var(--success-color)]') 
-                  : 'bg-[var(--glass-item-bg)] border-[var(--glass-border)] text-[var(--text-muted)] opacity-60'} ${data.type === 'expense' ? 'hover:scale-105 cursor-pointer' : 'cursor-default'}`}
+                  : 'bg-[var(--glass-item-bg)] border-[var(--glass-border)] text-[var(--text-muted)] opacity-60'} ${data.type === 'expense' ? 'hover:scale-105' : ''}`}
               >
                 <span className="text-[11px] font-black uppercase tracking-wider">{data.targetCurrency}</span>
                 {data.type === 'expense' && <ChevronRight size={12} className="opacity-60" />}
@@ -181,7 +190,7 @@ export const Numpad: React.FC<Props> = ({
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[300] flex items-end justify-center animate-in fade-in duration-300" onClick={() => setCurrencyPicker({ isOpen: false, field: null })}>
           <div className="w-full max-w-md bg-[var(--bg-color)] border border-[var(--glass-border)] rounded-t-3xl p-6 flex flex-col gap-4 animate-in slide-in-from-bottom duration-300 shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center"><h3 className="text-sm font-bold uppercase text-[var(--text-main)]">Выберите валюту</h3><button onClick={() => setCurrencyPicker({ isOpen: false, field: null })} className="p-1 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"><X size={20} /></button></div>
-            <div className="grid grid-cols-3 gap-2">
+            <div className={`grid ${getGridCols()} gap-2`}>
               {availableCurrencies.map(curr => (
                 <button key={curr} onClick={() => { onCurrencyChange?.(currencyPicker.field!, curr); setCurrencyPicker({ isOpen: false, field: null }); }} className={`h-12 rounded-xl border font-bold text-sm transition-all ${(currencyPicker.field === "source" ? data.sourceCurrency : data.targetCurrency) === curr ? "bg-[#D4AF37] text-white border-[#D4AF37]" : "bg-[var(--glass-item-bg)] border-[var(--glass-border)] text-[var(--text-muted)] hover:bg-[var(--glass-item-active)]"}`}>{curr}</button>
               ))}
