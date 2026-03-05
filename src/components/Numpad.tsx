@@ -84,14 +84,15 @@ export const Numpad: React.FC<Props> = ({
             <div className="flex items-center gap-1.5 absolute bottom-5 right-6">
               <button
                 onClick={(e) => {
+                  e.stopPropagation();
+                  // Allow changing source currency for INCOME only
                   if (data.type === 'income') {
-                    e.stopPropagation();
                     setCurrencyPicker({ isOpen: true, field: "source" });
                   }
                 }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all duration-300 ${data.activeField === "source" 
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all duration-300 active:scale-95 ${data.activeField === "source" 
                   ? (data.type === 'income' ? 'bg-[var(--success-color)] text-white border-[var(--success-color)] shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'bg-[#D4AF37] text-white border-[#D4AF37]') 
-                  : 'bg-[var(--glass-item-bg)] border-[var(--glass-border)] text-[var(--text-muted)] opacity-60'} ${data.type === 'income' ? 'hover:scale-105' : ''}`}
+                  : 'bg-[var(--glass-item-bg)] border-[var(--glass-border)] text-[var(--text-muted)] opacity-60'} ${data.type === 'income' ? 'hover:scale-105 cursor-pointer' : 'cursor-default'}`}
               >
                 <span className="text-[11px] font-black uppercase tracking-wider">{data.sourceCurrency}</span>
                 {data.type === 'income' && <ChevronRight size={12} className="opacity-60" />}
@@ -115,14 +116,15 @@ export const Numpad: React.FC<Props> = ({
             <div className="flex items-center gap-1.5 absolute bottom-5 right-6">
               <button
                 onClick={(e) => {
+                  e.stopPropagation();
+                  // Allow changing target currency for EXPENSE only
                   if (data.type === 'expense') {
-                    e.stopPropagation();
                     setCurrencyPicker({ isOpen: true, field: "target" });
                   }
                 }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all duration-300 ${data.activeField === "destination" 
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all duration-300 active:scale-95 ${data.activeField === "destination" 
                   ? (data.type === 'expense' ? 'bg-[#D4AF37] text-white border-[#D4AF37] shadow-[0_0_15px_rgba(212,175,55,0.3)]' : 'bg-[var(--success-color)] text-white border-[var(--success-color)]') 
-                  : 'bg-[var(--glass-item-bg)] border-[var(--glass-border)] text-[var(--text-muted)] opacity-60'} ${data.type === 'expense' ? 'hover:scale-105' : ''}`}
+                  : 'bg-[var(--glass-item-bg)] border-[var(--glass-border)] text-[var(--text-muted)] opacity-60'} ${data.type === 'expense' ? 'hover:scale-105 cursor-pointer' : 'cursor-default'}`}
               >
                 <span className="text-[11px] font-black uppercase tracking-wider">{data.targetCurrency}</span>
                 {data.type === 'expense' && <ChevronRight size={12} className="opacity-60" />}
