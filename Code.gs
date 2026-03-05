@@ -8,7 +8,6 @@ function doGet(e) {
     
     if (!sheet) {
       if (isDemo) {
-        // Auto-create demo sheets by copying existing ones
         const origConfig = ss.getSheetByName("Configs");
         if (origConfig) {
           sheet = origConfig.copyTo(ss);
@@ -32,8 +31,6 @@ function doGet(e) {
     }
     
     const rows = sheet.getDataRange().getValues();
-    
-    // Detect column format for Wallets
     let hasUSDCol = false;
     for (let i = 0; i < rows.length; i++) {
       if (String(rows[i][0]).includes("ID") && String(rows[i][3]).includes("USD")) {
@@ -42,45 +39,25 @@ function doGet(e) {
       }
     }
 
-    const data = {
-      accounts: [],
-      categories: [],
-      incomes: [],
-      transactions: []
-    };
-    
+    const data = { accounts: [], categories: [], incomes: [], transactions: [] };
     let currentSection = "";
     
     for (let i = 0; i < rows.length; i++) {
       const firstCol = String(rows[i][0]).trim();
-      
       if (firstCol.startsWith("Updated")) {
         data.timestamp = firstCol.split("Updated")[1]?.trim() || rows[i][1];
         continue;
       }
+      if (firstCol.includes("=== WALLETS ===")) { currentSection = "accounts"; continue; }
+      if (firstCol.includes("=== CATEGORIES ===")) { currentSection = "categories"; continue; }
+      if (firstCol.includes("=== INCOMES ===")) { currentSection = "incomes"; continue; }
       
-      if (firstCol.includes("=== WALLETS ===")) {
-        currentSection = "accounts";
-        continue;
-      }
-      if (firstCol.includes("=== CATEGORIES ===")) {
-        currentSection = "categories";
-        continue;
-      }
-      if (firstCol.includes("=== INCOMES ===")) {
-        currentSection = "incomes";
-        continue;
-      }
-      
-      // Skip headers and empty rows
       if (!firstCol || firstCol === "ID" || firstCol === "Name") continue;
       
       if (currentSection === "accounts") {
         const row = rows[i];
         data.accounts.push({
-          id: String(row[0]),
-          name: String(row[1]),
-          balance: Number(row[2]),
+          id: String(row[0]), name: String(row[1]), balance: Number(row[2]),
           balanceUSD: hasUSDCol ? (row[3] ? Number(row[3]) : undefined) : undefined,
           color: hasUSDCol ? row[4] : row[3],
           icon: (hasUSDCol ? row[5] : row[4]) || "wallet",
@@ -89,40 +66,28 @@ function doGet(e) {
       } else if (currentSection === "categories") {
         const row = rows[i];
         data.categories.push({
-          id: String(row[0]),
-          name: String(row[1]),
-          color: row[2],
-          icon: row[3] || "more",
+          id: String(row[0]), name: String(row[1]), color: row[2], icon: row[3] || "more",
           tags: row[4] ? String(row[4]).split(",").map(t => t.trim()) : []
         });
       } else if (currentSection === "incomes") {
         const row = rows[i];
-        data.incomes.push({
-          id: String(row[0]),
-          name: String(row[1]),
-          color: row[2],
-          icon: row[3] || "business"
-        });
+        data.incomes.push({ id: String(row[0]), name: String(row[1]), color: row[2], icon: row[3] || "business" });
       }
     }
 
-    // === Read current month transactions ===
     try {
       const txSheet = ss.getSheetByName(txSheetName);
       if (txSheet && txSheet.getLastRow() > 1) {
         const txData = txSheet.getDataRange().getValues();
         const headers = txData[0].map(h => String(h).trim());
-
-        // Map header names to column indices
         const col = {};
         headers.forEach((h, i) => { col[h] = i; });
 
         let now = new Date();
         let filterAll = false;
         if (e && e.parameter && e.parameter.month) {
-          if (e.parameter.month === "all") {
-            filterAll = true;
-          } else {
+          if (e.parameter.month === "all") filterAll = true;
+          else {
             const parts = e.parameter.month.split("-");
             now = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, 1);
           }
@@ -130,92 +95,53 @@ function doGet(e) {
         const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
         const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
 
-        // Build lookup maps for name → id
-        const accountByName = {};
-        data.accounts.forEach(a => { accountByName[a.name] = a.id; });
-
-        const categoryByName = {};
-        data.categories.forEach(c => { categoryByName[c.name] = c.id; });
-
-        const incomeByName = {};
-        data.incomes.forEach(i => { incomeByName[i.name] = i.id; });
+        const accountByName = {}; data.accounts.forEach(a => { accountByName[a.name] = a.id; });
+        const categoryByName = {}; data.categories.forEach(c => { categoryByName[c.name] = c.id; });
+        const incomeByName = {}; data.incomes.forEach(i => { incomeByName[i.name] = i.id; });
 
         for (let i = 1; i < txData.length; i++) {
           const row = txData[i];
           let rawDate = row[col["Date"]];
           if (!rawDate) continue;
-
-          let txDate;
-          if (rawDate instanceof Date) {
-            txDate = rawDate;
-          } else {
-            // Support multiple formats when reading from string
-            let dateStr = String(rawDate).trim();
-            if (!dateStr) continue;
-            // Safari/ISO fix: replace dashes with slashes if needed for parsing in some environments, 
-            // but here we are in Apps Script (V8), so new Date() is quite robust.
-            txDate = new Date(dateStr);
-          }
-
+          let txDate = new Date(rawDate);
           if (isNaN(txDate.getTime())) continue;
           if (!filterAll && (txDate < monthStart || txDate >= monthEnd)) continue;
 
-          // Standardize date to ISO string for the frontend
           const isoDate = Utilities.formatDate(txDate, ss.getSpreadsheetTimeZone(), "yyyy-MM-dd'T'HH:mm:ss");
-
           const type = String(row[col["Type"]] || "").trim();
           const sourceName = String(row[col["Source"]] || "").trim();
           const destinationName = String(row[col["Destination"]] || "").trim();
-          const amount = parseFloat(row[col["Amount"]] || 0) || 0;
-          const amountUSD = col["Amount USD"] !== undefined ? (parseFloat(row[col["Amount USD"]] || "") || undefined) : undefined;
-          const targetAmount = col["Target Amount"] !== undefined ? (parseFloat(row[col["Target Amount"]] || "") || amount) : amount;
+          
+          const sourceAmount = parseFloat(row[col["Source Amount"]] || row[col["Amount"]] || 0) || 0;
+          const sourceCurrency = col["Source Currency"] !== undefined ? String(row[col["Source Currency"]] || "").trim() : (col["Currency"] !== undefined ? String(row[col["Currency"]] || "").trim() : "USD");
+          const sourceAmountUSD = col["Source Amount USD"] !== undefined ? (parseFloat(row[col["Source Amount USD"]] || "") || undefined) : (col["Amount USD"] !== undefined ? (parseFloat(row[col["Amount USD"]] || "") || undefined) : undefined);
+          
+          const targetAmount = col["Target Amount"] !== undefined ? (parseFloat(row[col["Target Amount"]] || "") || sourceAmount) : (col["Amount Local"] !== undefined ? (parseFloat(row[col["Amount Local"]] || "") || sourceAmount) : sourceAmount);
+          const targetCurrency = col["Target Currency"] !== undefined ? String(row[col["Target Currency"]] || "").trim() : (col["Currency Local"] !== undefined ? String(row[col["Currency Local"]] || "").trim() : "USD");
           const targetAmountUSD = col["Target USD"] !== undefined ? (parseFloat(row[col["Target USD"]] || "") || undefined) : undefined;
+          
           const tag = col["Tag"] !== undefined ? String(row[col["Tag"]] || "").trim() || undefined : undefined;
           const comment = col["Comment"] !== undefined ? String(row[col["Comment"]] || "").trim() || undefined : undefined;
 
-          // Reconstruct accountId and targetId from names
-          let accountId = "";
-          let targetId = "";
+          let accountId = ""; let targetId = "";
+          if (type === "expense") { accountId = accountByName[sourceName] || sourceName; targetId = categoryByName[destinationName] || destinationName; }
+          else if (type === "income") { accountId = incomeByName[sourceName] || sourceName; targetId = accountByName[destinationName] || destinationName; }
+          else if (type === "transfer") { accountId = accountByName[sourceName] || sourceName; targetId = accountByName[destinationName] || destinationName; }
 
-          if (type === "expense") {
-            accountId = accountByName[sourceName] || sourceName;
-            targetId = categoryByName[destinationName] || destinationName;
-          } else if (type === "income") {
-            accountId = incomeByName[sourceName] || sourceName;
-            targetId = accountByName[destinationName] || destinationName;
-          } else if (type === "transfer") {
-            accountId = accountByName[sourceName] || sourceName;
-            targetId = accountByName[destinationName] || destinationName;
-          }
-
-          // Use ID column if available, fallback to deterministic pseudo-ID
           const idColIdx = col["ID"];
-          const rowId = (idColIdx !== undefined && row[idColIdx])
-            ? String(row[idColIdx]).trim()
-            : `${isoDate}_${sourceName}_${destinationName}_${amount}`;
+          const rowId = (idColIdx !== undefined && row[idColIdx]) ? String(row[idColIdx]).trim() : `${isoDate}_${sourceName}_${destinationName}_${sourceAmount}`;
 
           data.transactions.push({
-            id: rowId,
-            type,
-            accountId,
-            targetId,
-            amount,
-            amountUSD,
-            targetAmount,
-            targetAmountUSD,
-            date: isoDate,
-            tag,
-            comment
+            id: rowId, type, accountId, targetId,
+            sourceAmount, sourceCurrency, sourceAmountUSD,
+            targetAmount, targetCurrency, targetAmountUSD,
+            date: isoDate, tag, comment
           });
         }
       }
-    } catch (txErr) {
-      // Non-fatal: just return empty transactions if any error
-      console.error("Transaction fetch error:", txErr);
-    }
+    } catch (txErr) { console.error("Transaction fetch error:", txErr); }
     
     return ContentService.createTextOutput(JSON.stringify({ status: "success", data })).setMimeType(ContentService.MimeType.JSON);
-    
   } catch (err) {
     return ContentService.createTextOutput(JSON.stringify({ status: "error", message: err.toString() })).setMimeType(ContentService.MimeType.JSON);
   }
@@ -224,24 +150,19 @@ function doGet(e) {
 function doPost(e) {
   const lock = LockService.getScriptLock();
   try {
-    // Wait for up to 30 seconds for the lock
     lock.waitLock(30000);
-    
     const data = JSON.parse(e.postData.contents);
     const isDemo = data.demo === true;
     const configSheetName = isDemo ? "Configs-demo" : "Configs";
     const txSheetName = isDemo ? "Transactions-demo" : "Transactions";
     const ss = SpreadsheetApp.getActiveSpreadsheet();
-    
     let responses = [];
 
-    // Helper to sync settings (balances, categories, etc.)
     const syncSettingsInternal = (settingsData) => {
       if (!settingsData.accounts || settingsData.accounts.length === 0) return { status: "error", message: "Empty config" };
       let sheet = ss.getSheetByName(configSheetName) || ss.insertSheet(configSheetName);
       sheet.clear();
-      const rows = [];
-      const colCount = 7;
+      const rows = []; const colCount = 7;
       const pushRow = (arr) => {
         const row = new Array(colCount).fill("");
         for (let i = 0; i < Math.min(arr.length, colCount); i++) row[i] = arr[i];
@@ -265,10 +186,9 @@ function doPost(e) {
       return { status: "success", message: "Configs updated" };
     };
 
-    // 1. Handle Transaction actions
     if (["addTransaction", "updateTransaction", "deleteTransaction"].includes(data.action)) {
       let txSheet = ss.getSheetByName(txSheetName) || ss.insertSheet(txSheetName);
-      const baseHeaders = ["Date", "Type", "Source", "Destination", "Tag", "Amount", "Amount USD", "Target Amount", "Target USD", "Comment", "ID"];
+      const baseHeaders = ["Date", "Type", "Source", "Destination", "Tag", "Source Amount", "Source Currency", "Source Amount USD", "Target Amount", "Target Currency", "Target USD", "Comment", "ID"];
       
       if (txSheet.getLastRow() === 0) {
         txSheet.appendRow(baseHeaders);
@@ -276,16 +196,16 @@ function doPost(e) {
       }
 
       const currentHeaders = txSheet.getRange(1, 1, 1, txSheet.getLastColumn()).getValues()[0].map(h => String(h).trim());
-      const col = {};
-      currentHeaders.forEach((h, i) => col[h] = i);
+
+      const fieldMap = {
+        "Date": parseDateSafe(data.date), "Type": data.type, "Source": data.sourceName, "Destination": data.destinationName,
+        "Tag": data.tagName || "", 
+        "Source Amount": data.sourceAmount, "Source Currency": data.sourceCurrency || "", "Source Amount USD": data.sourceAmountUSD || "",
+        "Target Amount": data.targetAmount || data.sourceAmount, "Target Currency": data.targetCurrency || "", "Target USD": data.targetAmountUSD || "",
+        "Comment": data.comment || "", "ID": data.id || ""
+      };
 
       if (data.action === "addTransaction") {
-        const fieldMap = {
-          "Date": parseDateSafe(data.date), "Type": data.type, "Source": data.sourceName, "Destination": data.destinationName,
-          "Tag": data.tagName || "", "Amount": data.amount, "Amount USD": data.amountUSD || "",
-          "Target Amount": data.targetAmount || data.amount, "Target USD": data.targetAmountUSD || "",
-          "Comment": data.comment || "", "ID": data.id || ""
-        };
         txSheet.appendRow(currentHeaders.map(h => fieldMap[h] !== undefined ? fieldMap[h] : ""));
         responses.push({ action: "addTransaction", status: "success" });
       } 
@@ -298,12 +218,6 @@ function doPost(e) {
             if (String(allTx[i][idIdx]).trim() === String(data.id)) { foundRow = i + 1; break; }
           }
         }
-        const fieldMap = {
-          "Date": parseDateSafe(data.date), "Type": data.type, "Source": data.sourceName, "Destination": data.destinationName,
-          "Tag": data.tagName || "", "Amount": data.amount, "Amount USD": data.amountUSD || "",
-          "Target Amount": data.targetAmount || data.amount, "Target USD": data.targetAmountUSD || "",
-          "Comment": data.comment || "", "ID": data.id || ""
-        };
         const rowData = currentHeaders.map(h => fieldMap[h] !== undefined ? fieldMap[h] : "");
         if (foundRow !== -1) txSheet.getRange(foundRow, 1, 1, currentHeaders.length).setValues([rowData]);
         else txSheet.appendRow(rowData);
@@ -321,8 +235,6 @@ function doPost(e) {
       }
     }
 
-    // 2. Handle Settings Sync (can be standalone OR combined with transaction)
-    // If settings are present in the payload (even if action is addTransaction), sync them too!
     if (data.action === "syncSettings" || (data.accounts && data.categories)) {
       const settingsRes = syncSettingsInternal(data);
       responses.push({ action: "syncSettings", ...settingsRes });
@@ -330,7 +242,6 @@ function doPost(e) {
 
     SpreadsheetApp.flush();
     return ContentService.createTextOutput(JSON.stringify({ status: "success", responses })).setMimeType(ContentService.MimeType.JSON);
-
   } catch (err) {
     return ContentService.createTextOutput(JSON.stringify({ status: "error", message: err.toString() })).setMimeType(ContentService.MimeType.JSON);
   } finally {
@@ -338,43 +249,11 @@ function doPost(e) {
   }
 }
 
-// Вспомогательная функция для парсинга даты в doPost
 function parseDateSafe(dateStr) {
   if (!dateStr) return new Date();
   try {
-    // Превращаем ISO (2026-03-03T14:33:14) в формат, который Apps Script (V8) понимает стабильно
     const safeStr = String(dateStr).replace('T', ' ').replace(/-/g, '/');
     const d = new Date(safeStr);
     return isNaN(d.getTime()) ? new Date() : d;
-  } catch (e) {
-    return new Date();
-  }
-}
-
-function backupConfigs() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sourceSheet = ss.getSheetByName("Configs");
-  if (!sourceSheet) return;
-  
-  let targetSheet = ss.getSheetByName("ConfigsArch");
-  if (!targetSheet) {
-    targetSheet = ss.insertSheet("ConfigsArch");
-  } else {
-    targetSheet.clear();
-  }
-  
-  const dataRange = sourceSheet.getDataRange();
-  const values = dataRange.getValues();
-  const backgrounds = dataRange.getBackgrounds();
-  const fontColors = dataRange.getFontColors();
-  const fontWeights = dataRange.getFontWeights();
-  
-  if (values.length > 0) {
-    const targetRange = targetSheet.getRange(1, 1, values.length, values[0].length);
-    targetRange.setValues(values);
-    targetRange.setBackgrounds(backgrounds);
-    targetRange.setFontColors(fontColors);
-    targetRange.setFontWeights(fontWeights);
-    targetSheet.autoResizeColumns(1, values[0].length);
-  }
+  } catch (e) { return new Date(); }
 }

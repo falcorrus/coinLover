@@ -31,10 +31,12 @@ export interface Transaction {
   type: TransactionType;
   accountId: string;
   targetId: string;
-  amount: number; // Amount deducted from source
-  amountUSD?: number; // USD equivalent of source amount
-  targetAmount?: number; // Amount added to destination (for transfers) or recorded in category
-  targetAmountUSD?: number; // USD equivalent of target amount
+  sourceAmount: number; // Amount deducted from wallet
+  sourceCurrency: string; // Wallet currency
+  sourceAmountUSD: number; // USD equivalent of source amount
+  targetAmount: number; // Real receipt amount (Local currency)
+  targetCurrency: string; // Local currency code (e.g., BRL)
+  targetAmountUSD: number; // USD equivalent of target amount
   date: string;
   tag?: string;
   comment?: string;
@@ -45,9 +47,10 @@ export interface NumpadData {
   type: TransactionType;
   source: Account | IncomeSource | null;
   destination: Account | Category | null;
-  amount: string; // Source amount string
-  targetAmount: string; // Destination amount string
-  targetLinked: boolean; // true = targetAmount mirrors amount automatically
+  sourceAmount: string; // Source amount string
+  targetAmount: string; // Target (Local) amount string
+  targetCurrency: string; // Currency for the target amount field
+  targetLinked: boolean; 
   activeField: "source" | "destination";
   tag: string | null;
   comment: string;
@@ -63,7 +66,6 @@ export interface SyncSettingsFields {
   timestamp: string;
 }
 
-// Push sync payloads (discriminated union)
 export type SyncPayload =
   | ({
     action: "addTransaction";
@@ -74,10 +76,12 @@ export type SyncPayload =
     sourceName: string;
     destinationName: string;
     tagName: string;
-    amount: number;
-    amountUSD?: number;
-    targetAmount?: number;
-    targetAmountUSD?: number;
+    sourceAmount: number;
+    sourceCurrency: string;
+    sourceAmountUSD: number;
+    targetAmount: number;
+    targetCurrency: string;
+    targetAmountUSD: number;
     comment?: string;
   } & Partial<SyncSettingsFields>)
   | ({
@@ -89,10 +93,12 @@ export type SyncPayload =
     sourceName: string;
     destinationName: string;
     tagName: string;
-    amount: number;
-    amountUSD?: number;
-    targetAmount?: number;
-    targetAmountUSD?: number;
+    sourceAmount: number;
+    sourceCurrency: string;
+    sourceAmountUSD: number;
+    targetAmount: number;
+    targetCurrency: string;
+    targetAmountUSD: number;
     comment?: string;
   } & Partial<SyncSettingsFields>)
   | ({

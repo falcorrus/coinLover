@@ -30,7 +30,6 @@ export const useFinance = () => {
   const [categories, setCategories] = useState<Category[]>(() => {
     const saved = localStorage.getItem("cl_categories");
     const data: Category[] = saved ? JSON.parse(saved) : DEFAULT_CATEGORIES;
-    // Sanitize: Ensure tags exists for all categories (prevents crashes with old data)
     return data.map(c => ({ ...c, tags: c.tags || [] }));
   });
 
@@ -54,7 +53,6 @@ export const useFinance = () => {
     if (data.incomes) setIncomes(data.incomes);
     if (data.timestamp) localStorage.setItem("cl_last_sync", data.timestamp);
 
-    // Overwrite local transactions with what came from the cloud
     if (data.transactions && Array.isArray(data.transactions)) {
       setTransactions(
         [...data.transactions].sort(
@@ -66,7 +64,6 @@ export const useFinance = () => {
     setConflictData(null);
   }, []);
 
-  // ── Auto-save to localStorage ─────────────────────────────────────────────
   useEffect(() => { localStorage.setItem("cl_accounts", JSON.stringify(accounts)); }, [accounts]);
   useEffect(() => { localStorage.setItem("cl_categories", JSON.stringify(categories)); }, [categories]);
   useEffect(() => { localStorage.setItem("cl_incomes", JSON.stringify(incomes)); }, [incomes]);
@@ -104,33 +101,34 @@ export const useFinance = () => {
     type: TransactionType,
     source: Account | IncomeSource,
     destination: Account | Category,
-    amount: number,
+    sourceAmount: number,
     targetAmount?: number,
     tag?: string,
     customDate?: string,
-    comment?: string
+    comment?: string,
+    targetCurrency?: string
   ) => {
     const date = customDate ? getLocalTimeString(customDate) : getLocalTimeString();
 
-    // Calculate USD equivalents
     const wallet = type === "income" ? (destination as Account) : (source as Account);
-    const walletCurrency = wallet.currency || "USD";
+    const sourceCurrency = wallet.currency || "USD";
 
-    const sourceCurrency = (source as any).currency || walletCurrency;
-    const destCurrency = type === "expense" ? "USD" : ((destination as any).currency || walletCurrency);
+    const localCurrency = targetCurrency || (type === "expense" ? "USD" : ((destination as any).currency || sourceCurrency));
 
-    const amountUSD = sourceCurrency === "USD" ? amount : RatesService.convert(amount, sourceCurrency, "USD");
-    const finalTargetAmount = targetAmount ?? amount;
-    const targetAmountUSD = destCurrency === "USD" ? finalTargetAmount : RatesService.convert(finalTargetAmount, destCurrency, "USD");
+    const sourceAmountUSD = sourceCurrency === "USD" ? sourceAmount : RatesService.convert(sourceAmount, sourceCurrency, "USD");
+    const finalTargetAmount = targetAmount ?? sourceAmount;
+    const targetAmountUSD = localCurrency === "USD" ? finalTargetAmount : RatesService.convert(finalTargetAmount, localCurrency, "USD");
 
     const newTx: Transaction = {
       id: Date.now().toString(),
       type,
       accountId: type === "income" ? (destination as Account).id : (source as Account).id,
       targetId: type === "income" ? source.id : (destination as Category).id,
-      amount,
-      amountUSD: Math.round(amountUSD * 100) / 100,
+      sourceAmount,
+      sourceCurrency,
+      sourceAmountUSD: Math.round(sourceAmountUSD * 100) / 100,
       targetAmount: finalTargetAmount,
+      targetCurrency: localCurrency,
       targetAmountUSD: Math.round(targetAmountUSD * 100) / 100,
       date,
       tag,
@@ -140,10 +138,10 @@ export const useFinance = () => {
     setTransactions((prev) => [newTx, ...prev]);
 
     const updatedAccounts = accounts.map((a) => {
-      if (type === "expense" && a.id === source.id) return { ...a, balance: a.balance - amount };
-      if (type === "income" && a.id === (destination as Account).id) return { ...a, balance: a.balance + (targetAmount ?? amount) };
+      if (type === "expense" && a.id === source.id) return { ...a, balance: a.balance - sourceAmount };
+      if (type === "income" && a.id === (destination as Account).id) return { ...a, balance: a.balance + (targetAmount ?? sourceAmount) };
       if (type === "transfer") {
-        if (a.id === source.id) return { ...a, balance: a.balance - amount };
+        if (a.id === source.id) return { ...a, balance: a.balance - sourceAmount };
         if (a.id === (destination as Account).id) return { ...a, balance: a.balance + finalTargetAmount };
       }
       return a;
@@ -151,7 +149,6 @@ export const useFinance = () => {
     setAccounts(updatedAccounts);
 
     setSyncStatus("loading");
-    // Combined atomic sync: transaction + updated balances
     const ok = await googleSheetsService.syncToSheets({
       action: "addTransaction",
       targetSheet: "Transactions",
@@ -161,12 +158,13 @@ export const useFinance = () => {
       sourceName: source.name,
       destinationName: destination.name,
       tagName: tag ?? "",
-      amount,
-      amountUSD: newTx.amountUSD,
+      sourceAmount,
+      sourceCurrency,
+      sourceAmountUSD: newTx.sourceAmountUSD,
       targetAmount: finalTargetAmount,
+      targetCurrency: localCurrency,
       targetAmountUSD: newTx.targetAmountUSD,
       comment: comment || undefined,
-      // Include settings for atomic update
       accounts: enrichAccountsWithUSD(updatedAccounts),
       categories,
       incomes,
@@ -181,41 +179,41 @@ export const useFinance = () => {
     }
   };
 
-  // ── Update Transaction ──────────────────────────────────────────────────────
   const updateTransaction = async (
     txId: string,
     type: TransactionType,
     source: Account | IncomeSource,
     destination: Account | Category,
-    amount: number,
+    sourceAmount: number,
     targetAmount?: number,
     tag?: string,
     customDate?: string,
-    comment?: string
+    comment?: string,
+    targetCurrency?: string
   ) => {
     const oldTx = transactions.find(t => t.id === txId);
     if (!oldTx) return;
 
     const date = customDate ? getLocalTimeString(customDate) : oldTx.date;
 
-    // Calculate USD equivalents
     const wallet = type === "income" ? (destination as Account) : (source as Account);
-    const walletCurrency = wallet.currency || "USD";
+    const sourceCurrency = wallet.currency || "USD";
 
-    const sourceCurrency = (source as any).currency || walletCurrency;
-    const destCurrency = type === "expense" ? "USD" : ((destination as any).currency || walletCurrency);
-    const amountUSD = sourceCurrency === "USD" ? amount : RatesService.convert(amount, sourceCurrency, "USD");
-    const finalTargetAmount = targetAmount ?? amount;
-    const targetAmountUSD = destCurrency === "USD" ? finalTargetAmount : RatesService.convert(finalTargetAmount, destCurrency, "USD");
+    const localCurrency = targetCurrency || (type === "expense" ? "USD" : ((destination as any).currency || sourceCurrency));
+    const sourceAmountUSD = sourceCurrency === "USD" ? sourceAmount : RatesService.convert(sourceAmount, sourceCurrency, "USD");
+    const finalTargetAmount = targetAmount ?? sourceAmount;
+    const targetAmountUSD = localCurrency === "USD" ? finalTargetAmount : RatesService.convert(finalTargetAmount, localCurrency, "USD");
 
     const updatedTx: Transaction = {
       ...oldTx,
       type,
       accountId: type === "income" ? (destination as Account).id : (source as Account).id,
       targetId: type === "income" ? source.id : (destination as Category).id,
-      amount,
-      amountUSD: Math.round(amountUSD * 100) / 100,
+      sourceAmount,
+      sourceCurrency,
+      sourceAmountUSD: Math.round(sourceAmountUSD * 100) / 100,
       targetAmount: finalTargetAmount,
+      targetCurrency: localCurrency,
       targetAmountUSD: Math.round(targetAmountUSD * 100) / 100,
       date,
       tag,
@@ -224,31 +222,25 @@ export const useFinance = () => {
 
     setTransactions(prev => prev.map(t => t.id === txId ? updatedTx : t));
 
-    // Revert old tx effect from balances, then apply new tx effect
     const updatedAccounts = accounts.map(a => {
       let balance = a.balance;
-
-      // Revert old transaction
-      if (oldTx.type === "expense" && a.id === oldTx.accountId) balance += oldTx.amount;
-      if (oldTx.type === "income" && a.id === oldTx.targetId) balance -= (oldTx.targetAmount ?? oldTx.amount);
+      if (oldTx.type === "expense" && a.id === oldTx.accountId) balance += oldTx.sourceAmount;
+      if (oldTx.type === "income" && a.id === oldTx.targetId) balance -= (oldTx.targetAmount ?? oldTx.sourceAmount);
       if (oldTx.type === "transfer") {
-        if (a.id === oldTx.accountId) balance += oldTx.amount;
-        if (a.id === oldTx.targetId) balance -= (oldTx.targetAmount ?? oldTx.amount);
+        if (a.id === oldTx.accountId) balance += oldTx.sourceAmount;
+        if (a.id === oldTx.targetId) balance -= (oldTx.targetAmount ?? oldTx.sourceAmount);
       }
 
-      // Apply new transaction
-      if (type === "expense" && a.id === (source as Account).id) balance -= amount;
+      if (type === "expense" && a.id === (source as Account).id) balance -= sourceAmount;
       if (type === "income" && a.id === (destination as Account).id) balance += finalTargetAmount;
       if (type === "transfer") {
-        if (a.id === (source as Account).id) balance -= amount;
+        if (a.id === (source as Account).id) balance -= sourceAmount;
         if (a.id === (destination as Account).id) balance += finalTargetAmount;
       }
-
       return a.balance !== balance ? { ...a, balance } : a;
     });
     setAccounts(updatedAccounts);
 
-    // Sync updated transaction to Sheets
     setSyncStatus("loading");
     const ok = await googleSheetsService.syncToSheets({
       action: "updateTransaction",
@@ -259,12 +251,13 @@ export const useFinance = () => {
       sourceName: source.name,
       destinationName: destination.name,
       tagName: tag ?? "",
-      amount,
-      amountUSD: Math.round(amountUSD * 100) / 100,
+      sourceAmount,
+      sourceCurrency,
+      sourceAmountUSD: updatedTx.sourceAmountUSD,
       targetAmount: finalTargetAmount,
-      targetAmountUSD: Math.round(targetAmountUSD * 100) / 100,
+      targetCurrency: localCurrency,
+      targetAmountUSD: updatedTx.targetAmountUSD,
       comment: comment || undefined,
-      // Include settings for atomic update
       accounts: enrichAccountsWithUSD(updatedAccounts),
       categories,
       incomes,
@@ -287,11 +280,11 @@ export const useFinance = () => {
 
     const updatedAccounts = accounts.map((a) => {
       let balance = a.balance;
-      if (tx.type === "expense" && a.id === tx.accountId) balance += tx.amount;
-      if (tx.type === "income" && a.id === tx.targetId) balance -= tx.targetAmount ?? tx.amount;
+      if (tx.type === "expense" && a.id === tx.accountId) balance += tx.sourceAmount;
+      if (tx.type === "income" && a.id === tx.targetId) balance -= tx.targetAmount ?? tx.sourceAmount;
       if (tx.type === "transfer") {
-        if (a.id === tx.accountId) balance += tx.amount;
-        if (a.id === tx.targetId) balance -= tx.targetAmount ?? tx.amount;
+        if (a.id === tx.accountId) balance += tx.sourceAmount;
+        if (a.id === tx.targetId) balance -= tx.targetAmount ?? tx.sourceAmount;
       }
       return a.balance !== balance ? { ...a, balance } : a;
     });
@@ -304,7 +297,6 @@ export const useFinance = () => {
       targetSheet: "Transactions",
       id: txId,
       timestamp,
-      // Include settings for atomic update
       accounts: enrichAccountsWithUSD(updatedAccounts),
       categories,
       incomes,
@@ -318,11 +310,10 @@ export const useFinance = () => {
     }
   };
 
-  // ── Accounts ───────────────────────────────────────────────────────────────
   const saveAccount = async (account: Partial<Account>) => {
     const updated = account.id
       ? accounts.map((a) => (a.id === account.id ? { ...a, ...account } : a))
-      : [...accounts, { ...account, id: `acc - ${Date.now()} ` } as Account];
+      : [...accounts, { ...account, id: `acc-${Date.now()}` } as Account];
     setAccounts(updated);
     await pushSettings(updated, categories, incomes);
   };
@@ -333,8 +324,6 @@ export const useFinance = () => {
     await pushSettings(updated, categories, incomes);
   };
 
-  // ── Settings: categories & incomes ────────────────────────────────────────
-  /** Called from App when categories order/content changes via D&D or edit */
   const syncCategories = async (updated: Category[]) => {
     setCategories(updated);
     await pushSettings(accounts, updated, incomes);
@@ -343,7 +332,7 @@ export const useFinance = () => {
   const saveCategory = async (category: Partial<Category>) => {
     const updated = category.id
       ? categories.map((c) => (c.id === category.id ? { ...c, ...category } : c))
-      : [...categories, { ...category, id: `cat - ${Date.now()} `, tags: category.tags ?? [] } as Category];
+      : [...categories, { ...category, id: `cat-${Date.now()}`, tags: category.tags ?? [] } as Category];
     setCategories(updated);
     await pushSettings(accounts, updated, incomes);
   };
@@ -354,13 +343,11 @@ export const useFinance = () => {
     await pushSettings(accounts, updated, incomes);
   };
 
-  /** Called from App when incomes order/content changes via D&D or edit */
   const syncIncomes = async (updated: IncomeSource[]) => {
     setIncomes(updated);
     await pushSettings(accounts, categories, updated);
   };
 
-  /** Called from App when accounts order changes via D&D */
   const syncAccountsOrder = async (updated: Account[]) => {
     setAccounts(updated);
     await pushSettings(updated, categories, incomes);
@@ -369,7 +356,7 @@ export const useFinance = () => {
   const saveIncome = async (income: Partial<IncomeSource>) => {
     const updated = income.id
       ? incomes.map((i) => (i.id === income.id ? { ...i, ...income } : i))
-      : [...incomes, { ...income, id: `inc - ${Date.now()} ` } as IncomeSource];
+      : [...incomes, { ...income, id: `inc-${Date.now()}` } as IncomeSource];
     setIncomes(updated);
     await pushSettings(accounts, categories, updated);
   };
@@ -400,16 +387,11 @@ export const useFinance = () => {
       const localLastSync = localStorage.getItem("cl_last_sync");
       const hasLocalTransactions = transactions.length > 0;
 
-      // Auto-update if:
-      // 1. No last sync timestamp (first run)
-      // 2. OR remote is different AND we have no local transactions yet (safe to overwrite)
       if (!localLastSync || (remote.timestamp !== localLastSync && !hasLocalTransactions)) {
         updateLocalFromRemote(remote);
-        console.log("Auto-updated from remote (clean state)");
         return;
       }
 
-      // If we have local transactions and timestamps differ, show conflict modal
       if (localLastSync && remote.timestamp !== localLastSync) {
         setConflictData(remote);
       }
