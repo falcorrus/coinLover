@@ -36,7 +36,7 @@ export default function App() {
 
   const [isSplashVisible, setIsSplashVisible] = React.useState(true);
   const [mode, setMode] = React.useState<"expense" | "income">("expense");
-  const [pillMode, setPillMode] = React.useState<"expense" | "balance">("expense");
+  const [pillMode, setPillMode] = React.useState<"expense" | "income" | "balance">("expense");
   const [isIncomeCollapsed, setIsIncomeCollapsed] = React.useState(true);
   const [activeDragId, setActiveDragId] = React.useState<string | null>(null);
   const [activeDragType, setActiveDragType] = React.useState<DragItemType | null>(null);
@@ -77,7 +77,17 @@ export default function App() {
   }, [theme]);
 
   const toggleTheme = () => { setTheme(prev => prev === "light" ? "dark" : "light"); if (navigator.vibrate) navigator.vibrate(50); };
-  const toggleMode = (target: 'demo' | 'real') => { window.localStorage.setItem("coinlover_demo", target === 'demo' ? "true" : "false"); window.location.reload(); };
+  const toggleMode = (target: 'demo' | 'real') => {
+    // Clear data cache to force reload from the correct sheet
+    localStorage.removeItem("cl_accounts");
+    localStorage.removeItem("cl_categories");
+    localStorage.removeItem("cl_incomes");
+    localStorage.removeItem("cl_transactions");
+    localStorage.removeItem("cl_last_sync");
+    
+    window.localStorage.setItem("coinlover_demo", target === 'demo' ? "true" : "false");
+    window.location.reload();
+  };
   const handleDemoClick = () => { demoClickCount.current += 1; if (demoTimerRef.current) clearTimeout(demoTimerRef.current); if (demoClickCount.current >= 5) { toggleMode(isDemo ? 'real' : 'demo'); demoClickCount.current = 0; } else { demoTimerRef.current = setTimeout(() => { demoClickCount.current = 0; }, 2000); } };
 
   const safeEval = (str: string): string => {
@@ -91,7 +101,7 @@ export default function App() {
     } catch { return str; }
   };
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 15 } }));
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 10 } }));
   const toggleIncome = () => { const next = !isIncomeCollapsed; setIsIncomeCollapsed(next); setMode(next ? "expense" : "income"); };
 
   const handleDragStart = (e: DragStartEvent) => {
@@ -158,7 +168,8 @@ export default function App() {
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   });
   const totalBalance = Math.round(accounts.reduce((s, a) => s + RatesService.convert(a.balance, a.currency || "USD", "USD"), 0));
-  const totalSpent = Math.round(currentMonthTransactions.filter(t => t.type === "expense").reduce((s, t) => s + t.sourceAmountUSD, 0));
+  const totalSpent = Math.round(currentMonthTransactions.filter(t => t.type === "expense").reduce((s, t) => s + (t.sourceAmountUSD ?? t.amountUSD ?? t.sourceAmount ?? t.amount ?? 0), 0));
+  const totalEarned = Math.round(currentMonthTransactions.filter(t => t.type === "income").reduce((s, t) => s + (t.sourceAmountUSD ?? t.amountUSD ?? t.sourceAmount ?? t.amount ?? 0), 0));
 
   const anyModalOpen = accountModal.isOpen || incomeModal.isOpen || categoryModal.isOpen || historyModal.isOpen || analyticsModal.isOpen || numpad.isOpen || confirmDelete.isOpen || isSettingsMenuOpen || !!conflictData;
   const activeItemData = activeDragId ? (activeDragType === 'account' ? accounts.find(a => a.id === activeDragId) : activeDragType === 'category' ? categories.find(c => c.id === activeDragId) : incomes.find(i => i.id === activeDragId)) : null;
@@ -200,7 +211,12 @@ export default function App() {
               <>
                 <div className="fixed inset-0 z-[200] bg-black/40 backdrop-blur-[2px]" onClick={() => setIsSettingsMenuOpen(false)} />
                 <div className="absolute top-12 right-0 w-48 bg-[var(--bg-color)] border border-[var(--glass-border)] rounded-2xl shadow-2xl flex flex-col z-[201] p-2 animate-in fade-in zoom-in-95 origin-top-right">
-                  <button onClick={() => { setIsSettingsMenuOpen(false); setHistoryModal({ isOpen: true, entity: { name: "Лента", icon: "list" }, type: "feed" }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><List size={16} className="text-[var(--primary-color)]" /><span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Лента</span></button>
+                  <button onClick={() => { setIsSettingsMenuOpen(false); pullSettings(); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left">
+                    <RefreshCcw size={16} className={`text-amber-500 ${syncStatus === 'loading' ? 'animate-spin' : ''}`} /><span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Обновить</span>
+                  </button>
+                  <button onClick={() => { setIsSettingsMenuOpen(false); setHistoryModal({ isOpen: true, entity: { name: "Лента", icon: "list" }, type: "feed" }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left">
+                    <List size={16} className="text-[var(--primary-color)]" /><span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Лента</span>
+                  </button>
                   <button onClick={() => { setIsSettingsMenuOpen(false); toggleTheme(); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left">
                     {theme === 'dark' ? <Sun size={16} className="text-amber-400" /> : <Moon size={16} className="text-slate-400" />}
                     <span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">{theme === 'dark' ? "Light Mode" : "Dark Mode"}</span>
@@ -210,8 +226,17 @@ export default function App() {
             )}
           </div>
         </div>
-        <button onClick={() => setPillMode(p => p === "expense" ? "balance" : "expense")} className="mt-2 mx-auto px-5 py-2 rounded-full bg-[var(--glass-item-bg)] border border-[var(--glass-border)] flex items-center gap-2 hover:bg-[var(--glass-item-active)] active:scale-95 transition-all">
-          {pillMode === "expense" ? (<><TrendingDown size={14} className="text-[#cda434]" /><span className="text-xs font-bold text-[#cda434]">-${totalSpent.toLocaleString()} в этом месяце</span></>) : (<><Wallet size={14} className="text-[#10b981]" /><span className="text-xs font-bold text-[#10b981]">Общий баланс: ${totalBalance.toLocaleString()}</span></>)}
+        <button 
+          onClick={() => setPillMode(p => p === "expense" ? "income" : p === "income" ? "balance" : "expense")} 
+          className="mt-2 mx-auto px-5 py-2 rounded-full bg-[var(--glass-item-bg)] border border-[var(--glass-border)] flex items-center gap-2 hover:bg-[var(--glass-item-active)] active:scale-95 transition-all shadow-sm"
+        >
+          {pillMode === "expense" ? (
+            <><TrendingDown size={14} className="text-[#cda434]" /><span className="text-xs font-bold text-[#cda434]">-${totalSpent.toLocaleString()} в этом месяце</span></>
+          ) : pillMode === "income" ? (
+            <><TrendingUp size={14} className="text-[#10b981]" /><span className="text-xs font-bold text-[#10b981]">+${totalEarned.toLocaleString()} в этом месяце</span></>
+          ) : (
+            <><Wallet size={14} className="text-[var(--primary-color)]" /><span className="text-xs font-bold text-[var(--primary-color)]">Общий баланс: ${totalBalance.toLocaleString()}</span></>
+          )}
         </button>
       </header>
 
@@ -232,7 +257,7 @@ export default function App() {
             <SortableContext items={categories.map(c => c.id)} strategy={rectSortingStrategy}>
               <div className="grid grid-cols-4 gap-y-6 gap-x-2 pb-4">
                 {categories.map(cat => {
-                  const spent = Math.round(currentMonthTransactions.filter(t => t.type === "expense" && t.targetId === cat.id).reduce((s, t) => s + t.sourceAmountUSD, 0));
+                  const spent = Math.round(currentMonthTransactions.filter(t => t.type === "expense" && t.targetId === cat.id).reduce((s, t) => s + (t.sourceAmountUSD ?? t.amountUSD ?? t.sourceAmount ?? t.amount ?? 0), 0));
                   return (<CategoryItem key={cat.id} category={cat} spent={spent} isDragging={activeDragId === cat.id} onSortingMode={() => setIsSortingMode(true)} isSortingMode={isSortingMode} isOver={overId === cat.id} onLongPress={(c) => setCategoryModal({ isOpen: true, category: c })} onClick={(category) => setHistoryModal({ isOpen: true, entity: category, type: "category" })} activeDragType={activeDragType} />);
                 })}
               </div>
@@ -244,9 +269,7 @@ export default function App() {
       </DndContext>
 
       <Numpad
-        data={numpad} 
-        availableCurrencies={Array.from(new Set([...accounts.map(a => a.currency), numpad.sourceCurrency, numpad.targetCurrency]))} 
-        isEditing={!!editingTxId}
+        data={numpad} availableCurrencies={Array.from(new Set([...accounts.map(a => a.currency), numpad.sourceCurrency, numpad.targetCurrency]))} isEditing={!!editingTxId}
         onClose={() => { setNumpad({ ...numpad, isOpen: false, targetLinked: true }); setEditingTxId(null); }}
         onFieldChange={(f) => setNumpad(p => ({ ...p, activeField: f }))}
         onLinkToggle={() => { setNumpad(p => ({ ...p, targetLinked: !p.targetLinked })); if (navigator.vibrate) navigator.vibrate(10); }}

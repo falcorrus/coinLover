@@ -26,7 +26,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
     } else if (entityType === "category") {
         filteredTransactions = transactions.filter(t => t.targetId === entity.id);
     } else if (entityType === "income") {
-        filteredTransactions = transactions.filter(t => t.accountId === entity.id);
+        filteredTransactions = transactions.filter(t => t.accountId === entity.id || t.targetId === entity.id);
     } else if (entityType === "tag") {
         filteredTransactions = transactions.filter(t => t.tag === entity.name && t.type === "expense");
     } else if (entityType === "feed") {
@@ -39,7 +39,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
 
     const getCounterpartInfo = (tx: Transaction) => {
         let counterpartId = "";
-        let isOutflow = true;
+        let isOutflow = true; // Default to minus
 
         if (entityType === "account") {
             if (tx.accountId === entity.id) {
@@ -51,69 +51,60 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
             }
         } else if (entityType === "category" || entityType === "tag") {
             counterpartId = tx.accountId;
-            isOutflow = false;
+            isOutflow = true; // Always minus for category view
         } else if (entityType === "income") {
-            counterpartId = tx.targetId;
-            isOutflow = true;
+            counterpartId = tx.accountId;
+            isOutflow = false; // Always plus for income source view
         } else if (entityType === "feed") {
-            if (tx.type === "expense") { counterpartId = tx.targetId; isOutflow = true; }
-            else if (tx.type === "income") { counterpartId = tx.accountId; isOutflow = false; }
-            else { counterpartId = tx.targetId; isOutflow = true; }
+            isOutflow = tx.type !== "income";
+            counterpartId = tx.targetId;
         }
 
         let counterpartItem: Account | Category | IncomeSource | undefined;
         if (tx.type === "expense") {
-            if (entityType === "category" || entityType === "tag") counterpartItem = accounts.find(a => a.id === tx.accountId);
-            else counterpartItem = categories.find(c => c.id === tx.targetId);
+            counterpartItem = (entityType === "category" || entityType === "tag") 
+                ? accounts.find(a => a.id === tx.accountId)
+                : categories.find(c => c.id === tx.targetId);
         } else if (tx.type === "income") {
-            if (entityType === "income") counterpartItem = accounts.find(a => a.id === tx.accountId);
-            else counterpartItem = incomes.find(i => i.id === tx.targetId);
+            counterpartItem = (entityType === "income")
+                ? accounts.find(a => a.id === tx.accountId)
+                : incomes.find(i => i.id === tx.targetId);
         } else if (tx.type === "transfer") {
-            counterpartItem = accounts.find(a => a.id === counterpartId);
-        }
-
-        if (entityType === "feed") {
-            if (tx.type === "expense") counterpartItem = categories.find(c => c.id === tx.targetId);
-            else if (tx.type === "income") counterpartItem = incomes.find(i => i.id === tx.targetId);
-            else if (tx.type === "transfer") counterpartItem = accounts.find(a => a.id === tx.targetId);
+            counterpartItem = accounts.find(a => a.id === (tx.accountId === entity.id ? tx.targetId : tx.accountId));
         }
 
         return { item: counterpartItem, isOutflow };
     };
 
-    const getAmountStr = (tx: Transaction, isOutflow: boolean) => {
-        let amount = tx.sourceAmount;
-        let usdAmount = tx.sourceAmountUSD;
-        let currency = tx.sourceCurrency || "USD";
+    const getAmountStr = (tx: any, isOutflow: boolean) => {
+        const sAmt = tx.sourceAmount ?? tx.amount ?? 0;
+        const sAmtUsd = tx.sourceAmountUSD ?? tx.amountUSD;
+        const sCurr = tx.sourceCurrency ?? (accounts.find(a => a.id === tx.accountId)?.currency || "USD");
+        
+        const tAmt = tx.targetAmount ?? tx.amountLocal ?? sAmt;
+        const tCurr = tx.targetCurrency ?? tx.currencyLocal ?? sCurr;
+
+        let displayAmount = sAmt;
+        let displayCurrency = sCurr;
+        let displayUsd = sAmtUsd;
 
         if (entityType === "account") {
-            return {
-                amount: `${isOutflow ? "-" : "+"}${amount} ${currency}`,
-                usdAmount: usdAmount ? `${isOutflow ? "-" : "+"}$${usdAmount}` : null,
-                color: isOutflow ? "text-[var(--danger-color)]" : "text-[var(--success-color)]"
-            };
-        } 
-
-        // For non-account views, show Target (Local) amount if it's an expense
-        if (tx.type === "expense" && tx.targetCurrency) {
-            amount = tx.targetAmount ?? tx.sourceAmount;
-            currency = tx.targetCurrency;
+            displayAmount = sAmt;
+            displayCurrency = sCurr;
+        } else {
+            displayAmount = tAmt;
+            displayCurrency = tCurr;
         }
 
-        if (entityType === "category" || entityType === "tag" || entityType === "feed") {
-            const sign = tx.type === "income" ? "+" : "-";
-            const color = tx.type === "income" ? "text-[var(--success-color)]" : (tx.type === "expense" ? "text-[#D4AF37]" : "text-[var(--text-muted)]");
-            return {
-                amount: `${sign}${amount} ${currency}`,
-                usdAmount: usdAmount ? `${sign}$${usdAmount}` : null,
-                color
-            };
-        }
+        const sign = isOutflow ? "-" : "+";
+        const color = isOutflow 
+            ? (tx.type === "expense" ? "text-[#D4AF37]" : "text-[var(--danger-color)]") 
+            : "text-[var(--success-color)]";
 
         return {
-            amount: `+${amount} ${currency}`,
-            usdAmount: usdAmount ? `+$${usdAmount}` : null,
-            color: "text-[var(--success-color)]"
+            amount: `${sign}${displayAmount} ${displayCurrency}`,
+            usdAmount: displayUsd ? `${sign}$${displayUsd}` : null,
+            color
         };
     };
 
