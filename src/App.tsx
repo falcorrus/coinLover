@@ -215,6 +215,32 @@ export default function App() {
   const totalEarned = Math.round(currentMonthTransactions.filter(t => t.type === "income").reduce((s, t) => s + (t.sourceAmountUSD ?? t.amountUSD ?? t.sourceAmount ?? t.amount ?? 0), 0));
 
   const anyModalOpen = accountModal.isOpen || incomeModal.isOpen || categoryModal.isOpen || historyModal.isOpen || analyticsModal.isOpen || numpad.isOpen || confirmDelete.isOpen || isSettingsMenuOpen || !!conflictData;
+
+  // Handle hardware/gesture back button
+  React.useEffect(() => {
+    if (anyModalOpen) {
+      window.history.pushState({ modal: true }, "");
+    }
+    
+    const handlePopState = (e: PopStateEvent) => {
+      if (anyModalOpen) {
+        // Close all modals
+        setAccountModal(p => ({ ...p, isOpen: false }));
+        setIncomeModal(p => ({ ...p, isOpen: false }));
+        setCategoryModal(p => ({ ...p, isOpen: false }));
+        setHistoryModal(p => ({ ...p, isOpen: false, entity: null, type: null }));
+        setAnalyticsModal(p => ({ ...p, isOpen: false }));
+        setNumpad(p => ({ ...p, isOpen: false }));
+        setConfirmDelete(p => ({ ...p, isOpen: false }));
+        setIsSettingsMenuOpen(false);
+        setConflictData(null);
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [anyModalOpen, setConflictData]);
+
   const activeItemData = activeDragId ? (activeDragType === 'account' ? accounts.find(a => a.id === activeDragId) : activeDragType === 'category' ? categories.find(c => c.id === activeDragId) : incomes.find(i => i.id === activeDragId)) : null;
 
   return (

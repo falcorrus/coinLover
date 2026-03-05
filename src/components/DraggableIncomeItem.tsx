@@ -55,7 +55,7 @@ export const DraggableIncomeItem: React.FC<Props> = ({
     sortingTimerRef.current = setTimeout(() => {
       if (!didMoveRef.current) {
         onSortingMode?.();
-        if (navigator.vibrate) navigator.vibrate(50);
+        if (navigator.vibrate) navigator.vibrate(40);
       }
     }, 600);
 
@@ -67,42 +67,30 @@ export const DraggableIncomeItem: React.FC<Props> = ({
       }
     }, LONG_PRESS_MS);
 
-    const onPointerMove = (ev: PointerEvent) => {
-      const dist = Math.hypot(ev.clientX - startPosRef.current.x, ev.clientY - startPosRef.current.y);
-      if (dist > MOVE_THRESHOLD) {
-        didMoveRef.current = true;
-        clearTimers();
-      }
-    };
-
-    const onPointerUp = () => {
-      setIsPressing(false);
-      clearTimers();
-
-      const elapsed = Date.now() - startTimeRef.current;
-      if (!didMoveRef.current && elapsed < 500) {
-        onClick?.(income);
-      }
-
-      window.removeEventListener("pointermove", onPointerMove);
-      window.removeEventListener("pointerup", onPointerUp);
-      window.removeEventListener("pointercancel", onPointerCancel);
-    };
-
-    const onPointerCancel = () => {
-      setIsPressing(false);
-      clearTimers();
-      window.removeEventListener("pointermove", onPointerMove);
-      window.removeEventListener("pointerup", onPointerUp);
-      window.removeEventListener("pointercancel", onPointerCancel);
-    };
-
-    window.addEventListener("pointermove", onPointerMove);
-    window.addEventListener("pointerup", onPointerUp);
-    window.addEventListener("pointercancel", onPointerCancel);
-
-    // IMPORTANT: Call dnd-kit's listener to initiate drag
+    // Initiate dnd-kit drag
     listeners?.onPointerDown?.(e);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!isPressing) return;
+    const dx = e.clientX - startPosRef.current.x;
+    const dy = e.clientY - startPosRef.current.y;
+    const dist = Math.hypot(dx, dy);
+
+    // If movement is significant, clear timers
+    if (dist > MOVE_THRESHOLD) {
+      didMoveRef.current = true;
+      clearTimers();
+    }
+  };
+
+  const handlePointerUp = () => {
+    setIsPressing(false);
+    clearTimers();
+    const elapsed = Date.now() - startTimeRef.current;
+    if (!didMoveRef.current && elapsed < 500) {
+      onClick?.(income);
+    }
   };
 
   React.useEffect(() => {
@@ -131,7 +119,10 @@ export const DraggableIncomeItem: React.FC<Props> = ({
       <div
         {...listeners}
         onPointerDown={handlePointerDown}
-        style={{ touchAction: "none" }}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        style={{ touchAction: "pan-x" }}
         className={`draggable-coin w-[52px] h-[52px] mb-2 border border-[#10b981]/30 bg-[#10b981]/10 transition-all duration-300 ${isDragging ? "grabbed-elevation" :
           (isPressing && isSortingMode) ? "scale-110 border-[var(--primary-color)] shadow-[0_0_20px_rgba(109,93,252,0.4)] ring-4 ring-[var(--primary-color)]/20" :
           isPressing ? "scale-90 brightness-75 border-[#10b981]/50" : ""
