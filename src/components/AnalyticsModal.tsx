@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { X, ChevronLeft, ChevronRight, PieChart, Tag, RefreshCcw, MoreHorizontal, TrendingUp, TrendingDown, Wallet } from "lucide-react";
+import React, { useState, useEffect, useMemo } from "react";
+import { X, ChevronLeft, ChevronRight, PieChart, Tag, RefreshCcw, MoreHorizontal, TrendingUp, TrendingDown, Wallet, CheckCircle2, Circle } from "lucide-react";
 import { Transaction, Category, IncomeSource, Account } from "../types";
 import { IconMap } from "../constants";
 import { googleSheetsService } from "../services/googleSheets";
@@ -25,19 +25,88 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
     const [analysisType, setAnalysisType] = useState<"expense" | "income">(initialType);
     const [tab, setTab] = useState<"categories" | "tags">("categories");
     const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
+    // 1. Calculate derived data
+    const filteredTx = useMemo(() => {
+        return transactions.filter(t => {
+            if (t.type !== analysisType) return false;
+            const txDate = new Date(t.date.replace(/-/g, '/').replace('T', ' '));
+            return txDate.getFullYear() === currentDate.getFullYear() && txDate.getMonth() === currentDate.getMonth();
+        });
+    }, [transactions, analysisType, currentDate]);
+
+    const totalUSD = useMemo(() => {
+        return filteredTx.reduce((sum, t) => sum + (t.sourceAmountUSD || 0), 0);
+    }, [filteredTx]);
+
+    const listItems = useMemo(() => {
+        let items: { id: string, name: string, icon: any, color: string, amount: number, percent: number }[] = [];
+
+        if (tab === "categories" || analysisType === "income") {
+            const itemMap = new Map<string, number>();
+            filteredTx.forEach(t => {
+                const id = t.targetId;
+                itemMap.set(id, (itemMap.get(id) || 0) + (t.sourceAmountUSD || 0));
+            });
+
+            itemMap.forEach((amount, id) => {
+                if (analysisType === "expense") {
+                    const cat = categories.find(c => c.id === id);
+                    items.push({ 
+                        id, name: cat ? cat.name : "Удаленная категория", 
+                        icon: cat ? (IconMap[cat.icon] || MoreHorizontal) : MoreHorizontal, 
+                        color: cat ? cat.color : "#6b7280", 
+                        amount, percent: totalUSD > 0 ? (amount / totalUSD) * 100 : 0 
+                    });
+                } else {
+                    const inc = incomes.find(i => i.id === id);
+                    items.push({ 
+                        id, name: inc ? inc.name : "Удаленный источник", 
+                        icon: TrendingUp, color: inc ? inc.color : "var(--success-color)", 
+                        amount, percent: totalUSD > 0 ? (amount / totalUSD) * 100 : 0 
+                    });
+                }
+            });
+        } else {
+            const tagMap = new Map<string, number>();
+            filteredTx.forEach(t => {
+                const tagName = t.tag && t.tag.trim() ? t.tag.trim() : "Без тега";
+                tagMap.set(tagName, (tagMap.get(tagName) || 0) + (t.sourceAmountUSD || 0));
+            });
+            tagMap.forEach((amount, tagName) => {
+                items.push({ 
+                    id: tagName, name: tagName, icon: Tag, color: "var(--primary-color)", 
+                    amount, percent: totalUSD > 0 ? (amount / totalUSD) * 100 : 0 
+                });
+            });
+        }
+        return items.sort((a, b) => b.amount - a.amount);
+    }, [filteredTx, tab, analysisType, categories, incomes, totalUSD]);
+
+    const displayedTotal = useMemo(() => {
+        if (selectedIds.size === 0) return 0;
+        return listItems
+            .filter(item => selectedIds.has(item.id))
+            .reduce((sum, item) => sum + item.amount, 0);
+    }, [listItems, selectedIds]);
+
+    // 2. Effects
     useEffect(() => {
         if (isOpen) {
             setAnalysisType(initialType);
             setExpandedItemId(null);
+            // Reset selectedIds to let the next effect populate them
+            setSelectedIds(new Set());
         }
     }, [isOpen, initialType]);
 
-    const touchStartX = React.useRef(0);
-    const toggleExpand = (id: string) => {
-        setExpandedItemId(expandedItemId === id ? null : id);
-        if (navigator.vibrate) navigator.vibrate(10);
-    };
+    // Auto-populate selectedIds when listItems arrive
+    useEffect(() => {
+        if (listItems.length > 0 && selectedIds.size === 0) {
+            setSelectedIds(new Set(listItems.map(i => i.id)));
+        }
+    }, [listItems]);
 
     useEffect(() => {
         if (!isOpen) return;
@@ -60,12 +129,6 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
             if (monthTx.length > 0) {
                 setTransactions(globalTransactions);
                 globalAnalyticsCache.set(cacheKey, globalTransactions);
-                googleSheetsService.fetchMonthData(cacheKey).then(data => {
-                    if (isMounted && data && data.transactions) {
-                        globalAnalyticsCache.set(cacheKey, data.transactions);
-                        setTransactions(data.transactions);
-                    }
-                }).catch(() => { });
                 return;
             }
 
@@ -86,62 +149,46 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
         loadData();
     }, [isOpen, currentDate, globalTransactions]);
 
-    if (!isOpen) return null;
+    // 3. Handlers
+    const toggleSelect = (id: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        const next = new Set(selectedIds);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        setSelectedIds(next);
+        if (navigator.vibrate) navigator.vibrate(10);
+    };
 
-    const nextMonth = () => setCurrentDate(d => new Date(d.getFullYear(), d.getMonth() + 1, 1));
-    const prevMonth = () => setCurrentDate(d => new Date(d.getFullYear(), d.getMonth() - 1, 1));
+    const toggleAll = () => {
+        if (selectedIds.size === listItems.length) setSelectedIds(new Set());
+        else setSelectedIds(new Set(listItems.map(i => i.id)));
+        if (navigator.vibrate) navigator.vibrate(20);
+    };
+
+    const handleModeChange = (type: "expense" | "income") => {
+        setAnalysisType(type);
+        setExpandedItemId(null);
+        setSelectedIds(new Set());
+    };
+
+    const handleTabChange = (newTab: "categories" | "tags") => {
+        setTab(newTab);
+        setSelectedIds(new Set());
+    };
+
+    const nextMonth = () => {
+        setCurrentDate(d => new Date(d.getFullYear(), d.getMonth() + 1, 1));
+        setSelectedIds(new Set());
+    };
+    const prevMonth = () => {
+        setCurrentDate(d => new Date(d.getFullYear(), d.getMonth() - 1, 1));
+        setSelectedIds(new Set());
+    };
     const monthName = currentDate.toLocaleString('ru-RU', { month: 'long', year: 'numeric' });
 
-    const filteredTx = transactions.filter(t => {
-        if (t.type !== analysisType) return false;
-        const txDate = new Date(t.date.replace(/-/g, '/').replace('T', ' '));
-        return txDate.getFullYear() === currentDate.getFullYear() && txDate.getMonth() === currentDate.getMonth();
-    });
+    if (!isOpen) return null;
 
-    const totalUSD = filteredTx.reduce((sum, t) => sum + (t.sourceAmountUSD || 0), 0);
-
-    let listItems: { id: string, name: string, icon: any, color: string, amount: number, percent: number }[] = [];
-
-    if (tab === "categories" || analysisType === "income") {
-        const itemMap = new Map<string, number>();
-        filteredTx.forEach(t => {
-            const id = t.targetId;
-            itemMap.set(id, (itemMap.get(id) || 0) + (t.sourceAmountUSD || 0));
-        });
-
-        itemMap.forEach((amount, id) => {
-            if (analysisType === "expense") {
-                const cat = categories.find(c => c.id === id);
-                listItems.push({ 
-                    id, name: cat ? cat.name : "Удаленная категория", 
-                    icon: cat ? (IconMap[cat.icon] || MoreHorizontal) : MoreHorizontal, 
-                    color: cat ? cat.color : "#6b7280", 
-                    amount, percent: totalUSD > 0 ? (amount / totalUSD) * 100 : 0 
-                });
-            } else {
-                const inc = incomes.find(i => i.id === id);
-                listItems.push({ 
-                    id, name: inc ? inc.name : "Удаленный источник", 
-                    icon: TrendingUp, color: inc ? inc.color : "var(--success-color)", 
-                    amount, percent: totalUSD > 0 ? (amount / totalUSD) * 100 : 0 
-                });
-            }
-        });
-    } else {
-        const tagMap = new Map<string, number>();
-        filteredTx.forEach(t => {
-            const tagName = t.tag && t.tag.trim() ? t.tag.trim() : "Без тега";
-            tagMap.set(tagName, (tagMap.get(tagName) || 0) + (t.sourceAmountUSD || 0));
-        });
-        tagMap.forEach((amount, tagName) => {
-            listItems.push({ 
-                id: tagName, name: tagName, icon: Tag, color: "var(--primary-color)", 
-                amount, percent: totalUSD > 0 ? (amount / totalUSD) * 100 : 0 
-            });
-        });
-    }
-
-    listItems.sort((a, b) => b.amount - a.amount);
+    const allSelected = listItems.length > 0 && selectedIds.size === listItems.length;
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[200] flex flex-col items-center justify-center p-4 animate-in fade-in" onClick={onClose}>
@@ -162,8 +209,8 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                 </div>
 
                 <div className="flex p-2 gap-1 bg-[var(--glass-item-bg)]/30 border-b border-[var(--glass-border)]">
-                    <button onClick={() => { setAnalysisType("expense"); setExpandedItemId(null); }} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-[10px] font-black transition-all ${analysisType === "expense" ? 'bg-[var(--primary-color)] text-white shadow-lg' : 'text-[var(--text-muted)]'}`}><TrendingDown size={12} /> РАСХОДЫ</button>
-                    <button onClick={() => { setAnalysisType("income"); setExpandedItemId(null); }} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-[10px] font-black transition-all ${analysisType === "income" ? 'bg-[var(--success-color)] text-white shadow-lg' : 'text-[var(--text-muted)]'}`}><TrendingUp size={12} /> ДОХОДЫ</button>
+                    <button onClick={() => handleModeChange("expense")} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-[10px] font-black transition-all ${analysisType === "expense" ? 'bg-[var(--primary-color)] text-white shadow-lg' : 'text-[var(--text-muted)]'}`}><TrendingDown size={12} /> РАСХОДЫ</button>
+                    <button onClick={() => handleModeChange("income")} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-[10px] font-black transition-all ${analysisType === "income" ? 'bg-[var(--success-color)] text-white shadow-lg' : 'text-[var(--text-muted)]'}`}><TrendingUp size={12} /> ДОХОДЫ</button>
                 </div>
 
                 <div className="flex justify-between items-center px-4 py-3 bg-[var(--glass-item-bg)]/50 shrink-0 border-b border-[var(--glass-border)]">
@@ -174,28 +221,37 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
 
                 {analysisType === "expense" && (
                     <div className="flex gap-2 p-4 shrink-0 border-b border-[var(--glass-border)]">
-                        <button onClick={() => setTab("categories")} className={`flex-1 py-2 text-xs font-bold rounded-xl transition-colors ${tab === "categories" ? "bg-[var(--glass-item-active)] text-[var(--text-main)]" : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--glass-item-bg)]"}`}>КАТЕГОРИИ</button>
-                        <button onClick={() => setTab("tags")} className={`flex-1 py-2 text-xs font-bold rounded-xl transition-colors ${tab === "tags" ? "bg-[var(--glass-item-active)] text-[var(--text-main)]" : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--glass-item-bg)]"}`}>ТЕГИ</button>
+                        <button onClick={() => handleTabChange("categories")} className={`flex-1 py-2 text-xs font-bold rounded-xl transition-colors ${tab === "categories" ? "bg-[var(--glass-item-active)] text-[var(--text-main)]" : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--glass-item-bg)]"}`}>КАТЕГОРИИ</button>
+                        <button onClick={() => handleTabChange("tags")} className={`flex-1 py-2 text-xs font-bold rounded-xl transition-colors ${tab === "tags" ? "bg-[var(--glass-item-active)] text-[var(--text-main)]" : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--glass-item-bg)]"}`}>ТЕГИ</button>
                     </div>
                 )}
 
-                <div className="px-6 py-4 shrink-0 flex flex-col items-center">
+                <div className="px-6 py-4 shrink-0 flex flex-col items-center relative">
                     <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] tracking-widest mb-1">{analysisType === "expense" ? "Всего потрачено" : "Всего получено"}</span>
-                    <span className={`text-3xl font-black ${analysisType === "income" ? 'text-[var(--success-color)]' : 'text-[var(--text-main)]'}`}>${totalUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <span className={`text-3xl font-black ${analysisType === "income" ? 'text-[var(--success-color)]' : 'text-[var(--text-main)]'}`}>${displayedTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+
+                <div className="px-6 pb-2 shrink-0">
+                    <button onClick={toggleAll} className="flex items-center gap-2 text-[10px] font-black text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors uppercase tracking-widest group">
+                        <div className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all ${allSelected ? 'bg-[var(--primary-color)]/20 border-[var(--primary-color)] text-[var(--primary-color)]' : 'bg-transparent border-[var(--glass-border)] text-[var(--text-muted)]'}`}>
+                            {allSelected ? <CheckCircle2 size={12} /> : <Circle size={12} />}
+                        </div>
+                        {allSelected ? "Снять все" : "Выбрать все"}
+                    </button>
                 </div>
 
                 <div className="flex-1 overflow-y-auto hide-scrollbar px-6 pb-6 relative">
                     {listItems.length === 0 && !isLoading ? (
                         <div className="absolute inset-0 flex items-center justify-center text-[var(--text-muted)] text-xs uppercase font-bold tracking-widest">Нет данных</div>
                     ) : (
-                        <div className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-4 mt-2">
                             {listItems.map(item => {
                                 const isExpanded = expandedItemId === item.id;
+                                const isSelected = selectedIds.has(item.id);
                                 let itemDetails: { id: string, name: string, icon: any, color: string, amount: number, percent: number }[] = [];
                                 
                                 if (isExpanded) {
                                     if (analysisType === "expense" && tab === "categories") {
-                                        // Tag breakdown for categories
                                         const catTx = filteredTx.filter(t => t.targetId === item.id);
                                         const tagMap = new Map<string, number>();
                                         catTx.forEach(t => {
@@ -206,7 +262,6 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                                             itemDetails.push({ id: name, name, icon: Tag, color: item.color, amount, percent: item.amount > 0 ? (amount / item.amount) * 100 : 0 });
                                         });
                                     } else if (analysisType === "income") {
-                                        // Wallet breakdown for income sources
                                         const incTx = filteredTx.filter(t => t.targetId === item.id);
                                         const walletMap = new Map<string, number>();
                                         incTx.forEach(t => {
@@ -228,19 +283,21 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                                 }
 
                                 return (
-                                    <div key={item.id} className="flex flex-col">
+                                    <div key={item.id} className={`flex flex-col transition-all duration-300 ${isSelected ? 'opacity-100' : 'opacity-30 grayscale'}`}>
                                         <div className={`flex flex-col gap-1.5 cursor-pointer hover:bg-[var(--glass-item-bg)] p-2 rounded-xl transition-all -mx-2 ${isExpanded ? 'bg-[var(--glass-item-bg)] shadow-inner' : ''}`} onClick={() => { if (analysisType === "income" || (analysisType === "expense" && tab === "categories")) toggleExpand(item.id); else if (onItemClick) onItemClick(item, "tag", filteredTx); }}>
                                             <div className="flex justify-between items-center">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-inner text-[var(--text-main)] bg-[var(--glass-item-bg)]" style={{ color: item.color }}><item.icon size={14} /></div>
-                                                    <span className="text-sm font-semibold text-[var(--text-main)]">{item.name}</span>
+                                                    <div onClick={(e) => toggleSelect(item.id, e)} className={`w-8 h-8 rounded-full flex items-center justify-center shadow-inner transition-all duration-300 ${isSelected ? 'bg-[var(--glass-item-bg)]' : 'bg-transparent border border-[var(--glass-border)]'}`} style={{ color: isSelected ? item.color : 'transparent' }}>
+                                                        {isSelected ? <item.icon size={14} /> : <Circle size={10} className="text-[var(--text-muted)]" />}
+                                                    </div>
+                                                    <span className={`text-sm font-semibold transition-colors ${isSelected ? 'text-[var(--text-main)]' : 'text-[var(--text-muted)]'}`}>{item.name}</span>
                                                 </div>
                                                 <div className="flex flex-col items-end">
-                                                    <span className={`text-sm font-bold ${analysisType === 'income' ? 'text-[var(--success-color)]' : 'text-[var(--text-main)]'}`}>${item.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                                    <span className={`text-sm font-bold ${!isSelected ? 'text-[var(--text-muted)]' : (analysisType === 'income' ? 'text-[var(--success-color)]' : 'text-[var(--text-main)]')}`}>${item.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                                     <div className="flex items-center gap-1"><span className="text-[10px] font-bold text-[var(--text-muted)]">{item.percent.toFixed(1)}%</span><ChevronRight size={10} className={`text-[var(--text-muted)] transition-transform duration-300 ${isExpanded ? 'rotate-90' : ''}`} /></div>
                                                 </div>
                                             </div>
-                                            <div className="w-full bg-[var(--glass-item-bg)] h-1.5 rounded-full overflow-hidden"><div className="h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${item.percent}%`, backgroundColor: item.color }} /></div>
+                                            <div className="w-full bg-[var(--glass-item-bg)] h-1.5 rounded-full overflow-hidden"><div className="h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${item.percent}%`, backgroundColor: isSelected ? item.color : 'rgba(255,255,255,0.1)' }} /></div>
                                         </div>
                                         {isExpanded && itemDetails.length > 0 && (
                                             <div className="mt-2 ml-11 flex flex-col gap-3 border-l-2 border-[var(--glass-border)] pl-4 animate-in slide-in-from-top-2 duration-300">
