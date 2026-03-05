@@ -59,7 +59,7 @@ export const DraggableIncomeItem: React.FC<Props> = ({
       }
     }, 600);
 
-    // 2. Editing trigger - 1.5s
+    // 2. Editing trigger - 2.0s
     timerRef.current = setTimeout(() => {
       if (!didMoveRef.current) {
         onLongPress(income);
@@ -101,6 +101,7 @@ export const DraggableIncomeItem: React.FC<Props> = ({
     window.addEventListener("pointerup", onPointerUp);
     window.addEventListener("pointercancel", onPointerCancel);
 
+    // IMPORTANT: Call dnd-kit's listener to initiate drag
     listeners?.onPointerDown?.(e);
   };
 
@@ -123,13 +124,13 @@ export const DraggableIncomeItem: React.FC<Props> = ({
     <div
       ref={setNodeRef}
       style={style}
+      {...attributes}
+      onContextMenu={e => e.preventDefault()}
       className={`flex flex-col items-center justify-start transition-opacity w-[64px] shrink-0 ${isDragging ? "opacity-30" : "opacity-100"}`}
     >
       <div
-        {...attributes}
         {...listeners}
         onPointerDown={handlePointerDown}
-        onContextMenu={e => e.preventDefault()}
         style={{ touchAction: "none" }}
         className={`draggable-coin w-[52px] h-[52px] mb-2 border border-[#10b981]/30 bg-[#10b981]/10 transition-all duration-300 ${isDragging ? "grabbed-elevation" :
           (isPressing && isSortingMode) ? "scale-110 border-[var(--primary-color)] shadow-[0_0_20px_rgba(109,93,252,0.4)] ring-4 ring-[var(--primary-color)]/20" :
@@ -138,7 +139,7 @@ export const DraggableIncomeItem: React.FC<Props> = ({
       >
         <Icon size={22} color={income.color} />
       </div>
-      <span className="text-[10px] font-bold text-[#10b981] uppercase tracking-wider text-center leading-none truncate w-16">
+      <span className="text-[10px] font-bold text-[#10b981] uppercase tracking-wider text-center leading-none truncate w-16 pointer-events-none">
         {income.name}
       </span>
     </div>
