@@ -18,9 +18,9 @@ interface Props {
 }
 
 export const CategoryItem: React.FC<Props> = ({
-  category, spent, isDragging, isSortingMode, isOver, onSortingMode, onLongPress, onClick, activeDragType
+  category, spent, isDragging, isSortingMode, onSortingMode, onLongPress, onClick, activeDragType, isOver
 }) => {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
+  const { attributes, listeners, setNodeRef, transform, transition, isOver: isSortableOver } = useSortable({
     id: category.id,
     data: { type: "category", category }
   });
@@ -50,14 +50,14 @@ export const CategoryItem: React.FC<Props> = ({
         onSortingMode?.();
         if (navigator.vibrate) navigator.vibrate(40);
       }
-    }, 500);
+    }, 600);
 
     longPressTimerRef.current = setTimeout(() => {
       if (!didMoveRef.current) {
         onLongPress?.(category);
         if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
       }
-    }, 1500);
+    }, 2000);
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
@@ -75,16 +75,16 @@ export const CategoryItem: React.FC<Props> = ({
   };
 
   React.useEffect(() => {
-    if (isDragging) {
+    if (isDragging || !isSortingMode) {
       clearTimers();
       setIsPressing(false);
     }
-  }, [isDragging, clearTimers]);
+  }, [isDragging, isSortingMode, clearTimers]);
 
   const Icon = IconMap[category.icon] || ShoppingBag;
 
-  // Highlight only when dragging an Account (Expense action)
-  const isTarget = isOver && activeDragType === "account" && !isDragging;
+  // Unified target logic: Highlight when an account is dragged over a category (expense)
+  const isTarget = isOver && !isDragging && activeDragType === "account";
 
   const style = {
     transform: isSortingMode ? CSS.Translate.toString(transform) : undefined,
@@ -113,12 +113,15 @@ export const CategoryItem: React.FC<Props> = ({
     >
       <div
         style={{ touchAction: "none" }}
-        className={`w-[64px] h-[64px] rounded-[32px] flex items-center justify-center transition-all duration-300 pointer-events-none ${isDragging ? "grabbed-elevation" :
-          isPressing ? "scale-90 brightness-75" : ""
-          } ${isTarget ? "coin-target-glow shadow-[0_0_20px_var(--shadow-color)]" : "bg-gradient-to-br from-[var(--glass-border-highlight)] to-[var(--glass-item-bg)] border border-[var(--glass-border)]"
-          } ${isSortingMode && isDragging ? "shadow-2xl border-[var(--primary-color)] ring-4 ring-[var(--primary-color)]" : ""}`}
+        className={`draggable-coin transition-all duration-300 pointer-events-none ${
+          isDragging ? "grabbed-elevation" :
+          (isPressing && isSortingMode) ? "scale-110 border-[var(--primary-color)] shadow-[0_0_20px_rgba(109,93,252,0.4)] ring-4 ring-[var(--primary-color)]/20" :
+          isPressing ? "scale-90 brightness-75 border-[var(--glass-border-highlight)]" : ""
+        } ${isTarget ? "coin-target-glow" : ""} ${
+          isSortingMode && isDragging ? "shadow-2xl shadow-[var(--shadow-color)] border-[var(--primary-color)] ring-4 ring-[var(--primary-color)]/20" : ""
+        }`}
       >
-        <Icon size={26} color={isTarget ? "#fff" : category.color} />
+        <Icon size={26} color={isTarget ? "var(--text-main)" : category.color} />
       </div>
       <div className="flex flex-col items-center pb-2 pointer-events-none select-none">
         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center truncate w-full max-w-[70px] leading-tight break-words whitespace-pre-wrap">{category.name}</span>

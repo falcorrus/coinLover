@@ -120,7 +120,18 @@ export default function App() {
     sortingTimerRef.current = setTimeout(() => {
       setIsSortingMode(true);
       if (navigator.vibrate) navigator.vibrate(50);
-    }, 500);
+    }, 600);
+
+    // FIX: If we just hold but don't move, we need to clear isSortingMode on pointerup
+    const clearOnUp = () => {
+      if (sortingTimerRef.current) clearTimeout(sortingTimerRef.current);
+      // Wait a frame to see if handleDragStart finished or if handleDragEnd will fire
+      requestAnimationFrame(() => {
+        if (!activeDragId) setIsSortingMode(false);
+      });
+      window.removeEventListener('pointerup', clearOnUp);
+    };
+    window.addEventListener('pointerup', clearOnUp);
   };
 
   const handleDragMove = (e: DragMoveEvent) => {
@@ -272,7 +283,7 @@ export default function App() {
 
       <DndContext 
         sensors={sensors} 
-        collisionDetection={isSortingMode ? closestCenter : pointerWithin} 
+        collisionDetection={rectIntersection} 
         onDragStart={handleDragStart} 
         onDragMove={handleDragMove}
         onDragOver={handleDragOver} 
@@ -280,12 +291,12 @@ export default function App() {
       >
         <section className={`px-0 overflow-hidden transition-all duration-500 shrink-0 ${isIncomeCollapsed ? "max-h-0 opacity-0" : "max-h-[160px] opacity-100 py-1"}`}>
           <div className="px-6 py-2 flex justify-between items-center"><div onClick={toggleIncome} className="flex items-center gap-2 cursor-pointer group"><ChevronRight size={14} className="text-slate-500 rotate-90" /><h2 className="text-[10px] font-black text-slate-500 uppercase group-hover:text-white">Доходы</h2></div><div className="flex items-center gap-3"><button onClick={() => setAnalyticsModal({ isOpen: true, type: "income" })} className="w-8 h-8 rounded-full bg-[var(--success-color)]/10 border border-[var(--success-color)]/20 text-[var(--success-color)] flex items-center justify-center hover:bg-[var(--success-color)]/20 transition-all shadow-sm"><PieChart size={14} /></button><button onClick={() => setIncomeModal({ isOpen: true, income: null })} className="w-7 h-7 rounded-full bg-[var(--success-color)]/10 text-[var(--success-color)] flex items-center justify-center hover:bg-[var(--success-color)]/20 transition-colors"><Plus size={14} /></button></div></div>
-          <SortableContext items={incomes.map(i => i.id)} strategy={horizontalListSortingStrategy}><div className="flex gap-4 overflow-x-auto hide-scrollbar px-6 pb-4 pt-2">{incomes.map(inc => (<DraggableIncomeItem key={inc.id} income={inc} isDragging={activeDragId === inc.id} onSortingMode={() => setIsSortingMode(true)} isSortingMode={isSortingMode} onLongPress={(i) => setIncomeModal({ isOpen: true, income: i })} onClick={(income) => setHistoryModal({ isOpen: true, entity: income, type: "income" })} activeDragType={activeDragType} />))}</div></SortableContext>
+          <SortableContext items={incomes.map(i => i.id)} strategy={horizontalListSortingStrategy}><div className="flex gap-4 overflow-x-auto hide-scrollbar px-6 pb-4 pt-2">{incomes.map(inc => (<DraggableIncomeItem key={inc.id} income={inc} isDragging={activeDragId === inc.id} onSortingMode={() => setIsSortingMode(true)} isSortingMode={isSortingMode} onLongPress={(i) => { setIsSortingMode(false); setIncomeModal({ isOpen: true, income: i }); }} onClick={(income) => setHistoryModal({ isOpen: true, entity: income, type: "income" })} activeDragType={activeDragType} />))}</div></SortableContext>
         </section>
 
         <section className="px-0 py-2 relative z-20 shrink-0">
           <div className="px-6 mb-3 flex justify-between items-center"><h2 className="text-[10px] font-black text-slate-500 uppercase">Кошельки</h2><button onClick={() => setAccountModal({ isOpen: true, account: null })} className="w-8 h-8 rounded-full bg-[var(--glass-item-bg)] border border-[var(--glass-border)] text-[var(--text-main)] flex items-center justify-center hover:bg-[var(--glass-item-active)] transition-all shadow-sm"><Plus size={16} /></button></div>
-          <SortableContext items={accounts.map(a => a.id)} strategy={horizontalListSortingStrategy}><div className="flex gap-4 overflow-x-auto hide-scrollbar px-6 pb-4 pt-2">{accounts.map(acc => (<AccountItem key={acc.id} account={acc} isDragging={activeDragId === acc.id} onSortingMode={() => setIsSortingMode(true)} onLongPress={(a) => setAccountModal({ isOpen: true, account: a })} onClick={(account) => setHistoryModal({ isOpen: true, entity: account, type: "account" })} activeDragType={activeDragType} isSortingMode={isSortingMode} isOver={overId === acc.id} />))}</div></SortableContext>
+          <SortableContext items={accounts.map(a => a.id)} strategy={horizontalListSortingStrategy}><div className="flex gap-4 overflow-x-auto hide-scrollbar px-6 pb-4 pt-2">{accounts.map(acc => (<AccountItem key={acc.id} account={acc} isDragging={activeDragId === acc.id} onSortingMode={() => setIsSortingMode(true)} onLongPress={(a) => { setIsSortingMode(false); setAccountModal({ isOpen: true, account: a }); }} onClick={(account) => setHistoryModal({ isOpen: true, entity: account, type: "account" })} activeDragType={activeDragType} isSortingMode={isSortingMode} isOver={overId === acc.id} />))}</div></SortableContext>
         </section>
 
         <section className={`px-0 flex-1 pt-4 pb-8 overflow-y-auto hide-scrollbar z-10 relative transition-all duration-500 ${mode === "income" ? "opacity-30 pointer-events-none grayscale" : "opacity-100"}`}>
@@ -295,7 +306,7 @@ export default function App() {
               <div className="grid grid-cols-4 gap-y-6 gap-x-2 pb-4">
                 {categories.map(cat => {
                   const spent = Math.round(currentMonthTransactions.filter(t => t.type === "expense" && t.targetId === cat.id).reduce((s, t) => s + (t.sourceAmountUSD ?? t.amountUSD ?? t.sourceAmount ?? t.amount ?? 0), 0));
-                  return (<CategoryItem key={cat.id} category={cat} spent={spent} isDragging={activeDragId === cat.id} onSortingMode={() => setIsSortingMode(true)} isSortingMode={isSortingMode} isOver={overId === cat.id} onLongPress={(c) => setCategoryModal({ isOpen: true, category: c })} onClick={(category) => setHistoryModal({ isOpen: true, entity: category, type: "category" })} activeDragType={activeDragType} />);
+                  return (<CategoryItem key={cat.id} category={cat} spent={spent} isDragging={activeDragId === cat.id} onSortingMode={() => setIsSortingMode(true)} isSortingMode={isSortingMode} isOver={overId === cat.id} onLongPress={(c) => { setIsSortingMode(false); setCategoryModal({ isOpen: true, category: c }); }} onClick={(category) => setHistoryModal({ isOpen: true, entity: category, type: "category" })} activeDragType={activeDragType} />);
                 })}
               </div>
             </SortableContext>

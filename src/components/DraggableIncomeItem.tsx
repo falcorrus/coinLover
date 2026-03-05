@@ -5,7 +5,7 @@ import { Briefcase } from "lucide-react";
 import { IncomeSource } from "../types";
 import { IconMap } from "../constants";
 
-const LONG_PRESS_MS = 1500; // 1.5 seconds for edit modal
+const LONG_PRESS_MS = 2000; // 2 seconds for edit modal
 const MOVE_THRESHOLD = 20;   // px
 
 interface Props {
@@ -51,13 +51,13 @@ export const DraggableIncomeItem: React.FC<Props> = ({
     didMoveRef.current = false;
     startTimeRef.current = Date.now();
 
-    // 1. Sorting trigger - 500ms
+    // 1. Sorting trigger - 600ms
     sortingTimerRef.current = setTimeout(() => {
       if (!didMoveRef.current) {
         onSortingMode?.();
         if (navigator.vibrate) navigator.vibrate(50);
       }
-    }, 500);
+    }, 600);
 
     // 2. Editing trigger - 1.5s
     timerRef.current = setTimeout(() => {
@@ -104,6 +104,13 @@ export const DraggableIncomeItem: React.FC<Props> = ({
     listeners?.onPointerDown?.(e);
   };
 
+  React.useEffect(() => {
+    if (isDragging || !isSortingMode) {
+      clearTimers();
+      setIsPressing(false);
+    }
+  }, [isDragging, isSortingMode, clearTimers]);
+
   const Icon = IconMap[income.icon] || Briefcase;
 
   const style = {
@@ -125,6 +132,7 @@ export const DraggableIncomeItem: React.FC<Props> = ({
         onContextMenu={e => e.preventDefault()}
         style={{ touchAction: "none" }}
         className={`draggable-coin w-[52px] h-[52px] mb-2 border border-[#10b981]/30 bg-[#10b981]/10 transition-all duration-300 ${isDragging ? "grabbed-elevation" :
+          (isPressing && isSortingMode) ? "scale-110 border-[var(--primary-color)] shadow-[0_0_20px_rgba(109,93,252,0.4)] ring-4 ring-[var(--primary-color)]/20" :
           isPressing ? "scale-90 brightness-75 border-[#10b981]/50" : ""
           } ${isSortingMode && isDragging ? "shadow-2xl border-[var(--primary-color)] ring-2 ring-[var(--primary-color)]" : ""}`}
       >

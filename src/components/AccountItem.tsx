@@ -5,7 +5,7 @@ import { Wallet } from "lucide-react";
 import { Account, DragItemType } from "../types";
 import { IconMap } from "../constants";
 
-const LONG_PRESS_MS = 1500;
+const LONG_PRESS_MS = 2000;
 const MOVE_THRESHOLD = 15;
 
 interface Props {
@@ -23,7 +23,7 @@ export const AccountItem: React.FC<Props> = ({
   account, isDragging, onLongPress, onClick, activeDragType, isSortingMode, onSortingMode, isOver
 }) => {
   const {
-    attributes, listeners, setNodeRef, transform, transition,
+    attributes, listeners, setNodeRef, transform, transition, isOver: isSortableOver
   } = useSortable({
     id: account.id,
     data: { type: "account", account }
@@ -57,7 +57,7 @@ export const AccountItem: React.FC<Props> = ({
         onSortingMode?.();
         if (navigator.vibrate) navigator.vibrate(40);
       }
-    }, 500);
+    }, 600);
 
     longPressTimerRef.current = setTimeout(() => {
       if (!didMoveRef.current) {
@@ -83,15 +83,15 @@ export const AccountItem: React.FC<Props> = ({
 
   // Prevent Long Press from firing if dnd-kit starts dragging
   React.useEffect(() => {
-    if (isDragging) {
+    if (isDragging || !isSortingMode) {
       clearTimers();
       setIsPressing(false);
     }
-  }, [isDragging, clearTimers]);
+  }, [isDragging, isSortingMode, clearTimers]);
 
   const Icon = IconMap[account.icon] || Wallet;
-  const isTargetOver = isOver && activeDragType === "account" && !isDragging;
-  const isIncomeTarget = isOver && activeDragType === "income";
+  // Unified target logic: Highlight when another account or income is dragged over
+  const isTarget = isOver && !isDragging && (activeDragType === "account" || activeDragType === "income");
 
   const style = {
     transform: isSortingMode ? CSS.Translate.toString(transform) : undefined,
@@ -120,12 +120,15 @@ export const AccountItem: React.FC<Props> = ({
     >
       <div
         style={{ touchAction: "none" }}
-        className={`draggable-coin transition-all duration-300 pointer-events-none ${isDragging ? "grabbed-elevation" :
+        className={`draggable-coin transition-all duration-300 pointer-events-none ${
+          isDragging ? "grabbed-elevation" :
+          (isPressing && isSortingMode) ? "scale-110 border-[var(--primary-color)] shadow-[0_0_20px_rgba(109,93,252,0.4)] ring-4 ring-[var(--primary-color)]/20" :
           isPressing ? "scale-90 brightness-75 border-[var(--glass-border-highlight)]" : ""
-          } ${(isTargetOver || isIncomeTarget || isOver) ? "coin-target-glow" : ""
-          } ${isSortingMode && isDragging ? "shadow-2xl shadow-[var(--shadow-color)] border-[var(--primary-color)] ring-4 ring-[var(--primary-color)]/20" : ""}`}
+        } ${isTarget ? "coin-target-glow" : ""} ${
+          isSortingMode && isDragging ? "shadow-2xl shadow-[var(--shadow-color)] border-[var(--primary-color)] ring-4 ring-[var(--primary-color)]/20" : ""
+        }`}
       >
-        <Icon size={26} color={(isTargetOver || isIncomeTarget || isOver) ? "var(--text-main)" : account.color} />
+        <Icon size={26} color={isTarget ? "var(--text-main)" : account.color} />
       </div>
       <div className="flex flex-col items-center text-center leading-tight pointer-events-none select-none">
         <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-0.5">{account.name}</span>

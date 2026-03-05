@@ -1,5 +1,5 @@
 import React from "react";
-import { X, ArrowDownLeft, ArrowUpRight, ArrowRight, Wallet, Pencil, Tag } from "lucide-react";
+import { X, ArrowDownLeft, ArrowUpRight, ArrowRight, Wallet, Pencil, Tag, ArrowRightLeft } from "lucide-react";
 import { Transaction, Account, Category, IncomeSource } from "../types";
 import { IconMap } from "../constants";
 
@@ -145,7 +145,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                                         <div className="flex items-center gap-3">
                                             <div className="w-10 h-10 rounded-full bg-[var(--glass-item-bg)] flex items-center justify-center relative shadow-inner shrink-0" style={{ color: displayColor }}>
                                                 <Icon size={18} />
-                                                {entityType === "account" && tx.type === "transfer" && (<div className={`absolute -bottom-1 -right-1 rounded-full p-0.5 border-2 border-[var(--bg-color)] shadow-lg ${isOutflow ? "bg-[var(--danger-color)] text-black" : "bg-[var(--success-color)] text-black"}`}>{isOutflow ? <ArrowUpRight size={10} strokeWidth={3} /> : <ArrowDownLeft size={10} strokeWidth={3} />}</div>)}
+                                                {entityType === "account" && tx.type === "transfer" && (<div className="absolute -bottom-1 -right-1 rounded-full p-0.5 border-2 border-[var(--bg-color)] shadow-lg bg-[var(--primary-color)] text-white"><ArrowRightLeft size={10} strokeWidth={3} /></div>)}
                                                 {entityType === "account" && tx.type === "expense" && (<div className="absolute -bottom-1 -right-1 rounded-full bg-[var(--danger-color)] text-black p-0.5 border-2 border-[var(--bg-color)] shadow-lg"><ArrowUpRight size={10} strokeWidth={3} /></div>)}
                                                 {entityType === "account" && tx.type === "income" && (<div className="absolute -bottom-1 -right-1 rounded-full bg-[var(--success-color)] text-black p-0.5 border-2 border-[var(--bg-color)] shadow-lg"><ArrowDownLeft size={10} strokeWidth={3} /></div>)}
                                             </div>
@@ -155,7 +155,15 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                                                     {tx.tag && <span className="text-[9px] px-1.5 py-0.5 bg-[var(--glass-item-bg)] rounded text-[var(--text-muted)] font-bold uppercase shrink-0">{tx.tag}</span>}
                                                     {tx.type === "transfer" && <span className="text-[9px] px-1.5 py-0.5 bg-[var(--primary-color)]/20 rounded text-[var(--primary-color)] font-bold uppercase shrink-0">Трансфер</span>}
                                                 </div>
-                                                <span className="text-[10px] text-[var(--text-muted)] uppercase font-medium">{new Date(tx.date.replace(/-/g, '/').replace('T', ' ')).toLocaleDateString()}</span>
+                                                <span className="text-[10px] text-[var(--text-muted)] uppercase font-medium">
+                                                    {(() => {
+                                                        const d = new Date(tx.date.replace(/-/g, '/').replace('T', ' '));
+                                                        const day = String(d.getDate()).padStart(2, '0');
+                                                        const month = String(d.getMonth() + 1).padStart(2, '0');
+                                                        const year = d.getFullYear();
+                                                        return `${day}.${month}.${year}`;
+                                                    })()}
+                                                </span>
                                                 {tx.comment && <span className="text-xs text-[var(--text-muted)] mt-1 italic truncate opacity-70">{tx.comment}</span>}
                                             </div>
                                         </div>
