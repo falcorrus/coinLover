@@ -152,18 +152,20 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                                             <div className="flex flex-col overflow-hidden max-w-[150px]">
                                                 <div className="flex items-center gap-2">
                                                     <span className="text-sm font-semibold text-[var(--text-main)] truncate">{displayName}</span>
-                                                    {tx.tag && <span className="text-[9px] px-1.5 py-0.5 bg-[var(--glass-item-bg)] rounded text-[var(--text-muted)] font-bold uppercase shrink-0">{tx.tag}</span>}
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-[10px] text-[var(--text-muted)] uppercase font-medium">
+                                                        {(() => {
+                                                            const d = new Date(tx.date.replace(/-/g, '/').replace('T', ' '));
+                                                            const day = String(d.getDate()).padStart(2, '0');
+                                                            const month = String(d.getMonth() + 1).padStart(2, '0');
+                                                            const year = d.getFullYear();
+                                                            return `${day}.${month}.${year}`;
+                                                        })()}
+                                                    </span>
+                                                    {tx.tag && <span className="text-[8px] px-2 py-0.5 bg-white/5 border border-white/5 rounded-full text-slate-400 font-bold uppercase shrink-0 tracking-widest">{tx.tag}</span>}
                                                     {tx.type === "transfer" && <span className="text-[9px] px-1.5 py-0.5 bg-[var(--primary-color)]/20 rounded text-[var(--primary-color)] font-bold uppercase shrink-0">Трансфер</span>}
                                                 </div>
-                                                <span className="text-[10px] text-[var(--text-muted)] uppercase font-medium">
-                                                    {(() => {
-                                                        const d = new Date(tx.date.replace(/-/g, '/').replace('T', ' '));
-                                                        const day = String(d.getDate()).padStart(2, '0');
-                                                        const month = String(d.getMonth() + 1).padStart(2, '0');
-                                                        const year = d.getFullYear();
-                                                        return `${day}.${month}.${year}`;
-                                                    })()}
-                                                </span>
                                                 {tx.comment && <span className="text-xs text-[var(--text-muted)] mt-1 italic truncate opacity-70">{tx.comment}</span>}
                                             </div>
                                         </div>
