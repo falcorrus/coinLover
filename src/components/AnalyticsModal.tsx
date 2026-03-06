@@ -333,6 +333,24 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                                         tagMap.forEach((amount, name) => {
                                             itemDetails.push({ id: name, name, icon: Tag, color: item.color, amount, percent: item.amount > 0 ? (amount / item.amount) * 100 : 0 });
                                         });
+                                    } else if (analysisType === "expense" && tab === "tags") {
+                                        // Category breakdown for tags
+                                        const tagTx = filteredTx.filter(t => (t.tag?.trim() || "Без тега") === item.name);
+                                        const catMap = new Map<string, number>();
+                                        tagTx.forEach(t => {
+                                            catMap.set(t.targetId, (catMap.get(t.targetId) || 0) + (t.sourceAmountUSD || 0));
+                                        });
+                                        catMap.forEach((amount, catId) => {
+                                            const cat = categories.find(c => c.id === catId);
+                                            itemDetails.push({ 
+                                                id: catId, 
+                                                name: cat ? cat.name : "Удаленная категория", 
+                                                icon: cat ? (IconMap[cat.icon] || MoreHorizontal) : MoreHorizontal,
+                                                color: cat ? cat.color : "#6b7280",
+                                                amount, 
+                                                percent: item.amount > 0 ? (amount / item.amount) * 100 : 0 
+                                            });
+                                        });
                                     } else if (analysisType === "income") {
                                         const incTx = filteredTx.filter(t => t.targetId === item.id);
                                         const walletMap = new Map<string, number>();
@@ -386,9 +404,20 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                                         {isExpanded && itemDetails.length > 0 && (
                                             <div className="mt-2 ml-11 flex flex-col gap-3 border-l-2 border-[var(--glass-border)] pl-4 animate-in slide-in-from-top-2 duration-300">
                                                 {itemDetails.map(detail => (
-                                                    <div key={detail.id} className="flex justify-between items-center cursor-pointer group" onClick={(e) => { e.stopPropagation(); if (onItemClick) onItemClick({ ...detail }, analysisType === "income" ? "account" : "tag", filteredTx.filter(t => t.targetId === item.id && (analysisType === "income" ? t.accountId === detail.id : (t.tag?.trim() || "Без тега") === detail.name))); }}>
+                                                    <div key={detail.id} className="flex justify-between items-center cursor-pointer group" onClick={(e) => { 
+                                                        e.stopPropagation(); 
+                                                        if (onItemClick) {
+                                                            const entityType = analysisType === "income" ? "account" : (tab === "tags" ? "category" : "tag");
+                                                            const txFilter = filteredTx.filter(t => {
+                                                                if (analysisType === "income") return t.targetId === item.id && t.accountId === detail.id;
+                                                                if (tab === "tags") return (t.tag?.trim() || "Без тега") === item.name && t.targetId === detail.id;
+                                                                return t.targetId === item.id && (t.tag?.trim() || "Без тега") === detail.name;
+                                                            });
+                                                            onItemClick({ ...detail }, entityType, txFilter);
+                                                        }
+                                                    }}>
                                                         <div className="flex items-center gap-2">
-                                                            <detail.icon size={10} className="text-[var(--text-muted)]" />
+                                                            <detail.icon size={10} style={{ color: detail.color }} className="shrink-0" />
                                                             <span className="text-xs font-medium text-[var(--text-muted)] group-hover:text-[var(--text-main)] transition-colors">{detail.name}</span>
                                                         </div>
                                                         <div className="flex items-center gap-2">

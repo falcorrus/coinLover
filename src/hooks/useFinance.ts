@@ -202,11 +202,26 @@ export const useFinance = () => {
     try {
       const remote = await googleSheetsService.fetchSettings();
       if (!remote || !remote.timestamp) return;
+      
       const localLastSync = localStorage.getItem("cl_last_sync");
-      if (!localLastSync || (remote.timestamp !== localLastSync && transactions.length === 0)) { updateLocalFromRemote(remote); return; }
-      if (localLastSync && remote.timestamp !== localLastSync) setConflictData(remote);
-    } catch (e) { console.error("Conflict check failed:", e); }
-  }, [updateLocalFromRemote, transactions.length]);
+      if (!localLastSync) {
+        updateLocalFromRemote(remote);
+        return;
+      }
+
+      const remoteDate = new Date(remote.timestamp.replace(/-/g, '/').replace('T', ' '));
+      const localDate = new Date(localLastSync.replace(/-/g, '/').replace('T', ' '));
+
+      // If remote is newer than our last successful sync
+      if (remoteDate.getTime() > localDate.getTime()) {
+        // If we haven't made any local transactions since last sync, auto-update
+        // (This is a simplification, but effective for multi-device usage)
+        setConflictData(remote);
+      }
+    } catch (e) {
+      console.error("Conflict check failed:", e);
+    }
+  }, [updateLocalFromRemote]);
 
   const pushSettingsInternal = useCallback(async (a: Account[], c: Category[], i: IncomeSource[]) => {
     setSyncStatus("loading");

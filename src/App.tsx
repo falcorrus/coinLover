@@ -300,7 +300,14 @@ export default function App() {
                   <button onClick={() => { setIsSettingsMenuOpen(false); pullSettings(); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left">
                     <RefreshCcw size={16} className={`text-amber-500 ${syncStatus === 'loading' ? 'animate-spin' : ''}`} /><span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Обновить</span>
                   </button>
-                  <button onClick={() => { setIsSettingsMenuOpen(false); setHistoryModal({ isOpen: true, entity: { name: "Лента", icon: "list" }, type: "feed" }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><List size={16} className="text-[var(--primary-color)]" /><span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Лента</span></button>
+                  <button onClick={() => { setIsSettingsMenuOpen(false); setHistoryModal({ isOpen: true, entity: { name: "Лента", icon: "list" }, type: "feed" }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left">
+                    <List size={16} className="text-[var(--primary-color)]" />
+                    <span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Лента</span>
+                  </button>
+                  <button onClick={() => { setIsSettingsMenuOpen(false); setAnalyticsModal({ isOpen: true, type: "expense" }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left">
+                    <PieChart size={16} className="text-amber-500" />
+                    <span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Аналитика</span>
+                  </button>
                   <button onClick={() => { setIsSettingsMenuOpen(false); toggleTheme(); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left">
                     {theme === 'dark' ? <Sun size={16} className="text-amber-400" /> : <Moon size={16} className="text-slate-400" />}
                     <span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">{theme === 'dark' ? "Light Mode" : "Dark Mode"}</span>
@@ -411,6 +418,24 @@ export default function App() {
       <HistoryModal isOpen={historyModal.isOpen} onClose={() => setHistoryModal({ isOpen: false, entity: null, type: null })} entity={historyModal.entity} entityType={historyModal.type} transactions={historyModal.customTransactions || transactions} accounts={accounts} categories={categories} incomes={incomes} onEditTransaction={(tx) => { const source = tx.type === "income" ? incomes.find(i => i.id === tx.targetId) ?? null : accounts.find(a => a.id === tx.accountId) ?? null; const destination = tx.type === "expense" ? categories.find(c => c.id === tx.targetId) ?? null : tx.type === "income" ? accounts.find(a => a.id === tx.accountId) ?? null : accounts.find(a => a.id === tx.targetId) ?? null; if (!source || !destination) return; setEditingTxId(tx.id); setHistoryModal({ isOpen: false, entity: null, type: null }); setNumpad({ isOpen: true, type: tx.type, source, destination, sourceAmount: String(tx.sourceAmount), sourceCurrency: tx.sourceCurrency, targetAmount: String(tx.targetAmount ?? tx.sourceAmount), targetCurrency: tx.targetCurrency, targetLinked: true, activeField: "source", tag: tx.tag ?? null, comment: tx.comment ?? "", }); }} />
       <AnalyticsModal isOpen={analyticsModal.isOpen} onClose={() => setAnalyticsModal(p => ({ ...p, isOpen: false }))} categories={categories} incomes={incomes} accounts={accounts} globalTransactions={transactions} initialType={analyticsModal.type} onItemClick={(item, type, monthTx) => { let entity = item; if (type === "category") { const cat = categories.find(c => c.id === item.id); if (cat) entity = cat; } else if (type === "income") { const inc = incomes.find(i => i.id === item.id); if (inc) entity = inc; } setAnalyticsModal(p => ({ ...p, isOpen: false })); setHistoryModal({ isOpen: true, entity, type, customTransactions: monthTx.filter(t => { if (type === "category") return t.targetId === item.id; if (type === "tag") return (t.tag?.trim() || "Без тега") === item.name; if (type === "income") return t.targetId === item.id; return false; }) }); }} />
       <ConfirmModal isOpen={confirmDelete.isOpen} title={confirmDelete.title} message={confirmDelete.message} onConfirm={confirmDelete.onConfirm} onCancel={() => setConfirmDelete(p => ({ ...p, isOpen: false }))} />
+      
+      {conflictData && (
+        <ConfirmModal 
+          isOpen={true} 
+          title="Обнаружены изменения" 
+          message={`В облаке есть более свежие данные (версия от ${new Date(conflictData.timestamp.replace(/-/g, '/').replace('T', ' ')).toLocaleString()}). Загрузить их и перезаписать локальные данные?`}
+          confirmText="ЗАГРУЗИТЬ"
+          cancelText="ОСТАВИТЬ МОИ"
+          danger={false}
+          onConfirm={() => updateLocalFromRemote(conflictData)}
+          onCancel={() => {
+            // If user rejects cloud, we update our local sync timestamp to match remote
+            // to stop asking until next remote change
+            localStorage.setItem("cl_last_sync", conflictData.timestamp);
+            setConflictData(null);
+          }}
+        />
+      )}
     </div>
   );
 }
