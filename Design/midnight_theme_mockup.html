@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoinLover - Midnight Gold Theme Mockup</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            /* Midnight Gold Style (AliGrids inspired) */
+            --bg-color: #0B0E14;
+            --primary-color: #F59E0B; /* Liquid Amber */
+            --danger-color: #F43F5E;
+            --success-color: #10B981;
+            --text-main: #F8FAFC;
+            --text-muted: #64748B;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-card-bg: rgba(255, 255, 255, 0.04);
+            --glass-item-bg: rgba(255, 255, 255, 0.03);
+            --glass-item-active: rgba(255, 255, 255, 0.06);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-border-highlight: rgba(245, 158, 11, 0.2);
+            --shadow-color: rgba(0, 0, 0, 0.8);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .phone-frame {
+            width: 390px;
+            height: 844px;
+            background: var(--bg-color);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 100px var(--shadow-color);
+        }
+
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(30px);
+            border: 1px solid var(--glass-border);
+            border-radius: 28px;
+        }
+
+        .glass-card {
+            background: var(--glass-card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+        }
+
+        .glass-item {
+            background: var(--glass-item-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+        }
+
+        .glass-icon-btn {
+            background: var(--glass-item-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-main);
+        }
+
+        .glow-accent {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(245, 158, 11, 0.08) 0%, transparent 70%);
+            top: -100px;
+            right: -100px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Bento-like spacing */
+        .section-header {
+            font-size: 10px;
+            font-weight: 800;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+        }
+    </style>
+</head>
+<body>
+    <div class="phone-frame">
+        <div class="glow-accent"></div>
+        
+        <!-- Header -->
+        <header class="px-6 py-8 flex flex-col gap-2 text-center shrink-0 z-10">
+            <div class="flex justify-between items-center mb-2">
+                <div class="glass-icon-btn w-10 h-10">
+                    <span style="color: #10b981">💰</span>
+                </div>
+                <p class="section-header">Total Balance</p>
+                <div class="glass-icon-btn w-10 h-10 text-slate-500">
+                    <span>⚙️</span>
+                </div>
+            </div>
+            <button class="mt-2 mx-auto px-5 py-2 rounded-full bg-[var(--glass-item-bg)] border border-[var(--glass-border)] flex items-center gap-2 shadow-sm">
+                <span style="color: #cda434">📉</span>
+                <span class="text-xs font-bold text-[#cda434]">-$1,240 в этом месяце</span>
+            </button>
+        </header>
+
+        <!-- Accounts Section -->
+        <section class="px-0 py-2 relative z-20 shrink-0">
+            <div class="px-6 mb-3 flex justify-between items-center">
+                <h2 class="section-header">Кошельки</h2>
+                <div class="w-8 h-8 rounded-full glass-icon-btn">
+                    <span>+</span>
+                </div>
+            </div>
+            <div class="flex gap-4 overflow-x-auto px-6 pb-4 pt-2">
+                <!-- Account Item -->
+                <div class="glass-card min-w-[120px] p-4 flex flex-col gap-3 border-l-4" style="border-left-color: var(--primary-color)">
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center bg-[var(--primary-color)]/10 text-[var(--primary-color)]">
+                        <span>🏦</span>
+                    </div>
+                    <div>
+                        <div class="text-[10px] font-bold text-slate-500 uppercase">Chase</div>
+                        <div class="text-lg font-black tracking-tight">$8,240</div>
+                    </div>
+                </div>
+                <!-- Account Item 2 -->
+                <div class="glass-card min-w-[120px] p-4 flex flex-col gap-3 border-l-4" style="border-left-color: #10b981">
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center bg-[#10b981]/10 text-[#10b981]">
+                        <span>💵</span>
+                    </div>
+                    <div>
+                        <div class="text-[10px] font-bold text-slate-500 uppercase">Cash</div>
+                        <div class="text-lg font-black tracking-tight">$420</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Categories Section -->
+        <section class="px-0 flex-1 pt-4 pb-8 overflow-y-auto z-10 relative">
+            <div class="px-6 py-2">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="section-header">Расходы</h2>
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full glass-icon-btn">
+                            <span>📊</span>
+                        </div>
+                        <div class="w-8 h-8 rounded-full glass-icon-btn">
+                            <span>+</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-4 gap-y-6 gap-x-2 pb-4">
+                    <!-- Category Item -->
+                    <div class="flex flex-col items-center gap-2">
+                        <div class="w-16 h-16 rounded-3xl glass-card flex items-center justify-center text-2xl shadow-lg border-[var(--glass-border-highlight)]">
+                            <span>🍔</span>
+                        </div>
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">Food</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-2">
+                        <div class="w-16 h-16 rounded-3xl glass-card flex items-center justify-center text-2xl">
+                            <span>🚗</span>
+                        </div>
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">Transport</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-2">
+                        <div class="w-16 h-16 rounded-3xl glass-card flex items-center justify-center text-2xl">
+                            <span>🛍️</span>
+                        </div>
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">Shop</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-2">
+                        <div class="w-16 h-16 rounded-3xl glass-card flex items-center justify-center text-2xl">
+                            <span>💡</span>
+                        </div>
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">Bills</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Bottom Tab Placeholder (if needed, but App.tsx doesn't have a fixed bottom nav besides numpad) -->
+    </div>
+</body>
+</html>

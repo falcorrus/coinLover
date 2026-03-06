@@ -48,6 +48,27 @@
   --pull-indicator: #E2E8F0;
 }
 
+:root.midnight {
+  /* Midnight Gold - "AliGrids Style" */
+  --bg-color: #0B0E14;
+  --primary-color: #F59E0B; /* Liquid Amber */
+  --danger-color: #F43F5E;
+  --success-color: #10B981;
+  --text-main: #F8FAFC;
+  --text-muted: #64748B;
+  --glass-bg: rgba(255, 255, 255, 0.03);
+  --glass-card-bg: rgba(255, 255, 255, 0.04);
+  --glass-item-bg: rgba(255, 255, 255, 0.02);
+  --glass-item-active: rgba(255, 255, 255, 0.06);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-border-highlight: rgba(245, 158, 11, 0.2);
+  --numpad-bg: #0d1117;
+  --panel-bg: #161b22;
+  --btn-equals: rgba(245, 158, 11, 0.3);
+  --shadow-color: rgba(0, 0, 0, 0.8);
+  --pull-indicator: #334155;
+}
+
 body {
   background-color: var(--bg-color);
   color: var(--text-main);

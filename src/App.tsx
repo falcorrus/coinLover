@@ -7,7 +7,7 @@ import {
 import { arrayMove, SortableContext, horizontalListSortingStrategy, rectSortingStrategy } from "@dnd-kit/sortable";
 import {
   Plus, Settings, CircleDollarSign, TrendingDown, ChevronRight, TrendingUp, Wallet, RefreshCcw,
-  Heart, MousePointer2, PieChart, List, Moon, Sun
+  Heart, MousePointer2, PieChart, List, Moon, Sun, Sparkles
 } from "lucide-react";
 
 // Modules
@@ -44,7 +44,7 @@ export default function App() {
   const [hasMovedDuringDrag, setHasMovedDuringDrag] = React.useState(false);
   const [overId, setOverId] = React.useState<string | null>(null);
   const [isSettingsMenuOpen, setIsSettingsMenuOpen] = React.useState(false);
-  const [theme, setTheme] = React.useState<"light" | "dark">(() => (localStorage.getItem("coinlover_theme") as "light" | "dark") || "dark");
+  const [theme, setTheme] = React.useState<"light" | "dark" | "midnight">(() => (localStorage.getItem("coinlover_theme") as "light" | "dark" | "midnight") || "dark");
   const [editingTxId, setEditingTxId] = React.useState<string | null>(null);
 
   const [accountModal, setAccountModal] = React.useState<{ isOpen: boolean; account: Account | null }>({ isOpen: false, account: null });
@@ -71,12 +71,15 @@ export default function App() {
   }, [checkConflicts]);
 
   React.useEffect(() => {
-    if (theme === "light") document.documentElement.classList.add("light");
-    else document.documentElement.classList.remove("light");
+    document.documentElement.classList.remove("light", "midnight");
+    if (theme !== "dark") document.documentElement.classList.add(theme);
     localStorage.setItem("coinlover_theme", theme);
   }, [theme]);
 
-  const toggleTheme = () => { setTheme(prev => prev === "light" ? "dark" : "light"); if (navigator.vibrate) navigator.vibrate(50); };
+  const toggleTheme = () => { 
+    setTheme(prev => prev === "light" ? "dark" : prev === "dark" ? "midnight" : "light"); 
+    if (navigator.vibrate) navigator.vibrate(50); 
+  };
   const toggleMode = (target: 'demo' | 'real') => {
     localStorage.removeItem("cl_accounts");
     localStorage.removeItem("cl_categories");
@@ -297,6 +300,28 @@ export default function App() {
               <>
                 <div className="fixed inset-0 z-[200] bg-black/40 backdrop-blur-[2px]" onClick={() => setIsSettingsMenuOpen(false)} />
                 <div className="absolute top-12 right-0 w-48 bg-[var(--bg-color)] border border-[var(--glass-border)] rounded-2xl shadow-2xl flex flex-col z-[201] p-2 animate-in fade-in zoom-in-95 origin-top-right">
+                  <div className="px-1 py-1 mb-1">
+                    <div className="flex items-center gap-1 bg-[var(--glass-item-bg)] p-1 rounded-xl border border-[var(--glass-border)]">
+                      <button 
+                        onClick={() => { setTheme("light"); setIsSettingsMenuOpen(false); if (navigator.vibrate) navigator.vibrate(30); }} 
+                        className={`flex-1 h-9 rounded-lg flex items-center justify-center transition-all ${theme === 'light' ? 'bg-white text-amber-500 shadow-sm' : 'text-slate-500 hover:text-white'}`}
+                      >
+                        <Sun size={16} />
+                      </button>
+                      <button 
+                        onClick={() => { setTheme("dark"); setIsSettingsMenuOpen(false); if (navigator.vibrate) navigator.vibrate(30); }} 
+                        className={`flex-1 h-9 rounded-lg flex items-center justify-center transition-all ${theme === 'dark' ? 'bg-[#1e293b] text-blue-400 shadow-sm' : 'text-slate-500 hover:text-white'}`}
+                      >
+                        <Moon size={16} />
+                      </button>
+                      <button 
+                        onClick={() => { setTheme("midnight"); setIsSettingsMenuOpen(false); if (navigator.vibrate) navigator.vibrate(30); }} 
+                        className={`flex-1 h-9 rounded-lg flex items-center justify-center transition-all ${theme === 'midnight' ? 'bg-[#F59E0B]/20 text-[#F59E0B] shadow-sm' : 'text-slate-500 hover:text-white'}`}
+                      >
+                        <Sparkles size={16} />
+                      </button>
+                    </div>
+                  </div>
                   <button onClick={() => { setIsSettingsMenuOpen(false); pullSettings(); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left">
                     <RefreshCcw size={16} className={`text-amber-500 ${syncStatus === 'loading' ? 'animate-spin' : ''}`} /><span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Обновить</span>
                   </button>
@@ -307,10 +332,6 @@ export default function App() {
                   <button onClick={() => { setIsSettingsMenuOpen(false); setAnalyticsModal({ isOpen: true, type: "expense" }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left">
                     <PieChart size={16} className="text-amber-500" />
                     <span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Аналитика</span>
-                  </button>
-                  <button onClick={() => { setIsSettingsMenuOpen(false); toggleTheme(); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left">
-                    {theme === 'dark' ? <Sun size={16} className="text-amber-400" /> : <Moon size={16} className="text-slate-400" />}
-                    <span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">{theme === 'dark' ? "Light Mode" : "Dark Mode"}</span>
                   </button>
                 </div>
               </>
