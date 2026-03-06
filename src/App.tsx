@@ -6,8 +6,8 @@ import {
 } from "@dnd-kit/core";
 import { arrayMove, SortableContext, horizontalListSortingStrategy, rectSortingStrategy } from "@dnd-kit/sortable";
 import {
-  Plus, Settings, CircleDollarSign, TrendingDown, ChevronRight, TrendingUp, Wallet, RefreshCcw,
-  Heart, MousePointer2, PieChart, List, Moon, Sun, Sparkles
+  Plus, Settings, ArrowDownCircle, TrendingDown, ChevronRight, TrendingUp, Wallet, RefreshCcw,
+  Heart, MousePointer2, PieChart, List, Moon, Sun, Sparkles, Menu
 } from "lucide-react";
 
 // Modules
@@ -291,7 +291,7 @@ export default function App() {
       <header className="px-6 py-8 flex flex-col gap-2 text-center shrink-0">
         <div className="flex justify-between items-center mb-2">
           <button onClick={toggleIncome} className="glass-icon-btn w-10 h-10 relative">
-            <CircleDollarSign size={20} className="text-[#10b981]" />
+            <ArrowDownCircle size={20} className={`text-[#10b981] transition-transform duration-300 ${!isIncomeCollapsed ? "rotate-180" : ""}`} />
             {isDemo && (
               <span 
                 onClick={(e) => { e.stopPropagation(); handleDemoClick(); }}
@@ -303,7 +303,9 @@ export default function App() {
           </button>
           <p onClick={() => { if(!isDemo) handleDemoClick(); }} className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] cursor-default">Total Balance</p>
           <div className="relative">
-            <button onClick={() => setIsSettingsMenuOpen(!isSettingsMenuOpen)} className="glass-icon-btn w-10 h-10 text-slate-500"><Settings size={20} /></button>
+            <button onClick={() => setIsSettingsMenuOpen(!isSettingsMenuOpen)} className="glass-icon-btn w-10 h-10 text-slate-500">
+              <Menu size={20} className={`transition-transform duration-300 ${isSettingsMenuOpen ? "rotate-90" : ""}`} />
+            </button>
             {isSettingsMenuOpen && (
               <>
                 <div className="fixed inset-0 z-[200] bg-black/40 backdrop-blur-[2px]" onClick={() => setIsSettingsMenuOpen(false)} />
