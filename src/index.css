@@ -107,7 +107,6 @@ body {
   transform: scale(0.92);
   background: var(--glass-item-active);
 }
-
 .hide-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;

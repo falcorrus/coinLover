@@ -415,7 +415,44 @@ export default function App() {
       <AccountModal isOpen={accountModal.isOpen} account={accountModal.account} onClose={() => setAccountModal({ isOpen: false, account: null })} onSave={(name, balance, currency, icon, color) => { saveAccount({ ...accountModal.account, name, balance, currency, icon, color }); setAccountModal({ isOpen: false, account: null }); }} onDelete={() => { if (!accountModal.account) return; setConfirmDelete({ isOpen: true, title: "Удалить кошелек?", message: `Удалить "${accountModal.account.name}"?`, onConfirm: () => { deleteAccount(accountModal.account!.id); setAccountModal({ isOpen: false, account: null }); setConfirmDelete(p => ({ ...p, isOpen: false })); } }); }} />
       <IncomeModal isOpen={incomeModal.isOpen} income={incomeModal.income} onClose={() => setIncomeModal({ isOpen: false, income: null })} onSave={(name, icon, color) => { saveIncome({ ...incomeModal.income, name, icon, color }); setIncomeModal({ isOpen: false, income: null }); }} onDelete={() => { if (!incomeModal.income) return; setConfirmDelete({ isOpen: true, title: "Удалить доход?", message: `Удалить "${incomeModal.income.name}"?`, onConfirm: () => { deleteIncome(incomeModal.income!.id); setIncomeModal({ isOpen: false, income: null }); setConfirmDelete(p => ({ ...p, isOpen: false })); } }); }} />
       <CategoryModal isOpen={categoryModal.isOpen} category={categoryModal.category} onClose={() => setCategoryModal({ isOpen: false, category: null })} onSave={(cat) => { saveCategory(cat); setCategoryModal({ isOpen: false, category: null }); }} onDelete={() => { if (!categoryModal.category) return; setConfirmDelete({ isOpen: true, title: "Удалить категорию?", message: `Удалить "${categoryModal.category.name}"?`, onConfirm: () => { deleteCategory(categoryModal.category!.id); setCategoryModal({ isOpen: false, category: null }); setConfirmDelete(p => ({ ...p, isOpen: false })); } }); }} />
-      <HistoryModal isOpen={historyModal.isOpen} onClose={() => setHistoryModal({ isOpen: false, entity: null, type: null })} entity={historyModal.entity} entityType={historyModal.type} transactions={historyModal.customTransactions || transactions} accounts={accounts} categories={categories} incomes={incomes} onEditTransaction={(tx) => { const source = tx.type === "income" ? incomes.find(i => i.id === tx.targetId) ?? null : accounts.find(a => a.id === tx.accountId) ?? null; const destination = tx.type === "expense" ? categories.find(c => c.id === tx.targetId) ?? null : tx.type === "income" ? accounts.find(a => a.id === tx.accountId) ?? null : accounts.find(a => a.id === tx.targetId) ?? null; if (!source || !destination) return; setEditingTxId(tx.id); setHistoryModal({ isOpen: false, entity: null, type: null }); setNumpad({ isOpen: true, type: tx.type, source, destination, sourceAmount: String(tx.sourceAmount), sourceCurrency: tx.sourceCurrency, targetAmount: String(tx.targetAmount ?? tx.sourceAmount), targetCurrency: tx.targetCurrency, targetLinked: true, activeField: "source", tag: tx.tag ?? null, comment: tx.comment ?? "", }); }} />
+      <HistoryModal 
+        isOpen={historyModal.isOpen} 
+        onClose={() => setHistoryModal({ isOpen: false, entity: null, type: null })} 
+        entity={historyModal.entity} 
+        entityType={historyModal.type} 
+        transactions={historyModal.customTransactions || transactions} 
+        accounts={accounts} 
+        categories={categories} 
+        incomes={incomes} 
+        onEditTransaction={(tx) => { 
+          const source = tx.type === "income" ? incomes.find(i => i.id === tx.targetId) ?? null : accounts.find(a => a.id === tx.accountId) ?? null; 
+          const destination = tx.type === "expense" ? categories.find(c => c.id === tx.targetId) ?? null : tx.type === "income" ? accounts.find(a => a.id === tx.accountId) ?? null : accounts.find(a => a.id === tx.targetId) ?? null; 
+          if (!source || !destination) return; 
+          
+          setEditingTxId(tx.id); 
+          setHistoryModal({ isOpen: false, entity: null, type: null }); 
+          
+          // Determine the correct source currency based on the actual account/source settings
+          const actualSourceCurrency = tx.type === "income" 
+            ? tx.sourceCurrency // For income, source is external (could be anything)
+            : (source as Account).currency; // For expense/transfer, source is our wallet
+            
+          setNumpad({ 
+            isOpen: true, 
+            type: tx.type, 
+            source, 
+            destination, 
+            sourceAmount: String(tx.sourceAmount), 
+            sourceCurrency: actualSourceCurrency, 
+            targetAmount: String(tx.targetAmount ?? tx.sourceAmount), 
+            targetCurrency: tx.targetCurrency, 
+            targetLinked: true, 
+            activeField: "source", 
+            tag: tx.tag ?? null, 
+            comment: tx.comment ?? "", 
+          }); 
+        }} 
+      />
       <AnalyticsModal isOpen={analyticsModal.isOpen} onClose={() => setAnalyticsModal(p => ({ ...p, isOpen: false }))} categories={categories} incomes={incomes} accounts={accounts} globalTransactions={transactions} initialType={analyticsModal.type} onItemClick={(item, type, monthTx) => { let entity = item; if (type === "category") { const cat = categories.find(c => c.id === item.id); if (cat) entity = cat; } else if (type === "income") { const inc = incomes.find(i => i.id === item.id); if (inc) entity = inc; } setAnalyticsModal(p => ({ ...p, isOpen: false })); setHistoryModal({ isOpen: true, entity, type, customTransactions: monthTx.filter(t => { if (type === "category") return t.targetId === item.id; if (type === "tag") return (t.tag?.trim() || "Без тега") === item.name; if (type === "income") return t.targetId === item.id; return false; }) }); }} />
       <ConfirmModal isOpen={confirmDelete.isOpen} title={confirmDelete.title} message={confirmDelete.message} onConfirm={confirmDelete.onConfirm} onCancel={() => setConfirmDelete(p => ({ ...p, isOpen: false }))} />
       
