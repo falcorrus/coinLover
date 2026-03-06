@@ -18,12 +18,13 @@ interface Props {
   onCommentChange: (comment: string) => void;
   onLinkToggle?: () => void;
   onRemove?: () => void;
+  onManageTags?: () => void;
   isEditing?: boolean;
 }
 
 export const Numpad: React.FC<Props> = ({ 
   data, availableCurrencies, onClose, onFieldChange, onCurrencyChange, 
-  onPress, onDelete, onSubmit, onTagSelect, onCommentChange, onLinkToggle, onRemove, isEditing 
+  onPress, onDelete, onSubmit, onTagSelect, onCommentChange, onLinkToggle, onRemove, onManageTags, isEditing 
 }) => {
   const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
   const [isCommentOpen, setIsCommentOpen] = React.useState(false);
@@ -128,8 +129,19 @@ export const Numpad: React.FC<Props> = ({
 
       {/* Bar with Tags */}
       <div className="flex items-center px-4 py-3 gap-3 bg-[var(--glass-bg)] shrink-0 border-t border-[var(--glass-border)] overflow-hidden">
+        <button 
+          onClick={(e) => { e.stopPropagation(); onManageTags?.(); }}
+          className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-[var(--glass-item-bg)] border border-[var(--glass-border)] text-[var(--text-muted)] hover:text-[var(--text-main)] active:scale-90 transition-all"
+        >
+          <Plus size={16} />
+        </button>
         <div className="flex-1 flex items-center gap-2 overflow-x-auto hide-scrollbar">
+          {/* Tags for Expense */}
           {data.type === 'expense' && data.destination && (data.destination as Category).tags && (data.destination as Category).tags.map(t => (
+            <button key={t} onClick={() => handleTagClick(t)} className={`px-4 py-1.5 rounded-full uppercase text-[10px] font-black whitespace-nowrap transition-all duration-200 ${data.tag === t ? "bg-[var(--primary-color)] text-white scale-105" : "bg-[var(--glass-item-bg)] text-[var(--text-muted)] border border-[var(--glass-border)]"}`}>{t}</button>
+          ))}
+          {/* Tags for Income */}
+          {data.type === 'income' && data.source && (data.source as IncomeSource).tags && (data.source as IncomeSource).tags.map(t => (
             <button key={t} onClick={() => handleTagClick(t)} className={`px-4 py-1.5 rounded-full uppercase text-[10px] font-black whitespace-nowrap transition-all duration-200 ${data.tag === t ? "bg-[var(--success-color)] text-white scale-105" : "bg-[var(--glass-item-bg)] text-[var(--text-muted)] border border-[var(--glass-border)]"}`}>{t}</button>
           ))}
         </div>

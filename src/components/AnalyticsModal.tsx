@@ -72,7 +72,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
     });
 
     const currentKey = useMemo(() => {
-        return analysisType === "income" ? "income" : `expense_${tab}`;
+        return analysisType === "income" ? (tab === "categories" ? "income" : "income_tags") : `expense_${tab}`;
     }, [analysisType, tab]);
 
     const selectedIds = useMemo(() => selections[currentKey] || new Set(), [selections, currentKey]);
@@ -89,7 +89,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
     const listItems = useMemo(() => {
         let items: { id: string, name: string, icon: any, color: string, amount: number, percent: number }[] = [];
 
-        if (tab === "categories" || analysisType === "income") {
+        if (tab === "categories" || (analysisType === "income" && tab === "categories")) {
             const itemMap = new Map<string, number>();
             filteredTx.forEach(t => {
                 const id = t.targetId;
@@ -257,6 +257,11 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
         if (navigator.vibrate) navigator.vibrate(10);
     };
 
+    const handleTabChange = (newTab: "categories" | "tags") => {
+        setTab(newTab);
+        setExpandedItemId(null);
+    };
+
     if (!isOpen) return null;
 
     const currentVisibleIds = listItems.map(i => i.id);
@@ -291,12 +296,12 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                     <button onClick={nextMonth} className="p-2 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"><ChevronRight size={20} /></button>
                 </div>
 
-                {analysisType === "expense" && (
-                    <div className="flex gap-2 p-4 shrink-0 border-b border-[var(--glass-border)]">
-                        <button onClick={() => setTab("categories")} className={`flex-1 py-2 text-xs font-bold rounded-xl transition-colors ${tab === "categories" ? "bg-[var(--glass-item-active)] text-[var(--text-main)]" : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--glass-item-bg)]"}`}>КАТЕГОРИИ</button>
-                        <button onClick={() => setTab("tags")} className={`flex-1 py-2 text-xs font-bold rounded-xl transition-colors ${tab === "tags" ? "bg-[var(--glass-item-active)] text-[var(--text-main)]" : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--glass-item-bg)]"}`}>ТЕГИ</button>
-                    </div>
-                )}
+                <div className="flex gap-2 p-4 shrink-0 border-b border-[var(--glass-border)]">
+                    <button onClick={() => handleTabChange("categories")} className={`flex-1 py-2 text-xs font-bold rounded-xl transition-colors ${tab === "categories" ? "bg-[var(--glass-item-active)] text-[var(--text-main)]" : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--glass-item-bg)]"}`}>
+                        {analysisType === "expense" ? "КАТЕГОРИИ" : "ИСТОЧНИКИ"}
+                    </button>
+                    <button onClick={() => handleTabChange("tags")} className={`flex-1 py-2 text-xs font-bold rounded-xl transition-colors ${tab === "tags" ? "bg-[var(--glass-item-active)] text-[var(--text-main)]" : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--glass-item-bg)]"}`}>ТЕГИ</button>
+                </div>
 
                 <div className="px-6 py-4 shrink-0 flex flex-col items-center relative">
                     <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] tracking-widest mb-1">{analysisType === "expense" ? "Всего потрачено" : "Всего получено"}</span>
@@ -334,7 +339,6 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                                             itemDetails.push({ id: name, name, icon: Tag, color: item.color, amount, percent: item.amount > 0 ? (amount / item.amount) * 100 : 0 });
                                         });
                                     } else if (analysisType === "expense" && tab === "tags") {
-                                        // Category breakdown for tags
                                         const tagTx = filteredTx.filter(t => (t.tag?.trim() || "Без тега") === item.name);
                                         const catMap = new Map<string, number>();
                                         tagTx.forEach(t => {
@@ -342,31 +346,27 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                                         });
                                         catMap.forEach((amount, catId) => {
                                             const cat = categories.find(c => c.id === catId);
-                                            itemDetails.push({ 
-                                                id: catId, 
-                                                name: cat ? cat.name : "Удаленная категория", 
-                                                icon: cat ? (IconMap[cat.icon] || MoreHorizontal) : MoreHorizontal,
-                                                color: cat ? cat.color : "#6b7280",
-                                                amount, 
-                                                percent: item.amount > 0 ? (amount / item.amount) * 100 : 0 
-                                            });
+                                            itemDetails.push({ id: catId, name: cat ? cat.name : "Удаленная категория", icon: cat ? (IconMap[cat.icon] || MoreHorizontal) : MoreHorizontal, color: cat ? cat.color : "#6b7280", amount, percent: item.amount > 0 ? (amount / item.amount) * 100 : 0 });
                                         });
-                                    } else if (analysisType === "income") {
+                                    } else if (analysisType === "income" && tab === "categories") {
                                         const incTx = filteredTx.filter(t => t.targetId === item.id);
-                                        const walletMap = new Map<string, number>();
+                                        const tagMap = new Map<string, number>();
                                         incTx.forEach(t => {
-                                            walletMap.set(t.accountId, (walletMap.get(t.accountId) || 0) + (t.sourceAmountUSD || 0));
+                                            const tagName = t.tag && t.tag.trim() ? t.tag.trim() : "Без тега";
+                                            tagMap.set(tagName, (tagMap.get(tagName) || 0) + (t.sourceAmountUSD || 0));
                                         });
-                                        walletMap.forEach((amount, walletId) => {
-                                            const wallet = accounts.find(a => a.id === walletId);
-                                            itemDetails.push({ 
-                                                id: walletId, 
-                                                name: wallet ? wallet.name : "Удаленный кошелек", 
-                                                icon: wallet ? (IconMap[wallet.icon] || Wallet) : Wallet,
-                                                color: wallet ? wallet.color : "#6b7280",
-                                                amount, 
-                                                percent: item.amount > 0 ? (amount / item.amount) * 100 : 0 
-                                            });
+                                        tagMap.forEach((amount, name) => {
+                                            itemDetails.push({ id: name, name, icon: Tag, color: item.color, amount, percent: item.amount > 0 ? (amount / item.amount) * 100 : 0 });
+                                        });
+                                    } else if (analysisType === "income" && tab === "tags") {
+                                        const tagTx = filteredTx.filter(t => (t.tag?.trim() || "Без тега") === item.name);
+                                        const incMap = new Map<string, number>();
+                                        tagTx.forEach(t => {
+                                            incMap.set(t.targetId, (incMap.get(t.targetId) || 0) + (t.sourceAmountUSD || 0));
+                                        });
+                                        incMap.forEach((amount, incId) => {
+                                            const inc = incomes.find(i => i.id === incId);
+                                            itemDetails.push({ id: incId, name: inc ? inc.name : "Удаленный источник", icon: TrendingUp, color: inc ? inc.color : "var(--success-color)", amount, percent: item.amount > 0 ? (amount / item.amount) * 100 : 0 });
                                         });
                                     }
                                     itemDetails.sort((a, b) => b.amount - a.amount);
@@ -407,11 +407,15 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                                                     <div key={detail.id} className="flex justify-between items-center cursor-pointer group" onClick={(e) => { 
                                                         e.stopPropagation(); 
                                                         if (onItemClick) {
-                                                            const entityType = analysisType === "income" ? "account" : (tab === "tags" ? "category" : "tag");
+                                                            const entityType = analysisType === "income" ? (tab === "categories" ? "income" : "tag") : (tab === "tags" ? "category" : "tag");
                                                             const txFilter = filteredTx.filter(t => {
-                                                                if (analysisType === "income") return t.targetId === item.id && t.accountId === detail.id;
-                                                                if (tab === "tags") return (t.tag?.trim() || "Без тега") === item.name && t.targetId === detail.id;
-                                                                return t.targetId === item.id && (t.tag?.trim() || "Без тега") === detail.name;
+                                                                if (analysisType === "income") {
+                                                                    if (tab === "categories") return t.targetId === item.id && (t.tag?.trim() || "Без тега") === detail.name;
+                                                                    return (t.tag?.trim() || "Без тега") === item.name && t.targetId === detail.id;
+                                                                } else {
+                                                                    if (tab === "tags") return (t.tag?.trim() || "Без тега") === item.name && t.targetId === detail.id;
+                                                                    return t.targetId === item.id && (t.tag?.trim() || "Без тега") === detail.name;
+                                                                }
                                                             });
                                                             onItemClick({ ...detail }, entityType, txFilter);
                                                         }

@@ -15,10 +15,11 @@ interface Props {
   onLongPress: (income: IncomeSource) => void;
   onClick?: (income: IncomeSource) => void;
   isSortingMode: boolean;
+  monthlyAmount?: number;
 }
 
 export const DraggableIncomeItem: React.FC<Props> = ({
-  income, isDragging, isSortingMode, onLongPress, onClick, onSortingMode
+  income, isDragging, isSortingMode, onLongPress, onClick, onSortingMode, monthlyAmount = 0
 }) => {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id: income.id,
@@ -138,9 +139,14 @@ export const DraggableIncomeItem: React.FC<Props> = ({
       >
         <Icon size={22} color={income.color} />
       </div>
-      <span className="text-[10px] font-bold text-[#10b981] uppercase tracking-wider text-center leading-none truncate w-16 pointer-events-none">
+      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center leading-none truncate w-16 pointer-events-none">
         {income.name}
       </span>
+      {monthlyAmount > 0 && (
+        <span className="text-[11px] font-bold text-[#10b981] mt-0.5 pointer-events-none">
+          +${Math.round(monthlyAmount).toLocaleString()}
+        </span>
+      )}
     </div>
   );
 };

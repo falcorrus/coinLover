@@ -25,6 +25,7 @@ import { IncomeModal } from "./components/IncomeModal";
 import { HistoryModal } from "./components/HistoryModal";
 import { AnalyticsModal } from "./components/AnalyticsModal";
 import { ConfirmModal } from "./components/ConfirmModal";
+import { TagModal } from "./components/TagModal";
 
 export default function App() {
   const {
@@ -58,6 +59,7 @@ export default function App() {
     isOpen: false, type: "expense", source: null, destination: null,
     sourceAmount: "0", sourceCurrency: "USD", targetAmount: "0", targetCurrency: "USD", targetLinked: true, activeField: "source", tag: null, comment: ""
   });
+  const [isTagModalOpen, setIsTagModalOpen] = React.useState(false);
 
   const sortingTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const demoClickCount = React.useRef(0);
@@ -217,7 +219,12 @@ export default function App() {
   const totalSpent = Math.round(currentMonthTransactions.filter(t => t.type === "expense").reduce((s, t) => s + (t.sourceAmountUSD ?? t.amountUSD ?? t.sourceAmount ?? t.amount ?? 0), 0));
   const totalEarned = Math.round(currentMonthTransactions.filter(t => t.type === "income").reduce((s, t) => s + (t.sourceAmountUSD ?? t.amountUSD ?? t.sourceAmount ?? t.amount ?? 0), 0));
 
-  const anyModalOpen = accountModal.isOpen || incomeModal.isOpen || categoryModal.isOpen || historyModal.isOpen || analyticsModal.isOpen || numpad.isOpen || confirmDelete.isOpen || isSettingsMenuOpen || !!conflictData;
+  const allExistingTags = Array.from(new Set([
+    ...categories.flatMap(c => c.tags || []),
+    ...incomes.flatMap(i => i.tags || [])
+  ])).sort();
+
+  const anyModalOpen = accountModal.isOpen || incomeModal.isOpen || categoryModal.isOpen || historyModal.isOpen || analyticsModal.isOpen || numpad.isOpen || confirmDelete.isOpen || isSettingsMenuOpen || isTagModalOpen || !!conflictData;
 
   // Handle hardware/gesture back button and Esc key
   React.useEffect(() => {
@@ -250,6 +257,7 @@ export default function App() {
       setNumpad(p => ({ ...p, isOpen: false }));
       setConfirmDelete(p => ({ ...p, isOpen: false }));
       setIsSettingsMenuOpen(false);
+      setIsTagModalOpen(false);
       setConflictData(null);
     };
 
@@ -362,7 +370,27 @@ export default function App() {
       >
         <section className={`px-0 overflow-hidden transition-all duration-500 shrink-0 ${isIncomeCollapsed ? "max-h-0 opacity-0" : "max-h-[160px] opacity-100 py-1"}`}>
           <div className="px-6 py-2 flex justify-between items-center"><div onClick={toggleIncome} className="flex items-center gap-2 cursor-pointer group"><ChevronRight size={14} className="text-slate-500 rotate-90" /><h2 className="text-[10px] font-black text-slate-500 uppercase group-hover:text-white">Доходы</h2></div><div className="flex items-center gap-3"><button onClick={() => setAnalyticsModal({ isOpen: true, type: "income" })} className="w-8 h-8 rounded-full bg-[var(--success-color)]/10 border border-[var(--success-color)]/20 text-[var(--success-color)] flex items-center justify-center hover:bg-[var(--success-color)]/20 transition-all shadow-sm"><PieChart size={14} /></button><button onClick={() => setIncomeModal({ isOpen: true, income: null })} className="w-7 h-7 rounded-full bg-[var(--success-color)]/10 text-[var(--success-color)] flex items-center justify-center hover:bg-[var(--success-color)]/20 transition-colors"><Plus size={14} /></button></div></div>
-          <SortableContext items={incomes.map(i => i.id)} strategy={horizontalListSortingStrategy}><div className="flex gap-4 overflow-x-auto hide-scrollbar px-6 pb-4 pt-2">{incomes.map(inc => (<DraggableIncomeItem key={inc.id} income={inc} isDragging={activeDragId === inc.id} onSortingMode={() => setIsSortingMode(true)} isSortingMode={isSortingMode} onLongPress={(i) => { setIsSortingMode(false); setIncomeModal({ isOpen: true, income: i }); }} onClick={(income) => setHistoryModal({ isOpen: true, entity: income, type: "income" })} activeDragType={activeDragType} />))}</div></SortableContext>
+          <SortableContext items={incomes.map(i => i.id)} strategy={horizontalListSortingStrategy}>
+            <div className="flex gap-4 overflow-x-auto hide-scrollbar px-6 pb-4 pt-2">
+              {incomes.map(inc => {
+                const monthlyAmount = Math.round(currentMonthTransactions
+                  .filter(t => t.type === "income" && t.targetId === inc.id)
+                  .reduce((sum, t) => sum + (t.sourceAmountUSD ?? t.amountUSD ?? t.sourceAmount ?? t.amount ?? 0), 0));
+                return (
+                  <DraggableIncomeItem 
+                    key={inc.id} 
+                    income={inc} 
+                    isDragging={activeDragId === inc.id} 
+                    onSortingMode={() => setIsSortingMode(true)} 
+                    isSortingMode={isSortingMode} 
+                    onLongPress={(i) => { setIsSortingMode(false); setIncomeModal({ isOpen: true, income: i }); }} 
+                    onClick={(income) => setHistoryModal({ isOpen: true, entity: income, type: "income" })} 
+                    monthlyAmount={monthlyAmount}
+                  />
+                );
+              })}
+            </div>
+          </SortableContext>
         </section>
 
         <section className="px-0 py-2 relative z-20 shrink-0">
@@ -391,6 +419,7 @@ export default function App() {
         data={numpad} availableCurrencies={Array.from(new Set([...accounts.map(a => a.currency), numpad.sourceCurrency, numpad.targetCurrency]))} isEditing={!!editingTxId}
         onClose={() => { setNumpad({ ...numpad, isOpen: false, targetLinked: true }); setEditingTxId(null); }}
         onFieldChange={(f) => setNumpad(p => ({ ...p, activeField: f }))}
+        onManageTags={() => setIsTagModalOpen(true)}
         onLinkToggle={() => { setNumpad(p => ({ ...p, targetLinked: !p.targetLinked })); if (navigator.vibrate) navigator.vibrate(10); }}
         onCurrencyChange={(field, curr) => setNumpad(p => {
           if (field === "source") {
@@ -434,8 +463,46 @@ export default function App() {
       />
 
       <AccountModal isOpen={accountModal.isOpen} account={accountModal.account} onClose={() => setAccountModal({ isOpen: false, account: null })} onSave={(name, balance, currency, icon, color) => { saveAccount({ ...accountModal.account, name, balance, currency, icon, color }); setAccountModal({ isOpen: false, account: null }); }} onDelete={() => { if (!accountModal.account) return; setConfirmDelete({ isOpen: true, title: "Удалить кошелек?", message: `Удалить "${accountModal.account.name}"?`, onConfirm: () => { deleteAccount(accountModal.account!.id); setAccountModal({ isOpen: false, account: null }); setConfirmDelete(p => ({ ...p, isOpen: false })); } }); }} />
-      <IncomeModal isOpen={incomeModal.isOpen} income={incomeModal.income} onClose={() => setIncomeModal({ isOpen: false, income: null })} onSave={(name, icon, color) => { saveIncome({ ...incomeModal.income, name, icon, color }); setIncomeModal({ isOpen: false, income: null }); }} onDelete={() => { if (!incomeModal.income) return; setConfirmDelete({ isOpen: true, title: "Удалить доход?", message: `Удалить "${incomeModal.income.name}"?`, onConfirm: () => { deleteIncome(incomeModal.income!.id); setIncomeModal({ isOpen: false, income: null }); setConfirmDelete(p => ({ ...p, isOpen: false })); } }); }} />
-      <CategoryModal isOpen={categoryModal.isOpen} category={categoryModal.category} onClose={() => setCategoryModal({ isOpen: false, category: null })} onSave={(cat) => { saveCategory(cat); setCategoryModal({ isOpen: false, category: null }); }} onDelete={() => { if (!categoryModal.category) return; setConfirmDelete({ isOpen: true, title: "Удалить категорию?", message: `Удалить "${categoryModal.category.name}"?`, onConfirm: () => { deleteCategory(categoryModal.category!.id); setCategoryModal({ isOpen: false, category: null }); setConfirmDelete(p => ({ ...p, isOpen: false })); } }); }} />
+      <IncomeModal 
+        isOpen={incomeModal.isOpen} 
+        income={incomeModal.income} 
+        onClose={() => setIncomeModal({ isOpen: false, income: null })} 
+        onSave={(name, icon, color, tags) => { 
+          saveIncome({ ...incomeModal.income, name, icon, color, tags }); 
+          setIncomeModal({ isOpen: false, income: null }); 
+        }} 
+        onDelete={() => { 
+          if (!incomeModal.income) return; 
+          setConfirmDelete({ 
+            isOpen: true, 
+            title: "Удалить доход?", 
+            message: `Удалить "${incomeModal.income.name}"?`, 
+            onConfirm: () => { deleteIncome(incomeModal.income!.id); setIncomeModal({ isOpen: false, income: null }); setConfirmDelete(p => ({ ...p, isOpen: false })); } 
+          }); 
+        }} 
+      />
+      <CategoryModal 
+        isOpen={categoryModal.isOpen} 
+        category={categoryModal.category} 
+        onClose={() => setCategoryModal({ isOpen: false, category: null })} 
+        onSave={(cat) => { 
+          saveCategory(cat); 
+          setCategoryModal({ isOpen: false, category: null }); 
+        }} 
+        onDelete={() => { 
+          if (!categoryModal.category) return; 
+          setConfirmDelete({ 
+            isOpen: true, 
+            title: "Удалить категорию?", 
+            message: `Удалить "${categoryModal.category.name}"?`, 
+            onConfirm: () => { 
+              deleteCategory(categoryModal.category!.id); 
+              setCategoryModal({ isOpen: false, category: null }); 
+              setConfirmDelete(p => ({ ...p, isOpen: false })); 
+            } 
+          }); 
+        }} 
+      />
       <HistoryModal 
         isOpen={historyModal.isOpen} 
         onClose={() => setHistoryModal({ isOpen: false, entity: null, type: null })} 
@@ -477,6 +544,28 @@ export default function App() {
       <AnalyticsModal isOpen={analyticsModal.isOpen} onClose={() => setAnalyticsModal(p => ({ ...p, isOpen: false }))} categories={categories} incomes={incomes} accounts={accounts} globalTransactions={transactions} initialType={analyticsModal.type} onItemClick={(item, type, monthTx) => { let entity = item; if (type === "category") { const cat = categories.find(c => c.id === item.id); if (cat) entity = cat; } else if (type === "income") { const inc = incomes.find(i => i.id === item.id); if (inc) entity = inc; } setAnalyticsModal(p => ({ ...p, isOpen: false })); setHistoryModal({ isOpen: true, entity, type, customTransactions: monthTx.filter(t => { if (type === "category") return t.targetId === item.id; if (type === "tag") return (t.tag?.trim() || "Без тега") === item.name; if (type === "income") return t.targetId === item.id; return false; }) }); }} />
       <ConfirmModal isOpen={confirmDelete.isOpen} title={confirmDelete.title} message={confirmDelete.message} onConfirm={confirmDelete.onConfirm} onCancel={() => setConfirmDelete(p => ({ ...p, isOpen: false }))} />
       
+      <TagModal 
+        isOpen={isTagModalOpen} 
+        onClose={() => setIsTagModalOpen(false)} 
+        existingTags={allExistingTags}
+        activeTags={numpad.type === 'expense' ? (numpad.destination as Category)?.tags || [] : (numpad.source as IncomeSource)?.tags || []}
+        onSelect={(tag) => {
+          if (numpad.type === 'expense' && numpad.destination) {
+            const cat = numpad.destination as Category;
+            const newTags = cat.tags.includes(tag) ? cat.tags.filter(t => t !== tag) : [...cat.tags, tag];
+            const updated = { ...cat, tags: newTags };
+            saveCategory(updated);
+            setNumpad(p => ({ ...p, destination: updated }));
+          } else if (numpad.type === 'income' && numpad.source) {
+            const inc = numpad.source as IncomeSource;
+            const newTags = inc.tags.includes(tag) ? inc.tags.filter(t => t !== tag) : [...inc.tags, tag];
+            const updated = { ...inc, tags: newTags };
+            saveIncome(updated);
+            setNumpad(p => ({ ...p, source: updated }));
+          }
+        }}
+      />
+
       {conflictData && (
         <ConfirmModal 
           isOpen={true} 
