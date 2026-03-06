@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { X, ChevronLeft, ChevronRight, PieChart, Tag, RefreshCcw, MoreHorizontal, TrendingUp, TrendingDown, Wallet, CheckCircle2, Circle } from "lucide-react";
 import { Transaction, Category, IncomeSource, Account } from "../types";
 import { IconMap } from "../constants";
@@ -16,6 +16,40 @@ interface AnalyticsModalProps {
 }
 const globalAnalyticsCache = new Map<string, Transaction[]>();
 
+// Helper to get selection from localStorage with date check
+const getStoredSelections = () => {
+    try {
+        const stored = localStorage.getItem("cl_analytics_selections");
+        if (!stored) return null;
+        const { date, data } = JSON.parse(stored);
+        
+        const today = new Date().toDateString();
+        if (date !== today) {
+            localStorage.removeItem("cl_analytics_selections");
+            return null;
+        }
+        
+        const parsedData: Record<string, Set<string>> = {};
+        Object.keys(data).forEach(key => {
+            parsedData[key] = new Set(data[key]);
+        });
+        return parsedData;
+    } catch {
+        return null;
+    }
+};
+
+const saveStoredSelections = (selections: Record<string, Set<string>>) => {
+    const data: Record<string, string[]> = {};
+    Object.keys(selections).forEach(key => {
+        data[key] = Array.from(selections[key]);
+    });
+    localStorage.setItem("cl_analytics_selections", JSON.stringify({
+        date: new Date().toDateString(),
+        data
+    }));
+};
+
 export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ 
     isOpen, onClose, categories, incomes, accounts, globalTransactions, initialType = "expense", onItemClick 
 }) => {
@@ -25,7 +59,23 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
     const [analysisType, setAnalysisType] = useState<"expense" | "income">(initialType);
     const [tab, setTab] = useState<"categories" | "tags">("categories");
     const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
-    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    
+    // Track which keys have been auto-initialized in this session to prevent clear-all conflicts
+    const initializedKeys = useRef<Set<string>>(new Set());
+
+    const [selections, setSelections] = useState<Record<string, Set<string>>>(() => {
+        return getStoredSelections() || {
+            income: new Set(),
+            expense_categories: new Set(),
+            expense_tags: new Set()
+        };
+    });
+
+    const currentKey = useMemo(() => {
+        return analysisType === "income" ? "income" : `expense_${tab}`;
+    }, [analysisType, tab]);
+
+    const selectedIds = useMemo(() => selections[currentKey] || new Set(), [selections, currentKey]);
 
     // 1. Calculate derived data
     const filteredTx = useMemo(() => {
@@ -35,10 +85,6 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
             return txDate.getFullYear() === currentDate.getFullYear() && txDate.getMonth() === currentDate.getMonth();
         });
     }, [transactions, analysisType, currentDate]);
-
-    const totalUSD = useMemo(() => {
-        return filteredTx.reduce((sum, t) => sum + (t.sourceAmountUSD || 0), 0);
-    }, [filteredTx]);
 
     const listItems = useMemo(() => {
         let items: { id: string, name: string, icon: any, color: string, amount: number, percent: number }[] = [];
@@ -57,14 +103,14 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                         id, name: cat ? cat.name : "Удаленная категория", 
                         icon: cat ? (IconMap[cat.icon] || MoreHorizontal) : MoreHorizontal, 
                         color: cat ? cat.color : "#6b7280", 
-                        amount, percent: totalUSD > 0 ? (amount / totalUSD) * 100 : 0 
+                        amount, percent: 0 
                     });
                 } else {
                     const inc = incomes.find(i => i.id === id);
                     items.push({ 
                         id, name: inc ? inc.name : "Удаленный источник", 
                         icon: TrendingUp, color: inc ? inc.color : "var(--success-color)", 
-                        amount, percent: totalUSD > 0 ? (amount / totalUSD) * 100 : 0 
+                        amount, percent: 0 
                     });
                 }
             });
@@ -77,15 +123,17 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
             tagMap.forEach((amount, tagName) => {
                 items.push({ 
                     id: tagName, name: tagName, icon: Tag, color: "var(--primary-color)", 
-                    amount, percent: totalUSD > 0 ? (amount / totalUSD) * 100 : 0 
+                    amount, percent: 0 
                 });
             });
         }
-        return items.sort((a, b) => b.amount - a.amount);
-    }, [filteredTx, tab, analysisType, categories, incomes, totalUSD]);
+        
+        items.sort((a, b) => b.amount - a.amount);
+        const total = items.reduce((s, i) => s + i.amount, 0);
+        return items.map(i => ({ ...i, percent: total > 0 ? (i.amount / total) * 100 : 0 }));
+    }, [filteredTx, tab, analysisType, categories, incomes]);
 
     const displayedTotal = useMemo(() => {
-        if (selectedIds.size === 0) return 0;
         return listItems
             .filter(item => selectedIds.has(item.id))
             .reduce((sum, item) => sum + item.amount, 0);
@@ -96,17 +144,26 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
         if (isOpen) {
             setAnalysisType(initialType);
             setExpandedItemId(null);
-            // Reset selectedIds to let the next effect populate them
-            setSelectedIds(new Set());
         }
     }, [isOpen, initialType]);
 
-    // Auto-populate selectedIds when listItems arrive
+    // Auto-populate current view's selectedIds ONLY IF they are not initialized yet
     useEffect(() => {
-        if (listItems.length > 0 && selectedIds.size === 0) {
-            setSelectedIds(new Set(listItems.map(i => i.id)));
+        if (isOpen && listItems.length > 0 && !initializedKeys.current.has(currentKey)) {
+            const stored = getStoredSelections();
+            if (!stored || !stored[currentKey] || stored[currentKey].size === 0) {
+                setSelections(prev => {
+                    const next = {
+                        ...prev,
+                        [currentKey]: new Set(listItems.map(i => i.id))
+                    };
+                    saveStoredSelections(next);
+                    return next;
+                });
+            }
+            initializedKeys.current.add(currentKey);
         }
-    }, [listItems]);
+    }, [listItems, isOpen, currentKey]);
 
     useEffect(() => {
         if (!isOpen) return;
@@ -152,47 +209,62 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
     // 3. Handlers
     const toggleSelect = (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
-        const next = new Set(selectedIds);
-        if (next.has(id)) next.delete(id);
-        else next.add(id);
-        setSelectedIds(next);
+        const nextSet = new Set(selectedIds);
+        if (nextSet.has(id)) nextSet.delete(id);
+        else nextSet.add(id);
+        
+        const nextSelections = {
+            ...selections,
+            [currentKey]: nextSet
+        };
+        setSelections(nextSelections);
+        saveStoredSelections(nextSelections);
         if (navigator.vibrate) navigator.vibrate(10);
     };
 
     const toggleAll = () => {
-        if (selectedIds.size === listItems.length) setSelectedIds(new Set());
-        else setSelectedIds(new Set(listItems.map(i => i.id)));
+        const currentIds = listItems.map(i => i.id);
+        const isCurrentlyAllSelected = currentIds.length > 0 && currentIds.every(id => selectedIds.has(id));
+        
+        const nextSet = new Set(selectedIds);
+        if (isCurrentlyAllSelected) {
+            currentIds.forEach(id => nextSet.delete(id));
+        } else {
+            currentIds.forEach(id => nextSet.add(id));
+        }
+
+        const nextSelections = {
+            ...selections,
+            [currentKey]: nextSet
+        };
+        setSelections(nextSelections);
+        saveStoredSelections(nextSelections);
         if (navigator.vibrate) navigator.vibrate(20);
-    };
-
-    const handleModeChange = (type: "expense" | "income") => {
-        setAnalysisType(type);
-        setExpandedItemId(null);
-        setSelectedIds(new Set());
-    };
-
-    const handleTabChange = (newTab: "categories" | "tags") => {
-        setTab(newTab);
-        setSelectedIds(new Set());
     };
 
     const nextMonth = () => {
         setCurrentDate(d => new Date(d.getFullYear(), d.getMonth() + 1, 1));
-        setSelectedIds(new Set());
+        setExpandedItemId(null);
     };
     const prevMonth = () => {
         setCurrentDate(d => new Date(d.getFullYear(), d.getMonth() - 1, 1));
-        setSelectedIds(new Set());
+        setExpandedItemId(null);
     };
     const monthName = currentDate.toLocaleString('ru-RU', { month: 'long', year: 'numeric' });
 
+    const toggleExpand = (id: string) => {
+        setExpandedItemId(expandedItemId === id ? null : id);
+        if (navigator.vibrate) navigator.vibrate(10);
+    };
+
     if (!isOpen) return null;
 
-    const allSelected = listItems.length > 0 && selectedIds.size === listItems.length;
+    const currentVisibleIds = listItems.map(i => i.id);
+    const isAllVisibleSelected = currentVisibleIds.length > 0 && currentVisibleIds.every(id => selectedIds.has(id));
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[200] flex flex-col items-center justify-center p-4 animate-in fade-in" onClick={onClose}>
-            <div className="glass-panel bg-[var(--bg-color)]/90 w-full max-w-sm h-[80vh] flex flex-col overflow-hidden relative shadow-2xl shadow-[var(--shadow-color)]" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[200] flex flex-col items-center justify-end sm:justify-center p-0 sm:p-4 animate-in fade-in" onClick={onClose}>
+            <div className="glass-panel bg-[var(--bg-color)]/90 w-full max-w-md h-[95vh] sm:h-[85vh] flex flex-col overflow-hidden relative shadow-2xl shadow-[var(--shadow-color)] rounded-t-[32px] sm:rounded-[32px]" onClick={e => e.stopPropagation()}>
                 <div className="flex justify-between items-center p-6 border-b border-[var(--glass-border)] shrink-0">
                     <div className="flex items-center gap-3">
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-[0_0_15px_var(--primary-color)] ${analysisType === 'income' ? 'bg-[var(--success-color)]/20 text-[var(--success-color)]' : 'bg-[var(--primary-color)]/20 text-[var(--primary-color)]'}`}>
@@ -209,8 +281,8 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                 </div>
 
                 <div className="flex p-2 gap-1 bg-[var(--glass-item-bg)]/30 border-b border-[var(--glass-border)]">
-                    <button onClick={() => handleModeChange("expense")} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-[10px] font-black transition-all ${analysisType === "expense" ? 'bg-[var(--primary-color)] text-white shadow-lg' : 'text-[var(--text-muted)]'}`}><TrendingDown size={12} /> РАСХОДЫ</button>
-                    <button onClick={() => handleModeChange("income")} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-[10px] font-black transition-all ${analysisType === "income" ? 'bg-[var(--success-color)] text-white shadow-lg' : 'text-[var(--text-muted)]'}`}><TrendingUp size={12} /> ДОХОДЫ</button>
+                    <button onClick={() => { setAnalysisType("expense"); setExpandedItemId(null); }} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-[10px] font-black transition-all ${analysisType === "expense" ? 'bg-[var(--primary-color)] text-white shadow-lg' : 'text-[var(--text-muted)]'}`}><TrendingDown size={12} /> РАСХОДЫ</button>
+                    <button onClick={() => { setAnalysisType("income"); setExpandedItemId(null); }} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-[10px] font-black transition-all ${analysisType === "income" ? 'bg-[var(--success-color)] text-white shadow-lg' : 'text-[var(--text-muted)]'}`}><TrendingUp size={12} /> ДОХОДЫ</button>
                 </div>
 
                 <div className="flex justify-between items-center px-4 py-3 bg-[var(--glass-item-bg)]/50 shrink-0 border-b border-[var(--glass-border)]">
@@ -221,8 +293,8 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
 
                 {analysisType === "expense" && (
                     <div className="flex gap-2 p-4 shrink-0 border-b border-[var(--glass-border)]">
-                        <button onClick={() => handleTabChange("categories")} className={`flex-1 py-2 text-xs font-bold rounded-xl transition-colors ${tab === "categories" ? "bg-[var(--glass-item-active)] text-[var(--text-main)]" : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--glass-item-bg)]"}`}>КАТЕГОРИИ</button>
-                        <button onClick={() => handleTabChange("tags")} className={`flex-1 py-2 text-xs font-bold rounded-xl transition-colors ${tab === "tags" ? "bg-[var(--glass-item-active)] text-[var(--text-main)]" : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--glass-item-bg)]"}`}>ТЕГИ</button>
+                        <button onClick={() => setTab("categories")} className={`flex-1 py-2 text-xs font-bold rounded-xl transition-colors ${tab === "categories" ? "bg-[var(--glass-item-active)] text-[var(--text-main)]" : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--glass-item-bg)]"}`}>КАТЕГОРИИ</button>
+                        <button onClick={() => setTab("tags")} className={`flex-1 py-2 text-xs font-bold rounded-xl transition-colors ${tab === "tags" ? "bg-[var(--glass-item-active)] text-[var(--text-main)]" : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--glass-item-bg)]"}`}>ТЕГИ</button>
                     </div>
                 )}
 
@@ -233,10 +305,10 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
 
                 <div className="px-6 pb-2 shrink-0">
                     <button onClick={toggleAll} className="flex items-center gap-2 text-[10px] font-black text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors uppercase tracking-widest group">
-                        <div className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all ${allSelected ? 'bg-[var(--primary-color)]/20 border-[var(--primary-color)] text-[var(--primary-color)]' : 'bg-transparent border-[var(--glass-border)] text-[var(--text-muted)]'}`}>
-                            {allSelected ? <CheckCircle2 size={12} /> : <Circle size={12} />}
+                        <div className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all ${isAllVisibleSelected ? 'bg-[var(--primary-color)]/20 border-[var(--primary-color)] text-[var(--primary-color)]' : 'bg-transparent border-[var(--glass-border)] text-[var(--text-muted)]'}`}>
+                            {isAllVisibleSelected ? <CheckCircle2 size={12} /> : <Circle size={12} />}
                         </div>
-                        {allSelected ? "Снять все" : "Выбрать все"}
+                        {isAllVisibleSelected ? "Снять все" : "Выбрать все"}
                     </button>
                 </div>
 
@@ -284,20 +356,32 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
 
                                 return (
                                     <div key={item.id} className={`flex flex-col transition-all duration-300 ${isSelected ? 'opacity-100' : 'opacity-30 grayscale'}`}>
-                                        <div className={`flex flex-col gap-1.5 cursor-pointer hover:bg-[var(--glass-item-bg)] p-2 rounded-xl transition-all -mx-2 ${isExpanded ? 'bg-[var(--glass-item-bg)] shadow-inner' : ''}`} onClick={() => { if (analysisType === "income" || (analysisType === "expense" && tab === "categories")) toggleExpand(item.id); else if (onItemClick) onItemClick(item, "tag", filteredTx); }}>
+                                        <div 
+                                            className={`flex flex-col gap-1.5 p-2 rounded-xl transition-all -mx-2 cursor-pointer ${isExpanded ? 'bg-[var(--glass-item-bg)] shadow-inner' : ''}`}
+                                            onClick={() => toggleExpand(item.id)}
+                                        >
                                             <div className="flex justify-between items-center">
-                                                <div className="flex items-center gap-3">
-                                                    <div onClick={(e) => toggleSelect(item.id, e)} className={`w-8 h-8 rounded-full flex items-center justify-center shadow-inner transition-all duration-300 ${isSelected ? 'bg-[var(--glass-item-bg)]' : 'bg-transparent border border-[var(--glass-border)]'}`} style={{ color: isSelected ? item.color : 'transparent' }}>
-                                                        {isSelected ? <item.icon size={14} /> : <Circle size={10} className="text-[var(--text-muted)]" />}
+                                                <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                    <div 
+                                                        onClick={(e) => toggleSelect(item.id, e)} 
+                                                        className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-200 cursor-pointer shrink-0 border ${isSelected ? 'bg-[var(--glass-item-bg)] border-transparent' : 'bg-transparent border-[var(--glass-border)]'}`} 
+                                                        style={{ color: isSelected ? item.color : 'transparent' }}
+                                                    >
+                                                        {isSelected ? <item.icon size={14} /> : <Circle size={10} className="text-[var(--text-muted)] opacity-50" />}
                                                     </div>
-                                                    <span className={`text-sm font-semibold transition-colors ${isSelected ? 'text-[var(--text-main)]' : 'text-[var(--text-muted)]'}`}>{item.name}</span>
+                                                    <span className={`text-sm font-semibold truncate transition-colors ${isSelected ? 'text-[var(--text-main)]' : 'text-[var(--text-muted)]'}`}>{item.name}</span>
                                                 </div>
                                                 <div className="flex flex-col items-end">
                                                     <span className={`text-sm font-bold ${!isSelected ? 'text-[var(--text-muted)]' : (analysisType === 'income' ? 'text-[var(--success-color)]' : 'text-[var(--text-main)]')}`}>${item.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                                    <div className="flex items-center gap-1"><span className="text-[10px] font-bold text-[var(--text-muted)]">{item.percent.toFixed(1)}%</span><ChevronRight size={10} className={`text-[var(--text-muted)] transition-transform duration-300 ${isExpanded ? 'rotate-90' : ''}`} /></div>
+                                                    <div className="flex items-center gap-1">
+                                                        <span className="text-[10px] font-bold text-[var(--text-muted)]">{item.percent.toFixed(1)}%</span>
+                                                        <ChevronRight size={10} className={`text-[var(--text-muted)] transition-transform duration-300 ${isExpanded ? 'rotate-90' : ''}`} />
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div className="w-full bg-[var(--glass-item-bg)] h-1.5 rounded-full overflow-hidden"><div className="h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${item.percent}%`, backgroundColor: isSelected ? item.color : 'rgba(255,255,255,0.1)' }} /></div>
+                                            <div className="w-full bg-[var(--glass-item-bg)] h-1.5 rounded-full overflow-hidden">
+                                                <div className="h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${item.percent}%`, backgroundColor: isSelected ? item.color : 'rgba(255,255,255,0.1)' }} />
+                                            </div>
                                         </div>
                                         {isExpanded && itemDetails.length > 0 && (
                                             <div className="mt-2 ml-11 flex flex-col gap-3 border-l-2 border-[var(--glass-border)] pl-4 animate-in slide-in-from-top-2 duration-300">

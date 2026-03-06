@@ -1,6 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
+* {
+  -webkit-tap-highlight-color: transparent;
+  outline: none !important;
+}
+
 :root {
   /* Dark mode (default) - "Linear Style" */
   --bg-color: #050505;

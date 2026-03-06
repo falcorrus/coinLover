@@ -216,7 +216,7 @@ export default function App() {
 
   const anyModalOpen = accountModal.isOpen || incomeModal.isOpen || categoryModal.isOpen || historyModal.isOpen || analyticsModal.isOpen || numpad.isOpen || confirmDelete.isOpen || isSettingsMenuOpen || !!conflictData;
 
-  // Handle hardware/gesture back button
+  // Handle hardware/gesture back button and Esc key
   React.useEffect(() => {
     if (anyModalOpen) {
       window.history.pushState({ modal: true }, "");
@@ -224,21 +224,38 @@ export default function App() {
     
     const handlePopState = (e: PopStateEvent) => {
       if (anyModalOpen) {
-        // Close all modals
-        setAccountModal(p => ({ ...p, isOpen: false }));
-        setIncomeModal(p => ({ ...p, isOpen: false }));
-        setCategoryModal(p => ({ ...p, isOpen: false }));
-        setHistoryModal(p => ({ ...p, isOpen: false, entity: null, type: null }));
-        setAnalyticsModal(p => ({ ...p, isOpen: false }));
-        setNumpad(p => ({ ...p, isOpen: false }));
-        setConfirmDelete(p => ({ ...p, isOpen: false }));
-        setIsSettingsMenuOpen(false);
-        setConflictData(null);
+        closeAllModals();
       }
     };
 
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && anyModalOpen) {
+        closeAllModals();
+        // Also go back in history to sync with pushState
+        if (window.history.state?.modal) {
+          window.history.back();
+        }
+      }
+    };
+
+    const closeAllModals = () => {
+      setAccountModal(p => ({ ...p, isOpen: false }));
+      setIncomeModal(p => ({ ...p, isOpen: false }));
+      setCategoryModal(p => ({ ...p, isOpen: false }));
+      setHistoryModal(p => ({ ...p, isOpen: false, entity: null, type: null }));
+      setAnalyticsModal(p => ({ ...p, isOpen: false }));
+      setNumpad(p => ({ ...p, isOpen: false }));
+      setConfirmDelete(p => ({ ...p, isOpen: false }));
+      setIsSettingsMenuOpen(false);
+      setConflictData(null);
+    };
+
     window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, [anyModalOpen, setConflictData]);
 
   const activeItemData = activeDragId ? (activeDragType === 'account' ? accounts.find(a => a.id === activeDragId) : activeDragType === 'category' ? categories.find(c => c.id === activeDragId) : incomes.find(i => i.id === activeDragId)) : null;
