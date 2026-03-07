@@ -71,7 +71,10 @@ function doGet(e) {
         });
       } else if (currentSection === "incomes") {
         const row = rows[i];
-        data.incomes.push({ id: String(row[0]), name: String(row[1]), color: row[2], icon: row[3] || "business" });
+        data.incomes.push({ 
+          id: String(row[0]), name: String(row[1]), color: row[2], icon: row[3] || "business",
+          tags: row[4] ? String(row[4]).split(",").map(t => t.trim()) : []
+        });
       }
     }
 
@@ -172,7 +175,7 @@ function doPost(e) {
       if (!settingsData.accounts || settingsData.accounts.length === 0) return { status: "error", message: "Empty config" };
       let sheet = ss.getSheetByName(configSheetName) || ss.insertSheet(configSheetName);
       sheet.clear();
-      const rows = []; const colCount = 7;
+      const rows = []; const colCount = 8;
       const pushRow = (arr) => {
         const row = new Array(colCount).fill("");
         for (let i = 0; i < Math.min(arr.length, colCount); i++) row[i] = arr[i];
@@ -189,8 +192,8 @@ function doPost(e) {
       if (settingsData.categories) settingsData.categories.forEach(c => pushRow([c.id || "", c.name || "", c.color || "", c.icon || "", c.tags ? (Array.isArray(c.tags) ? c.tags.join(", ") : c.tags) : ""]));
       pushRow([""]);
       pushRow([" === INCOMES ==="]);
-      pushRow(["ID", "Name", "Color", "Icon"]);
-      if (settingsData.incomes) settingsData.incomes.forEach(i => pushRow([i.id || "", i.name || "", i.color || "", i.icon || ""]));
+      pushRow(["ID", "Name", "Color", "Icon", "Tags"]);
+      if (settingsData.incomes) settingsData.incomes.forEach(i => pushRow([i.id || "", i.name || "", i.color || "", i.icon || "", i.tags ? (Array.isArray(i.tags) ? i.tags.join(", ") : i.tags) : ""]));
       if (rows.length > 0) sheet.getRange(1, 1, rows.length, colCount).setValues(rows);
       sheet.autoResizeColumns(1, colCount);
       return { status: "success", message: "Configs updated" };
