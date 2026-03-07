@@ -1,5 +1,5 @@
 import React from "react";
-import { X, Plus, Search } from "lucide-react";
+import { Check, Plus, Search } from "lucide-react";
 
 interface Props {
   isOpen: boolean;
@@ -47,8 +47,8 @@ export const TagModal: React.FC<Props> = ({ isOpen, onClose, onSelect, existingT
             <Search size={18} className="text-[var(--primary-color)]" />
             <h3 className="text-sm font-bold uppercase text-[var(--text-main)] tracking-wider">Управление тегами</h3>
           </div>
-          <button onClick={onClose} className="p-1 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors">
-            <X size={24} />
+          <button onClick={onClose} className="p-1 text-[var(--success-color)] hover:opacity-80 transition-all active:scale-90">
+            <Check size={28} strokeWidth={3} />
           </button>
         </div>
 
