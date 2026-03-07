@@ -560,14 +560,20 @@ export default function App() {
           if (numpad.type === 'expense' && numpad.destination) {
             const cat = numpad.destination as Category;
             const currentTags = cat.tags || [];
-            const newTags = currentTags.includes(tag) ? currentTags.filter(t => t !== tag) : [...currentTags, tag];
+            const isSelected = currentTags.some(t => t.toLowerCase() === tag.toLowerCase());
+            const newTags = isSelected 
+              ? currentTags.filter(t => t.toLowerCase() !== tag.toLowerCase()) 
+              : [...currentTags, tag];
             const updated = { ...cat, tags: newTags };
             saveCategory(updated);
             setNumpad(p => ({ ...p, destination: updated, tag: tag }));
           } else if (numpad.type === 'income' && numpad.source) {
             const inc = numpad.source as IncomeSource;
             const currentTags = inc.tags || [];
-            const newTags = currentTags.includes(tag) ? currentTags.filter(t => t !== tag) : [...currentTags, tag];
+            const isSelected = currentTags.some(t => t.toLowerCase() === tag.toLowerCase());
+            const newTags = isSelected 
+              ? currentTags.filter(t => t.toLowerCase() !== tag.toLowerCase()) 
+              : [...currentTags, tag];
             const updated = { ...inc, tags: newTags };
             saveIncome(updated);
             setNumpad(p => ({ ...p, source: updated, tag: tag }));

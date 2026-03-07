@@ -34,7 +34,7 @@ export const IncomeModal: React.FC<Props> = ({ isOpen, income, onClose, onSave, 
             e.stopPropagation();
         }
         const trimmed = newTag.trim();
-        if (trimmed && !(tags || []).includes(trimmed)) {
+        if (trimmed && !(tags || []).some(t => t.toLowerCase() === trimmed.toLowerCase())) {
             setTags([...(tags || []), trimmed]);
             setNewTag("");
         }

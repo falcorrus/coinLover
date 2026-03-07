@@ -27,8 +27,11 @@ export const TagModal: React.FC<Props> = ({ isOpen, onClose, onSelect, existingT
   );
 
   const handleCreate = () => {
-    if (query.trim()) {
-      onSelect(query.trim());
+    const trimmed = query.trim();
+    if (trimmed) {
+      // Check if tag already exists case-insensitively
+      const existing = existingTags.find(t => t.toLowerCase() === trimmed.toLowerCase());
+      onSelect(existing || trimmed);
       setQuery("");
     }
   };
@@ -60,7 +63,7 @@ export const TagModal: React.FC<Props> = ({ isOpen, onClose, onSelect, existingT
             className="w-full bg-[var(--glass-item-bg)] border border-[var(--glass-border)] rounded-2xl px-5 py-4 outline-none text-[var(--text-main)] text-sm focus:border-[var(--primary-color)]/50 transition-all pr-12"
             onKeyDown={e => e.key === 'Enter' && handleCreate()}
           />
-          {query.trim().length > 0 && !existingTags.includes(query.trim()) && (
+          {query.trim().length > 0 && !existingTags.some(t => t.toLowerCase() === query.trim().toLowerCase()) && (
             <button 
               onClick={handleCreate}
               className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-xl bg-[var(--primary-color)] text-white flex items-center justify-center shadow-lg active:scale-90 transition-all"
@@ -74,7 +77,7 @@ export const TagModal: React.FC<Props> = ({ isOpen, onClose, onSelect, existingT
         <div className="max-h-[40vh] overflow-y-auto hide-scrollbar flex flex-wrap gap-2 pb-4">
           {filteredTags.length > 0 ? (
             filteredTags.map(tag => {
-              const isActive = activeTags.includes(tag);
+              const isActive = activeTags.some(t => t.toLowerCase() === tag.toLowerCase());
               return (
                 <button
                   key={tag}
@@ -94,7 +97,7 @@ export const TagModal: React.FC<Props> = ({ isOpen, onClose, onSelect, existingT
           )}
         </div>
 
-        {query.trim() !== "" && !existingTags.includes(query.trim()) && (
+        {query.trim() !== "" && !existingTags.some(t => t.toLowerCase() === query.trim().toLowerCase()) && (
            <button 
             onClick={handleCreate}
             className="w-full py-4 rounded-2xl bg-[var(--primary-color)]/10 border border-[var(--primary-color)]/30 text-[var(--primary-color)] text-xs font-black uppercase tracking-widest active:scale-[0.98] transition-all"
