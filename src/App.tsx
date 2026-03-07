@@ -37,7 +37,12 @@ export default function App() {
 
   const [isSplashVisible, setIsSplashVisible] = React.useState(true);
   const [mode, setMode] = React.useState<"expense" | "income">("expense");
-  const [pillMode, setPillMode] = React.useState<"expense" | "income" | "balance">("expense");
+  const [pillMode, setPillMode] = React.useState<"expense" | "income" | "balance">(() => (localStorage.getItem("cl_pill_mode") as any) || "expense");
+
+  // Persist pill mode changes
+  React.useEffect(() => {
+    localStorage.setItem("cl_pill_mode", pillMode);
+  }, [pillMode]);
   const [isIncomeCollapsed, setIsIncomeCollapsed] = React.useState(true);
   const [activeDragId, setActiveDragId] = React.useState<string | null>(null);
   const [activeDragType, setActiveDragType] = React.useState<DragItemType | null>(null);
