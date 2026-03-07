@@ -210,7 +210,7 @@ export default function App() {
       setNumpad({
         isOpen: true, type: "income", source: activeData.income, destination: overData.account,
         sourceAmount: "0", sourceCurrency: lastCur, targetAmount: "0", targetCurrency: overData.account.currency,
-        targetLinked: true, activeField: "source", tag: null, comment: ""
+        targetLinked: true, activeField: "source", tag: activeData.income.tags?.[0] || null, comment: ""
       });
     }
   };
@@ -559,16 +559,20 @@ export default function App() {
         onSelect={(tag) => {
           if (numpad.type === 'expense' && numpad.destination) {
             const cat = numpad.destination as Category;
-            const newTags = cat.tags.includes(tag) ? cat.tags.filter(t => t !== tag) : [...cat.tags, tag];
+            const currentTags = cat.tags || [];
+            const newTags = currentTags.includes(tag) ? currentTags.filter(t => t !== tag) : [...currentTags, tag];
             const updated = { ...cat, tags: newTags };
             saveCategory(updated);
-            setNumpad(p => ({ ...p, destination: updated }));
+            setNumpad(p => ({ ...p, destination: updated, tag: tag }));
           } else if (numpad.type === 'income' && numpad.source) {
             const inc = numpad.source as IncomeSource;
-            const newTags = inc.tags.includes(tag) ? inc.tags.filter(t => t !== tag) : [...inc.tags, tag];
+            const currentTags = inc.tags || [];
+            const newTags = currentTags.includes(tag) ? currentTags.filter(t => t !== tag) : [...currentTags, tag];
             const updated = { ...inc, tags: newTags };
             saveIncome(updated);
-            setNumpad(p => ({ ...p, source: updated }));
+            setNumpad(p => ({ ...p, source: updated, tag: tag }));
+          } else {
+            setNumpad(p => ({ ...p, tag: tag }));
           }
         }}
       />

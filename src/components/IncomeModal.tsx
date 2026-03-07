@@ -28,10 +28,14 @@ export const IncomeModal: React.FC<Props> = ({ isOpen, income, onClose, onSave, 
         }
     }, [isOpen, income]);
 
-    const addTag = () => {
+    const addTag = (e?: React.MouseEvent | React.KeyboardEvent) => {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
         const trimmed = newTag.trim();
-        if (trimmed && !tags.includes(trimmed)) {
-            setTags([...tags, trimmed]);
+        if (trimmed && !(tags || []).includes(trimmed)) {
+            setTags([...(tags || []), trimmed]);
             setNewTag("");
         }
     };
@@ -83,11 +87,11 @@ export const IncomeModal: React.FC<Props> = ({ isOpen, income, onClose, onSave, 
                                 type="text" 
                                 value={newTag} 
                                 onChange={e => setNewTag(e.target.value)} 
-                                onKeyDown={e => e.key === 'Enter' && addTag()}
+                                onKeyDown={e => e.key === 'Enter' && addTag(e)}
                                 className="flex-1 bg-[var(--glass-item-bg)] border border-[var(--glass-border)] rounded-xl px-4 py-2 outline-none text-xs text-[var(--text-main)]" 
                                 placeholder="Новый тег..." 
                             />
-                            <button onClick={addTag} className="w-10 h-10 rounded-xl bg-[var(--success-color)]/20 text-[var(--success-color)] flex items-center justify-center hover:bg-[var(--success-color)]/30 transition-colors">
+                            <button onClick={(e) => addTag(e)} className="w-10 h-10 rounded-xl bg-[var(--success-color)]/20 text-[var(--success-color)] flex items-center justify-center hover:bg-[var(--success-color)]/30 transition-colors pointer-events-auto">
                                 <Plus size={18} />
                             </button>
                         </div>

@@ -168,27 +168,32 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
     useEffect(() => {
         if (!isOpen) return;
         let isMounted = true;
+        
         const loadData = async () => {
             const yearStr = currentDate.getFullYear();
             const monthStr = String(currentDate.getMonth() + 1).padStart(2, '0');
             const cacheKey = `${yearStr}-${monthStr}`;
 
+            // Check if we have matching transactions in the globalTransactions prop first (latest data)
+            const globalMonthTx = globalTransactions.filter(t => {
+                const txDate = new Date(t.date.replace(/-/g, '/').replace('T', ' '));
+                return txDate.getFullYear() === yearStr && (txDate.getMonth() + 1) === Number(monthStr);
+            });
+
+            if (globalMonthTx.length > 0) {
+                setTransactions(globalTransactions);
+                // Update cache with the latest data we have
+                globalAnalyticsCache.set(cacheKey, globalTransactions);
+                return;
+            }
+
+            // If not in globalTransactions, check cache
             if (globalAnalyticsCache.has(cacheKey)) {
                 setTransactions(globalAnalyticsCache.get(cacheKey)!);
                 return;
             }
 
-            const monthTx = globalTransactions.filter(t => {
-                const txDate = new Date(t.date.replace(/-/g, '/').replace('T', ' '));
-                return txDate.getFullYear() === yearStr && (txDate.getMonth() + 1) === Number(monthStr);
-            });
-
-            if (monthTx.length > 0) {
-                setTransactions(globalTransactions);
-                globalAnalyticsCache.set(cacheKey, globalTransactions);
-                return;
-            }
-
+            // Only fetch from network if we have nothing
             setIsLoading(true);
             try {
                 const data = await googleSheetsService.fetchMonthData(cacheKey);
