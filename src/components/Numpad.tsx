@@ -97,7 +97,7 @@ export const Numpad: React.FC<Props> = ({
             </div>
           </div>
 
-          <button onClick={(e) => { e.stopPropagation(); onLinkToggle?.(); }} className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 active:scale-90 ${data.targetLinked ? 'bg-[var(--glass-item-bg)] border border-[var(--glass-border)] shadow-lg' : 'bg-transparent opacity-40'}`}>
+          <button onClick={(e) => { e.stopPropagation(); onLinkToggle?.(); }} className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 active:scale-90 ${data.targetLinked ? 'bg-[var(--glass-item-bg)] border border-[var(--glass-border)] shadow-lg' : 'bg-transparent opacity-40'}`}>
             {data.targetLinked ? <Link2 size={20} className={data.type === 'expense' ? "text-[#D4AF37]" : "text-[var(--success-color)]"} /> : <ArrowDown size={20} className="text-[var(--text-muted)]" />}
           </button>
 
@@ -131,7 +131,7 @@ export const Numpad: React.FC<Props> = ({
       <div className="flex items-center px-4 py-3 gap-3 bg-[var(--glass-bg)] shrink-0 border-t border-[var(--glass-border)] overflow-hidden">
         <button 
           onClick={(e) => { e.stopPropagation(); onManageTags?.(); }}
-          className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-[var(--glass-item-bg)] border border-[var(--glass-border)] text-[var(--text-muted)] hover:text-[var(--text-main)] active:scale-90 transition-all"
+          className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center bg-[var(--glass-item-bg)] border border-[var(--glass-border)] text-[var(--text-muted)] hover:text-[var(--text-main)] active:scale-90 transition-all"
         >
           <Plus size={16} />
         </button>
@@ -141,7 +141,7 @@ export const Numpad: React.FC<Props> = ({
             const catTags = (data.destination as Category).tags || [];
             const allTags = data.tag && !catTags.includes(data.tag) ? [data.tag, ...catTags] : catTags;
             return allTags.map(t => (
-              <button key={t} onClick={() => handleTagClick(t)} className={`px-4 py-1.5 rounded-full uppercase text-[10px] font-black whitespace-nowrap transition-all duration-200 ${data.tag === t ? "bg-[var(--primary-color)] text-white scale-105" : "bg-[var(--glass-item-bg)] text-[var(--text-muted)] border border-[var(--glass-border)]"}`}>{t}</button>
+              <button key={t} onClick={() => handleTagClick(t)} className={`px-4 py-1.5 rounded-lg uppercase text-[10px] font-black whitespace-nowrap transition-all duration-200 ${data.tag === t ? "bg-[var(--primary-color)] text-white scale-105" : "bg-[var(--glass-item-bg)] text-[var(--text-muted)] border border-[var(--glass-border)]"}`}>{t}</button>
             ));
           })()}
           {/* Tags for Income */}
@@ -149,11 +149,11 @@ export const Numpad: React.FC<Props> = ({
             const incTags = (data.source as IncomeSource).tags || [];
             const allTags = data.tag && !incTags.includes(data.tag) ? [data.tag, ...incTags] : incTags;
             return allTags.map(t => (
-              <button key={t} onClick={() => handleTagClick(t)} className={`px-4 py-1.5 rounded-full uppercase text-[10px] font-black whitespace-nowrap transition-all duration-200 ${data.tag === t ? "bg-[var(--success-color)] text-white scale-105" : "bg-[var(--glass-item-bg)] text-[var(--text-muted)] border border-[var(--glass-border)]"}`}>{t}</button>
+              <button key={t} onClick={() => handleTagClick(t)} className={`px-4 py-1.5 rounded-lg uppercase text-[10px] font-black whitespace-nowrap transition-all duration-200 ${data.tag === t ? "bg-[var(--success-color)] text-white scale-105" : "bg-[var(--glass-item-bg)] text-[var(--text-muted)] border border-[var(--glass-border)]"}`}>{t}</button>
             ));
           })()}
         </div>
-        <button onClick={() => setIsCommentOpen(true)} className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 ${hasComment ? "bg-[var(--primary-color)]/20 text-[var(--primary-color)]" : "bg-[var(--glass-item-bg)] text-[var(--text-muted)] border border-[var(--glass-border)]"}`}><MessageSquare size={18} /></button>
+        <button onClick={() => setIsCommentOpen(true)} className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 ${hasComment ? "bg-[var(--primary-color)]/20 text-[var(--primary-color)]" : "bg-[var(--glass-item-bg)] text-[var(--text-muted)] border border-[var(--glass-border)]"}`}><MessageSquare size={18} /></button>
       </div>
 
       {/* Numerical Pad */}
@@ -178,11 +178,11 @@ export const Numpad: React.FC<Props> = ({
           </div>
         </div>
         <div className="mt-6 flex justify-center">
-          {isEditing ? (<button onClick={() => onSubmit()} className="px-8 py-3 rounded-full text-sm font-black uppercase text-white bg-[var(--primary-color)] shadow-lg active:scale-95 tracking-wider">✓ Сохранить</button>) : (
-            <div className="flex items-center bg-[var(--panel-bg)] rounded-full p-1 border border-[var(--glass-border)]">
-              <button onClick={handleYesterday} className="px-6 py-2.5 text-xs font-bold tracking-wider text-[var(--text-muted)] rounded-full active:bg-[var(--glass-item-bg)] transition-all">Вчера</button>
-              <button onClick={() => onSubmit()} className="px-6 py-2.5 bg-[var(--success-color)] text-white text-xs font-bold tracking-wider rounded-full shadow-sm active:scale-95 transition-all">Сегодня</button>
-              <button onClick={() => setIsCalendarOpen(true)} className="w-10 h-10 flex items-center justify-center text-[var(--text-muted)] rounded-full ml-1"><CalendarDays size={20} /></button>
+          {isEditing ? (<button onClick={() => onSubmit()} className="px-8 py-3 rounded-2xl text-sm font-black uppercase text-white bg-[var(--primary-color)] shadow-lg active:scale-95 tracking-wider">✓ Сохранить</button>) : (
+            <div className="flex items-center bg-[var(--panel-bg)] rounded-2xl p-1 border border-[var(--glass-border)]">
+              <button onClick={handleYesterday} className="px-6 py-2.5 text-xs font-bold tracking-wider text-[var(--text-muted)] rounded-xl active:bg-[var(--glass-item-bg)] transition-all">Вчера</button>
+              <button onClick={() => onSubmit()} className="px-6 py-2.5 bg-[var(--success-color)] text-white text-xs font-bold tracking-wider rounded-xl shadow-sm active:scale-95 transition-all">Сегодня</button>
+              <button onClick={() => setIsCalendarOpen(true)} className="w-10 h-10 flex items-center justify-center text-[var(--text-muted)] rounded-xl ml-1"><CalendarDays size={20} /></button>
             </div>
           )}
         </div>

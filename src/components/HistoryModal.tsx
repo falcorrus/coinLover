@@ -157,10 +157,10 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
             <div className="glass-panel bg-[var(--bg-color)]/90 w-full max-w-sm max-h-[80vh] flex flex-col overflow-hidden shadow-2xl shadow-[var(--shadow-color)]" onClick={e => e.stopPropagation()}>
                 <div className="flex justify-between items-center p-6 border-b border-[var(--glass-border)] shrink-0">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-[0_0_15px_currentColor]" style={{ color: entity.color || "var(--primary-color)" }}><EntityIcon size={20} /></div>
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-[0_0_15px_currentColor]" style={{ color: entity.color || "var(--primary-color)" }}><EntityIcon size={20} /></div>
                         <div className="flex flex-col"><h2 className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">{entity.name}</h2><span className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest">История</span></div>
                     </div>
-                    <button onClick={onClose} className="w-8 h-8 rounded-full bg-[var(--glass-item-bg)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"><X size={16} /></button>
+                    <button onClick={onClose} className="w-8 h-8 rounded-lg bg-[var(--glass-item-bg)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"><X size={16} /></button>
                 </div>
 
                 <div className="flex-1 overflow-y-auto hide-scrollbar p-6">
@@ -192,7 +192,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                                 return (
                                     <div key={tx.id} className={`flex justify-between items-center bg-[var(--glass-item-bg)]/50 p-3 -mx-3 rounded-2xl transition-colors cursor-pointer hover:bg-[var(--glass-item-active)]`} onClick={() => handleTransactionClick(tx)}>
                                         <div className="flex items-center gap-3">
-                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center relative shadow-inner shrink-0 ${status.isBroken ? 'bg-rose-500/20 text-rose-500' : 'bg-[var(--glass-item-bg)] text-[var(--text-muted)]'}`} style={{ color: !status.isBroken ? (item as any)?.color : undefined }}>
+                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center relative shadow-inner shrink-0 ${status.isBroken ? 'bg-rose-500/20 text-rose-500' : 'bg-[var(--glass-item-bg)] text-[var(--text-muted)]'}`} style={{ color: !status.isBroken ? (item as any)?.color : undefined }}>
                                                 <Icon size={18} />
                                                 {status.isBroken && <div className="absolute -top-1 -right-1 bg-rose-500 w-3 h-3 rounded-full border-2 border-[var(--bg-color)]" />}
                                             </div>
@@ -205,7 +205,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                                                             return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}`;
                                                         })()}
                                                     </span>
-                                                    {tx.tag && <span className="text-[8px] px-2 py-0.5 bg-white/5 border border-white/5 rounded-full text-slate-400 font-bold uppercase shrink-0 tracking-widest">{tx.tag}</span>}
+                                                    {tx.tag && <span className="text-[8px] px-2 py-0.5 bg-white/5 border border-white/5 rounded-lg text-slate-400 font-bold uppercase shrink-0 tracking-widest">{tx.tag}</span>}
                                                 </div>
                                             </div>
                                         </div>
@@ -229,7 +229,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                                 <h3 className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Восстановление данных</h3>
                                 <span className="text-[10px] text-rose-500 uppercase font-bold tracking-widest">Выберите новый {repairingTx.field === "source" ? "кошелек" : (repairingTx.tx.type === "expense" ? "категорию" : "источник")}</span>
                             </div>
-                            <button onClick={() => setRepairingTx(null)} className="w-8 h-8 rounded-full bg-[var(--glass-item-bg)] flex items-center justify-center text-[var(--text-muted)]"><X size={16} /></button>
+                            <button onClick={() => setRepairingTx(null)} className="w-8 h-8 rounded-lg bg-[var(--glass-item-bg)] flex items-center justify-center text-[var(--text-muted)]"><X size={16} /></button>
                         </div>
                         <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2">
                             {/* Option 1: Accounts (for Transfers or Incomes) */}
@@ -238,7 +238,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                                     <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-2 mb-1 mt-2">Кошельки</h4>
                                     {accounts.map(acc => (
                                         <button key={acc.id} onClick={() => handleRepair(acc.id, "account")} className="flex items-center gap-4 p-4 bg-[var(--glass-item-bg)]/50 rounded-2xl hover:bg-[var(--glass-item-active)] transition-all text-left">
-                                            <div className="w-10 h-10 rounded-full flex items-center justify-center shadow-inner" style={{ backgroundColor: `${acc.color}20`, color: acc.color }}>
+                                            <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-inner" style={{ backgroundColor: `${acc.color}20`, color: acc.color }}>
                                                 {React.createElement(IconMap[acc.icon] || Wallet, { size: 20 })}
                                             </div>
                                             <div className="flex flex-col"><span className="text-sm font-bold text-[var(--text-main)]">{acc.name}</span><span className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest">{Math.round(acc.balance).toLocaleString()} {acc.currency}</span></div>
@@ -253,7 +253,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                                     <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-2 mb-1 mt-4">Категории</h4>
                                     {categories.map(cat => (
                                         <button key={cat.id} onClick={() => handleRepair(cat.id, "category")} className="flex items-center gap-4 p-4 bg-[var(--glass-item-bg)]/50 rounded-2xl hover:bg-[var(--glass-item-active)] transition-all text-left">
-                                            <div className="w-10 h-10 rounded-full flex items-center justify-center shadow-inner" style={{ backgroundColor: `${cat.color}20`, color: cat.color }}>
+                                            <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-inner" style={{ backgroundColor: `${cat.color}20`, color: cat.color }}>
                                                 {React.createElement(IconMap[cat.icon] || Wallet, { size: 20 })}
                                             </div>
                                             <span className="text-sm font-bold text-[var(--text-main)]">{cat.name}</span>
@@ -268,7 +268,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                                     <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-2 mb-1 mt-2">Источники</h4>
                                     {incomes.map(inc => (
                                         <button key={inc.id} onClick={() => handleRepair(inc.id, "income")} className="flex items-center gap-4 p-4 bg-[var(--glass-item-bg)]/50 rounded-2xl hover:bg-[var(--glass-item-active)] transition-all text-left">
-                                            <div className="w-10 h-10 rounded-full flex items-center justify-center shadow-inner" style={{ backgroundColor: `${inc.color}20`, color: inc.color }}>
+                                            <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-inner" style={{ backgroundColor: `${inc.color}20`, color: inc.color }}>
                                                 {React.createElement(IconMap[inc.icon] || Wallet, { size: 20 })}
                                             </div>
                                             <span className="text-sm font-bold text-[var(--text-main)]">{inc.name}</span>

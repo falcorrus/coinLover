@@ -110,7 +110,7 @@ export const IncomeModal: React.FC<Props> = ({ isOpen, income, onClose, onSave, 
 
                 <div className="flex gap-3 mt-2 items-center">
                     {income && (
-                        <button onClick={onDelete} className="w-12 h-12 rounded-full bg-[var(--glass-item-bg)] border border-[var(--glass-border)] text-[var(--danger-color)] flex items-center justify-center hover:bg-[var(--danger-color)]/10 transition-all">
+                        <button onClick={onDelete} className="w-12 h-12 rounded-xl bg-[var(--glass-item-bg)] border border-[var(--glass-border)] text-[var(--danger-color)] flex items-center justify-center hover:bg-[var(--danger-color)]/10 transition-all">
                             <Trash2 size={20} />
                         </button>
                     )}

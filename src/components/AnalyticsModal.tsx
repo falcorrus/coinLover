@@ -277,7 +277,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
             <div className="glass-panel bg-[var(--bg-color)]/90 w-full max-w-md h-[95vh] sm:h-[85vh] flex flex-col overflow-hidden relative shadow-2xl shadow-[var(--shadow-color)] rounded-t-[32px] sm:rounded-[32px]" onClick={e => e.stopPropagation()}>
                 <div className="flex justify-between items-center p-6 border-b border-[var(--glass-border)] shrink-0">
                     <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-[0_0_15px_var(--primary-color)] ${analysisType === 'income' ? 'bg-[var(--success-color)]/20 text-[var(--success-color)]' : 'bg-[var(--primary-color)]/20 text-[var(--primary-color)]'}`}>
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-[0_0_15px_var(--primary-color)] ${analysisType === 'income' ? 'bg-[var(--success-color)]/20 text-[var(--success-color)]' : 'bg-[var(--primary-color)]/20 text-[var(--primary-color)]'}`}>
                             <PieChart size={20} />
                         </div>
                         <div className="flex flex-col">
@@ -287,7 +287,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                             <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest leading-none mt-1">за период</span>
                         </div>
                     </div>
-                    <button onClick={onClose} className="w-8 h-8 rounded-full bg-[var(--glass-item-bg)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"><X size={16} /></button>
+                    <button onClick={onClose} className="w-8 h-8 rounded-lg bg-[var(--glass-item-bg)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"><X size={16} /></button>
                 </div>
 
                 <div className="flex p-2 gap-1 bg-[var(--glass-item-bg)]/30 border-b border-[var(--glass-border)]">
@@ -315,7 +315,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
 
                 <div className="px-6 pb-2 shrink-0">
                     <button onClick={toggleAll} className="flex items-center gap-2 text-[10px] font-black text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors uppercase tracking-widest group">
-                        <div className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all ${isAllVisibleSelected ? 'bg-[var(--primary-color)]/20 border-[var(--primary-color)] text-[var(--primary-color)]' : 'bg-transparent border-[var(--glass-border)] text-[var(--text-muted)]'}`}>
+                        <div className={`w-5 h-5 rounded flex items-center justify-center border transition-all ${isAllVisibleSelected ? 'bg-[var(--primary-color)]/20 border-[var(--primary-color)] text-[var(--primary-color)]' : 'bg-transparent border-[var(--glass-border)] text-[var(--text-muted)]'}`}>
                             {isAllVisibleSelected ? <CheckCircle2 size={12} /> : <Circle size={12} />}
                         </div>
                         {isAllVisibleSelected ? "Снять все" : "Выбрать все"}
@@ -387,7 +387,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                                                 <div className="flex items-center gap-3 flex-1 min-w-0">
                                                     <div 
                                                         onClick={(e) => toggleSelect(item.id, e)} 
-                                                        className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-200 cursor-pointer shrink-0 border ${isSelected ? 'bg-[var(--glass-item-bg)] border-transparent' : 'bg-transparent border-[var(--glass-border)]'}`} 
+                                                        className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors duration-200 cursor-pointer shrink-0 border ${isSelected ? 'bg-[var(--glass-item-bg)] border-transparent' : 'bg-transparent border-[var(--glass-border)]'}`} 
                                                         style={{ color: isSelected ? item.color : 'transparent' }}
                                                     >
                                                         {isSelected ? <item.icon size={14} /> : <Circle size={10} className="text-[var(--text-muted)] opacity-50" />}
@@ -402,8 +402,8 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className="w-full bg-[var(--glass-item-bg)] h-1.5 rounded-full overflow-hidden">
-                                                <div className="h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${item.percent}%`, backgroundColor: isSelected ? item.color : 'rgba(255,255,255,0.1)' }} />
+                                            <div className="w-full bg-[var(--glass-item-bg)] h-1.5 rounded-xl overflow-hidden">
+                                                <div className="h-full rounded-xl transition-all duration-1000 ease-out" style={{ width: `${item.percent}%`, backgroundColor: isSelected ? item.color : 'rgba(255,255,255,0.1)' }} />
                                             </div>
                                         </div>
                                         {isExpanded && itemDetails.length > 0 && (
@@ -445,7 +445,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                 </div>
                 {isLoading && (
                     <div className="absolute inset-0 bg-[var(--bg-color)]/60 backdrop-blur-sm z-10 flex flex-col items-center justify-center animate-in fade-in">
-                        <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500 shadow-[0_0_40px_rgba(245,158,11,0.2)] mb-4"><RefreshCcw size={28} className="animate-spin" /></div>
+                        <div className="w-16 h-16 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500 shadow-[0_0_40px_rgba(245,158,11,0.2)] mb-4"><RefreshCcw size={28} className="animate-spin" /></div>
                         <span className="text-xs font-black text-[var(--text-main)] uppercase tracking-widest animate-pulse">Загружаю данные...</span>
                     </div>
                 )}

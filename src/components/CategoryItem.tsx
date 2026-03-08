@@ -114,7 +114,7 @@ export const CategoryItem: React.FC<Props> = ({
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
         style={{ touchAction: "none" }}
-        className={`draggable-coin transition-all duration-300 ${
+        className={`draggable-coin coin-category transition-all duration-300 ${
           isDragging ? "grabbed-elevation" :
           (isPressing && isSortingMode) ? "scale-110 border-[var(--primary-color)] shadow-[0_0_20px_rgba(109,93,252,0.4)] ring-4 ring-[var(--primary-color)]/20" :
           isPressing ? "scale-90 brightness-75 border-[var(--glass-border-highlight)]" : ""

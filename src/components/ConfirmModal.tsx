@@ -29,8 +29,8 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
             <div className="glass-panel w-full max-w-[320px] p-8 flex flex-col items-center gap-6 text-center border-[var(--glass-border)] shadow-2xl shadow-[var(--shadow-color)] animate-in zoom-in-95 duration-500 slide-in-from-bottom-8">
 
                 {/* Icon with pulsing background */}
-                <div className={`relative w-20 h-20 rounded-full flex items-center justify-center ${danger ? 'bg-[var(--danger-color)]/10 text-[var(--danger-color)]' : 'bg-[var(--primary-color)]/10 text-[var(--primary-color)]'}`}>
-                    <div className={`absolute inset-0 rounded-full animate-ping opacity-20 ${danger ? 'bg-[var(--danger-color)]' : 'bg-[var(--primary-color)]'}`} style={{ animationDuration: '3s' }} />
+                <div className={`relative w-20 h-20 rounded-[32px] flex items-center justify-center ${danger ? 'bg-[var(--danger-color)]/10 text-[var(--danger-color)]' : 'bg-[var(--primary-color)]/10 text-[var(--primary-color)]'}`}>
+                    <div className={`absolute inset-0 rounded-[32px] animate-ping opacity-20 ${danger ? 'bg-[var(--danger-color)]' : 'bg-[var(--primary-color)]'}`} style={{ animationDuration: '3s' }} />
                     <AlertTriangle size={36} strokeWidth={2.5} />
                 </div>
 

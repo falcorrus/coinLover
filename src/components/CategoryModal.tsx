@@ -168,18 +168,18 @@ export const CategoryModal: React.FC<Props> = ({ isOpen, category, onClose, onSa
 
                 {/* Actions */}
                 <div className="flex gap-3 mt-2 items-center text-[var(--text-main)]">
-                    {category && (
-                        <button onClick={onDelete} className="w-12 h-12 rounded-full bg-[var(--glass-item-bg)] border border-[var(--glass-border)] text-[var(--danger-color)] flex items-center justify-center">
-                            <Trash2 size={20} />
-                        </button>
-                    )}
-                    <button
-                        onClick={handleSave}
-                        disabled={!name.trim()}
-                        className="flex-1 h-14 rounded-2xl bg-[var(--primary-color)] text-white font-bold shadow-lg shadow-[var(--primary-color)]/20 uppercase disabled:opacity-40 transition-opacity"
-                    >
-                        СОХРАНИТЬ
+                  {category && (
+                    <button onClick={onDelete} className="w-12 h-12 rounded-xl bg-[var(--glass-item-bg)] border border-[var(--glass-border)] text-[var(--danger-color)] flex items-center justify-center">
+                      <Trash2 size={20} />
                     </button>
+                  )}
+                  <button
+                    onClick={handleSave}
+                    disabled={!name.trim()}
+                    className="flex-1 h-14 rounded-2xl bg-[var(--primary-color)] text-white font-bold shadow-lg shadow-[var(--primary-color)]/20 uppercase disabled:opacity-40 transition-opacity"
+                  >
+                    СОХРАНИТЬ
+                  </button>
                 </div>
             </div>
         </div>

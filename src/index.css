@@ -178,11 +178,10 @@ body {
   opacity: 0.8;
 }
 
-/* Draggable coin */
+/* Draggable coin base styles */
 .draggable-coin {
   width: 64px;
   height: 64px;
-  border-radius: 32px;
   background: linear-gradient(135deg, var(--glass-border-highlight), var(--glass-item-bg));
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -192,6 +191,17 @@ body {
   align-items: center;
   justify-content: center;
   cursor: grab;
+  transition: all 0.3s ease;
+}
+
+/* Category style: More "squarish" but Apple-like */
+.coin-category {
+  border-radius: 18px;
+}
+
+/* Wallet style: Perfectly round */
+.coin-wallet {
+  border-radius: 50%;
 }
 
 .draggable-coin:active {
@@ -208,7 +218,7 @@ body {
 
 /* Premium iOS-style Grab effect */
 .grabbed-elevation {
-  transform: scale(1.2);
+  transform: scale(0.9);
   box-shadow: 0 16px 32px -8px var(--shadow-color);
   z-index: 9999;
   filter: brightness(1.1);

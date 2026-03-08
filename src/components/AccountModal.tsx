@@ -117,7 +117,7 @@ export const AccountModal: React.FC<Props> = ({ isOpen, account, onClose, onSave
 
         <div className="flex gap-3 mt-4 items-center text-left text-[var(--text-main)]">
           {account && (
-            <button onClick={onDelete} className="w-12 h-12 rounded-full bg-[var(--glass-item-bg)] border border-[var(--glass-border)] text-[var(--danger-color)] flex items-center justify-center text-left">
+            <button onClick={onDelete} className="w-12 h-12 rounded-xl bg-[var(--glass-item-bg)] border border-[var(--glass-border)] text-[var(--danger-color)] flex items-center justify-center text-left">
               <Trash2 size={20} />
             </button>
           )}
