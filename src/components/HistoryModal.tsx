@@ -92,14 +92,20 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
         let displayAmount = entityType === "account" ? sAmt : tAmt;
         let displayCurrency = entityType === "account" ? sCurr : tCurr;
 
-        const sign = isOutflow ? "-" : "+";
-        const color = isOutflow 
-            ? (tx.type === "expense" ? "text-[#D4AF37]" : "text-[var(--danger-color)]") 
-            : "text-[var(--success-color)]";
+        // Transfers are neutral in total balance, use Indigo color to distinguish from expenses/income
+        const txType = tx.type?.toLowerCase();
+        const color = txType === "transfer" 
+            ? "text-indigo-400" 
+            : (isOutflow 
+                ? (txType === "expense" ? "text-[#D4AF37]" : "text-[var(--danger-color)]") 
+                : "text-[var(--success-color)]");
+
+        // No sign for transfers in general feed, but keep signs in specific account history
+        const sign = (txType === "transfer" && entityType === "feed") ? "" : (isOutflow ? "-" : "+");
 
         return {
-            amount: `${sign}${displayAmount} ${displayCurrency}`,
-            usdAmount: sAmtUsd ? `${sign}$${sAmtUsd}` : null,
+            amount: `${sign}${displayAmount.toLocaleString()} ${displayCurrency}`,
+            usdAmount: sAmtUsd ? `${sign}$${sAmtUsd.toLocaleString()}` : null,
             color
         };
     };
@@ -171,11 +177,16 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                                 let displayName = item?.name || (status.isBroken ? "Требует внимания" : "Unknown");
                                 if (entityType === "feed") {
                                     const s = accounts.find(a => a.id === tx.accountId);
-                                    let dName = "?";
-                                    if (tx.type === "expense") dName = categories.find(c => c.id === tx.targetId)?.name || "?";
-                                    else if (tx.type === "income") dName = incomes.find(i => i.id === tx.targetId)?.name || "?";
-                                    else dName = accounts.find(a => a.id === tx.targetId)?.name || "?";
-                                    displayName = `${s?.name || "?"} → ${dName}`;
+                                    if (tx.type === "expense") {
+                                        const dName = categories.find(c => c.id === tx.targetId)?.name || "?";
+                                        displayName = `${s?.name || "?"} → ${dName}`;
+                                    } else if (tx.type === "income") {
+                                        const dName = incomes.find(i => i.id === tx.targetId)?.name || "?";
+                                        displayName = `${dName} → ${s?.name || "?"}`;
+                                    } else {
+                                        const dName = accounts.find(a => a.id === tx.targetId)?.name || "?";
+                                        displayName = `${s?.name || "?"} → ${dName}`;
+                                    }
                                 }
 
                                 return (
@@ -200,6 +211,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                                         </div>
                                         <div className="flex flex-col items-end shrink-0 pl-2">
                                             <span className={`text-sm font-black ${amountInfo.color} tracking-tight`}>{amountInfo.amount}</span>
+                                            {amountInfo.usdAmount && <span className="text-[10px] text-[var(--text-muted)] font-bold opacity-60">≈ {amountInfo.usdAmount}</span>}
                                             {status.isBroken && <span className="text-[9px] text-rose-500 font-bold uppercase mt-1 animate-pulse">Исправить</span>}
                                         </div>
                                     </div>

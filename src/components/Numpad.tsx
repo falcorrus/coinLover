@@ -137,13 +137,21 @@ export const Numpad: React.FC<Props> = ({
         </button>
         <div className="flex-1 flex items-center gap-2 overflow-x-auto hide-scrollbar">
           {/* Tags for Expense */}
-          {data.type === 'expense' && data.destination && (data.destination as Category).tags && (data.destination as Category).tags.map(t => (
-            <button key={t} onClick={() => handleTagClick(t)} className={`px-4 py-1.5 rounded-full uppercase text-[10px] font-black whitespace-nowrap transition-all duration-200 ${data.tag === t ? "bg-[var(--primary-color)] text-white scale-105" : "bg-[var(--glass-item-bg)] text-[var(--text-muted)] border border-[var(--glass-border)]"}`}>{t}</button>
-          ))}
+          {data.type === 'expense' && data.destination && (() => {
+            const catTags = (data.destination as Category).tags || [];
+            const allTags = data.tag && !catTags.includes(data.tag) ? [data.tag, ...catTags] : catTags;
+            return allTags.map(t => (
+              <button key={t} onClick={() => handleTagClick(t)} className={`px-4 py-1.5 rounded-full uppercase text-[10px] font-black whitespace-nowrap transition-all duration-200 ${data.tag === t ? "bg-[var(--primary-color)] text-white scale-105" : "bg-[var(--glass-item-bg)] text-[var(--text-muted)] border border-[var(--glass-border)]"}`}>{t}</button>
+            ));
+          })()}
           {/* Tags for Income */}
-          {data.type === 'income' && data.source && (data.source as IncomeSource).tags && (data.source as IncomeSource).tags.map(t => (
-            <button key={t} onClick={() => handleTagClick(t)} className={`px-4 py-1.5 rounded-full uppercase text-[10px] font-black whitespace-nowrap transition-all duration-200 ${data.tag === t ? "bg-[var(--success-color)] text-white scale-105" : "bg-[var(--glass-item-bg)] text-[var(--text-muted)] border border-[var(--glass-border)]"}`}>{t}</button>
-          ))}
+          {data.type === 'income' && data.source && (() => {
+            const incTags = (data.source as IncomeSource).tags || [];
+            const allTags = data.tag && !incTags.includes(data.tag) ? [data.tag, ...incTags] : incTags;
+            return allTags.map(t => (
+              <button key={t} onClick={() => handleTagClick(t)} className={`px-4 py-1.5 rounded-full uppercase text-[10px] font-black whitespace-nowrap transition-all duration-200 ${data.tag === t ? "bg-[var(--success-color)] text-white scale-105" : "bg-[var(--glass-item-bg)] text-[var(--text-muted)] border border-[var(--glass-border)]"}`}>{t}</button>
+            ));
+          })()}
         </div>
         <button onClick={() => setIsCommentOpen(true)} className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 ${hasComment ? "bg-[var(--primary-color)]/20 text-[var(--primary-color)]" : "bg-[var(--glass-item-bg)] text-[var(--text-muted)] border border-[var(--glass-border)]"}`}><MessageSquare size={18} /></button>
       </div>

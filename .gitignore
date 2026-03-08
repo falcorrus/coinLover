@@ -6,3 +6,6 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Local Obsidian Docs symlink
+Obsidian_Docs/
