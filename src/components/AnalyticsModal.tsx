@@ -273,9 +273,16 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
     const isAllVisibleSelected = currentVisibleIds.length > 0 && currentVisibleIds.every(id => selectedIds.has(id));
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[200] flex items-start justify-center p-6 pt-10 animate-in fade-in duration-500" onClick={onClose}>
+        <div 
+            className="fixed inset-0 bg-black/60 backdrop-blur-md z-[200] flex items-start justify-center p-6 animate-in fade-in duration-500" 
+            onClick={onClose}
+            style={{ 
+                paddingTop: `calc(env(safe-area-inset-top) + 24px)`,
+                paddingBottom: `calc(env(safe-area-inset-bottom) + 24px)`
+            }}
+        >
             <div className="w-full max-w-sm animate-in zoom-in-95 duration-500" onClick={e => e.stopPropagation()}>
-                <div className="glass-panel bg-[var(--bg-color)]/90 w-full max-h-[85vh] flex flex-col overflow-hidden relative shadow-2xl shadow-[var(--shadow-color)] rounded-[32px]">
+                <div className="glass-panel bg-[var(--bg-color)]/90 w-full max-h-[75vh] flex flex-col overflow-hidden relative shadow-2xl shadow-[var(--shadow-color)] rounded-[32px]">
                     <div className="flex justify-between items-center p-6 border-b border-[var(--glass-border)] shrink-0">
                         <div className="flex items-center gap-3">
                             <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-[0_0_15px_var(--primary-color)] ${analysisType === 'income' ? 'bg-[var(--success-color)]/20 text-[var(--success-color)]' : 'bg-[var(--primary-color)]/20 text-[var(--primary-color)]'}`}>
