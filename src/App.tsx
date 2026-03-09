@@ -471,8 +471,11 @@ export default function App() {
         onRemove={() => { if (editingTxId) setConfirmDelete({ isOpen: true, title: "Удалить операцию?", message: "Транзакция будет удалена, балансы кошельков будут скорректированы автоматически.", onConfirm: () => { deleteTransaction(editingTxId); setEditingTxId(null); setNumpad(p => ({ ...p, isOpen: false, sourceAmount: "0", targetAmount: "0", comment: "" })); setConfirmDelete(p => ({ ...p, isOpen: false })); } }); }}
         onSubmit={(date?: string) => {
           const fs = parseFloat(safeEval(numpad.sourceAmount)); const ft = parseFloat(safeEval(numpad.targetAmount));
-          if (editingTxId) updateTransaction(editingTxId, numpad.type, numpad.source!, numpad.destination!, fs, ft, numpad.tag || undefined, date, numpad.comment || undefined, numpad.targetCurrency);
-          else addTransaction(numpad.type, numpad.source!, numpad.destination!, fs, ft, numpad.tag || undefined, date, numpad.comment || undefined, numpad.targetCurrency);
+          // Use sourceCurrency for income (left field), targetCurrency for expense (right field)
+          const customCurr = numpad.type === "income" ? numpad.sourceCurrency : numpad.targetCurrency;
+          
+          if (editingTxId) updateTransaction(editingTxId, numpad.type, numpad.source!, numpad.destination!, fs, ft, numpad.tag || undefined, date, numpad.comment || undefined, customCurr);
+          else addTransaction(numpad.type, numpad.source!, numpad.destination!, fs, ft, numpad.tag || undefined, date, numpad.comment || undefined, customCurr);
           setNumpad({ ...numpad, isOpen: false, sourceAmount: "0", targetAmount: "0", targetLinked: true, activeField: "source", comment: "" });
         }}
       />
