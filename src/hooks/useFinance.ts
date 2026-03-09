@@ -91,17 +91,47 @@ export const useFinance = () => {
     const date = customDate ? getLocalTimeString(customDate) : getLocalTimeString();
     const finalTargetAmount = targetAmount ?? sourceAmount;
     let sCurr: string, tCurr: string;
-    if (type === "expense") { sCurr = (source as Account).currency; tCurr = customCurrency || "USD"; }
-    else if (type === "income") { sCurr = customCurrency || "USD"; tCurr = (destination as Account).currency; }
-    else { sCurr = (source as Account).currency; tCurr = (destination as Account).currency; }
+    
+    if (type === "expense") { 
+      sCurr = (source as Account).currency; 
+      tCurr = customCurrency || "USD"; 
+    } else if (type === "income") { 
+      // For income, target is our account, source is external.
+      // customCurrency usually refers to the source (where money comes from)
+      tCurr = (destination as Account).currency;
+      sCurr = customCurrency || tCurr; // Default source currency to match target if not specified
+    } else { 
+      sCurr = (source as Account).currency; 
+      tCurr = (destination as Account).currency; 
+    }
+
     const sAmountUSD = RatesService.convert(sourceAmount, sCurr, "USD");
     const tAmountUSD = RatesService.convert(finalTargetAmount, tCurr, "USD");
-    const newTx: Transaction = { id: Date.now().toString(), type, accountId: type === "income" ? (destination as Account).id : (source as Account).id, targetId: type === "income" ? source.id : (destination as Category).id, sourceAmount, sourceCurrency: sCurr, sourceAmountUSD: Math.round(sAmountUSD * 100) / 100, targetAmount: finalTargetAmount, targetCurrency: tCurr, targetAmountUSD: Math.round(tAmountUSD * 100) / 100, date, tag, comment: comment || undefined };
+    
+    const newTx: Transaction = { 
+      id: Date.now().toString(), 
+      type, 
+      accountId: type === "income" ? (destination as Account).id : (source as Account).id, 
+      targetId: type === "income" ? source.id : (destination as Category).id, 
+      sourceAmount, 
+      sourceCurrency: sCurr, 
+      sourceAmountUSD: Math.round(sAmountUSD * 100) / 100, 
+      targetAmount: finalTargetAmount, 
+      targetCurrency: tCurr, 
+      targetAmountUSD: Math.round(tAmountUSD * 100) / 100, 
+      date, 
+      tag, 
+      comment: comment || undefined 
+    };
+    
     setTransactions((prev) => [newTx, ...prev]);
     const updatedAccounts = accounts.map((a) => {
-      if (type === "expense" && a.id === source.id) return { ...a, balance: a.balance - sourceAmount };
+      if (type === "expense" && a.id === (source as Account).id) return { ...a, balance: a.balance - sourceAmount };
       if (type === "income" && a.id === (destination as Account).id) return { ...a, balance: a.balance + finalTargetAmount };
-      if (type === "transfer") { if (a.id === source.id) return { ...a, balance: a.balance - sourceAmount }; if (a.id === (destination as Account).id) return { ...a, balance: a.balance + finalTargetAmount }; }
+      if (type === "transfer") { 
+        if (a.id === (source as Account).id) return { ...a, balance: a.balance - sourceAmount }; 
+        if (a.id === (destination as Account).id) return { ...a, balance: a.balance + finalTargetAmount }; 
+      }
       return a;
     });
     setAccounts(updatedAccounts);
@@ -115,12 +145,36 @@ export const useFinance = () => {
     const date = customDate ? getLocalTimeString(customDate) : oldTx.date;
     const finalTargetAmount = targetAmount ?? sourceAmount;
     let sCurr: string, tCurr: string;
-    if (type === "expense") { sCurr = (source as Account).currency; tCurr = customCurrency || oldTx.targetCurrency; }
-    else if (type === "income") { sCurr = customCurrency || oldTx.sourceCurrency; tCurr = (destination as Account).currency; }
-    else { sCurr = (source as Account).currency; tCurr = (destination as Account).currency; }
+    
+    if (type === "expense") { 
+      sCurr = (source as Account).currency; 
+      tCurr = customCurrency || oldTx.targetCurrency; 
+    } else if (type === "income") { 
+      tCurr = (destination as Account).currency;
+      sCurr = customCurrency || oldTx.sourceCurrency;
+    } else { 
+      sCurr = (source as Account).currency; 
+      tCurr = (destination as Account).currency; 
+    }
+
     const sAmountUSD = RatesService.convert(sourceAmount, sCurr, "USD");
     const tAmountUSD = RatesService.convert(finalTargetAmount, tCurr, "USD");
-    const updatedTx: Transaction = { ...oldTx, type, accountId: type === "income" ? (destination as Account).id : (source as Account).id, targetId: type === "income" ? source.id : (destination as Category).id, sourceAmount, sourceCurrency: sCurr, sourceAmountUSD: Math.round(sAmountUSD * 100) / 100, targetAmount: finalTargetAmount, targetCurrency: tCurr, targetAmountUSD: Math.round(tAmountUSD * 100) / 100, date, tag, comment: comment || undefined };
+    
+    const updatedTx: Transaction = { 
+      ...oldTx, 
+      type, 
+      accountId: type === "income" ? (destination as Account).id : (source as Account).id, 
+      targetId: type === "income" ? source.id : (destination as Category).id, 
+      sourceAmount, 
+      sourceCurrency: sCurr, 
+      sourceAmountUSD: Math.round(sAmountUSD * 100) / 100, 
+      targetAmount: finalTargetAmount, 
+      targetCurrency: tCurr, 
+      targetAmountUSD: Math.round(tAmountUSD * 100) / 100, 
+      date, 
+      tag, 
+      comment: comment || undefined 
+    };
     setTransactions(prev => prev.map(t => t.id === txId ? updatedTx : t));
     const updatedAccounts = accounts.map(a => {
       let balance = a.balance;
