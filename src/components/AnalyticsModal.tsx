@@ -267,6 +267,36 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
         setExpandedItemId(null);
     };
 
+    // Swipe down to close logic
+    const [dragOffset, setDragOffset] = useState(0);
+    const [isDragging, setIsDragging] = useState(false);
+    const touchStartY = useRef(0);
+
+    const handleTouchStart = (e: React.TouchEvent) => {
+        touchStartY.current = e.touches[0].clientY;
+        setIsDragging(true);
+    };
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+        if (!isDragging) return;
+        const currentY = e.touches[0].clientY;
+        const deltaY = currentY - touchStartY.current;
+        if (deltaY > 0) {
+            setDragOffset(deltaY);
+        }
+    };
+
+    const handleTouchEnd = () => {
+        if (dragOffset > 100) {
+            onClose();
+            // Reset offset after close to prevent flicker on next open
+            setTimeout(() => setDragOffset(0), 300);
+        } else {
+            setDragOffset(0);
+        }
+        setIsDragging(false);
+    };
+
     if (!isOpen) return null;
 
     const currentVisibleIds = listItems.map(i => i.id);
@@ -274,9 +304,21 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[200] flex flex-col items-center justify-end sm:justify-center p-0 sm:p-4 animate-in fade-in" onClick={onClose}>
-            <div className="glass-panel bg-[var(--bg-color)]/90 w-full max-w-md h-[95vh] sm:h-[85vh] flex flex-col overflow-hidden relative shadow-2xl shadow-[var(--shadow-color)] rounded-t-[32px] sm:rounded-[32px]" onClick={e => e.stopPropagation()}>
-                <div className="flex justify-between items-center p-6 border-b border-[var(--glass-border)] shrink-0">
-                    <div className="flex items-center gap-3">
+            <div 
+                className="glass-panel bg-[var(--bg-color)]/90 w-full max-w-md h-[95vh] sm:h-[85vh] flex flex-col overflow-hidden relative shadow-2xl shadow-[var(--shadow-color)] rounded-t-[32px] sm:rounded-[32px]" 
+                onClick={e => e.stopPropagation()}
+                style={{ 
+                    transform: `translateY(${dragOffset}px)`,
+                    transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)'
+                }}
+            >
+                <div 
+                    className="flex justify-between items-center p-6 border-b border-[var(--glass-border)] shrink-0 cursor-grab active:cursor-grabbing touch-none"
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                >
+                    <div className="flex items-center gap-3 pointer-events-none">
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-[0_0_15px_var(--primary-color)] ${analysisType === 'income' ? 'bg-[var(--success-color)]/20 text-[var(--success-color)]' : 'bg-[var(--primary-color)]/20 text-[var(--primary-color)]'}`}>
                             <PieChart size={20} />
                         </div>
