@@ -293,140 +293,142 @@ export default function App() {
 
       <div className="absolute top-4 right-4 z-50"><div className={`w-2 h-2 rounded-full ${syncStatus === "loading" ? "bg-amber-400 animate-pulse" : syncStatus === "success" ? "bg-emerald-500/50" : syncStatus === "error" ? "bg-rose-500" : "bg-white/10"}`} /></div>
 
-      <header className="px-6 py-8 flex flex-col gap-2 text-center shrink-0">
-        <div className="flex justify-between items-center mb-2">
-          <button onClick={toggleIncome} className="glass-icon-btn w-10 h-10 relative">
-            <Plus size={20} className={`text-[#10b981] transition-transform duration-300 ${!isIncomeCollapsed ? "rotate-45" : ""}`} />
-            {isDemo && (
-              <span 
-                onClick={(e) => { e.stopPropagation(); handleDemoClick(); }}
-                className="absolute left-12 top-1/2 -translate-y-1/2 bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded-full text-[9px] font-black uppercase animate-pulse cursor-pointer hover:bg-amber-500/20 transition-colors"
-              >
-                Demo
-              </span>
+      <div className="flex-1 flex flex-col overflow-hidden animate-in zoom-in-95 duration-500">
+        <header className="px-6 py-8 flex flex-col gap-2 text-center shrink-0">
+          <div className="flex justify-between items-center mb-2">
+            <button onClick={toggleIncome} className="glass-icon-btn w-10 h-10 relative">
+              <Plus size={20} className={`text-[#10b981] transition-transform duration-300 ${!isIncomeCollapsed ? "rotate-45" : ""}`} />
+              {isDemo && (
+                <span 
+                  onClick={(e) => { e.stopPropagation(); handleDemoClick(); }}
+                  className="absolute left-12 top-1/2 -translate-y-1/2 bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded-full text-[9px] font-black uppercase animate-pulse cursor-pointer hover:bg-amber-500/20 transition-colors"
+                >
+                  Demo
+                </span>
+              )}
+            </button>
+            <p onClick={() => { if(!isDemo) handleDemoClick(); }} className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] cursor-default">Total Balance</p>
+            <div className="relative">
+              <button onClick={() => setIsSettingsMenuOpen(!isSettingsMenuOpen)} className="glass-icon-btn w-10 h-10 text-slate-500">
+                <Menu size={20} className={`transition-transform duration-300 ${isSettingsMenuOpen ? "rotate-90" : ""}`} />
+              </button>
+              {isSettingsMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-[200] bg-black/40 backdrop-blur-[2px]" onClick={() => setIsSettingsMenuOpen(false)} />
+                  <div className="absolute top-12 right-0 w-48 bg-[var(--bg-color)] border border-[var(--glass-border)] rounded-2xl shadow-2xl flex flex-col z-[201] p-2 animate-in fade-in zoom-in-95 origin-top-right">
+                    <div className="px-1 py-1 mb-1">
+                      <div className="flex items-center gap-1 bg-[var(--glass-item-bg)] p-1 rounded-xl border border-[var(--glass-border)]">
+                        <button 
+                          onClick={() => { setTheme("light"); setIsSettingsMenuOpen(false); if (navigator.vibrate) navigator.vibrate(30); }} 
+                          className={`flex-1 h-9 rounded-lg flex items-center justify-center transition-all ${theme === 'light' ? 'bg-white text-amber-500 shadow-sm' : 'text-slate-500 hover:text-white'}`}
+                        >
+                          <Sun size={16} />
+                        </button>
+                        <button 
+                          onClick={() => { setTheme("dark"); setIsSettingsMenuOpen(false); if (navigator.vibrate) navigator.vibrate(30); }} 
+                          className={`flex-1 h-9 rounded-lg flex items-center justify-center transition-all ${theme === 'dark' ? 'bg-[#1e293b] text-blue-400 shadow-sm' : 'text-slate-500 hover:text-white'}`}
+                        >
+                          <Moon size={16} />
+                        </button>
+                        <button 
+                          onClick={() => { setTheme("midnight"); setIsSettingsMenuOpen(false); if (navigator.vibrate) navigator.vibrate(30); }} 
+                          className={`flex-1 h-9 rounded-lg flex items-center justify-center transition-all ${theme === 'midnight' ? 'bg-[#F59E0B]/20 text-[#F59E0B] shadow-sm' : 'text-slate-500 hover:text-white'}`}
+                        >
+                          <Sparkles size={16} />
+                        </button>
+                      </div>
+                    </div>
+                    <button onClick={() => { setIsSettingsMenuOpen(false); pullSettings(); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left">
+                      <RefreshCcw size={16} className={`text-amber-500 ${syncStatus === 'loading' ? 'animate-spin' : ''}`} /><span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Обновить</span>
+                    </button>
+                    <button onClick={() => { setIsSettingsMenuOpen(false); setHistoryModal({ isOpen: true, entity: { name: "Лента", icon: "list" }, type: "feed" }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left">
+                      <List size={16} className="text-[var(--primary-color)]" />
+                      <span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Лента</span>
+                    </button>
+                    <button onClick={() => { setIsSettingsMenuOpen(false); setAnalyticsModal({ isOpen: true, type: "expense" }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left">
+                      <PieChart size={16} className="text-amber-500" />
+                      <span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Аналитика</span>
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+          <button 
+            onClick={() => setPillMode(p => p === "expense" ? "income" : p === "income" ? "balance" : "expense")} 
+            className="mt-2 mx-auto px-5 py-2 rounded-full bg-[var(--glass-item-bg)] border border-[var(--glass-border)] flex items-center gap-2 hover:bg-[var(--glass-item-active)] active:scale-95 transition-all shadow-sm"
+          >
+            {pillMode === "expense" ? (
+              <><TrendingDown size={14} className="text-[#cda434]" /><span className="text-xs font-bold text-[#cda434]">-${totalSpent.toLocaleString()} в этом месяце</span></>
+            ) : pillMode === "income" ? (
+              <><TrendingUp size={14} className="text-[#10b981]" /><span className="text-xs font-bold text-[#10b981]">+${totalEarned.toLocaleString()} в этом месяце</span></>
+            ) : (
+              <><Wallet size={14} className="text-[var(--primary-color)]" /><span className="text-xs font-bold text-[var(--primary-color)]">Общий баланс: ${totalBalance.toLocaleString()}</span></>
             )}
           </button>
-          <p onClick={() => { if(!isDemo) handleDemoClick(); }} className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] cursor-default">Total Balance</p>
-          <div className="relative">
-            <button onClick={() => setIsSettingsMenuOpen(!isSettingsMenuOpen)} className="glass-icon-btn w-10 h-10 text-slate-500">
-              <Menu size={20} className={`transition-transform duration-300 ${isSettingsMenuOpen ? "rotate-90" : ""}`} />
-            </button>
-            {isSettingsMenuOpen && (
-              <>
-                <div className="fixed inset-0 z-[200] bg-black/40 backdrop-blur-[2px]" onClick={() => setIsSettingsMenuOpen(false)} />
-                <div className="absolute top-12 right-0 w-48 bg-[var(--bg-color)] border border-[var(--glass-border)] rounded-2xl shadow-2xl flex flex-col z-[201] p-2 animate-in fade-in zoom-in-95 origin-top-right">
-                  <div className="px-1 py-1 mb-1">
-                    <div className="flex items-center gap-1 bg-[var(--glass-item-bg)] p-1 rounded-xl border border-[var(--glass-border)]">
-                      <button 
-                        onClick={() => { setTheme("light"); setIsSettingsMenuOpen(false); if (navigator.vibrate) navigator.vibrate(30); }} 
-                        className={`flex-1 h-9 rounded-lg flex items-center justify-center transition-all ${theme === 'light' ? 'bg-white text-amber-500 shadow-sm' : 'text-slate-500 hover:text-white'}`}
-                      >
-                        <Sun size={16} />
-                      </button>
-                      <button 
-                        onClick={() => { setTheme("dark"); setIsSettingsMenuOpen(false); if (navigator.vibrate) navigator.vibrate(30); }} 
-                        className={`flex-1 h-9 rounded-lg flex items-center justify-center transition-all ${theme === 'dark' ? 'bg-[#1e293b] text-blue-400 shadow-sm' : 'text-slate-500 hover:text-white'}`}
-                      >
-                        <Moon size={16} />
-                      </button>
-                      <button 
-                        onClick={() => { setTheme("midnight"); setIsSettingsMenuOpen(false); if (navigator.vibrate) navigator.vibrate(30); }} 
-                        className={`flex-1 h-9 rounded-lg flex items-center justify-center transition-all ${theme === 'midnight' ? 'bg-[#F59E0B]/20 text-[#F59E0B] shadow-sm' : 'text-slate-500 hover:text-white'}`}
-                      >
-                        <Sparkles size={16} />
-                      </button>
-                    </div>
-                  </div>
-                  <button onClick={() => { setIsSettingsMenuOpen(false); pullSettings(); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left">
-                    <RefreshCcw size={16} className={`text-amber-500 ${syncStatus === 'loading' ? 'animate-spin' : ''}`} /><span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Обновить</span>
-                  </button>
-                  <button onClick={() => { setIsSettingsMenuOpen(false); setHistoryModal({ isOpen: true, entity: { name: "Лента", icon: "list" }, type: "feed" }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left">
-                    <List size={16} className="text-[var(--primary-color)]" />
-                    <span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Лента</span>
-                  </button>
-                  <button onClick={() => { setIsSettingsMenuOpen(false); setAnalyticsModal({ isOpen: true, type: "expense" }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left">
-                    <PieChart size={16} className="text-amber-500" />
-                    <span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Аналитика</span>
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-        <button 
-          onClick={() => setPillMode(p => p === "expense" ? "income" : p === "income" ? "balance" : "expense")} 
-          className="mt-2 mx-auto px-5 py-2 rounded-full bg-[var(--glass-item-bg)] border border-[var(--glass-border)] flex items-center gap-2 hover:bg-[var(--glass-item-active)] active:scale-95 transition-all shadow-sm"
+        </header>
+
+        <DndContext 
+          sensors={sensors} 
+          collisionDetection={rectIntersection} 
+          onDragStart={handleDragStart} 
+          onDragMove={handleDragMove}
+          onDragOver={handleDragOver} 
+          onDragEnd={handleDragEnd}
         >
-          {pillMode === "expense" ? (
-            <><TrendingDown size={14} className="text-[#cda434]" /><span className="text-xs font-bold text-[#cda434]">-${totalSpent.toLocaleString()} в этом месяце</span></>
-          ) : pillMode === "income" ? (
-            <><TrendingUp size={14} className="text-[#10b981]" /><span className="text-xs font-bold text-[#10b981]">+${totalEarned.toLocaleString()} в этом месяце</span></>
-          ) : (
-            <><Wallet size={14} className="text-[var(--primary-color)]" /><span className="text-xs font-bold text-[var(--primary-color)]">Общий баланс: ${totalBalance.toLocaleString()}</span></>
-          )}
-        </button>
-      </header>
-
-      <DndContext 
-        sensors={sensors} 
-        collisionDetection={rectIntersection} 
-        onDragStart={handleDragStart} 
-        onDragMove={handleDragMove}
-        onDragOver={handleDragOver} 
-        onDragEnd={handleDragEnd}
-      >
-        <section className={`px-0 overflow-hidden transition-all duration-500 shrink-0 ${isIncomeCollapsed ? "max-h-0 opacity-0" : "max-h-[160px] opacity-100 py-1"}`}>
-          <div className="px-6 py-2 flex justify-between items-center"><div onClick={toggleIncome} className="flex items-center gap-2 cursor-pointer group"><ChevronRight size={14} className="text-slate-500 rotate-90" /><h2 className="text-[10px] font-black text-slate-500 uppercase group-hover:text-white">Доходы</h2></div><div className="flex items-center gap-3"><button onClick={() => setAnalyticsModal({ isOpen: true, type: "income" })} className="w-8 h-8 rounded-xl bg-[var(--success-color)]/10 border border-[var(--success-color)]/20 text-[var(--success-color)] flex items-center justify-center hover:bg-[var(--success-color)]/20 transition-all shadow-sm"><PieChart size={14} /></button><button onClick={() => setIncomeModal({ isOpen: true, income: null })} className="w-7 h-7 rounded-xl bg-[var(--success-color)]/10 text-[var(--success-color)] flex items-center justify-center hover:bg-[var(--success-color)]/20 transition-colors"><Plus size={14} /></button></div></div>
-          <SortableContext items={incomes.map(i => i.id)} strategy={horizontalListSortingStrategy}>
-            <div className="flex gap-4 overflow-x-auto hide-scrollbar px-6 pb-4 pt-2">
-              {incomes.map(inc => {
-                const monthlyAmount = Math.round(currentMonthTransactions
-                  .filter(t => t.type === "income" && t.targetId === inc.id)
-                  .reduce((sum, t) => sum + (t.sourceAmountUSD ?? t.amountUSD ?? t.sourceAmount ?? t.amount ?? 0), 0));
-                return (
-                  <DraggableIncomeItem 
-                    key={inc.id} 
-                    income={inc} 
-                    isDragging={activeDragId === inc.id} 
-                    onSortingMode={() => setIsSortingMode(true)} 
-                    isSortingMode={isSortingMode} 
-                    onLongPress={(i) => { setIsSortingMode(false); setIncomeModal({ isOpen: true, income: i }); }} 
-                    onClick={(income) => setHistoryModal({ isOpen: true, entity: income, type: "income" })} 
-                    monthlyAmount={monthlyAmount}
-                  />
-                );
-              })}
-            </div>
-          </SortableContext>
-        </section>
-
-        <section className="px-0 py-2 relative z-20 shrink-0">
-          <div className="px-6 mb-3 flex justify-between items-center"><h2 className="text-[10px] font-black text-slate-500 uppercase">Кошельки</h2><button onClick={() => setAccountModal({ isOpen: true, account: null })} className="w-8 h-8 rounded-xl bg-[var(--glass-item-bg)] border border-[var(--glass-border)] text-[var(--text-main)] flex items-center justify-center hover:bg-[var(--glass-item-active)] transition-all shadow-sm"><Plus size={16} /></button></div>
-          <SortableContext items={accounts.map(a => a.id)} strategy={horizontalListSortingStrategy}><div className="flex gap-4 overflow-x-auto hide-scrollbar px-6 pb-4 pt-2">{accounts.map(acc => (<AccountItem key={acc.id} account={acc} isDragging={activeDragId === acc.id} onSortingMode={() => setIsSortingMode(true)} onLongPress={(a) => { setIsSortingMode(false); setAccountModal({ isOpen: true, account: a }); }} onClick={(account) => setHistoryModal({ isOpen: true, entity: account, type: "account" })} activeDragType={activeDragType} isSortingMode={isSortingMode} isOver={overId === acc.id} />))}</div></SortableContext>
-        </section>
-
-        <section className={`px-0 flex-1 pt-4 pb-8 overflow-y-auto hide-scrollbar z-10 relative transition-all duration-500 ${mode === "income" ? "opacity-30 pointer-events-none grayscale" : "opacity-100"}`}>
-          <div className="px-6 py-2">
-            <div className="flex justify-between items-center mb-6"><h2 className="text-[10px] font-black text-slate-500 uppercase">Расходы</h2><div className="flex items-center gap-3"><button onClick={() => setAnalyticsModal({ isOpen: true, type: "expense" })} className="w-8 h-8 rounded-xl bg-[var(--primary-color)]/10 border border-[var(--primary-color)]/20 text-[var(--primary-color)] flex items-center justify-center hover:bg-[var(--primary-color)]/20 transition-all shadow-sm"><PieChart size={14} /></button><button onClick={() => setCategoryModal({ isOpen: true, category: null })} className="w-8 h-8 rounded-xl bg-[var(--glass-item-bg)] border border-[var(--glass-border)] text-[var(--text-main)] flex items-center justify-center hover:bg-[var(--glass-item-active)] transition-all shadow-sm"><Plus size={16} /></button></div></div>
-            <SortableContext items={categories.map(c => c.id)} strategy={rectSortingStrategy}>
-              <div className="grid grid-cols-4 gap-y-6 gap-x-2 pb-4">
-                {categories.map(cat => {
-                  const spent = Math.round(currentMonthTransactions.filter(t => t.type === "expense" && t.targetId === cat.id).reduce((s, t) => s + (t.sourceAmountUSD ?? t.amountUSD ?? t.sourceAmount ?? t.amount ?? 0), 0));
-                  return (<CategoryItem key={cat.id} category={cat} spent={spent} isDragging={activeDragId === cat.id} onSortingMode={() => setIsSortingMode(true)} isSortingMode={isSortingMode} isOver={overId === cat.id} onLongPress={(c) => { setIsSortingMode(false); setCategoryModal({ isOpen: true, category: c }); }} onClick={(category) => setHistoryModal({ isOpen: true, entity: category, type: "category" })} activeDragType={activeDragType} />);
+          <section className={`px-0 overflow-hidden transition-all duration-500 shrink-0 ${isIncomeCollapsed ? "max-h-0 opacity-0" : "max-h-[160px] opacity-100 py-1"}`}>
+            <div className="px-6 py-2 flex justify-between items-center"><div onClick={toggleIncome} className="flex items-center gap-2 cursor-pointer group"><ChevronRight size={14} className="text-slate-500 rotate-90" /><h2 className="text-[10px] font-black text-slate-500 uppercase group-hover:text-white">Доходы</h2></div><div className="flex items-center gap-3"><button onClick={() => setAnalyticsModal({ isOpen: true, type: "income" })} className="w-8 h-8 rounded-xl bg-[var(--success-color)]/10 border border-[var(--success-color)]/20 text-[var(--success-color)] flex items-center justify-center hover:bg-[var(--success-color)]/20 transition-all shadow-sm"><PieChart size={14} /></button><button onClick={() => setIncomeModal({ isOpen: true, income: null })} className="w-7 h-7 rounded-xl bg-[var(--success-color)]/10 text-[var(--success-color)] flex items-center justify-center hover:bg-[var(--success-color)]/20 transition-colors"><Plus size={14} /></button></div></div>
+            <SortableContext items={incomes.map(i => i.id)} strategy={horizontalListSortingStrategy}>
+              <div className="flex gap-4 overflow-x-auto hide-scrollbar px-6 pb-4 pt-2">
+                {incomes.map(inc => {
+                  const monthlyAmount = Math.round(currentMonthTransactions
+                    .filter(t => t.type === "income" && t.targetId === inc.id)
+                    .reduce((sum, t) => sum + (t.sourceAmountUSD ?? t.amountUSD ?? t.sourceAmount ?? t.amount ?? 0), 0));
+                  return (
+                    <DraggableIncomeItem 
+                      key={inc.id} 
+                      income={inc} 
+                      isDragging={activeDragId === inc.id} 
+                      onSortingMode={() => setIsSortingMode(true)} 
+                      isSortingMode={isSortingMode} 
+                      onLongPress={(i) => { setIsSortingMode(false); setIncomeModal({ isOpen: true, income: i }); }} 
+                      onClick={(income) => setHistoryModal({ isOpen: true, entity: income, type: "income" })} 
+                      monthlyAmount={monthlyAmount}
+                    />
+                  );
                 })}
               </div>
             </SortableContext>
-          </div>
-        </section>
+          </section>
 
-        <DragOverlay dropAnimation={null}>
-          {activeDragId ? (
-            <div className={`draggable-coin grabbed-elevation pointer-events-none ${activeDragType === 'category' ? 'coin-category' : 'coin-wallet'}`}>
-              {React.createElement(IconMap[(activeItemData as any)?.icon] || Wallet, { size: 28, color: (activeItemData as any)?.color })}
+          <section className="px-0 py-2 relative z-20 shrink-0">
+            <div className="px-6 mb-3 flex justify-between items-center"><h2 className="text-[10px] font-black text-slate-500 uppercase">Кошельки</h2><button onClick={() => setAccountModal({ isOpen: true, account: null })} className="w-8 h-8 rounded-xl bg-[var(--glass-item-bg)] border border-[var(--glass-border)] text-[var(--text-main)] flex items-center justify-center hover:bg-[var(--glass-item-active)] transition-all shadow-sm"><Plus size={16} /></button></div>
+            <SortableContext items={accounts.map(a => a.id)} strategy={horizontalListSortingStrategy}><div className="flex gap-4 overflow-x-auto hide-scrollbar px-6 pb-4 pt-2">{accounts.map(acc => (<AccountItem key={acc.id} account={acc} isDragging={activeDragId === acc.id} onSortingMode={() => setIsSortingMode(true)} onLongPress={(a) => { setIsSortingMode(false); setAccountModal({ isOpen: true, account: a }); }} onClick={(account) => setHistoryModal({ isOpen: true, entity: account, type: "account" })} activeDragType={activeDragType} isSortingMode={isSortingMode} isOver={overId === acc.id} />))}</div></SortableContext>
+          </section>
+
+          <section className={`px-0 flex-1 pt-4 pb-8 overflow-y-auto hide-scrollbar z-10 relative transition-all duration-500 ${mode === "income" ? "opacity-30 pointer-events-none grayscale" : "opacity-100"}`}>
+            <div className="px-6 py-2">
+              <div className="flex justify-between items-center mb-6"><h2 className="text-[10px] font-black text-slate-500 uppercase">Расходы</h2><div className="flex items-center gap-3"><button onClick={() => setAnalyticsModal({ isOpen: true, type: "expense" })} className="w-8 h-8 rounded-xl bg-[var(--primary-color)]/10 border border-[var(--primary-color)]/20 text-[var(--primary-color)] flex items-center justify-center hover:bg-[var(--primary-color)]/20 transition-all shadow-sm"><PieChart size={14} /></button><button onClick={() => setCategoryModal({ isOpen: true, category: null })} className="w-8 h-8 rounded-xl bg-[var(--glass-item-bg)] border border-[var(--glass-border)] text-[var(--text-main)] flex items-center justify-center hover:bg-[var(--glass-item-active)] transition-all shadow-sm"><Plus size={16} /></button></div></div>
+              <SortableContext items={categories.map(c => c.id)} strategy={rectSortingStrategy}>
+                <div className="grid grid-cols-4 gap-y-6 gap-x-2 pb-4">
+                  {categories.map(cat => {
+                    const spent = Math.round(currentMonthTransactions.filter(t => t.type === "expense" && t.targetId === cat.id).reduce((s, t) => s + (t.sourceAmountUSD ?? t.amountUSD ?? t.sourceAmount ?? t.amount ?? 0), 0));
+                    return (<CategoryItem key={cat.id} category={cat} spent={spent} isDragging={activeDragId === cat.id} onSortingMode={() => setIsSortingMode(true)} isSortingMode={isSortingMode} isOver={overId === cat.id} onLongPress={(c) => { setIsSortingMode(false); setCategoryModal({ isOpen: true, category: c }); }} onClick={(category) => setHistoryModal({ isOpen: true, entity: category, type: "category" })} activeDragType={activeDragType} />);
+                  })}
+                </div>
+              </SortableContext>
             </div>
-          ) : null}
-        </DragOverlay>
-      </DndContext>
+          </section>
+
+          <DragOverlay dropAnimation={null}>
+            {activeDragId ? (
+              <div className={`draggable-coin grabbed-elevation pointer-events-none ${activeDragType === 'category' ? 'coin-category' : 'coin-wallet'}`}>
+                {React.createElement(IconMap[(activeItemData as any)?.icon] || Wallet, { size: 28, color: (activeItemData as any)?.color })}
+              </div>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
+      </div>
 
       <Numpad
         data={numpad} availableCurrencies={Array.from(new Set([...accounts.map(a => a.currency), numpad.sourceCurrency, numpad.targetCurrency]))} isEditing={!!editingTxId}
