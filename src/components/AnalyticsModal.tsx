@@ -277,8 +277,8 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
             className="fixed inset-0 bg-black/60 backdrop-blur-md z-[200] flex items-start justify-center p-6 animate-in fade-in duration-500" 
             onClick={onClose}
             style={{ 
-                paddingTop: `calc(env(safe-area-inset-top) + 24px)`,
-                paddingBottom: `calc(env(safe-area-inset-bottom) + 24px)`
+                paddingTop: `calc(env(safe-area-inset-top) + 64px)`,
+                paddingBottom: `calc(env(safe-area-inset-bottom) + 40px)`
             }}
         >
             <div className="w-full max-w-sm animate-in zoom-in-95 duration-500" onClick={e => e.stopPropagation()}>
