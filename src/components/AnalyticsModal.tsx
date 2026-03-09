@@ -277,9 +277,9 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
             className="fixed inset-0 bg-black/60 backdrop-blur-md z-[200] flex items-start justify-center p-6 animate-in fade-in duration-500" 
             onClick={onClose}
         >
-            <div className="w-full max-w-sm mt-[12vh] animate-in zoom-in-95 duration-500" onClick={e => e.stopPropagation()}>
-                <div className="glass-panel bg-[var(--bg-color)]/90 w-full max-h-[70vh] flex flex-col overflow-hidden relative shadow-2xl shadow-[var(--shadow-color)] rounded-[32px]">
-                    <div className="flex justify-between items-center p-6 border-b border-[var(--glass-border)] shrink-0">
+            <div className="w-full max-w-sm mt-[150px] animate-in zoom-in-95 duration-500" onClick={e => e.stopPropagation()}>
+                <div className="glass-panel bg-[var(--bg-color)]/90 w-full max-h-[70vh] flex flex-col overflow-hidden relative shadow-2xl shadow-[var(--shadow-color)] border-2 border-red-500/50 rounded-[32px]">
+                    <div className="flex justify-between items-center p-6 border-b border-red-500/20 shrink-0">
                         <div className="flex items-center gap-3">
                             <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-[0_0_15px_var(--primary-color)] ${analysisType === 'income' ? 'bg-[var(--success-color)]/20 text-[var(--success-color)]' : 'bg-[var(--primary-color)]/20 text-[var(--primary-color)]'}`}>
                                 <PieChart size={20} />
