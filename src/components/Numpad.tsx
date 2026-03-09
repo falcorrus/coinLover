@@ -1,6 +1,6 @@
 import React from "react";
 import { X, ChevronRight, Check, CalendarDays, Delete, Divide, Plus, Minus, Equal, Percent, MessageSquare, Link2, Trash2, ArrowDown } from "lucide-react";
-import { NumpadData, Category, Account } from "../types";
+import { NumpadData, Category, Account, IncomeSource } from "../types";
 import { IconMap } from "../constants";
 import { CalendarModal } from "./CalendarModal";
 import { RatesService } from "../services/RatesService";

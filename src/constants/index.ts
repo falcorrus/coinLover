@@ -43,8 +43,8 @@ export const DEFAULT_CATEGORIES: Category[] = [
 ];
 
 export const INITIAL_INCOMES: IncomeSource[] = [
-  { id: "inc-1", name: "Зарплата", color: "#10b981", icon: "business" },
-  { id: "inc-2", name: "Фриланс", color: "#3b82f6", icon: "laptop" },
-  { id: "inc-3", name: "Подарки", color: "#f43f5e", icon: "gift" },
-  { id: "inc-4", name: "Дивиденды", color: "#8b5cf6", icon: "trendingUp" },
+  { id: "inc-1", name: "Зарплата", color: "#10b981", icon: "business", tags: [] },
+  { id: "inc-2", name: "Фриланс", color: "#3b82f6", icon: "laptop", tags: [] },
+  { id: "inc-3", name: "Подарки", color: "#f43f5e", icon: "gift", tags: [] },
+  { id: "inc-4", name: "Дивиденды", color: "#8b5cf6", icon: "trendingUp", tags: [] },
 ];
