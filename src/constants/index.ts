@@ -2,7 +2,7 @@ import {
   Wallet, CreditCard, PiggyBank, Utensils, Bus, Coffee, Home,
   PlaySquare, ShoppingBag, HeartPulse, MoreHorizontal, Briefcase,
   Gift, TrendingUp, Laptop, Baby, Activity, Bitcoin,
-  DollarSign, Euro, RussianRuble, Coins, Banknote, List
+  DollarSign, Euro, RussianRuble, Coins, Banknote, List, Calendar
 } from "lucide-react";
 import React from "react";
 import { Account, Category, IncomeSource } from "../types";
@@ -17,7 +17,7 @@ export const IconMap: Record<string, React.FC<any>> = {
   gift: Gift, trendingUp: TrendingUp, laptop: Laptop,
   baby: Baby, activity: Activity, bitcoin: Bitcoin,
   usd: DollarSign, eur: Euro, rub: RussianRuble, brl: Coins, ars: Banknote,
-  list: List
+  list: List, calendar: Calendar
 };
 
 export const COLORS = ["#6d5dfc", "#10b981", "#f43f5e", "#f59e0b", "#06b6d4"];

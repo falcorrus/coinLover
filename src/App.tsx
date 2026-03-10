@@ -7,7 +7,7 @@ import {
 import { arrayMove, SortableContext, horizontalListSortingStrategy, rectSortingStrategy } from "@dnd-kit/sortable";
 import {
   Plus, Settings, ArrowDownCircle, TrendingDown, ChevronRight, TrendingUp, Wallet, RefreshCcw,
-  Heart, MousePointer2, PieChart, List, Moon, Sun, Sparkles, Menu
+  Heart, MousePointer2, PieChart, List, Moon, Sun, Sparkles, Menu, Calendar
 } from "lucide-react";
 
 // Modules
@@ -24,6 +24,7 @@ import { DraggableIncomeItem } from "./components/DraggableIncomeItem";
 import { IncomeModal } from "./components/IncomeModal";
 import { HistoryModal } from "./components/HistoryModal";
 import { AnalyticsModal } from "./components/AnalyticsModal";
+import { CalendarAnalyticsModal } from "./components/CalendarAnalyticsModal";
 import { ConfirmModal } from "./components/ConfirmModal";
 import { TagModal } from "./components/TagModal";
 
@@ -58,6 +59,7 @@ export default function App() {
   const [categoryModal, setCategoryModal] = React.useState<{ isOpen: boolean; category: Category | null }>({ isOpen: false, category: null });
   const [historyModal, setHistoryModal] = React.useState<{ isOpen: boolean; entity: any; type: "account" | "category" | "income" | "tag" | "feed" | null; customTransactions?: Transaction[]; }>({ isOpen: false, entity: null, type: null });
   const [analyticsModal, setAnalyticsModal] = React.useState<{ isOpen: boolean; type: "expense" | "income" }>({ isOpen: false, type: "expense" });
+  const [calendarAnalyticsModal, setCalendarAnalyticsModal] = React.useState({ isOpen: false });
   const [confirmDelete, setConfirmDelete] = React.useState<{ isOpen: boolean; title: string; message: string; onConfirm: () => void; }>({ isOpen: false, title: "", message: "", onConfirm: () => { } });
 
   const [numpad, setNumpad] = React.useState<NumpadData>({
@@ -229,7 +231,7 @@ export default function App() {
     ...incomes.flatMap(i => i.tags || [])
   ])).sort();
 
-  const anyModalOpen = accountModal.isOpen || incomeModal.isOpen || categoryModal.isOpen || historyModal.isOpen || analyticsModal.isOpen || numpad.isOpen || confirmDelete.isOpen || isSettingsMenuOpen || isTagModalOpen || !!conflictData;
+  const anyModalOpen = accountModal.isOpen || incomeModal.isOpen || categoryModal.isOpen || historyModal.isOpen || analyticsModal.isOpen || calendarAnalyticsModal.isOpen || numpad.isOpen || confirmDelete.isOpen || isSettingsMenuOpen || isTagModalOpen || !!conflictData;
 
   // Handle hardware/gesture back button and Esc key
   React.useEffect(() => {
@@ -259,6 +261,7 @@ export default function App() {
       setCategoryModal(p => ({ ...p, isOpen: false }));
       setHistoryModal(p => ({ ...p, isOpen: false, entity: null, type: null }));
       setAnalyticsModal(p => ({ ...p, isOpen: false }));
+      setCalendarAnalyticsModal({ isOpen: false });
       setNumpad(p => ({ ...p, isOpen: false }));
       setConfirmDelete(p => ({ ...p, isOpen: false }));
       setIsSettingsMenuOpen(false);
@@ -344,6 +347,10 @@ export default function App() {
                     <button onClick={() => { setIsSettingsMenuOpen(false); setHistoryModal({ isOpen: true, entity: { name: "Лента", icon: "list" }, type: "feed" }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left">
                       <List size={16} className="text-[var(--primary-color)]" />
                       <span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Лента</span>
+                    </button>
+                    <button onClick={() => { setIsSettingsMenuOpen(false); setCalendarAnalyticsModal({ isOpen: true }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left">
+                      <Calendar size={16} className="text-emerald-500" />
+                      <span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Календарь</span>
                     </button>
                     <button onClick={() => { setIsSettingsMenuOpen(false); setAnalyticsModal({ isOpen: true, type: "expense" }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left">
                       <PieChart size={16} className="text-amber-500" />
@@ -523,7 +530,11 @@ export default function App() {
       />
       <HistoryModal 
         isOpen={historyModal.isOpen} 
-        onClose={() => setHistoryModal({ isOpen: false, entity: null, type: null })} 
+        onClose={() => {
+          const wasFromCalendar = historyModal.entity?.icon === "calendar";
+          setHistoryModal({ isOpen: false, entity: null, type: null }); 
+          if (wasFromCalendar) setCalendarAnalyticsModal({ isOpen: true });
+        }} 
         entity={historyModal.entity} 
         entityType={historyModal.type} 
         transactions={historyModal.customTransactions || transactions} 
@@ -531,6 +542,7 @@ export default function App() {
         categories={categories} 
         incomes={incomes} 
         onEditTransaction={(tx) => { 
+          const wasFromCalendar = historyModal.entity?.icon === "calendar";
           const source = tx.type === "income" ? incomes.find(i => i.id === tx.targetId) ?? null : accounts.find(a => a.id === tx.accountId) ?? null; 
           const destination = tx.type === "expense" ? categories.find(c => c.id === tx.targetId) ?? null : tx.type === "income" ? accounts.find(a => a.id === tx.accountId) ?? null : accounts.find(a => a.id === tx.targetId) ?? null; 
           if (!source || !destination) return; 
@@ -556,10 +568,13 @@ export default function App() {
             activeField: "source", 
             tag: tx.tag ?? null, 
             comment: tx.comment ?? "", 
+            // We don't automatically return to calendar after Numpad, 
+            // but the history modal's state is now cleared.
           }); 
         }} 
       />
       <AnalyticsModal isOpen={analyticsModal.isOpen} onClose={() => setAnalyticsModal(p => ({ ...p, isOpen: false }))} categories={categories} incomes={incomes} accounts={accounts} globalTransactions={transactions} initialType={analyticsModal.type} onItemClick={(item, type, monthTx) => { let entity = item; if (type === "category") { const cat = categories.find(c => c.id === item.id); if (cat) entity = cat; } else if (type === "income") { const inc = incomes.find(i => i.id === item.id); if (inc) entity = inc; } setAnalyticsModal(p => ({ ...p, isOpen: false })); setHistoryModal({ isOpen: true, entity, type, customTransactions: monthTx.filter(t => { if (type === "category") return t.targetId === item.id; if (type === "tag") return (t.tag?.trim() || "Без тега") === item.name; if (type === "income") return t.targetId === item.id; return false; }) }); }} />
+      <CalendarAnalyticsModal isOpen={calendarAnalyticsModal.isOpen} onClose={() => setCalendarAnalyticsModal({ isOpen: false })} globalTransactions={transactions} onItemClick={(item, type, dayTx) => { setCalendarAnalyticsModal({ isOpen: false }); setHistoryModal({ isOpen: true, entity: item, type, customTransactions: dayTx }); }} />
       <ConfirmModal isOpen={confirmDelete.isOpen} title={confirmDelete.title} message={confirmDelete.message} onConfirm={confirmDelete.onConfirm} onCancel={() => setConfirmDelete(p => ({ ...p, isOpen: false }))} />
       
       <TagModal 
