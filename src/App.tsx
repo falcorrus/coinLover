@@ -2,7 +2,7 @@
 import * as React from "react";
 import {
   DndContext, DragOverlay, DragStartEvent, DragEndEvent, DragOverEvent, DragMoveEvent,
-  closestCenter, pointerWithin, rectIntersection, PointerSensor, useSensor, useSensors,
+  closestCenter, pointerWithin, rectIntersection, MouseSensor, TouchSensor, useSensor, useSensors,
 } from "@dnd-kit/core";
 import { arrayMove, SortableContext, horizontalListSortingStrategy, rectSortingStrategy } from "@dnd-kit/sortable";
 import {
@@ -120,7 +120,10 @@ export default function App() {
     } catch { return str; }
   };
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 15 } }));
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } })
+  );
   const toggleIncome = () => { const next = !isIncomeCollapsed; setIsIncomeCollapsed(next); setMode(next ? "expense" : "income"); };
 
   const handleDragStart = (e: DragStartEvent) => {
@@ -256,10 +259,17 @@ export default function App() {
     };
 
     const closeAllModals = () => {
+      // If we are in History and came from Calendar, go back to Calendar
+      if (historyModal.isOpen && historyModal.entity?.icon === "calendar") {
+        setHistoryModal({ isOpen: false, entity: null, type: null });
+        setCalendarAnalyticsModal({ isOpen: true });
+        return;
+      }
+
       setAccountModal(p => ({ ...p, isOpen: false }));
       setIncomeModal(p => ({ ...p, isOpen: false }));
       setCategoryModal(p => ({ ...p, isOpen: false }));
-      setHistoryModal(p => ({ ...p, isOpen: false, entity: null, type: null }));
+      setHistoryModal({ isOpen: false, entity: null, type: null });
       setAnalyticsModal(p => ({ ...p, isOpen: false }));
       setCalendarAnalyticsModal({ isOpen: false });
       setNumpad(p => ({ ...p, isOpen: false }));
@@ -275,114 +285,122 @@ export default function App() {
       window.removeEventListener("popstate", handlePopState);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [anyModalOpen, setConflictData]);
+  }, [
+    anyModalOpen, setConflictData, 
+    historyModal.isOpen, historyModal.entity?.icon,
+    calendarAnalyticsModal.isOpen, numpad.isOpen, 
+    accountModal.isOpen, incomeModal.isOpen, 
+    categoryModal.isOpen, analyticsModal.isOpen, 
+    confirmDelete.isOpen, isSettingsMenuOpen, 
+    isTagModalOpen
+  ]);
 
   const activeItemData = activeDragId ? (activeDragType === 'account' ? accounts.find(a => a.id === activeDragId) : activeDragType === 'category' ? categories.find(c => c.id === activeDragId) : incomes.find(i => i.id === activeDragId)) : null;
 
   return (
-    <div className={`min-h-screen flex flex-col max-w-md mx-auto relative shadow-2xl overflow-hidden bg-[var(--bg-color)] text-[var(--text-main)] font-sans select-none transition-colors duration-300 ${theme === 'light' ? 'light' : ''}`}>
-      <style>{`body { overflow: hidden; overscroll-behavior: none; background: var(--bg-color); } * { -webkit-tap-highlight-color: transparent; }`}</style>
-      
-      {isSplashVisible && (
-        <div className="fixed inset-0 z-[1000] bg-[var(--bg-color)] flex items-center justify-center animate-in fade-in duration-500">
-          <div className="relative animate-pulse flex flex-col items-center gap-6">
-            <div className="relative w-32 h-32 rounded-[48px] bg-gradient-to-br from-amber-300 via-amber-500 to-amber-600 flex items-center justify-center border-4 border-amber-200/20 shadow-2xl">
-              <Heart size={64} fill="white" className="text-white drop-shadow-lg" />
+    <DndContext 
+      sensors={sensors} 
+      collisionDetection={rectIntersection} 
+      onDragStart={handleDragStart} 
+      onDragMove={handleDragMove}
+      onDragOver={handleDragOver} 
+      onDragEnd={handleDragEnd}
+    >
+      <div className={`min-h-screen flex flex-col max-w-md mx-auto relative shadow-2xl overflow-hidden bg-[var(--bg-color)] text-[var(--text-main)] font-sans select-none transition-colors duration-300 ${theme === 'light' ? 'light' : ''}`}>
+        <style>{`body { overflow: hidden; overscroll-behavior: none; background: var(--bg-color); } * { -webkit-tap-highlight-color: transparent; }`}</style>
+        
+        {isSplashVisible && (
+          <div className="fixed inset-0 z-[1000] bg-[var(--bg-color)] flex items-center justify-center animate-in fade-in duration-500">
+            <div className="relative animate-pulse flex flex-col items-center gap-6">
+              <div className="relative w-32 h-32 rounded-[48px] bg-gradient-to-br from-amber-300 via-amber-500 to-amber-600 flex items-center justify-center border-4 border-amber-200/20 shadow-2xl">
+                <Heart size={64} fill="white" className="text-white drop-shadow-lg" />
+              </div>
+              <span className="text-amber-500 font-black tracking-[0.4em] uppercase text-sm">CoinLover</span>
             </div>
-            <span className="text-amber-500 font-black tracking-[0.4em] uppercase text-sm">CoinLover</span>
           </div>
-        </div>
-      )}
+        )}
 
-      <div className="absolute top-4 right-4 z-50"><div className={`w-2 h-2 rounded-full ${syncStatus === "loading" ? "bg-amber-400 animate-pulse" : syncStatus === "success" ? "bg-emerald-500/50" : syncStatus === "error" ? "bg-rose-500" : "bg-white/10"}`} /></div>
+        <div className="absolute top-4 right-4 z-50"><div className={`w-2 h-2 rounded-full ${syncStatus === "loading" ? "bg-amber-400 animate-pulse" : syncStatus === "success" ? "bg-emerald-500/50" : syncStatus === "error" ? "bg-rose-500" : "bg-white/10"}`} /></div>
 
-      <div className="flex-1 flex flex-col overflow-hidden animate-in zoom-in-95 duration-500">
-        <header className="px-6 py-8 flex flex-col gap-2 text-center shrink-0">
-          <div className="flex justify-between items-center mb-2">
-            <button onClick={toggleIncome} className="glass-icon-btn w-10 h-10 relative">
-              <Plus size={20} className={`text-[#10b981] transition-transform duration-300 ${!isIncomeCollapsed ? "rotate-45" : ""}`} />
-              {isDemo && (
-                <span 
-                  onClick={(e) => { e.stopPropagation(); handleDemoClick(); }}
-                  className="absolute left-12 top-1/2 -translate-y-1/2 bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded-full text-[9px] font-black uppercase animate-pulse cursor-pointer hover:bg-amber-500/20 transition-colors"
-                >
-                  Demo
-                </span>
+        <div className="flex-1 flex flex-col overflow-hidden animate-in zoom-in-95 duration-500">
+          <header className="px-6 py-8 flex flex-col gap-2 text-center shrink-0">
+            <div className="flex justify-between items-center mb-2">
+              <button onClick={toggleIncome} className="glass-icon-btn w-10 h-10 relative">
+                <Plus size={20} className={`text-[#10b981] transition-transform duration-300 ${!isIncomeCollapsed ? "rotate-45" : ""}`} />
+                {isDemo && (
+                  <span 
+                    onClick={(e) => { e.stopPropagation(); handleDemoClick(); }}
+                    className="absolute left-12 top-1/2 -translate-y-1/2 bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded-full text-[9px] font-black uppercase animate-pulse cursor-pointer hover:bg-amber-500/20 transition-colors"
+                  >
+                    Demo
+                  </span>
+                )}
+              </button>
+              <p onClick={() => { if(!isDemo) handleDemoClick(); }} className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] cursor-default">Total Balance</p>
+              <div className="relative">
+                <button onClick={() => setIsSettingsMenuOpen(!isSettingsMenuOpen)} className="glass-icon-btn w-10 h-10 text-slate-500">
+                  <Menu size={20} className={`transition-transform duration-300 ${isSettingsMenuOpen ? "rotate-90" : ""}`} />
+                </button>
+                {isSettingsMenuOpen && (
+                  <>
+                    <div className="fixed inset-0 z-[200] bg-black/40 backdrop-blur-[2px]" onClick={() => setIsSettingsMenuOpen(false)} />
+                    <div className="absolute top-12 right-0 w-48 bg-[var(--bg-color)] border border-[var(--glass-border)] rounded-2xl shadow-2xl flex flex-col z-[201] p-2 animate-in fade-in zoom-in-95 origin-top-right">
+                      <div className="px-1 py-1 mb-1">
+                        <div className="flex items-center gap-1 bg-[var(--glass-item-bg)] p-1 rounded-xl border border-[var(--glass-border)]">
+                          <button 
+                            onClick={() => { setTheme("light"); setIsSettingsMenuOpen(false); if (navigator.vibrate) navigator.vibrate(30); }} 
+                            className={`flex-1 h-9 rounded-lg flex items-center justify-center transition-all ${theme === 'light' ? 'bg-white text-amber-500 shadow-sm' : 'text-slate-500 hover:text-white'}`}
+                          >
+                            <Sun size={16} />
+                          </button>
+                          <button 
+                            onClick={() => { setTheme("dark"); setIsSettingsMenuOpen(false); if (navigator.vibrate) navigator.vibrate(30); }} 
+                            className={`flex-1 h-9 rounded-lg flex items-center justify-center transition-all ${theme === 'dark' ? 'bg-[#1e293b] text-blue-400 shadow-sm' : 'text-slate-500 hover:text-white'}`}
+                          >
+                            <Moon size={16} />
+                          </button>
+                          <button 
+                            onClick={() => { setTheme("midnight"); setIsSettingsMenuOpen(false); if (navigator.vibrate) navigator.vibrate(30); }} 
+                            className={`flex-1 h-9 rounded-lg flex items-center justify-center transition-all ${theme === 'midnight' ? 'bg-[#F59E0B]/20 text-[#F59E0B] shadow-sm' : 'text-slate-500 hover:text-white'}`}
+                          >
+                            <Sparkles size={16} />
+                          </button>
+                        </div>
+                      </div>
+                      <button onClick={() => { setIsSettingsMenuOpen(false); pullSettings(); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left">
+                        <RefreshCcw size={16} className={`text-amber-500 ${syncStatus === 'loading' ? 'animate-spin' : ''}`} /><span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Обновить</span>
+                      </button>
+                      <button onClick={() => { setIsSettingsMenuOpen(false); setHistoryModal({ isOpen: true, entity: { name: "Лента", icon: "list" }, type: "feed" }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left">
+                        <List size={16} className="text-[var(--primary-color)]" />
+                        <span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Лента</span>
+                      </button>
+                      <button onClick={() => { setIsSettingsMenuOpen(false); setCalendarAnalyticsModal({ isOpen: true }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left">
+                        <Calendar size={16} className="text-emerald-500" />
+                        <span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Календарь</span>
+                      </button>
+                      <button onClick={() => { setIsSettingsMenuOpen(false); setAnalyticsModal({ isOpen: true, type: "expense" }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left">
+                        <PieChart size={16} className="text-amber-500" />
+                        <span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Аналитика</span>
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+            <button 
+              onClick={() => setPillMode(p => p === "expense" ? "income" : p === "income" ? "balance" : "expense")} 
+              className="mt-2 mx-auto px-5 py-2 rounded-full bg-[var(--glass-item-bg)] border border-[var(--glass-border)] flex items-center gap-2 hover:bg-[var(--glass-item-active)] active:scale-95 transition-all shadow-sm"
+            >
+              {pillMode === "expense" ? (
+                <><TrendingDown size={14} className="text-[#cda434]" /><span className="text-xs font-bold text-[#cda434]">-${totalSpent.toLocaleString()} в этом месяце</span></>
+              ) : pillMode === "income" ? (
+                <><TrendingUp size={14} className="text-[#10b981]" /><span className="text-xs font-bold text-[#10b981]">+${totalEarned.toLocaleString()} в этом месяце</span></>
+              ) : (
+                <><Wallet size={14} className="text-[var(--primary-color)]" /><span className="text-xs font-bold text-[var(--primary-color)]">Общий баланс: ${totalBalance.toLocaleString()}</span></>
               )}
             </button>
-            <p onClick={() => { if(!isDemo) handleDemoClick(); }} className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] cursor-default">Total Balance</p>
-            <div className="relative">
-              <button onClick={() => setIsSettingsMenuOpen(!isSettingsMenuOpen)} className="glass-icon-btn w-10 h-10 text-slate-500">
-                <Menu size={20} className={`transition-transform duration-300 ${isSettingsMenuOpen ? "rotate-90" : ""}`} />
-              </button>
-              {isSettingsMenuOpen && (
-                <>
-                  <div className="fixed inset-0 z-[200] bg-black/40 backdrop-blur-[2px]" onClick={() => setIsSettingsMenuOpen(false)} />
-                  <div className="absolute top-12 right-0 w-48 bg-[var(--bg-color)] border border-[var(--glass-border)] rounded-2xl shadow-2xl flex flex-col z-[201] p-2 animate-in fade-in zoom-in-95 origin-top-right">
-                    <div className="px-1 py-1 mb-1">
-                      <div className="flex items-center gap-1 bg-[var(--glass-item-bg)] p-1 rounded-xl border border-[var(--glass-border)]">
-                        <button 
-                          onClick={() => { setTheme("light"); setIsSettingsMenuOpen(false); if (navigator.vibrate) navigator.vibrate(30); }} 
-                          className={`flex-1 h-9 rounded-lg flex items-center justify-center transition-all ${theme === 'light' ? 'bg-white text-amber-500 shadow-sm' : 'text-slate-500 hover:text-white'}`}
-                        >
-                          <Sun size={16} />
-                        </button>
-                        <button 
-                          onClick={() => { setTheme("dark"); setIsSettingsMenuOpen(false); if (navigator.vibrate) navigator.vibrate(30); }} 
-                          className={`flex-1 h-9 rounded-lg flex items-center justify-center transition-all ${theme === 'dark' ? 'bg-[#1e293b] text-blue-400 shadow-sm' : 'text-slate-500 hover:text-white'}`}
-                        >
-                          <Moon size={16} />
-                        </button>
-                        <button 
-                          onClick={() => { setTheme("midnight"); setIsSettingsMenuOpen(false); if (navigator.vibrate) navigator.vibrate(30); }} 
-                          className={`flex-1 h-9 rounded-lg flex items-center justify-center transition-all ${theme === 'midnight' ? 'bg-[#F59E0B]/20 text-[#F59E0B] shadow-sm' : 'text-slate-500 hover:text-white'}`}
-                        >
-                          <Sparkles size={16} />
-                        </button>
-                      </div>
-                    </div>
-                    <button onClick={() => { setIsSettingsMenuOpen(false); pullSettings(); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left">
-                      <RefreshCcw size={16} className={`text-amber-500 ${syncStatus === 'loading' ? 'animate-spin' : ''}`} /><span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Обновить</span>
-                    </button>
-                    <button onClick={() => { setIsSettingsMenuOpen(false); setHistoryModal({ isOpen: true, entity: { name: "Лента", icon: "list" }, type: "feed" }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left">
-                      <List size={16} className="text-[var(--primary-color)]" />
-                      <span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Лента</span>
-                    </button>
-                    <button onClick={() => { setIsSettingsMenuOpen(false); setCalendarAnalyticsModal({ isOpen: true }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left">
-                      <Calendar size={16} className="text-emerald-500" />
-                      <span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Календарь</span>
-                    </button>
-                    <button onClick={() => { setIsSettingsMenuOpen(false); setAnalyticsModal({ isOpen: true, type: "expense" }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left">
-                      <PieChart size={16} className="text-amber-500" />
-                      <span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Аналитика</span>
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-          <button 
-            onClick={() => setPillMode(p => p === "expense" ? "income" : p === "income" ? "balance" : "expense")} 
-            className="mt-2 mx-auto px-5 py-2 rounded-full bg-[var(--glass-item-bg)] border border-[var(--glass-border)] flex items-center gap-2 hover:bg-[var(--glass-item-active)] active:scale-95 transition-all shadow-sm"
-          >
-            {pillMode === "expense" ? (
-              <><TrendingDown size={14} className="text-[#cda434]" /><span className="text-xs font-bold text-[#cda434]">-${totalSpent.toLocaleString()} в этом месяце</span></>
-            ) : pillMode === "income" ? (
-              <><TrendingUp size={14} className="text-[#10b981]" /><span className="text-xs font-bold text-[#10b981]">+${totalEarned.toLocaleString()} в этом месяце</span></>
-            ) : (
-              <><Wallet size={14} className="text-[var(--primary-color)]" /><span className="text-xs font-bold text-[var(--primary-color)]">Общий баланс: ${totalBalance.toLocaleString()}</span></>
-            )}
-          </button>
-        </header>
+          </header>
 
-        <DndContext 
-          sensors={sensors} 
-          collisionDetection={rectIntersection} 
-          onDragStart={handleDragStart} 
-          onDragMove={handleDragMove}
-          onDragOver={handleDragOver} 
-          onDragEnd={handleDragEnd}
-        >
           <section className={`px-0 overflow-hidden transition-all duration-500 shrink-0 ${isIncomeCollapsed ? "max-h-0 opacity-0" : "max-h-[160px] opacity-100 py-1"}`}>
             <div className="px-6 py-2 flex justify-between items-center"><div onClick={toggleIncome} className="flex items-center gap-2 cursor-pointer group"><ChevronRight size={14} className="text-slate-500 rotate-90" /><h2 className="text-[10px] font-black text-slate-500 uppercase group-hover:text-white">Доходы</h2></div><div className="flex items-center gap-3"><button onClick={() => setAnalyticsModal({ isOpen: true, type: "income" })} className="w-8 h-8 rounded-xl bg-[var(--success-color)]/10 border border-[var(--success-color)]/20 text-[var(--success-color)] flex items-center justify-center hover:bg-[var(--success-color)]/20 transition-all shadow-sm"><PieChart size={14} /></button><button onClick={() => setIncomeModal({ isOpen: true, income: null })} className="w-7 h-7 rounded-xl bg-[var(--success-color)]/10 text-[var(--success-color)] flex items-center justify-center hover:bg-[var(--success-color)]/20 transition-colors"><Plus size={14} /></button></div></div>
             <SortableContext items={incomes.map(i => i.id)} strategy={horizontalListSortingStrategy}>
@@ -426,206 +444,378 @@ export default function App() {
               </SortableContext>
             </div>
           </section>
+        </div>
 
-          <DragOverlay dropAnimation={null}>
-            {activeDragId ? (
-              <div className={`draggable-coin grabbed-elevation pointer-events-none ${activeDragType === 'category' ? 'coin-category' : 'coin-wallet'}`}>
-                {React.createElement(IconMap[(activeItemData as any)?.icon] || Wallet, { size: 28, color: (activeItemData as any)?.color })}
-              </div>
-            ) : null}
-          </DragOverlay>
-        </DndContext>
-      </div>
-
-      <Numpad
-        data={numpad} availableCurrencies={Array.from(new Set([...accounts.map(a => a.currency), numpad.sourceCurrency, numpad.targetCurrency]))} isEditing={!!editingTxId}
-        onClose={() => { setNumpad({ ...numpad, isOpen: false, targetLinked: true }); setEditingTxId(null); }}
-        onFieldChange={(f) => setNumpad(p => ({ ...p, activeField: f }))}
-        onManageTags={() => setIsTagModalOpen(true)}
-        onLinkToggle={() => { setNumpad(p => ({ ...p, targetLinked: !p.targetLinked })); if (navigator.vibrate) navigator.vibrate(10); }}
-        onCurrencyChange={(field, curr) => setNumpad(p => {
-          if (field === "source") {
-            if (p.type === "income") localStorage.setItem("cl_last_currency", curr);
-            const evalAmt = parseFloat(safeEval(p.sourceAmount));
-            const newTarget = p.targetLinked && evalAmt > 0 ? (Math.round(RatesService.convert(evalAmt, curr, p.targetCurrency) * 100) / 100).toString() : p.targetAmount;
-            return { ...p, sourceCurrency: curr, targetAmount: newTarget };
-          } else {
-            if (p.type === "expense") localStorage.setItem("cl_last_currency", curr);
-            const evalAmt = parseFloat(safeEval(p.sourceAmount));
-            const newTarget = p.targetLinked && evalAmt > 0 ? (Math.round(RatesService.convert(evalAmt, p.sourceCurrency, curr) * 100) / 100).toString() : p.targetAmount;
-            return { ...p, targetCurrency: curr, targetAmount: newTarget };
-          }
-        })}
-        onPress={(val) => setNumpad(p => {
-          const isSource = p.activeField === "source"; const key = isSource ? "sourceAmount" : "targetAmount"; const currStr = p[key];
-          const computeTarget = (s: string): string => { const amt = parseFloat(safeEval(s)); return isNaN(amt) || amt === 0 ? "0" : (Math.round(RatesService.convert(amt, p.sourceCurrency, p.targetCurrency) * 100) / 100).toString(); };
-          const computeSource = (t: string): string => { const amt = parseFloat(safeEval(t)); return isNaN(amt) || amt === 0 ? "0" : (Math.round(RatesService.convert(amt, p.targetCurrency, p.sourceCurrency) * 100) / 100).toString(); };
-          if (val === "C") return p.targetLinked ? { ...p, sourceAmount: "0", targetAmount: "0" } : { ...p, [key]: "0" };
-          if (val === "=") { const ev = safeEval(currStr); if (p.targetLinked) return isSource ? { ...p, sourceAmount: ev, targetAmount: computeTarget(ev) } : { ...p, targetAmount: ev, sourceAmount: computeSource(ev) }; return { ...p, [key]: ev }; }
-          const nv = currStr === "0" && !isNaN(Number(val)) ? val : currStr + val;
-          if (p.targetLinked) return isSource ? { ...p, sourceAmount: nv, targetAmount: computeTarget(nv) } : { ...p, targetAmount: nv, sourceAmount: computeSource(nv) };
-          if (!isSource && (p.sourceAmount === "0" || p.sourceAmount === "")) return { ...p, targetAmount: nv, sourceAmount: computeSource(nv), targetLinked: true };
-          return { ...p, [key]: nv };
-        })}
-        onDelete={() => setNumpad(p => {
-          const isSource = p.activeField === "source"; const key = isSource ? "sourceAmount" : "targetAmount"; const currStr = p[key]; const nv = currStr.length > 1 ? currStr.slice(0, -1) : "0";
-          const computeTarget = (s: string): string => { const amt = parseFloat(safeEval(s)); return isNaN(amt) || amt === 0 ? "0" : (Math.round(RatesService.convert(amt, p.sourceCurrency, p.targetCurrency) * 100) / 100).toString(); };
-          const computeSource = (t: string): string => { const amt = parseFloat(safeEval(t)); return isNaN(amt) || amt === 0 ? "0" : (Math.round(RatesService.convert(amt, p.targetCurrency, p.sourceCurrency) * 100) / 100).toString(); };
-          if (p.targetLinked) return isSource ? { ...p, sourceAmount: nv, targetAmount: computeTarget(nv) } : { ...p, targetAmount: nv, sourceAmount: computeSource(nv) };
-          return { ...p, [key]: nv };
-        })}
-        onTagSelect={(t) => setNumpad(p => ({ ...p, tag: t }))} onCommentChange={(c) => setNumpad(p => ({ ...p, comment: c }))}
-        onRemove={() => { if (editingTxId) setConfirmDelete({ isOpen: true, title: "Удалить операцию?", message: "Транзакция будет удалена, балансы кошельков будут скорректированы автоматически.", onConfirm: () => { deleteTransaction(editingTxId); setEditingTxId(null); setNumpad(p => ({ ...p, isOpen: false, sourceAmount: "0", targetAmount: "0", comment: "" })); setConfirmDelete(p => ({ ...p, isOpen: false })); } }); }}
-        onSubmit={(date?: string) => {
-          const fs = parseFloat(safeEval(numpad.sourceAmount)); const ft = parseFloat(safeEval(numpad.targetAmount));
-          // Use sourceCurrency for income (left field), targetCurrency for expense (right field)
-          const customCurr = numpad.type === "income" ? numpad.sourceCurrency : numpad.targetCurrency;
-          
-          if (editingTxId) updateTransaction(editingTxId, numpad.type, numpad.source!, numpad.destination!, fs, ft, numpad.tag || undefined, date, numpad.comment || undefined, customCurr);
-          else addTransaction(numpad.type, numpad.source!, numpad.destination!, fs, ft, numpad.tag || undefined, date, numpad.comment || undefined, customCurr);
-          setNumpad({ ...numpad, isOpen: false, sourceAmount: "0", targetAmount: "0", targetLinked: true, activeField: "source", comment: "" });
-        }}
-      />
-
-      <AccountModal isOpen={accountModal.isOpen} account={accountModal.account} onClose={() => setAccountModal({ isOpen: false, account: null })} onSave={(name, balance, currency, icon, color) => { saveAccount({ ...accountModal.account, name, balance, currency, icon, color }); setAccountModal({ isOpen: false, account: null }); }} onDelete={() => { if (!accountModal.account) return; setConfirmDelete({ isOpen: true, title: "Удалить кошелек?", message: `Удалить "${accountModal.account.name}"?`, onConfirm: () => { deleteAccount(accountModal.account!.id); setAccountModal({ isOpen: false, account: null }); setConfirmDelete(p => ({ ...p, isOpen: false })); } }); }} />
-      <IncomeModal 
-        isOpen={incomeModal.isOpen} 
-        income={incomeModal.income} 
-        onClose={() => setIncomeModal({ isOpen: false, income: null })} 
-        onSave={(name, icon, color, tags) => { 
-          saveIncome({ ...incomeModal.income, name, icon, color, tags }); 
-          setIncomeModal({ isOpen: false, income: null }); 
-        }} 
-        onDelete={() => { 
-          if (!incomeModal.income) return; 
-          setConfirmDelete({ 
-            isOpen: true, 
-            title: "Удалить доход?", 
-            message: `Удалить "${incomeModal.income.name}"?`, 
-            onConfirm: () => { deleteIncome(incomeModal.income!.id); setIncomeModal({ isOpen: false, income: null }); setConfirmDelete(p => ({ ...p, isOpen: false })); } 
-          }); 
-        }} 
-      />
-      <CategoryModal 
-        isOpen={categoryModal.isOpen} 
-        category={categoryModal.category} 
-        onClose={() => setCategoryModal({ isOpen: false, category: null })} 
-        onSave={(cat) => { 
-          saveCategory(cat); 
-          setCategoryModal({ isOpen: false, category: null }); 
-        }} 
-        onDelete={() => { 
-          if (!categoryModal.category) return; 
-          setConfirmDelete({ 
-            isOpen: true, 
-            title: "Удалить категорию?", 
-            message: `Удалить "${categoryModal.category.name}"?`, 
-            onConfirm: () => { 
-              deleteCategory(categoryModal.category!.id); 
-              setCategoryModal({ isOpen: false, category: null }); 
-              setConfirmDelete(p => ({ ...p, isOpen: false })); 
-            } 
-          }); 
-        }} 
-      />
-      <HistoryModal 
-        isOpen={historyModal.isOpen} 
-        onClose={() => {
-          const wasFromCalendar = historyModal.entity?.icon === "calendar";
-          setHistoryModal({ isOpen: false, entity: null, type: null }); 
-          if (wasFromCalendar) setCalendarAnalyticsModal({ isOpen: true });
-        }} 
-        entity={historyModal.entity} 
-        entityType={historyModal.type} 
-        transactions={historyModal.customTransactions || transactions} 
-        accounts={accounts} 
-        categories={categories} 
-        incomes={incomes} 
-        onEditTransaction={(tx) => { 
-          const wasFromCalendar = historyModal.entity?.icon === "calendar";
-          const source = tx.type === "income" ? incomes.find(i => i.id === tx.targetId) ?? null : accounts.find(a => a.id === tx.accountId) ?? null; 
-          const destination = tx.type === "expense" ? categories.find(c => c.id === tx.targetId) ?? null : tx.type === "income" ? accounts.find(a => a.id === tx.accountId) ?? null : accounts.find(a => a.id === tx.targetId) ?? null; 
-          if (!source || !destination) return; 
-          
-          setEditingTxId(tx.id); 
-          setHistoryModal({ isOpen: false, entity: null, type: null }); 
-          
-          // Determine the correct source currency based on the actual account/source settings
-          const actualSourceCurrency = tx.type === "income" 
-            ? tx.sourceCurrency // For income, source is external (could be anything)
-            : (source as Account).currency; // For expense/transfer, source is our wallet
+        <Numpad
+          data={numpad} availableCurrencies={Array.from(new Set([...accounts.map(a => a.currency), numpad.sourceCurrency, numpad.targetCurrency]))} isEditing={!!editingTxId}
+          onClose={() => { setNumpad({ ...numpad, isOpen: false, targetLinked: true }); setEditingTxId(null); }}
+          onFieldChange={(f) => setNumpad(p => ({ ...p, activeField: f }))}
+          onManageTags={() => setIsTagModalOpen(true)}
+          onLinkToggle={() => { setNumpad(p => ({ ...p, targetLinked: !p.targetLinked })); if (navigator.vibrate) navigator.vibrate(10); }}
+          onCurrencyChange={(field, curr) => setNumpad(p => {
+            if (field === "source") {
+              if (p.type === "income") localStorage.setItem("cl_last_currency", curr);
+              const evalAmt = parseFloat(safeEval(p.sourceAmount));
+              const newTarget = p.targetLinked && evalAmt > 0 ? (Math.round(RatesService.convert(evalAmt, curr, p.targetCurrency) * 100) / 100).toString() : p.targetAmount;
+              return { ...p, sourceCurrency: curr, targetAmount: newTarget };
+            } else {
+              if (p.type === "expense") localStorage.setItem("cl_last_currency", curr);
+              const evalAmt = parseFloat(safeEval(p.sourceAmount));
+              const newTarget = p.targetLinked && evalAmt > 0 ? (Math.round(RatesService.convert(evalAmt, p.sourceCurrency, curr) * 100) / 100).toString() : p.targetAmount;
+              return { ...p, targetCurrency: curr, targetAmount: newTarget };
+            }
+          })}
+          onPress={(val) => setNumpad(p => {
+            const isSource = p.activeField === "source"; const key = isSource ? "sourceAmount" : "targetAmount"; const currStr = p[key];
+            const computeTarget = (s: string): string => { const amt = parseFloat(safeEval(s)); return isNaN(amt) || amt === 0 ? "0" : (Math.round(RatesService.convert(amt, p.sourceCurrency, p.targetCurrency) * 100) / 100).toString(); };
+            const computeSource = (t: string): string => { const amt = parseFloat(safeEval(t)); return isNaN(amt) || amt === 0 ? "0" : (Math.round(RatesService.convert(amt, p.targetCurrency, p.sourceCurrency) * 100) / 100).toString(); };
+            if (val === "C") return p.targetLinked ? { ...p, sourceAmount: "0", targetAmount: "0" } : { ...p, [key]: "0" };
+            if (val === "=") { const ev = safeEval(currStr); if (p.targetLinked) return isSource ? { ...p, sourceAmount: ev, targetAmount: computeTarget(ev) } : { ...p, targetAmount: ev, sourceAmount: computeSource(ev) }; return { ...p, [key]: ev }; }
+            const nv = currStr === "0" && !isNaN(Number(val)) ? val : currStr + val;
+            if (p.targetLinked) return isSource ? { ...p, sourceAmount: nv, targetAmount: computeTarget(nv) } : { ...p, targetAmount: nv, sourceAmount: computeSource(nv) };
+            if (!isSource && (p.sourceAmount === "0" || p.sourceAmount === "")) return { ...p, targetAmount: nv, sourceAmount: computeSource(nv), targetLinked: true };
+            return { ...p, [key]: nv };
+          })}
+          onDelete={() => setNumpad(p => {
+            const isSource = p.activeField === "source"; const key = isSource ? "sourceAmount" : "targetAmount"; const currStr = p[key]; const nv = currStr.length > 1 ? currStr.slice(0, -1) : "0";
+            const computeTarget = (s: string): string => { const amt = parseFloat(safeEval(s)); return isNaN(amt) || amt === 0 ? "0" : (Math.round(RatesService.convert(amt, p.sourceCurrency, p.targetCurrency) * 100) / 100).toString(); };
+            const computeSource = (t: string): string => { const amt = parseFloat(safeEval(t)); return isNaN(amt) || amt === 0 ? "0" : (Math.round(RatesService.convert(amt, p.targetCurrency, p.sourceCurrency) * 100) / 100).toString(); };
+            if (p.targetLinked) return isSource ? { ...p, sourceAmount: nv, targetAmount: computeTarget(nv) } : { ...p, targetAmount: nv, sourceAmount: computeSource(nv) };
+            return { ...p, [key]: nv };
+          })}
+          onTagSelect={(t) => setNumpad(p => ({ ...p, tag: t }))} onCommentChange={(c) => setNumpad(p => ({ ...p, comment: c }))}
+          onRemove={() => { if (editingTxId) setConfirmDelete({ isOpen: true, title: "Удалить операцию?", message: "Транзакция будет удалена, балансы кошельков будут скорректированы автоматически.", onConfirm: () => { deleteTransaction(editingTxId); setEditingTxId(null); setNumpad(p => ({ ...p, isOpen: false, sourceAmount: "0", targetAmount: "0", comment: "" })); setConfirmDelete(p => ({ ...p, isOpen: false })); } }); }}
+          onSubmit={(date?: string) => {
+            const fs = parseFloat(safeEval(numpad.sourceAmount)); const ft = parseFloat(safeEval(numpad.targetAmount));
+            // Use sourceCurrency for income (left field), targetCurrency for expense (right field)
+            const customCurr = numpad.type === "income" ? numpad.sourceCurrency : numpad.targetCurrency;
             
-          setNumpad({ 
-            isOpen: true, 
-            type: tx.type, 
-            source, 
-            destination, 
-            sourceAmount: String(tx.sourceAmount), 
-            sourceCurrency: actualSourceCurrency, 
-            targetAmount: String(tx.targetAmount ?? tx.sourceAmount), 
-            targetCurrency: tx.targetCurrency, 
-            targetLinked: true, 
-            activeField: "source", 
-            tag: tx.tag ?? null, 
-            comment: tx.comment ?? "", 
-            // We don't automatically return to calendar after Numpad, 
-            // but the history modal's state is now cleared.
-          }); 
-        }} 
-      />
-      <AnalyticsModal isOpen={analyticsModal.isOpen} onClose={() => setAnalyticsModal(p => ({ ...p, isOpen: false }))} categories={categories} incomes={incomes} accounts={accounts} globalTransactions={transactions} initialType={analyticsModal.type} onItemClick={(item, type, monthTx) => { let entity = item; if (type === "category") { const cat = categories.find(c => c.id === item.id); if (cat) entity = cat; } else if (type === "income") { const inc = incomes.find(i => i.id === item.id); if (inc) entity = inc; } setAnalyticsModal(p => ({ ...p, isOpen: false })); setHistoryModal({ isOpen: true, entity, type, customTransactions: monthTx.filter(t => { if (type === "category") return t.targetId === item.id; if (type === "tag") return (t.tag?.trim() || "Без тега") === item.name; if (type === "income") return t.targetId === item.id; return false; }) }); }} />
-      <CalendarAnalyticsModal isOpen={calendarAnalyticsModal.isOpen} onClose={() => setCalendarAnalyticsModal({ isOpen: false })} globalTransactions={transactions} onItemClick={(item, type, dayTx) => { setCalendarAnalyticsModal({ isOpen: false }); setHistoryModal({ isOpen: true, entity: item, type, customTransactions: dayTx }); }} />
-      <ConfirmModal isOpen={confirmDelete.isOpen} title={confirmDelete.title} message={confirmDelete.message} onConfirm={confirmDelete.onConfirm} onCancel={() => setConfirmDelete(p => ({ ...p, isOpen: false }))} />
-      
-      <TagModal 
-        isOpen={isTagModalOpen} 
-        onClose={() => setIsTagModalOpen(false)} 
-        existingTags={allExistingTags}
-        activeTags={numpad.type === 'expense' ? (numpad.destination as Category)?.tags || [] : (numpad.source as IncomeSource)?.tags || []}
-        onSelect={(tag) => {
-          if (numpad.type === 'expense' && numpad.destination) {
-            const cat = numpad.destination as Category;
-            const currentTags = cat.tags || [];
-            const isSelected = currentTags.some(t => t.toLowerCase() === tag.toLowerCase());
-            const newTags = isSelected 
-              ? currentTags.filter(t => t.toLowerCase() !== tag.toLowerCase()) 
-              : [...currentTags, tag];
-            const updated = { ...cat, tags: newTags };
-            saveCategory(updated);
-            setNumpad(p => ({ ...p, destination: updated, tag: tag }));
-          } else if (numpad.type === 'income' && numpad.source) {
-            const inc = numpad.source as IncomeSource;
-            const currentTags = inc.tags || [];
-            const isSelected = currentTags.some(t => t.toLowerCase() === tag.toLowerCase());
-            const newTags = isSelected 
-              ? currentTags.filter(t => t.toLowerCase() !== tag.toLowerCase()) 
-              : [...currentTags, tag];
-            const updated = { ...inc, tags: newTags };
-            saveIncome(updated);
-            setNumpad(p => ({ ...p, source: updated, tag: tag }));
-          } else {
-            setNumpad(p => ({ ...p, tag: tag }));
-          }
-        }}
-      />
-
-      {conflictData && (
-        <ConfirmModal 
-          isOpen={true} 
-          title="Обнаружены изменения" 
-          message={`В облаке есть более свежие данные (версия от ${new Date(conflictData.timestamp.replace(/-/g, '/').replace('T', ' ')).toLocaleString()}). Загрузить их и перезаписать локальные данные?`}
-          confirmText="ЗАГРУЗИТЬ"
-          cancelText="ОСТАВИТЬ МОИ"
-          danger={false}
-          onConfirm={() => updateLocalFromRemote(conflictData)}
-          onCancel={() => {
-            // If user rejects cloud, we update our local sync timestamp to match remote
-            // to stop asking until next remote change
-            localStorage.setItem("cl_last_sync", conflictData.timestamp);
-            setConflictData(null);
+            if (editingTxId) updateTransaction(editingTxId, numpad.type, numpad.source!, numpad.destination!, fs, ft, numpad.tag || undefined, date, numpad.comment || undefined, customCurr);
+            else addTransaction(numpad.type, numpad.source!, numpad.destination!, fs, ft, numpad.tag || undefined, date, numpad.comment || undefined, customCurr);
+            setNumpad({ ...numpad, isOpen: false, sourceAmount: "0", targetAmount: "0", targetLinked: true, activeField: "source", comment: "" });
           }}
         />
-      )}
-    </div>
+
+        <AccountModal isOpen={accountModal.isOpen} account={accountModal.account} onClose={() => setAccountModal({ isOpen: false, account: null })} onSave={(name, balance, currency, icon, color) => { saveAccount({ ...accountModal.account, name, balance, currency, icon, color }); setAccountModal({ isOpen: false, account: null }); }} onDelete={() => { if (!accountModal.account) return; setConfirmDelete({ isOpen: true, title: "Удалить кошелек?", message: `Удалить "${accountModal.account.name}"?`, onConfirm: () => { deleteAccount(accountModal.account!.id); setAccountModal({ isOpen: false, account: null }); setConfirmDelete(p => ({ ...p, isOpen: false })); } }); }} />
+        <IncomeModal 
+          isOpen={incomeModal.isOpen} 
+          income={incomeModal.income} 
+          onClose={() => setIncomeModal({ isOpen: false, income: null })} 
+          onSave={(name, icon, color, tags) => { 
+            saveIncome({ ...incomeModal.income, name, icon, color, tags }); 
+            setIncomeModal({ isOpen: false, income: null }); 
+          }} 
+          onDelete={() => { 
+            if (!incomeModal.income) return; 
+            setConfirmDelete({ 
+              isOpen: true, 
+              title: "Удалить доход?", 
+              message: `Удалить "${incomeModal.income.name}"?`, 
+              onConfirm: () => { deleteIncome(incomeModal.income!.id); setIncomeModal({ isOpen: false, income: null }); setConfirmDelete(p => ({ ...p, isOpen: false })); } 
+            }); 
+          }} 
+        />
+        <CategoryModal 
+          isOpen={categoryModal.isOpen} 
+          category={categoryModal.category} 
+          onClose={() => setCategoryModal({ isOpen: false, category: null })} 
+          onSave={(cat) => { 
+            saveCategory(cat); 
+            setCategoryModal({ isOpen: false, category: null }); 
+          }} 
+          onDelete={() => { 
+            if (!categoryModal.category) return; 
+            setConfirmDelete({ 
+              isOpen: true, 
+              title: "Удалить категорию?", 
+              message: `Удалить "${categoryModal.category.name}"?`, 
+              onConfirm: () => { 
+                deleteCategory(categoryModal.category!.id); 
+                setCategoryModal({ isOpen: false, category: null }); 
+                setConfirmDelete(p => ({ ...p, isOpen: false })); 
+              } 
+            }); 
+          }} 
+        />
+        <HistoryModal 
+          isOpen={historyModal.isOpen} 
+          onClose={() => {
+            const wasFromCalendar = historyModal.entity?.icon === "calendar";
+            setHistoryModal({ isOpen: false, entity: null, type: null }); 
+            if (wasFromCalendar) setCalendarAnalyticsModal({ isOpen: true });
+          }} 
+          entity={historyModal.entity} 
+          entityType={historyModal.type} 
+          transactions={historyModal.customTransactions || transactions} 
+          accounts={accounts} 
+          categories={categories} 
+          incomes={incomes} 
+          onEditTransaction={(tx) => { 
+            const wasFromCalendar = historyModal.entity?.icon === "calendar";
+            const source = tx.type === "income" ? incomes.find(i => i.id === tx.targetId) ?? null : accounts.find(a => a.id === tx.accountId) ?? null; 
+            const destination = tx.type === "expense" ? categories.find(c => c.id === tx.targetId) ?? null : tx.type === "income" ? accounts.find(a => a.id === tx.accountId) ?? null : accounts.find(a => a.id === tx.targetId) ?? null; 
+            if (!source || !destination) return; 
+            
+            setEditingTxId(tx.id); 
+            setHistoryModal({ isOpen: false, entity: null, type: null }); 
+            
+            // Determine the correct source currency based on the actual account/source settings
+            const actualSourceCurrency = tx.type === "income" 
+              ? tx.sourceCurrency // For income, source is external (could be anything)
+              : (source as Account).currency; // For expense/transfer, source is our wallet
+              
+            setNumpad({ 
+              isOpen: true, 
+              type: tx.type, 
+              source, 
+              destination, 
+              sourceAmount: String(tx.sourceAmount), 
+              sourceCurrency: actualSourceCurrency, 
+              targetAmount: String(tx.targetAmount ?? tx.sourceAmount), 
+              targetCurrency: tx.targetCurrency, 
+              targetLinked: true, 
+              activeField: "source", 
+              tag: tx.tag ?? null, 
+              comment: tx.comment ?? "", 
+              // We don't automatically return to calendar after Numpad, 
+              // but the history modal's state is now cleared.
+            }); 
+          }} 
+        />
+        <AnalyticsModal isOpen={analyticsModal.isOpen} onClose={() => setAnalyticsModal(p => ({ ...p, isOpen: false }))} categories={categories} incomes={incomes} accounts={accounts} globalTransactions={transactions} initialType={analyticsModal.type} onItemClick={(item, type, monthTx) => { let entity = item; if (type === "category") { const cat = categories.find(c => c.id === item.id); if (cat) entity = cat; } else if (type === "income") { const inc = incomes.find(i => i.id === item.id); if (inc) entity = inc; } setAnalyticsModal(p => ({ ...p, isOpen: false })); setHistoryModal({ isOpen: true, entity, type, customTransactions: monthTx.filter(t => { if (type === "category") return t.targetId === item.id; if (type === "tag") return (t.tag?.trim() || "Без тега") === item.name; if (type === "income") return t.targetId === item.id; return false; }) }); }} />
+        <CalendarAnalyticsModal isOpen={calendarAnalyticsModal.isOpen} onClose={() => setCalendarAnalyticsModal({ isOpen: false })} globalTransactions={transactions} onItemClick={(item, type, dayTx) => { setCalendarAnalyticsModal({ isOpen: false }); setHistoryModal({ isOpen: true, entity: item, type, customTransactions: dayTx }); }} />
+        <ConfirmModal isOpen={confirmDelete.isOpen} title={confirmDelete.title} message={confirmDelete.message} onConfirm={confirmDelete.onConfirm} onCancel={() => setConfirmDelete(p => ({ ...p, isOpen: false }))} />
+        
+        <TagModal 
+          isOpen={isTagModalOpen} 
+          onClose={() => setIsTagModalOpen(false)} 
+          existingTags={allExistingTags}
+          activeTags={numpad.type === 'expense' ? (numpad.destination as Category)?.tags || [] : (numpad.source as IncomeSource)?.tags || []}
+          onSelect={(tag) => {
+            if (numpad.type === 'expense' && numpad.destination) {
+              const cat = numpad.destination as Category;
+              const currentTags = cat.tags || [];
+              const isSelected = currentTags.some(t => t.toLowerCase() === tag.toLowerCase());
+              const newTags = isSelected 
+                ? currentTags.filter(t => t.toLowerCase() !== tag.toLowerCase()) 
+                : [...currentTags, tag];
+              const updated = { ...cat, tags: newTags };
+              saveCategory(updated);
+              setNumpad(p => ({ ...p, destination: updated, tag: tag }));
+            } else if (numpad.type === 'income' && numpad.source) {
+              const inc = numpad.source as IncomeSource;
+              const currentTags = inc.tags || [];
+              const isSelected = currentTags.some(t => t.toLowerCase() === tag.toLowerCase());
+              const newTags = isSelected 
+                ? currentTags.filter(t => t.toLowerCase() !== tag.toLowerCase()) 
+                : [...currentTags, tag];
+              const updated = { ...inc, tags: newTags };
+              saveIncome(updated);
+              setNumpad(p => ({ ...p, source: updated, tag: tag }));
+            } else {
+              setNumpad(p => ({ ...p, tag: tag }));
+            }
+          }}
+        />
+
+        {conflictData && (
+          <ConfirmModal 
+            isOpen={true} 
+            title="Обнаружены изменения" 
+            message={`В облаке есть более свежие данные (версия от ${new Date(conflictData.timestamp.replace(/-/g, '/').replace('T', ' ')).toLocaleString()}). Загрузить их и перезаписать локальные данные?`}
+            confirmText="ЗАГРУЗИТЬ"
+            cancelText="ОСТАВИТЬ МОИ"
+            danger={false}
+            onConfirm={() => updateLocalFromRemote(conflictData)}
+            onCancel={() => {
+              // If user rejects cloud, we update our local sync timestamp to match remote
+              // to stop asking until next remote change
+              localStorage.setItem("cl_last_sync", conflictData.timestamp);
+              setConflictData(null);
+            }}
+          />
+        )}
+        
+        <Numpad
+          data={numpad} availableCurrencies={Array.from(new Set([...accounts.map(a => a.currency), numpad.sourceCurrency, numpad.targetCurrency]))} isEditing={!!editingTxId}
+          onClose={() => { setNumpad({ ...numpad, isOpen: false, targetLinked: true }); setEditingTxId(null); }}
+          onFieldChange={(f) => setNumpad(p => ({ ...p, activeField: f }))}
+          onManageTags={() => setIsTagModalOpen(true)}
+          onLinkToggle={() => { setNumpad(p => ({ ...p, targetLinked: !p.targetLinked })); if (navigator.vibrate) navigator.vibrate(10); }}
+          onCurrencyChange={(field, curr) => setNumpad(p => {
+            if (field === "source") {
+              if (p.type === "income") localStorage.setItem("cl_last_currency", curr);
+              const evalAmt = parseFloat(safeEval(p.sourceAmount));
+              const newTarget = p.targetLinked && evalAmt > 0 ? (Math.round(RatesService.convert(evalAmt, curr, p.targetCurrency) * 100) / 100).toString() : p.targetAmount;
+              return { ...p, sourceCurrency: curr, targetAmount: newTarget };
+            } else {
+              if (p.type === "expense") localStorage.setItem("cl_last_currency", curr);
+              const evalAmt = parseFloat(safeEval(p.sourceAmount));
+              const newTarget = p.targetLinked && evalAmt > 0 ? (Math.round(RatesService.convert(evalAmt, p.sourceCurrency, curr) * 100) / 100).toString() : p.targetAmount;
+              return { ...p, targetCurrency: curr, targetAmount: newTarget };
+            }
+          })}
+          onPress={(val) => setNumpad(p => {
+            const isSource = p.activeField === "source"; const key = isSource ? "sourceAmount" : "targetAmount"; const currStr = p[key];
+            const computeTarget = (s: string): string => { const amt = parseFloat(safeEval(s)); return isNaN(amt) || amt === 0 ? "0" : (Math.round(RatesService.convert(amt, p.sourceCurrency, p.targetCurrency) * 100) / 100).toString(); };
+            const computeSource = (t: string): string => { const amt = parseFloat(safeEval(t)); return isNaN(amt) || amt === 0 ? "0" : (Math.round(RatesService.convert(amt, p.targetCurrency, p.sourceCurrency) * 100) / 100).toString(); };
+            if (val === "C") return p.targetLinked ? { ...p, sourceAmount: "0", targetAmount: "0" } : { ...p, [key]: "0" };
+            if (val === "=") { const ev = safeEval(currStr); if (p.targetLinked) return isSource ? { ...p, sourceAmount: ev, targetAmount: computeTarget(ev) } : { ...p, targetAmount: ev, sourceAmount: computeSource(ev) }; return { ...p, [key]: ev }; }
+            const nv = currStr === "0" && !isNaN(Number(val)) ? val : currStr + val;
+            if (p.targetLinked) return isSource ? { ...p, sourceAmount: nv, targetAmount: computeTarget(nv) } : { ...p, targetAmount: nv, sourceAmount: computeSource(nv) };
+            if (!isSource && (p.sourceAmount === "0" || p.sourceAmount === "")) return { ...p, targetAmount: nv, sourceAmount: computeSource(nv), targetLinked: true };
+            return { ...p, [key]: nv };
+          })}
+          onDelete={() => setNumpad(p => {
+            const isSource = p.activeField === "source"; const key = isSource ? "sourceAmount" : "targetAmount"; const currStr = p[key]; const nv = currStr.length > 1 ? currStr.slice(0, -1) : "0";
+            const computeTarget = (s: string): string => { const amt = parseFloat(safeEval(s)); return isNaN(amt) || amt === 0 ? "0" : (Math.round(RatesService.convert(amt, p.sourceCurrency, p.targetCurrency) * 100) / 100).toString(); };
+            const computeSource = (t: string): string => { const amt = parseFloat(safeEval(t)); return isNaN(amt) || amt === 0 ? "0" : (Math.round(RatesService.convert(amt, p.targetCurrency, p.sourceCurrency) * 100) / 100).toString(); };
+            if (p.targetLinked) return isSource ? { ...p, sourceAmount: nv, targetAmount: computeTarget(nv) } : { ...p, targetAmount: nv, sourceAmount: computeSource(nv) };
+            return { ...p, [key]: nv };
+          })}
+          onTagSelect={(t) => setNumpad(p => ({ ...p, tag: t }))} onCommentChange={(c) => setNumpad(p => ({ ...p, comment: c }))}
+          onRemove={() => { if (editingTxId) setConfirmDelete({ isOpen: true, title: "Удалить операцию?", message: "Транзакция будет удалена, балансы кошельков будут скорректированы автоматически.", onConfirm: () => { deleteTransaction(editingTxId); setEditingTxId(null); setNumpad(p => ({ ...p, isOpen: false, sourceAmount: "0", targetAmount: "0", comment: "" })); setConfirmDelete(p => ({ ...p, isOpen: false })); } }); }}
+          onSubmit={(date?: string) => {
+            const fs = parseFloat(safeEval(numpad.sourceAmount)); const ft = parseFloat(safeEval(numpad.targetAmount));
+            // Use sourceCurrency for income (left field), targetCurrency for expense (right field)
+            const customCurr = numpad.type === "income" ? numpad.sourceCurrency : numpad.targetCurrency;
+            
+            if (editingTxId) updateTransaction(editingTxId, numpad.type, numpad.source!, numpad.destination!, fs, ft, numpad.tag || undefined, date, numpad.comment || undefined, customCurr);
+            else addTransaction(numpad.type, numpad.source!, numpad.destination!, fs, ft, numpad.tag || undefined, date, numpad.comment || undefined, customCurr);
+            setNumpad({ ...numpad, isOpen: false, sourceAmount: "0", targetAmount: "0", targetLinked: true, activeField: "source", comment: "" });
+          }}
+        />
+
+        <AccountModal isOpen={accountModal.isOpen} account={accountModal.account} onClose={() => setAccountModal({ isOpen: false, account: null })} onSave={(name, balance, currency, icon, color) => { saveAccount({ ...accountModal.account, name, balance, currency, icon, color }); setAccountModal({ isOpen: false, account: null }); }} onDelete={() => { if (!accountModal.account) return; setConfirmDelete({ isOpen: true, title: "Удалить кошелек?", message: `Удалить "${accountModal.account.name}"?`, onConfirm: () => { deleteAccount(accountModal.account!.id); setAccountModal({ isOpen: false, account: null }); setConfirmDelete(p => ({ ...p, isOpen: false })); } }); }} />
+        <IncomeModal 
+          isOpen={incomeModal.isOpen} 
+          income={incomeModal.income} 
+          onClose={() => setIncomeModal({ isOpen: false, income: null })} 
+          onSave={(name, icon, color, tags) => { 
+            saveIncome({ ...incomeModal.income, name, icon, color, tags }); 
+            setIncomeModal({ isOpen: false, income: null }); 
+          }} 
+          onDelete={() => { 
+            if (!incomeModal.income) return; 
+            setConfirmDelete({ 
+              isOpen: true, 
+              title: "Удалить доход?", 
+              message: `Удалить "${incomeModal.income.name}"?`, 
+              onConfirm: () => { deleteIncome(incomeModal.income!.id); setIncomeModal({ isOpen: false, income: null }); setConfirmDelete(p => ({ ...p, isOpen: false })); } 
+            }); 
+          }} 
+        />
+        <CategoryModal 
+          isOpen={categoryModal.isOpen} 
+          category={categoryModal.category} 
+          onClose={() => setCategoryModal({ isOpen: false, category: null })} 
+          onSave={(cat) => { 
+            saveCategory(cat); 
+            setCategoryModal({ isOpen: false, category: null }); 
+          }} 
+          onDelete={() => { 
+            if (!categoryModal.category) return; 
+            setConfirmDelete({ 
+              isOpen: true, 
+              title: "Удалить категорию?", 
+              message: `Удалить "${categoryModal.category.name}"?`, 
+              onConfirm: () => { 
+                deleteCategory(categoryModal.category!.id); 
+                setCategoryModal({ isOpen: false, category: null }); 
+                setConfirmDelete(p => ({ ...p, isOpen: false })); 
+              } 
+            }); 
+          }} 
+        />
+        <HistoryModal 
+          isOpen={historyModal.isOpen} 
+          onClose={() => {
+            const wasFromCalendar = historyModal.entity?.icon === "calendar";
+            setHistoryModal({ isOpen: false, entity: null, type: null }); 
+            if (wasFromCalendar) setCalendarAnalyticsModal({ isOpen: true });
+          }} 
+          entity={historyModal.entity} 
+          entityType={historyModal.type} 
+          transactions={historyModal.customTransactions || transactions} 
+          accounts={accounts} 
+          categories={categories} 
+          incomes={incomes} 
+          onEditTransaction={(tx) => { 
+            const wasFromCalendar = historyModal.entity?.icon === "calendar";
+            const source = tx.type === "income" ? incomes.find(i => i.id === tx.targetId) ?? null : accounts.find(a => a.id === tx.accountId) ?? null; 
+            const destination = tx.type === "expense" ? categories.find(c => c.id === tx.targetId) ?? null : tx.type === "income" ? accounts.find(a => a.id === tx.accountId) ?? null : accounts.find(a => a.id === tx.targetId) ?? null; 
+            if (!source || !destination) return; 
+            
+            setEditingTxId(tx.id); 
+            setHistoryModal({ isOpen: false, entity: null, type: null }); 
+            
+            // Determine the correct source currency based on the actual account/source settings
+            const actualSourceCurrency = tx.type === "income" 
+              ? tx.sourceCurrency // For income, source is external (could be anything)
+              : (source as Account).currency; // For expense/transfer, source is our wallet
+              
+            setNumpad({ 
+              isOpen: true, 
+              type: tx.type, 
+              source, 
+              destination, 
+              sourceAmount: String(tx.sourceAmount), 
+              sourceCurrency: actualSourceCurrency, 
+              targetAmount: String(tx.targetAmount ?? tx.sourceAmount), 
+              targetCurrency: tx.targetCurrency, 
+              targetLinked: true, 
+              activeField: "source", 
+              tag: tx.tag ?? null, 
+              comment: tx.comment ?? "", 
+              // We don't automatically return to calendar after Numpad, 
+              // but the history modal's state is now cleared.
+            }); 
+          }} 
+        />
+        <AnalyticsModal isOpen={analyticsModal.isOpen} onClose={() => setAnalyticsModal(p => ({ ...p, isOpen: false }))} categories={categories} incomes={incomes} accounts={accounts} globalTransactions={transactions} initialType={analyticsModal.type} onItemClick={(item, type, monthTx) => { let entity = item; if (type === "category") { const cat = categories.find(c => c.id === item.id); if (cat) entity = cat; } else if (type === "income") { const inc = incomes.find(i => i.id === item.id); if (inc) entity = inc; } setAnalyticsModal(p => ({ ...p, isOpen: false })); setHistoryModal({ isOpen: true, entity, type, customTransactions: monthTx.filter(t => { if (type === "category") return t.targetId === item.id; if (type === "tag") return (t.tag?.trim() || "Без тега") === item.name; if (type === "income") return t.targetId === item.id; return false; }) }); }} />
+        <CalendarAnalyticsModal isOpen={calendarAnalyticsModal.isOpen} onClose={() => setCalendarAnalyticsModal({ isOpen: false })} globalTransactions={transactions} onItemClick={(item, type, dayTx) => { setCalendarAnalyticsModal({ isOpen: false }); setHistoryModal({ isOpen: true, entity: item, type, customTransactions: dayTx }); }} />
+        <ConfirmModal isOpen={confirmDelete.isOpen} title={confirmDelete.title} message={confirmDelete.message} onConfirm={confirmDelete.onConfirm} onCancel={() => setConfirmDelete(p => ({ ...p, isOpen: false }))} />
+        
+        <TagModal 
+          isOpen={isTagModalOpen} 
+          onClose={() => setIsTagModalOpen(false)} 
+          existingTags={allExistingTags}
+          activeTags={numpad.type === 'expense' ? (numpad.destination as Category)?.tags || [] : (numpad.source as IncomeSource)?.tags || []}
+          onSelect={(tag) => {
+            if (numpad.type === 'expense' && numpad.destination) {
+              const cat = numpad.destination as Category;
+              const currentTags = cat.tags || [];
+              const isSelected = currentTags.some(t => t.toLowerCase() === tag.toLowerCase());
+              const newTags = isSelected 
+                ? currentTags.filter(t => t.toLowerCase() !== tag.toLowerCase()) 
+                : [...currentTags, tag];
+              const updated = { ...cat, tags: newTags };
+              saveCategory(updated);
+              setNumpad(p => ({ ...p, destination: updated, tag: tag }));
+            } else if (numpad.type === 'income' && numpad.source) {
+              const inc = numpad.source as IncomeSource;
+              const currentTags = inc.tags || [];
+              const isSelected = currentTags.some(t => t.toLowerCase() === tag.toLowerCase());
+              const newTags = isSelected 
+                ? currentTags.filter(t => t.toLowerCase() !== tag.toLowerCase()) 
+                : [...currentTags, tag];
+              const updated = { ...inc, tags: newTags };
+              saveIncome(updated);
+              setNumpad(p => ({ ...p, source: updated, tag: tag }));
+            } else {
+              setNumpad(p => ({ ...p, tag: tag }));
+            }
+          }}
+        />
+      </div>
+
+      <DragOverlay dropAnimation={null}>
+        {activeDragId ? (
+          <div className={`draggable-coin grabbed-elevation pointer-events-none ${activeDragType === 'category' ? 'coin-category' : 'coin-wallet'}`}>
+            {React.createElement(IconMap[(activeItemData as any)?.icon] || Wallet, { size: 28, color: (activeItemData as any)?.color })}
+          </div>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
   );
 }

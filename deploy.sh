@@ -26,11 +26,17 @@ PYTHONPATH=./backend python3 backend/test_api.py || { echo "❌ Backend test fai
 echo "📤 Committing and pushing local changes to GitHub..."
 git add .
 git commit -m "Auto-deploy: update backend and frontend configuration" || echo "Nothing to commit"
-git push origin $(git rev-parse --abbrev-ref HEAD)
+
+# If we have a target branch in mind, push current HEAD to it
+LOCAL_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
 deploy_env() {
   local IFS="|"
   read -r name dir branch port_front port_back container_prefix <<< "$1"
+
+  # Push to the remote branch that the server expects
+  echo "Pushing local $LOCAL_BRANCH to remote $branch..."
+  git push origin $LOCAL_BRANCH:$branch --force
   
   # Determine backend URL for frontend (on reloto.ru we'll assume standard naming)
   local backend_url=""
