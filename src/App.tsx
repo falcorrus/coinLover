@@ -2,7 +2,7 @@
 import * as React from "react";
 import {
   DndContext, DragOverlay, DragStartEvent, DragEndEvent, DragOverEvent, DragMoveEvent,
-  closestCenter, pointerWithin, rectIntersection, MouseSensor, TouchSensor, useSensor, useSensors,
+  closestCenter, pointerWithin, rectIntersection, PointerSensor, useSensor, useSensors,
 } from "@dnd-kit/core";
 import { arrayMove, SortableContext, horizontalListSortingStrategy, rectSortingStrategy } from "@dnd-kit/sortable";
 import {
@@ -120,10 +120,7 @@ export default function App() {
     } catch { return str; }
   };
 
-  const sensors = useSensors(
-    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } })
-  );
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 10 } }));
   const toggleIncome = () => { const next = !isIncomeCollapsed; setIsIncomeCollapsed(next); setMode(next ? "expense" : "income"); };
 
   const handleDragStart = (e: DragStartEvent) => {
