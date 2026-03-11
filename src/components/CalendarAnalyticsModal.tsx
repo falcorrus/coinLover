@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { X, ChevronLeft, ChevronRight, RefreshCcw, Calendar, Wallet, AlertCircle } from "lucide-react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import { X, ChevronLeft, ChevronRight, RefreshCcw, Calendar, Wallet, AlertCircle, LayoutGrid, List } from "lucide-react";
 import { Transaction, Account, Category, IncomeSource } from "../types";
 import { googleSheetsService } from "../services/googleSheets";
 import { IconMap } from "../constants";
@@ -22,7 +22,9 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
     const [currentDate, setCurrentDate] = useState(new Date());
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [selectedDay, setSelectedDay] = useState<number | null>(null);
+    const [selectedDay, setSelectedDay] = useState<number | null>(new Date().getDate());
+    const [viewMode, setViewMode] = useState<"timeline" | "month">("timeline");
+    const timelineRef = useRef<HTMLDivElement>(null);
 
     // 1. Effects
     useEffect(() => {
@@ -67,10 +69,15 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
         loadData();
     }, [isOpen, currentDate, globalTransactions]);
 
-    // Reset selected day when month changes
+    // Auto-scroll to selected day in timeline mode
     useEffect(() => {
-        setSelectedDay(null);
-    }, [currentDate]);
+        if (viewMode === "timeline" && selectedDay && timelineRef.current) {
+            const element = timelineRef.current.querySelector(`[data-day="${selectedDay}"]`);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }
+        }
+    }, [viewMode, selectedDay]);
 
     // 2. Handlers
     const nextMonth = () => setCurrentDate(d => new Date(d.getFullYear(), d.getMonth() + 1, 1));
@@ -100,6 +107,15 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
         return days;
     }, [currentDate]);
 
+    const timelineDays = useMemo(() => {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        const totalDays = daysInMonth(year, month);
+        const days = [];
+        for (let d = 1; d <= totalDays; d++) days.push(d);
+        return days;
+    }, [currentDate]);
+
     const getDailyData = (day: number) => {
         const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         const dayTx = filteredTx.filter(t => t.date.startsWith(dateStr));
@@ -109,20 +125,6 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
     };
 
     const selectedDayData = selectedDay ? getDailyData(selectedDay) : null;
-
-    const checkBroken = (tx: Transaction) => {
-        const acc = accounts.find(a => a.id === tx.accountId);
-        let targetExists = false;
-        if (tx.type === "expense") targetExists = categories.some(c => c.id === tx.targetId);
-        else if (tx.type === "income") targetExists = incomes.some(i => i.id === tx.targetId);
-        else if (tx.type === "transfer") targetExists = accounts.some(a => a.id === tx.targetId);
-
-        return {
-            sourceBroken: !acc,
-            targetBroken: !targetExists,
-            isBroken: !acc || !targetExists
-        };
-    };
 
     const getCounterpartInfo = (tx: Transaction) => {
         let isOutflow = tx.type !== "income";
@@ -160,6 +162,8 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
         };
     };
 
+    const dayNames = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
+
     if (!isOpen) return null;
 
     return (
@@ -172,62 +176,128 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
                     className="bg-[var(--bg-color)] w-full h-full flex flex-col overflow-hidden relative shadow-2xl"
                     style={{ paddingTop: `env(safe-area-inset-top)` }}
                 >
-                    <div className="flex justify-between items-center p-4 border-b border-[var(--glass-border)] shrink-0">
+                    {/* Header */}
+                    <div className="flex justify-between items-center p-6 border-b border-[var(--glass-border)] shrink-0">
                         <div className="flex items-center gap-3">
-                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-[0_0_15px_var(--primary-color)] bg-[var(--primary-color)]/20 text-[var(--primary-color)]`}>
-                                <Calendar size={18} />
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-[0_0_15px_var(--primary-color)] bg-[var(--primary-color)]/20 text-[var(--primary-color)]`}>
+                                <Calendar size={20} />
                             </div>
                             <div className="flex flex-col">
-                                <h2 className="text-xs font-black text-[var(--text-main)] uppercase tracking-wider">Календарь операций</h2>
-                                <span className="text-[9px] text-[var(--text-muted)] uppercase tracking-widest leading-none mt-1">активность по дням</span>
+                                <h2 className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Календарь операций</h2>
+                                <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest leading-none mt-1">активность по дням</span>
                             </div>
                         </div>
-                        <button onClick={onClose} className="w-9 h-9 rounded-xl bg-[var(--glass-item-bg)] flex items-center justify-center text-[var(--text-main)] hover:bg-[var(--glass-item-active)] transition-colors border border-[var(--glass-border)]"><X size={18} /></button>
+                        <button onClick={onClose} className="w-10 h-10 rounded-xl bg-[var(--glass-item-bg)] flex items-center justify-center text-[var(--text-main)] hover:bg-[var(--glass-item-active)] transition-colors border border-[var(--glass-border)]"><X size={20} /></button>
                     </div>
 
-                    <div className="flex justify-between items-center px-4 py-2 bg-[var(--glass-item-bg)]/50 shrink-0 border-b border-[var(--glass-border)]">
-                        <button onClick={prevMonth} className="p-1 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"><ChevronLeft size={18} /></button>
-                        <span className="text-[10px] font-bold text-[var(--text-main)] uppercase tracking-widest">{monthName}</span>
-                        <button onClick={nextMonth} className="p-1 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"><ChevronRight size={18} /></button>
-                    </div>
-
-                    <div className="px-6 py-4 shrink-0">
-                        <div className="grid grid-cols-7 gap-1">
-                            {["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"].map(d => (
-                                <div key={d} className="text-[9px] font-black text-[var(--text-muted)] uppercase text-center py-1">{d}</div>
-                            ))}
-                            {calendarDays.map((day, i) => {
-                                if (day === null) return <div key={`empty-${i}`} className="aspect-square" />;
-                                const { expense, income, transactions: dayTx } = getDailyData(day);
-                                const hasData = dayTx.length > 0;
-                                const today = new Date();
-                                const isToday = today.getDate() === day && today.getMonth() === currentDate.getMonth() && today.getFullYear() === currentDate.getFullYear();
-                                const isSelected = selectedDay === day;
-                                
-                                return (
-                                    <button 
-                                        key={day}
-                                        onClick={() => {
-                                            if (hasData) {
-                                                setSelectedDay(day === selectedDay ? null : day);
-                                            }
-                                        }}
-                                        className={`aspect-square rounded-xl flex flex-col items-center justify-center gap-1 transition-all relative border 
-                                            ${isSelected ? 'bg-[var(--primary-color)]/20 border-[var(--primary-color)] shadow-[0_0_15px_rgba(109,93,252,0.3)]' : isToday ? 'border-[var(--primary-color)]/50' : 'border-transparent'} 
-                                            ${hasData ? 'bg-[var(--glass-item-bg)] hover:bg-[var(--glass-item-active)] active:scale-90' : 'opacity-40 cursor-default'}
-                                        `}
-                                    >
-                                        <span className={`text-xs font-bold ${isSelected || isToday ? 'text-[var(--primary-color)]' : 'text-[var(--text-main)]'}`}>{day}</span>
-                                        <div className="flex gap-0.5">
-                                            {income > 0 && <div className="w-1 h-1 rounded-full bg-[var(--success-color)] shadow-[0_0_5px_var(--success-color)]" />}
-                                            {expense > 0 && <div className="w-1 h-1 rounded-full bg-[var(--primary-color)] shadow-[0_0_5px_var(--primary-color)]" />}
-                                        </div>
-                                    </button>
-                                );
-                            })}
+                    {/* Month Selection & View Toggle */}
+                    <div className="flex justify-between items-center px-4 py-3 bg-[var(--glass-item-bg)]/50 shrink-0 border-b border-[var(--glass-border)]">
+                        <div className="flex bg-black/20 p-1 rounded-xl border border-[var(--glass-border)]">
+                            <button 
+                                onClick={() => setViewMode("timeline")}
+                                className={`p-1.5 rounded-lg transition-all ${viewMode === 'timeline' ? 'bg-[var(--primary-color)] text-white shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
+                            >
+                                <List size={16} />
+                            </button>
+                            <button 
+                                onClick={() => setViewMode("month")}
+                                className={`p-1.5 rounded-lg transition-all ${viewMode === 'month' ? 'bg-[var(--primary-color)] text-white shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
+                            >
+                                <LayoutGrid size={16} />
+                            </button>
+                        </div>
+                        <div className="flex items-center gap-1">
+                            <button onClick={prevMonth} className="p-2 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"><ChevronLeft size={20} /></button>
+                            <span className="text-xs font-bold text-[var(--text-main)] uppercase tracking-widest min-w-[120px] text-center">{monthName}</span>
+                            <button onClick={nextMonth} className="p-2 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"><ChevronRight size={20} /></button>
                         </div>
                     </div>
 
+                    {/* Calendar View Area */}
+                    <div className="shrink-0">
+                        {viewMode === "month" ? (
+                            <div className="px-6 py-6 animate-in fade-in duration-300">
+                                <div className="grid grid-cols-7 gap-1">
+                                    {["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"].map(d => (
+                                        <div key={d} className="text-[10px] font-black text-[var(--text-muted)] uppercase text-center py-2">{d}</div>
+                                    ))}
+                                    {calendarDays.map((day, i) => {
+                                        if (day === null) return <div key={`empty-${i}`} className="aspect-square" />;
+                                        const { expense, income, transactions: dayTx } = getDailyData(day);
+                                        const hasData = dayTx.length > 0;
+                                        const today = new Date();
+                                        const isToday = today.getDate() === day && today.getMonth() === currentDate.getMonth() && today.getFullYear() === currentDate.getFullYear();
+                                        const isSelected = selectedDay === day;
+                                        
+                                        return (
+                                            <button 
+                                                key={day}
+                                                onClick={() => {
+                                                    if (hasData) {
+                                                        setSelectedDay(day === selectedDay ? null : day);
+                                                    }
+                                                }}
+                                                className={`aspect-square rounded-xl flex flex-col items-center justify-center gap-1 transition-all relative border 
+                                                    ${isSelected ? 'bg-[var(--primary-color)]/20 border-[var(--primary-color)] shadow-[0_0_15px_rgba(109,93,252,0.3)]' : isToday ? 'border-[var(--primary-color)]/50' : 'border-transparent'} 
+                                                    ${hasData ? 'bg-[var(--glass-item-bg)] hover:bg-[var(--glass-item-active)] active:scale-90' : 'opacity-40 cursor-default'}
+                                                `}
+                                            >
+                                                <span className={`text-xs font-bold ${isSelected || isToday ? 'text-[var(--primary-color)]' : 'text-[var(--text-main)]'}`}>{day}</span>
+                                                <div className="flex gap-0.5">
+                                                    {income > 0 && <div className="w-1 h-1 rounded-full bg-[var(--success-color)] shadow-[0_0_5px_var(--success-color)]" />}
+                                                    {expense > 0 && <div className="w-1 h-1 rounded-full bg-[var(--primary-color)] shadow-[0_0_5px_var(--primary-color)]" />}
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        ) : (
+                            <div 
+                                ref={timelineRef}
+                                className="flex overflow-x-auto hide-scrollbar gap-2 px-6 py-8 animate-in slide-in-from-right-4 duration-300"
+                            >
+                                {timelineDays.map((day) => {
+                                    const { expense, income, transactions: dayTx } = getDailyData(day);
+                                    const hasData = dayTx.length > 0;
+                                    const dateObj = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+                                    const dName = dayNames[dateObj.getDay()];
+                                    const today = new Date();
+                                    const isToday = today.getDate() === day && today.getMonth() === currentDate.getMonth() && today.getFullYear() === currentDate.getFullYear();
+                                    const isSelected = selectedDay === day;
+
+                                    return (
+                                        <button
+                                            key={day}
+                                            data-day={day}
+                                            onClick={() => {
+                                                if (hasData) {
+                                                    setSelectedDay(day === selectedDay ? null : day);
+                                                }
+                                            }}
+                                            className={`w-14 shrink-0 flex flex-col items-center gap-2 p-3 rounded-2xl transition-all border
+                                                ${isSelected 
+                                                    ? 'bg-[var(--primary-color)] border-[var(--primary-color)] text-white shadow-lg shadow-[var(--primary-color)]/30' 
+                                                    : isToday 
+                                                        ? 'bg-[var(--glass-item-bg)] border-[var(--primary-color)]/50' 
+                                                        : 'bg-[var(--glass-item-bg)]/50 border-transparent'}
+                                                ${hasData ? 'opacity-100' : 'opacity-30'}
+                                            `}
+                                        >
+                                            <span className={`text-[10px] font-black uppercase tracking-widest ${isSelected ? 'text-white/70' : 'text-[var(--text-muted)]'}`}>{dName}</span>
+                                            <span className="text-base font-black tracking-tight">{day}</span>
+                                            <div className="flex gap-0.5 mt-1">
+                                                {income > 0 && <div className={`w-1 h-1 rounded-full ${isSelected ? 'bg-white' : 'bg-[var(--success-color)]'}`} />}
+                                                {expense > 0 && <div className={`w-1 h-1 rounded-full ${isSelected ? 'bg-white/50' : 'bg-[var(--primary-color)]'}`} />}
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Transaction List */}
                     <div className="flex-1 overflow-y-auto hide-scrollbar px-6 pb-6 relative border-t border-[var(--glass-border)] pt-4">
                         {isLoading ? (
                             <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -251,7 +321,7 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
                                 <div className="flex flex-col gap-3">
                                     {selectedDayData.transactions.map(tx => {
                                         const { item, isOutflow } = getCounterpartInfo(tx);
-                                        const status = checkBroken(tx);
+                                        const status = { isBroken: !accounts.find(a => a.id === tx.accountId) || (!categories.find(c => c.id === tx.targetId) && tx.type === 'expense') };
                                         const Icon = item ? (IconMap[(item as any).icon] || Wallet) : (status.isBroken ? AlertCircle : Wallet);
                                         const amountInfo = getAmountStr(tx, isOutflow);
                                         
@@ -280,17 +350,17 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
                                                 }}
                                             >
                                                 <div className="flex items-center gap-3">
-                                                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center relative shadow-inner shrink-0 ${status.isBroken ? 'bg-rose-500/20 text-rose-500' : 'bg-[var(--glass-item-bg)] text-[var(--text-muted)]'}`} style={{ color: !status.isBroken ? (item as any)?.color : undefined }}>
-                                                        <Icon size={16} />
+                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center relative shadow-inner shrink-0 ${status.isBroken ? 'bg-rose-500/20 text-rose-500' : 'bg-[var(--glass-item-bg)] text-[var(--text-muted)]'}`} style={{ color: !status.isBroken ? (item as any)?.color : undefined }}>
+                                                        <Icon size={18} />
                                                     </div>
                                                     <div className="flex flex-col overflow-hidden">
-                                                        <span className="text-xs font-bold text-[var(--text-main)] truncate">{displayName}</span>
-                                                        {tx.tag && <span className="text-[8px] text-[var(--text-muted)] uppercase font-bold tracking-widest mt-0.5">{tx.tag}</span>}
+                                                        <span className="text-sm font-bold text-[var(--text-main)] truncate">{displayName}</span>
+                                                        {tx.tag && <span className="text-[10px] text-[var(--text-muted)] uppercase font-black tracking-widest mt-0.5">{tx.tag}</span>}
                                                     </div>
                                                 </div>
                                                 <div className="flex flex-col items-end shrink-0 pl-2">
-                                                    <span className={`text-xs font-black ${amountInfo.color}`}>{amountInfo.amount}</span>
-                                                    {amountInfo.usdAmount && <span className="text-[9px] text-[var(--text-muted)] font-bold opacity-60">≈ {amountInfo.usdAmount}</span>}
+                                                    <span className={`text-sm font-black ${amountInfo.color}`}>{amountInfo.amount}</span>
+                                                    {amountInfo.usdAmount && <span className="text-[10px] text-[var(--text-muted)] font-bold opacity-60">≈ {amountInfo.usdAmount}</span>}
                                                 </div>
                                             </div>
                                         );
