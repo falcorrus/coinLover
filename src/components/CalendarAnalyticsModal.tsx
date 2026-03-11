@@ -1,23 +1,28 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { X, ChevronLeft, ChevronRight, RefreshCcw, Calendar } from "lucide-react";
-import { Transaction } from "../types";
+import { X, ChevronLeft, ChevronRight, RefreshCcw, Calendar, Wallet, AlertCircle } from "lucide-react";
+import { Transaction, Account, Category, IncomeSource } from "../types";
 import { googleSheetsService } from "../services/googleSheets";
+import { IconMap } from "../constants";
 
 interface CalendarAnalyticsModalProps {
     isOpen: boolean;
     onClose: () => void;
     globalTransactions: Transaction[];
+    accounts: Account[];
+    categories: Category[];
+    incomes: IncomeSource[];
     onItemClick?: (entity: any, type: "feed", transactions: Transaction[]) => void;
 }
 
 const globalCalendarCache = new Map<string, Transaction[]>();
 
 export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({ 
-    isOpen, onClose, globalTransactions, onItemClick 
+    isOpen, onClose, globalTransactions, accounts, categories, incomes, onItemClick 
 }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [selectedDay, setSelectedDay] = useState<number | null>(null);
 
     // 1. Effects
     useEffect(() => {
@@ -62,6 +67,11 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
         loadData();
     }, [isOpen, currentDate, globalTransactions]);
 
+    // Reset selected day when month changes
+    useEffect(() => {
+        setSelectedDay(null);
+    }, [currentDate]);
+
     // 2. Handlers
     const nextMonth = () => setCurrentDate(d => new Date(d.getFullYear(), d.getMonth() + 1, 1));
     const prevMonth = () => setCurrentDate(d => new Date(d.getFullYear(), d.getMonth() - 1, 1));
@@ -98,8 +108,57 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
         return { expense, income, transactions: dayTx };
     };
 
-    const totalMonthExpense = useMemo(() => filteredTx.filter(t => t.type === "expense").reduce((s, t) => s + (t.sourceAmountUSD || 0), 0), [filteredTx]);
-    const totalMonthIncome = useMemo(() => filteredTx.filter(t => t.type === "income").reduce((s, t) => s + (t.sourceAmountUSD || 0), 0), [filteredTx]);
+    const selectedDayData = selectedDay ? getDailyData(selectedDay) : null;
+
+    const checkBroken = (tx: Transaction) => {
+        const acc = accounts.find(a => a.id === tx.accountId);
+        let targetExists = false;
+        if (tx.type === "expense") targetExists = categories.some(c => c.id === tx.targetId);
+        else if (tx.type === "income") targetExists = incomes.some(i => i.id === tx.targetId);
+        else if (tx.type === "transfer") targetExists = accounts.some(a => a.id === tx.targetId);
+
+        return {
+            sourceBroken: !acc,
+            targetBroken: !targetExists,
+            isBroken: !acc || !targetExists
+        };
+    };
+
+    const getCounterpartInfo = (tx: Transaction) => {
+        let isOutflow = tx.type !== "income";
+        let counterpartItem: Account | Category | IncomeSource | undefined;
+        
+        if (tx.type === "expense") {
+            counterpartItem = categories.find(c => c.id === tx.targetId);
+        } else if (tx.type === "income") {
+            counterpartItem = incomes.find(i => i.id === tx.targetId);
+        } else if (tx.type === "transfer") {
+            counterpartItem = accounts.find(a => a.id === tx.targetId);
+        }
+
+        return { item: counterpartItem, isOutflow };
+    };
+
+    const getAmountStr = (tx: any, isOutflow: boolean) => {
+        const sAmt = tx.sourceAmount ?? tx.amount ?? 0;
+        const sAmtUsd = tx.sourceAmountUSD ?? tx.amountUSD;
+        const sCurr = tx.sourceCurrency ?? (accounts.find(a => a.id === tx.accountId)?.currency || "USD");
+
+        const txType = tx.type?.toLowerCase();
+        const color = txType === "transfer" 
+            ? "text-indigo-400" 
+            : (isOutflow 
+                ? (txType === "expense" ? "text-[#D4AF37]" : "text-[var(--danger-color)]") 
+                : "text-[var(--success-color)]");
+
+        const sign = txType === "transfer" ? "" : (isOutflow ? "-" : "+");
+
+        return {
+            amount: `${sign}${sAmt.toLocaleString()} ${sCurr}`,
+            usdAmount: sAmtUsd ? `${sign}$${sAmtUsd.toLocaleString()}` : null,
+            color
+        };
+    };
 
     if (!isOpen) return null;
 
@@ -113,74 +172,135 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
                     className="bg-[var(--bg-color)] w-full h-full flex flex-col overflow-hidden relative shadow-2xl"
                     style={{ paddingTop: `env(safe-area-inset-top)` }}
                 >
-                    <div className="flex justify-between items-center p-6 border-b border-[var(--glass-border)] shrink-0">
+                    <div className="flex justify-between items-center p-4 border-b border-[var(--glass-border)] shrink-0">
                         <div className="flex items-center gap-3">
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-[0_0_15px_var(--primary-color)] bg-[var(--primary-color)]/20 text-[var(--primary-color)]`}>
-                                <Calendar size={20} />
+                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-[0_0_15px_var(--primary-color)] bg-[var(--primary-color)]/20 text-[var(--primary-color)]`}>
+                                <Calendar size={18} />
                             </div>
                             <div className="flex flex-col">
-                                <h2 className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Календарь операций</h2>
-                                <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest leading-none mt-1">активность по дням</span>
+                                <h2 className="text-xs font-black text-[var(--text-main)] uppercase tracking-wider">Календарь операций</h2>
+                                <span className="text-[9px] text-[var(--text-muted)] uppercase tracking-widest leading-none mt-1">активность по дням</span>
                             </div>
                         </div>
-                        <button onClick={onClose} className="w-10 h-10 rounded-xl bg-[var(--glass-item-bg)] flex items-center justify-center text-[var(--text-main)] hover:bg-[var(--glass-item-active)] transition-colors border border-[var(--glass-border)]"><X size={20} /></button>
+                        <button onClick={onClose} className="w-9 h-9 rounded-xl bg-[var(--glass-item-bg)] flex items-center justify-center text-[var(--text-main)] hover:bg-[var(--glass-item-active)] transition-colors border border-[var(--glass-border)]"><X size={18} /></button>
                     </div>
 
-                    <div className="flex justify-between items-center px-4 py-3 bg-[var(--glass-item-bg)]/50 shrink-0 border-b border-[var(--glass-border)]">
-                        <button onClick={prevMonth} className="p-2 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"><ChevronLeft size={20} /></button>
-                        <span className="text-xs font-bold text-[var(--text-main)] uppercase tracking-widest">{monthName}</span>
-                        <button onClick={nextMonth} className="p-2 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"><ChevronRight size={20} /></button>
+                    <div className="flex justify-between items-center px-4 py-2 bg-[var(--glass-item-bg)]/50 shrink-0 border-b border-[var(--glass-border)]">
+                        <button onClick={prevMonth} className="p-1 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"><ChevronLeft size={18} /></button>
+                        <span className="text-[10px] font-bold text-[var(--text-main)] uppercase tracking-widest">{monthName}</span>
+                        <button onClick={nextMonth} className="p-1 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"><ChevronRight size={18} /></button>
                     </div>
 
-                    <div className="px-6 py-6 shrink-0 flex gap-4">
-                        <div className="flex-1 p-4 rounded-2xl bg-[var(--glass-item-bg)] border border-[var(--glass-border)] flex flex-col items-center">
-                            <span className="text-[9px] uppercase font-bold text-[var(--text-muted)] tracking-widest mb-1">Расходы</span>
-                            <span className="text-lg font-black text-[var(--text-main)]">${totalMonthExpense.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                    <div className="px-6 py-4 shrink-0">
+                        <div className="grid grid-cols-7 gap-1">
+                            {["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"].map(d => (
+                                <div key={d} className="text-[9px] font-black text-[var(--text-muted)] uppercase text-center py-1">{d}</div>
+                            ))}
+                            {calendarDays.map((day, i) => {
+                                if (day === null) return <div key={`empty-${i}`} className="aspect-square" />;
+                                const { expense, income, transactions: dayTx } = getDailyData(day);
+                                const hasData = dayTx.length > 0;
+                                const today = new Date();
+                                const isToday = today.getDate() === day && today.getMonth() === currentDate.getMonth() && today.getFullYear() === currentDate.getFullYear();
+                                const isSelected = selectedDay === day;
+                                
+                                return (
+                                    <button 
+                                        key={day}
+                                        onClick={() => {
+                                            if (hasData) {
+                                                setSelectedDay(day === selectedDay ? null : day);
+                                            }
+                                        }}
+                                        className={`aspect-square rounded-xl flex flex-col items-center justify-center gap-1 transition-all relative border 
+                                            ${isSelected ? 'bg-[var(--primary-color)]/20 border-[var(--primary-color)] shadow-[0_0_15px_rgba(109,93,252,0.3)]' : isToday ? 'border-[var(--primary-color)]/50' : 'border-transparent'} 
+                                            ${hasData ? 'bg-[var(--glass-item-bg)] hover:bg-[var(--glass-item-active)] active:scale-90' : 'opacity-40 cursor-default'}
+                                        `}
+                                    >
+                                        <span className={`text-xs font-bold ${isSelected || isToday ? 'text-[var(--primary-color)]' : 'text-[var(--text-main)]'}`}>{day}</span>
+                                        <div className="flex gap-0.5">
+                                            {income > 0 && <div className="w-1 h-1 rounded-full bg-[var(--success-color)] shadow-[0_0_5px_var(--success-color)]" />}
+                                            {expense > 0 && <div className="w-1 h-1 rounded-full bg-[var(--primary-color)] shadow-[0_0_5px_var(--primary-color)]" />}
+                                        </div>
+                                    </button>
+                                );
+                            })}
                         </div>
-                        <div className="flex-1 p-4 rounded-2xl bg-[var(--glass-item-bg)] border border-[var(--glass-border)] flex flex-col items-center">
-                            <span className="text-[9px] uppercase font-bold text-[var(--text-muted)] tracking-widest mb-1">Доходы</span>
-                            <span className="text-lg font-black text-[var(--success-color)]">${totalMonthIncome.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-                        </div>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto hide-scrollbar px-6 pb-6 relative">
+                    <div className="flex-1 overflow-y-auto hide-scrollbar px-6 pb-6 relative border-t border-[var(--glass-border)] pt-4">
                         {isLoading ? (
                             <div className="absolute inset-0 flex flex-col items-center justify-center">
                                 <RefreshCcw size={32} className="animate-spin text-[var(--primary-color)] opacity-20" />
                             </div>
-                        ) : (
-                            <div className="flex flex-col gap-6 mt-2">
-                                <div className="grid grid-cols-7 gap-1">
-                                    {["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"].map(d => (
-                                        <div key={d} className="text-[10px] font-black text-[var(--text-muted)] uppercase text-center py-2">{d}</div>
-                                    ))}
-                                    {calendarDays.map((day, i) => {
-                                        if (day === null) return <div key={`empty-${i}`} className="aspect-square" />;
-                                        const { expense, income, transactions: dayTx } = getDailyData(day);
-                                        const hasData = dayTx.length > 0;
-                                        const today = new Date();
-                                        const isToday = today.getDate() === day && today.getMonth() === currentDate.getMonth() && today.getFullYear() === currentDate.getFullYear();
+                        ) : selectedDayData && selectedDayData.transactions.length > 0 ? (
+                            <div className="flex flex-col gap-4 animate-in slide-in-from-bottom-4 duration-300">
+                                <div className="flex justify-between items-center mb-2">
+                                    <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">
+                                        {String(selectedDay).padStart(2, '0')}.{String(currentDate.getMonth() + 1).padStart(2, '0')}.{currentDate.getFullYear()}
+                                    </span>
+                                    <div className="flex gap-3">
+                                        {selectedDayData.income > 0 && (
+                                            <span className="text-[10px] font-black text-[var(--success-color)]">+${selectedDayData.income.toLocaleString()}</span>
+                                        )}
+                                        {selectedDayData.expense > 0 && (
+                                            <span className="text-[10px] font-black text-[var(--danger-color)]">-${selectedDayData.expense.toLocaleString()}</span>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="flex flex-col gap-3">
+                                    {selectedDayData.transactions.map(tx => {
+                                        const { item, isOutflow } = getCounterpartInfo(tx);
+                                        const status = checkBroken(tx);
+                                        const Icon = item ? (IconMap[(item as any).icon] || Wallet) : (status.isBroken ? AlertCircle : Wallet);
+                                        const amountInfo = getAmountStr(tx, isOutflow);
                                         
+                                        const s = accounts.find(a => a.id === tx.accountId);
+                                        let displayName = "";
+                                        if (tx.type === "expense") {
+                                            const dName = categories.find(c => c.id === tx.targetId)?.name || "?";
+                                            displayName = `${s?.name || "?"} → ${dName}`;
+                                        } else if (tx.type === "income") {
+                                            const dName = incomes.find(i => i.id === tx.targetId)?.name || "?";
+                                            displayName = `${dName} → ${s?.name || "?"}`;
+                                        } else {
+                                            const dName = accounts.find(a => a.id === tx.targetId)?.name || "?";
+                                            displayName = `${s?.name || "?"} → ${dName}`;
+                                        }
+
                                         return (
-                                            <button 
-                                                key={day}
+                                            <div 
+                                                key={tx.id} 
+                                                className="flex justify-between items-center bg-[var(--glass-item-bg)]/30 p-3 rounded-2xl border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)] transition-colors cursor-pointer"
                                                 onClick={() => {
-                                                    if (hasData && onItemClick) {
-                                                        const dateStr = `${String(day).padStart(2, '0')}.${String(currentDate.getMonth() + 1).padStart(2, '0')}.${currentDate.getFullYear()}`;
-                                                        onItemClick({ name: dateStr, icon: "calendar" }, "feed", dayTx);
+                                                    if (onItemClick) {
+                                                        const dateStr = `${String(selectedDay).padStart(2, '0')}.${String(currentDate.getMonth() + 1).padStart(2, '0')}.${currentDate.getFullYear()}`;
+                                                        onItemClick({ name: dateStr, icon: "calendar" }, "feed", [tx]);
                                                     }
                                                 }}
-                                                className={`aspect-square rounded-xl flex flex-col items-center justify-center gap-1 transition-all relative border ${isToday ? 'border-[var(--primary-color)] shadow-[0_0_10px_rgba(109,93,252,0.2)]' : 'border-transparent'} ${hasData ? 'bg-[var(--glass-item-bg)] hover:bg-[var(--glass-item-active)] active:scale-90' : 'opacity-40 cursor-default'}`}
                                             >
-                                                <span className={`text-xs font-bold ${isToday ? 'text-[var(--primary-color)]' : 'text-[var(--text-main)]'}`}>{day}</span>
-                                                <div className="flex gap-0.5">
-                                                    {income > 0 && <div className="w-1 h-1 rounded-full bg-[var(--success-color)] shadow-[0_0_5px_var(--success-color)]" />}
-                                                    {expense > 0 && <div className="w-1 h-1 rounded-full bg-[var(--primary-color)] shadow-[0_0_5px_var(--primary-color)]" />}
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center relative shadow-inner shrink-0 ${status.isBroken ? 'bg-rose-500/20 text-rose-500' : 'bg-[var(--glass-item-bg)] text-[var(--text-muted)]'}`} style={{ color: !status.isBroken ? (item as any)?.color : undefined }}>
+                                                        <Icon size={16} />
+                                                    </div>
+                                                    <div className="flex flex-col overflow-hidden">
+                                                        <span className="text-xs font-bold text-[var(--text-main)] truncate">{displayName}</span>
+                                                        {tx.tag && <span className="text-[8px] text-[var(--text-muted)] uppercase font-bold tracking-widest mt-0.5">{tx.tag}</span>}
+                                                    </div>
                                                 </div>
-                                            </button>
+                                                <div className="flex flex-col items-end shrink-0 pl-2">
+                                                    <span className={`text-xs font-black ${amountInfo.color}`}>{amountInfo.amount}</span>
+                                                    {amountInfo.usdAmount && <span className="text-[9px] text-[var(--text-muted)] font-bold opacity-60">≈ {amountInfo.usdAmount}</span>}
+                                                </div>
+                                            </div>
                                         );
                                     })}
                                 </div>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center h-full opacity-30 gap-3">
+                                <Calendar size={40} className="text-[var(--text-muted)]" />
+                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">Выберите день для просмотра</span>
                             </div>
                         )}
                     </div>

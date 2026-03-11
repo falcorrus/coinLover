@@ -583,7 +583,23 @@ export default function App() {
           }} 
         />
         <AnalyticsModal isOpen={analyticsModal.isOpen} onClose={() => setAnalyticsModal(p => ({ ...p, isOpen: false }))} categories={categories} incomes={incomes} accounts={accounts} globalTransactions={transactions} initialType={analyticsModal.type} onItemClick={(item, type, monthTx) => { let entity = item; if (type === "category") { const cat = categories.find(c => c.id === item.id); if (cat) entity = cat; } else if (type === "income") { const inc = incomes.find(i => i.id === item.id); if (inc) entity = inc; } setAnalyticsModal(p => ({ ...p, isOpen: false })); setHistoryModal({ isOpen: true, entity, type, customTransactions: monthTx.filter(t => { if (type === "category") return t.targetId === item.id; if (type === "tag") return (t.tag?.trim() || "Без тега") === item.name; if (type === "income") return t.targetId === item.id; return false; }) }); }} />
-        <CalendarAnalyticsModal isOpen={calendarAnalyticsModal.isOpen} onClose={() => setCalendarAnalyticsModal({ isOpen: false })} globalTransactions={transactions} onItemClick={(item, type, dayTx) => { setCalendarAnalyticsModal({ isOpen: false }); setHistoryModal({ isOpen: true, entity: item, type, customTransactions: dayTx }); }} />
+        <CalendarAnalyticsModal 
+          isOpen={calendarAnalyticsModal.isOpen} 
+          onClose={() => setCalendarAnalyticsModal({ isOpen: false })} 
+          globalTransactions={transactions} 
+          accounts={accounts}
+          categories={categories}
+          incomes={incomes}
+          onItemClick={(item, type, dayTx) => { 
+            setCalendarAnalyticsModal({ isOpen: false }); 
+            setHistoryModal({ 
+              isOpen: true, 
+              entity: item, 
+              type, 
+              customTransactions: dayTx 
+            }); 
+          }} 
+        />
         <ConfirmModal isOpen={confirmDelete.isOpen} title={confirmDelete.title} message={confirmDelete.message} onConfirm={confirmDelete.onConfirm} onCancel={() => setConfirmDelete(p => ({ ...p, isOpen: false }))} />
         
         <TagModal 
@@ -773,7 +789,23 @@ export default function App() {
           }} 
         />
         <AnalyticsModal isOpen={analyticsModal.isOpen} onClose={() => setAnalyticsModal(p => ({ ...p, isOpen: false }))} categories={categories} incomes={incomes} accounts={accounts} globalTransactions={transactions} initialType={analyticsModal.type} onItemClick={(item, type, monthTx) => { let entity = item; if (type === "category") { const cat = categories.find(c => c.id === item.id); if (cat) entity = cat; } else if (type === "income") { const inc = incomes.find(i => i.id === item.id); if (inc) entity = inc; } setAnalyticsModal(p => ({ ...p, isOpen: false })); setHistoryModal({ isOpen: true, entity, type, customTransactions: monthTx.filter(t => { if (type === "category") return t.targetId === item.id; if (type === "tag") return (t.tag?.trim() || "Без тега") === item.name; if (type === "income") return t.targetId === item.id; return false; }) }); }} />
-        <CalendarAnalyticsModal isOpen={calendarAnalyticsModal.isOpen} onClose={() => setCalendarAnalyticsModal({ isOpen: false })} globalTransactions={transactions} onItemClick={(item, type, dayTx) => { setCalendarAnalyticsModal({ isOpen: false }); setHistoryModal({ isOpen: true, entity: item, type, customTransactions: dayTx }); }} />
+        <CalendarAnalyticsModal 
+          isOpen={calendarAnalyticsModal.isOpen} 
+          onClose={() => setCalendarAnalyticsModal({ isOpen: false })} 
+          globalTransactions={transactions} 
+          accounts={accounts}
+          categories={categories}
+          incomes={incomes}
+          onItemClick={(item, type, dayTx) => { 
+            setCalendarAnalyticsModal({ isOpen: false }); 
+            setHistoryModal({ 
+              isOpen: true, 
+              entity: item, 
+              type, 
+              customTransactions: dayTx 
+            }); 
+          }} 
+        />
         <ConfirmModal isOpen={confirmDelete.isOpen} title={confirmDelete.title} message={confirmDelete.message} onConfirm={confirmDelete.onConfirm} onCancel={() => setConfirmDelete(p => ({ ...p, isOpen: false }))} />
         
         <TagModal 
