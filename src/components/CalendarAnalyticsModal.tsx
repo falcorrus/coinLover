@@ -80,6 +80,13 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
     }, [viewMode, selectedDay]);
 
     // 2. Handlers
+    const goToToday = () => {
+        const today = new Date();
+        // Set to a fresh date object to ensure month/year update triggers correctly
+        setCurrentDate(new Date(today.getFullYear(), today.getMonth(), today.getDate()));
+        setSelectedDay(today.getDate());
+    };
+
     const nextMonth = () => setCurrentDate(d => new Date(d.getFullYear(), d.getMonth() + 1, 1));
     const prevMonth = () => setCurrentDate(d => new Date(d.getFullYear(), d.getMonth() - 1, 1));
     const monthName = currentDate.toLocaleString('ru-RU', { month: 'long', year: 'numeric' });
@@ -93,7 +100,7 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
             const txDate = new Date(t.date.replace(/-/g, '/').replace('T', ' '));
             return txDate.getFullYear() === currentDate.getFullYear() && txDate.getMonth() === currentDate.getMonth();
         });
-    }, [transactions, currentDate]);
+    }, [transactions, currentDate.getFullYear(), currentDate.getMonth()]); // Use specific parts of date for stability
 
     const calendarDays = useMemo(() => {
         const year = currentDate.getFullYear();
@@ -117,8 +124,10 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
     }, [currentDate]);
 
     const getDailyData = (day: number) => {
-        const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        const dayTx = filteredTx.filter(t => t.date.startsWith(dateStr));
+        const dayTx = filteredTx.filter(t => {
+            const txDate = new Date(t.date.replace(/-/g, '/').replace('T', ' '));
+            return txDate.getDate() === day;
+        });
         const expense = dayTx.filter(t => t.type === "expense").reduce((s, t) => s + (t.sourceAmountUSD || 0), 0);
         const income = dayTx.filter(t => t.type === "income").reduce((s, t) => s + (t.sourceAmountUSD || 0), 0);
         return { expense, income, transactions: dayTx };
@@ -192,19 +201,32 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
 
                     {/* Month Selection & View Toggle */}
                     <div className="flex justify-between items-center px-4 py-3 bg-[var(--glass-item-bg)]/50 shrink-0 border-b border-[var(--glass-border)]">
-                        <div className="flex bg-black/20 p-1 rounded-xl border border-[var(--glass-border)]">
-                            <button 
-                                onClick={() => setViewMode("timeline")}
-                                className={`p-1.5 rounded-lg transition-all ${viewMode === 'timeline' ? 'bg-[var(--primary-color)] text-white shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
-                            >
-                                <List size={16} />
-                            </button>
-                            <button 
-                                onClick={() => setViewMode("month")}
-                                className={`p-1.5 rounded-lg transition-all ${viewMode === 'month' ? 'bg-[var(--primary-color)] text-white shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
-                            >
-                                <LayoutGrid size={16} />
-                            </button>
+                        <div className="flex items-center gap-[5px]">
+                            <div className="flex bg-black/20 p-1 rounded-xl border border-[var(--glass-border)] gap-0.5">
+                                <button 
+                                    onClick={() => setViewMode("timeline")}
+                                    className={`p-1.5 rounded-lg transition-all ${viewMode === 'timeline' ? 'bg-[var(--primary-color)] text-white shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
+                                    title="Список"
+                                >
+                                    <List size={16} />
+                                </button>
+                                <button 
+                                    onClick={() => setViewMode("month")}
+                                    className={`p-1.5 rounded-lg transition-all ${viewMode === 'month' ? 'bg-[var(--primary-color)] text-white shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
+                                    title="Сетка"
+                                >
+                                    <LayoutGrid size={16} />
+                                </button>
+                            </div>
+                            <div className="flex bg-black/20 p-1 rounded-xl border border-[var(--glass-border)]">
+                                <button 
+                                    onClick={goToToday}
+                                    className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] transition-all flex items-center justify-center"
+                                    title="Сегодня"
+                                >
+                                    <Calendar size={16} />
+                                </button>
+                            </div>
                         </div>
                         <div className="flex items-center gap-1">
                             <button onClick={prevMonth} className="p-2 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"><ChevronLeft size={20} /></button>
