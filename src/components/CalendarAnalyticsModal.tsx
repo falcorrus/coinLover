@@ -19,12 +19,26 @@ const globalCalendarCache = new Map<string, Transaction[]>();
 export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({ 
     isOpen, onClose, globalTransactions, accounts, categories, incomes, onItemClick 
 }) => {
-    const [currentDate, setCurrentDate] = useState(new Date());
+    const [currentDate, setCurrentDate] = useState(() => {
+        const saved = localStorage.getItem("cl_calendar_date");
+        return saved ? new Date(saved) : new Date();
+    });
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [selectedDay, setSelectedDay] = useState<number | null>(new Date().getDate());
+    const [selectedDay, setSelectedDay] = useState<number | null>(() => {
+        const saved = localStorage.getItem("cl_calendar_selected_day");
+        return saved ? parseInt(saved) : new Date().getDate();
+    });
     const [viewMode, setViewMode] = useState<"timeline" | "month">("timeline");
     const timelineRef = useRef<HTMLDivElement>(null);
+
+    // Save state to localStorage when it changes
+    useEffect(() => {
+        localStorage.setItem("cl_calendar_date", currentDate.toISOString());
+        if (selectedDay !== null) {
+            localStorage.setItem("cl_calendar_selected_day", selectedDay.toString());
+        }
+    }, [currentDate, selectedDay]);
 
     // 1. Effects
     useEffect(() => {
