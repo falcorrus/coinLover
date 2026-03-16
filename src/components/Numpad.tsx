@@ -77,16 +77,18 @@ export const Numpad: React.FC<Props> = ({
             {/* SOURCE FIELD (Left) */}
             <div
               onClick={() => onFieldChange("source")}
-              className={`flex-1 h-36 rounded-[24px] border flex flex-col items-end justify-center p-6 relative transition-all duration-300 ${data.activeField === "source"
-                ? (data.type === 'expense' ? 'bg-[#D4AF37]/20 border-[#D4AF37] ring-1 ring-[#D4AF37]/50' : 'bg-[var(--success-color)]/20 border-[var(--success-color)] ring-1 ring-[var(--success-color)]/50')
+              className={`flex-1 h-32 rounded-[24px] border flex flex-col overflow-hidden transition-all duration-300 ${data.activeField === "source"
+                ? (data.type === 'expense' ? 'bg-[#D4AF37]/20 border-[#D4AF37] ring-1 ring-[#D4AF37]/50 scale-[1.02]' : 'bg-[var(--success-color)]/20 border-[var(--success-color)] ring-1 ring-[var(--success-color)]/50 scale-[1.02]')
                 : 'bg-[var(--glass-item-bg)] border-[var(--glass-border)] opacity-50'}`}
             >
-              <span className={`text-4xl sm:text-5xl font-light tracking-tighter text-right overflow-hidden ${data.activeField === "source" ? "text-[var(--text-main)]" : "text-[var(--text-muted)]"}`}>{data.sourceAmount}</span>
-              <div className="flex items-center gap-1.5 absolute bottom-5 right-6">
+              <div className="h-2/3 flex items-center justify-end px-5">
+                <span className={`text-3xl sm:text-4xl font-light tracking-tighter text-right overflow-hidden leading-tight ${data.activeField === "source" ? "text-[var(--text-main)]" : "text-[var(--text-muted)]"}`}>{data.sourceAmount}</span>
+              </div>
+              <div className="h-1/3 flex items-center justify-between px-5 bg-black/10">
                 {data.type === 'income' ? (
                   <button
                     onClick={(e) => { e.stopPropagation(); setCurrencyPicker({ isOpen: true, field: "source" }); }}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all duration-300 active:scale-95 shadow-sm ${data.activeField === "source" ? 'bg-[var(--success-color)] text-white border-[var(--success-color)]' : 'bg-[var(--glass-item-bg)] border-[var(--glass-border)] text-[var(--text-muted)]'}`}
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-xl border transition-all duration-300 active:scale-95 shadow-sm ${data.activeField === "source" ? 'bg-[var(--success-color)] text-white border-[var(--success-color)]' : 'bg-[var(--glass-item-bg)] border-[var(--glass-border)] text-[var(--text-muted)]'}`}
                   >
                     <span className="text-[11px] font-black uppercase tracking-wider">{data.sourceCurrency}</span>
                     <ChevronRight size={12} className="opacity-60" />
@@ -94,7 +96,7 @@ export const Numpad: React.FC<Props> = ({
                 ) : (
                   <span className={`text-[11px] font-black uppercase px-1 py-0.5 ${data.activeField === "source" ? "text-[#D4AF37]" : "text-[var(--text-muted)]"}`}>{data.sourceCurrency}</span>
                 )}
-                <span className="text-[9px] font-bold text-[var(--text-muted)] uppercase opacity-40 ml-1">ОТКУДА</span>
+                <span className="text-[9px] font-bold text-[var(--text-muted)] uppercase opacity-40">ОТКУДА</span>
               </div>
             </div>
 
@@ -105,16 +107,18 @@ export const Numpad: React.FC<Props> = ({
             {/* DESTINATION FIELD (Right) */}
             <div
               onClick={() => onFieldChange("destination")}
-              className={`flex-1 h-36 rounded-[24px] border flex flex-col items-end justify-center p-6 relative transition-all duration-300 ${data.activeField === "destination"
-                ? (data.type === 'expense' ? 'bg-[#D4AF37]/20 border-[#D4AF37] ring-1 ring-[#D4AF37]/50' : 'bg-[var(--success-color)]/20 border-[var(--success-color)] ring-1 ring-[var(--success-color)]/50')
+              className={`flex-1 h-32 rounded-[24px] border flex flex-col overflow-hidden transition-all duration-300 ${data.activeField === "destination"
+                ? (data.type === 'expense' ? 'bg-[#D4AF37]/20 border-[#D4AF37] ring-1 ring-[#D4AF37]/50 scale-[1.02]' : 'bg-[var(--success-color)]/20 border-[var(--success-color)] ring-1 ring-[var(--success-color)]/50 scale-[1.02]')
                 : 'bg-[var(--glass-item-bg)] border-[var(--glass-border)] opacity-50'}`}
             >
-              <span className={`text-4xl sm:text-5xl font-light tracking-tighter text-right overflow-hidden ${data.activeField === "destination" ? "text-[var(--text-main)]" : "text-[var(--text-muted)]"}`}>{data.targetAmount}</span>
-              <div className="flex items-center gap-1.5 absolute bottom-5 right-6">
+              <div className="h-2/3 flex items-center justify-end px-5">
+                <span className={`text-3xl sm:text-4xl font-light tracking-tighter text-right overflow-hidden leading-tight ${data.activeField === "destination" ? "text-[var(--text-main)]" : "text-[var(--text-muted)]"}`}>{data.targetAmount}</span>
+              </div>
+              <div className="h-1/3 flex items-center justify-between px-5 bg-black/10">
                 {data.type === 'expense' ? (
                   <button
                     onClick={(e) => { e.stopPropagation(); setCurrencyPicker({ isOpen: true, field: "target" }); }}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all duration-300 active:scale-95 shadow-sm ${data.activeField === "destination" ? 'bg-[#D4AF37] text-white border-[#D4AF37]' : 'bg-[var(--glass-item-bg)] border-[var(--glass-border)] text-[var(--text-muted)]'}`}
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-xl border transition-all duration-300 active:scale-95 shadow-sm ${data.activeField === "destination" ? 'bg-[#D4AF37] text-white border-[#D4AF37]' : 'bg-[var(--glass-item-bg)] border-[var(--glass-border)] text-[var(--text-muted)]'}`}
                   >
                     <span className="text-[11px] font-black uppercase tracking-wider">{data.targetCurrency}</span>
                     <ChevronRight size={12} className="opacity-60" />
@@ -122,7 +126,7 @@ export const Numpad: React.FC<Props> = ({
                 ) : (
                   <span className={`text-[11px] font-black uppercase px-1 py-0.5 ${data.activeField === "destination" ? "text-[var(--success-color)]" : "text-[var(--text-muted)]"}`}>{data.targetCurrency}</span>
                 )}
-                <span className="text-[9px] font-bold text-[var(--text-muted)] uppercase opacity-40 ml-1">КУДА</span>
+                <span className="text-[9px] font-bold text-[var(--text-muted)] uppercase opacity-40">КУДА</span>
               </div>
             </div>
           </div>
@@ -158,7 +162,7 @@ export const Numpad: React.FC<Props> = ({
 
         {/* Numerical Pad */}
         <div className="bg-[var(--numpad-bg)] border-t border-[var(--glass-border)] shrink-0 flex flex-col">
-          <div className="grid grid-cols-5 gap-px bg-[var(--glass-border)]">
+          <div className="grid grid-cols-[2fr_2fr_2fr_1.5fr_1.5fr] gap-px bg-[var(--glass-border)]">
             {/* Row 1 */}
             <button onClick={() => onPress("1")} className="h-16 bg-[var(--numpad-bg)] flex items-center justify-center text-2xl font-light text-[var(--text-main)] active:bg-[var(--glass-item-active)] transition-all">1</button>
             <button onClick={() => onPress("2")} className="h-16 bg-[var(--numpad-bg)] flex items-center justify-center text-2xl font-light text-[var(--text-main)] active:bg-[var(--glass-item-active)] transition-all">2</button>
