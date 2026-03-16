@@ -105,7 +105,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
 
         return {
             amount: `${sign}${displayAmount.toLocaleString()} ${displayCurrency}`,
-            usdAmount: sAmtUsd ? `${sign}$${sAmtUsd.toLocaleString()}` : null,
+            usdAmount: (displayCurrency !== "USD" && sAmtUsd) ? `${sign}$${sAmtUsd.toLocaleString()}` : null,
             color
         };
     };

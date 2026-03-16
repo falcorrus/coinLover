@@ -1,19 +1,13 @@
-# CoinLover Project Instructions (Gemini CLI)
+# CoinLover
 
-## Владелец
-- **Пользователь:** Broz
-- **Среда выполнения:** macOS (Local) / VPS (server.reloto.ru)
+## Architecture & Resources
+- **Source Code:** `/Users/eugene/MyProjects/CoinLover`
+- **Obsidian Docs:** `3. РЕСУРСЫ/00! Мои приложения/coinLover/`
+- **Link:** Folder `/Users/eugene/MyProjects/CoinLover/Obsidian_Docs` points to the project notes in Obsidian.
 
-## Документация и База знаний
-- **Obsidian Docs:** Вся документация проекта доступна в папке `Obsidian_Docs` (в корне проекта).
-- **Связь с Obsidian:** Эта папка является символической ссылкой на `3. РЕСУРСЫ/00! Мои приложения/coinLover/` в хранилище Google Drive.
-- **Инструкция:** Перед началом крупных задач всегда проверяй `Obsidian_Docs/PROJECT.md` и `Obsidian_Docs/MAIN_FUNCTIONS.md`, чтобы понимать текущее состояние и цели проекта.
+## Deployment Policy
+- **Action:** Always merge the current branch into `main` before deploying to the server.
 
-## Технические детали
-- **Backend:** В папке `backend/`
-- **Frontend:** В папке `src/` (Vite/React/TS)
-- **Deployment:** Используй `deploy.sh` (Main) или `deploy-dev.sh` (Dev) на VPS.
-- **VPS SSH:** Алиас `vps` (root@server.reloto.ru)
-
----
-*Этот файл является базовой инструкцией для Gemini CLI.*
+## Reporting & Analytics
+- **Aggregation:** When requesting 'coinlover' or 'coin', merge data from `coin.reloto.ru` and `coinlover-dev.reloto.ru`.
+- **Financial Table (Google Sheets):** ID `1IQCs35RQlMMQsGB-CRczJeuRqa8WIxW4Sy_kjZyHP2M` (Income/Expenses).

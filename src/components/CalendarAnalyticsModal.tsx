@@ -72,17 +72,19 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
     // Auto-scroll to selected day in timeline mode
     useEffect(() => {
         if (viewMode === "timeline" && selectedDay && timelineRef.current) {
-            const element = timelineRef.current.querySelector(`[data-day="${selectedDay}"]`);
-            if (element) {
-                element.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-            }
+            const timer = setTimeout(() => {
+                const element = timelineRef.current?.querySelector(`[data-day="${selectedDay}"]`);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                }
+            }, 100);
+            return () => clearTimeout(timer);
         }
-    }, [viewMode, selectedDay]);
+    }, [viewMode, selectedDay, currentDate]);
 
     // 2. Handlers
     const goToToday = () => {
         const today = new Date();
-        // Set to a fresh date object to ensure month/year update triggers correctly
         setCurrentDate(new Date(today.getFullYear(), today.getMonth(), today.getDate()));
         setSelectedDay(today.getDate());
     };
@@ -166,7 +168,7 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
 
         return {
             amount: `${sign}${sAmt.toLocaleString()} ${sCurr}`,
-            usdAmount: sAmtUsd ? `${sign}$${sAmtUsd.toLocaleString()}` : null,
+            usdAmount: (sCurr !== "USD" && sAmtUsd) ? `${sign}$${sAmtUsd.toLocaleString()}` : null,
             color
         };
     };
@@ -255,13 +257,11 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
                                             <button 
                                                 key={day}
                                                 onClick={() => {
-                                                    if (hasData) {
-                                                        setSelectedDay(day === selectedDay ? null : day);
-                                                    }
+                                                    setSelectedDay(day === selectedDay ? null : day);
                                                 }}
                                                 className={`aspect-square rounded-xl flex flex-col items-center justify-center gap-1 transition-all relative border 
                                                     ${isSelected ? 'bg-[var(--primary-color)]/20 border-[var(--primary-color)] shadow-[0_0_15px_rgba(109,93,252,0.3)]' : isToday ? 'border-[var(--primary-color)]/50' : 'border-transparent'} 
-                                                    ${hasData ? 'bg-[var(--glass-item-bg)] hover:bg-[var(--glass-item-active)] active:scale-90' : 'opacity-40 cursor-default'}
+                                                    ${(hasData || isSelected) ? 'bg-[var(--glass-item-bg)] hover:bg-[var(--glass-item-active)] active:scale-90' : 'opacity-40 cursor-default'}
                                                 `}
                                             >
                                                 <span className={`text-xs font-bold ${isSelected || isToday ? 'text-[var(--primary-color)]' : 'text-[var(--text-main)]'}`}>{day}</span>
@@ -293,9 +293,7 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
                                             key={day}
                                             data-day={day}
                                             onClick={() => {
-                                                if (hasData) {
-                                                    setSelectedDay(day === selectedDay ? null : day);
-                                                }
+                                                setSelectedDay(day === selectedDay ? null : day);
                                             }}
                                             className={`w-14 shrink-0 flex flex-col items-center gap-2 p-3 rounded-2xl transition-all border
                                                 ${isSelected 
@@ -303,7 +301,7 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
                                                     : isToday 
                                                         ? 'bg-[var(--glass-item-bg)] border-[var(--primary-color)]/50' 
                                                         : 'bg-[var(--glass-item-bg)]/50 border-transparent'}
-                                                ${hasData ? 'opacity-100' : 'opacity-30'}
+                                                ${(hasData || isSelected) ? 'opacity-100' : 'opacity-30'}
                                             `}
                                         >
                                             <span className={`text-[10px] font-black uppercase tracking-widest ${isSelected ? 'text-white/70' : 'text-[var(--text-muted)]'}`}>{dName}</span>
