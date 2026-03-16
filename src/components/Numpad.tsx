@@ -195,17 +195,11 @@ export const Numpad: React.FC<Props> = ({
         {/* Bottom Action Bar */}
         <div className="flex justify-center px-4 py-6 bg-[var(--numpad-bg)] shrink-0">
           <div className="flex items-center bg-[#1a1c1e]/80 backdrop-blur-xl rounded-2xl p-1.5 border border-white/5 shadow-2xl">
-            {isEditing ? (
-              <button onClick={() => onSubmit()} className="px-12 py-3 bg-[var(--primary-color)] rounded-xl text-white font-black uppercase text-[10px] tracking-widest active:scale-95 transition-all flex items-center justify-center gap-2">
-                <Check size={14} /> Сохранить
-              </button>
-            ) : (
-              <>
-                <button onClick={handleYesterday} className="px-6 py-3 text-[var(--text-muted)] font-black uppercase text-[10px] tracking-widest active:text-white transition-all">Вчера</button>
-                <button onClick={() => onSubmit()} className="px-12 py-3 bg-[var(--success-color)] text-white font-black uppercase text-[10px] tracking-widest rounded-xl shadow-lg shadow-[var(--success-color)]/20 active:scale-95 transition-all">Сегодня</button>
-                <button onClick={() => setIsCalendarOpen(true)} className="px-5 py-3 text-[var(--text-muted)] active:text-white transition-all hover:scale-110"><CalendarDays size={18} /></button>
-              </>
-            )}
+            <button onClick={handleYesterday} className="px-6 py-3 text-[var(--text-muted)] font-black uppercase text-[10px] tracking-widest active:text-white transition-all">Вчера</button>
+            <button onClick={() => onSubmit()} className="px-12 py-3 bg-[var(--success-color)] text-white font-black uppercase text-[10px] tracking-widest rounded-xl shadow-lg shadow-[var(--success-color)]/20 active:scale-95 transition-all">
+              {isEditing ? "Сохранить" : "Сегодня"}
+            </button>
+            <button onClick={() => setIsCalendarOpen(true)} className="px-5 py-3 text-[var(--text-muted)] active:text-white transition-all hover:scale-110"><CalendarDays size={18} /></button>
           </div>
         </div>
       </div>
