@@ -25,7 +25,7 @@ interface ModalManagerProps {
   confirmDelete: { isOpen: boolean; title: string; message: string; onConfirm: () => void };
   numpad: NumpadData;
   isTagModalOpen: boolean;
-  conflictData: any;
+  conflictData: any; // Keep as any if dynamic from GAS, but better SyncSettingsFields | null
   editingTxId: string | null;
   
   // Data
@@ -36,14 +36,14 @@ interface ModalManagerProps {
   allExistingTags: string[];
   
   // Handlers
-  setAccountModal: (v: { isOpen: boolean; account: Account | null }) => void;
-  setIncomeModal: (v: { isOpen: boolean; income: IncomeSource | null }) => void;
-  setCategoryModal: (v: { isOpen: boolean; category: Category | null }) => void;
-  setHistoryModal: (v: HistoryModalState) => void;
-  setAnalyticsModal: (v: { isOpen: boolean; type: "expense" | "income" } | ((p: any) => any)) => void;
-  setCalendarAnalyticsModal: (v: { isOpen: boolean }) => void;
-  setConfirmDelete: (v: { isOpen: boolean; title: string; message: string; onConfirm: () => void } | ((p: any) => any)) => void;
-  setNumpad: (v: NumpadData | ((p: NumpadData) => NumpadData)) => void;
+  setAccountModal: React.Dispatch<React.SetStateAction<{ isOpen: boolean; account: Account | null }>>;
+  setIncomeModal: React.Dispatch<React.SetStateAction<{ isOpen: boolean; income: IncomeSource | null }>>;
+  setCategoryModal: React.Dispatch<React.SetStateAction<{ isOpen: boolean; category: Category | null }>>;
+  setHistoryModal: React.Dispatch<React.SetStateAction<HistoryModalState>>;
+  setAnalyticsModal: React.Dispatch<React.SetStateAction<{ isOpen: boolean; type: "expense" | "income" }>>;
+  setCalendarAnalyticsModal: React.Dispatch<React.SetStateAction<{ isOpen: boolean }>>;
+  setConfirmDelete: React.Dispatch<React.SetStateAction<{ isOpen: boolean; title: string; message: string; onConfirm: () => void }>>;
+  setNumpad: React.Dispatch<React.SetStateAction<NumpadData>>;
   setIsTagModalOpen: (v: boolean) => void;
   setEditingTxId: (v: string | null) => void;
   setConflictData: (v: any) => void;

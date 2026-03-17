@@ -56,15 +56,15 @@ export default function App() {
   const [editingTxId, setEditingTxId] = React.useState<string | null>(null);
 
   // Modal States
-  const [accountModal, setAccountModal] = React.useState<{ isOpen: boolean; account: any }>({ isOpen: false, account: null });
-  const [incomeModal, setIncomeModal] = React.useState<{ isOpen: boolean; income: any }>({ isOpen: false, income: null });
-  const [categoryModal, setCategoryModal] = React.useState<{ isOpen: boolean; category: any }>({ isOpen: false, category: null });
+  const [accountModal, setAccountModal] = React.useState<{ isOpen: boolean; account: Account | null }>({ isOpen: false, account: null });
+  const [incomeModal, setIncomeModal] = React.useState<{ isOpen: boolean; income: IncomeSource | null }>({ isOpen: false, income: null });
+  const [categoryModal, setCategoryModal] = React.useState<{ isOpen: boolean; category: Category | null }>({ isOpen: false, category: null });
   const [historyModal, setHistoryModal] = React.useState<HistoryModalState>({ isOpen: false, entity: null, type: null });
   const [analyticsModal, setAnalyticsModal] = React.useState<{ isOpen: boolean; type: "expense" | "income" }>({ isOpen: false, type: "expense" });
   const [calendarAnalyticsModal, setCalendarAnalyticsModal] = React.useState({ isOpen: false });
   const [confirmDelete, setConfirmDelete] = React.useState<{ isOpen: boolean; title: string; message: string; onConfirm: () => void; }>({ isOpen: false, title: "", message: "", onConfirm: () => { } });
   const [isTagModalOpen, setIsTagModalOpen] = React.useState(false);
-  const [numpad, setNumpad] = React.useState<any>({
+  const [numpad, setNumpad] = React.useState<NumpadData>({
     isOpen: false, type: "expense", source: null, destination: null,
     sourceAmount: "0", sourceCurrency: "USD", targetAmount: "0", targetCurrency: "USD", targetLinked: true, activeField: "source", tag: null, comment: ""
   });

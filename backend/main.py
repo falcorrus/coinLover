@@ -66,6 +66,37 @@ def fetch_rate(url):
         print(f"Error fetching rate: {e}")
         return None
 
+import os
+from pydantic import BaseModel
+
+class LeadRequest(BaseModel):
+    contact: str
+
+# Telegram credentials from environment
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+TELEGRAM_ADMIN_ID = os.getenv("TELEGRAM_ADMIN_ID")
+
+@app.post("/api/leads")
+def create_lead(lead: LeadRequest):
+    if not lead.contact:
+        raise HTTPException(status_code=400, detail="Contact is required")
+    
+    # Send to Telegram if credentials are set
+    if TELEGRAM_BOT_TOKEN and TELEGRAM_ADMIN_ID:
+        try:
+            msg = f"🚀 <b>New Lead for CoinLover!</b>\n\nContact: <code>{lead.contact}</code>"
+            url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+            requests.post(url, json={
+                "chat_id": TELEGRAM_ADMIN_ID,
+                "text": msg,
+                "parse_mode": "HTML"
+            }, timeout=10)
+        except Exception as e:
+            print(f"Error sending to Telegram: {e}")
+            # We don't fail the request if TG fails, just log it
+    
+    return {"status": "success"}
+
 @app.get("/api/rates/rub")
 def get_rub_rate():
     url = "https://www.bestchange.com/tether-trc20-to-tinkoff.html"
