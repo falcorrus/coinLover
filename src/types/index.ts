@@ -52,6 +52,7 @@ export interface HistoryModalState {
   entity: Entity | { name: string; icon: string } | null;
   type: DragItemType | "tag" | "feed" | null;
   customTransactions?: Transaction[];
+  returnTo?: "analytics" | "calendar";
 }
 
 export interface NumpadData {
@@ -68,6 +69,7 @@ export interface NumpadData {
   tag: string | null;
   comment: string;
   date?: string;
+  returnState?: HistoryModalState;
 }
 
 export interface SyncSettingsFields {

@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 
 // Modules
-import { DragItemType, HistoryModalState } from "./types";
+import { Account, IncomeSource, Category, NumpadData, DragItemType, HistoryModalState } from "./types";
 import { IconMap } from "./constants";
 import { APP_SETTINGS } from "./constants/settings";
 import { useFinance } from "./hooks/useFinance";
@@ -166,9 +166,16 @@ export default function App() {
     };
 
     const closeAllModals = () => {
-      if (historyModal.isOpen && (historyModal.entity as any)?.icon === "calendar") {
+      if (numpad.isOpen && numpad.returnState) {
+        setHistoryModal(numpad.returnState);
+        setNumpad(p => ({ ...p, isOpen: false, returnState: undefined }));
+        return;
+      }
+      if (historyModal.isOpen && historyModal.returnTo) {
+        const returnTo = historyModal.returnTo;
         setHistoryModal({ isOpen: false, entity: null, type: null });
-        setCalendarAnalyticsModal({ isOpen: true });
+        if (returnTo === "calendar") setCalendarAnalyticsModal({ isOpen: true });
+        else if (returnTo === "analytics") setAnalyticsModal(p => ({ ...p, isOpen: true }));
         return;
       }
       setAccountModal(p => ({ ...p, isOpen: false }));
