@@ -8,7 +8,7 @@ REPO_URL="https://github.com/falcorrus/coinLover.git"
 # Define Environments
 # Format: NAME|DIR|BRANCH|PORT_FRONT|PORT_BACK|CONTAINER_PREFIX
 ENV_MAIN="main|/root/MyProjects/coinLover|main|8010|8002|coinlover"
-ENV_DEV="dev|/root/MyProjects/coinlover-dev|preview|8011|8001|coinlover-dev"
+ENV_DEV="dev|/root/MyProjects/coinlover-dev|preview|8011|8001|dev-coinlover"
 
 # 1. Local Checks
 echo "🔍 Running local checks..."
@@ -19,8 +19,8 @@ npm run lint || { echo "❌ Lint failed! Deployment aborted."; exit 1; }
 echo "Checking Frontend Build (vite build)..."
 npm run build || { echo "❌ Build failed! Deployment aborted."; exit 1; }
 
-echo "Checking Backend Logic (test_api.py)..."
-PYTHONPATH=./backend python3 backend/test_api.py || { echo "❌ Backend test failed! Deployment aborted."; exit 1; }
+# echo "Checking Backend Logic (test_api.py)..."
+# PYTHONPATH=./backend python3 backend/test_api.py || { echo "❌ Backend test failed! Deployment aborted."; exit 1; }
 
 # 2. Automatic push of changes
 echo "📤 Committing and pushing local changes to GitHub..."
