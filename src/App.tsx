@@ -27,14 +27,40 @@ import { AnalyticsModal } from "./components/AnalyticsModal";
 import { CalendarAnalyticsModal } from "./components/CalendarAnalyticsModal";
 import { ConfirmModal } from "./components/ConfirmModal";
 import { TagModal } from "./components/TagModal";
+import { LandingPage } from "./components/LandingPage";
 
 export default function App() {
+  const [currentPath, setCurrentPath] = React.useState(window.location.pathname);
+
+  // Simple routing logic
+  React.useEffect(() => {
+    const handleLocationChange = () => setCurrentPath(window.location.pathname);
+    window.addEventListener("popstate", handleLocationChange);
+    return () => window.removeEventListener("popstate", handleLocationChange);
+  }, []);
+
   const {
     accounts, setAccounts, categories, setCategories, incomes, setIncomes,
     transactions, syncStatus, addTransaction, updateTransaction, deleteTransaction, saveAccount, deleteAccount,
     saveCategory, deleteCategory, saveIncome, deleteIncome, syncCategories, syncIncomes, syncAccountsOrder,
     pullSettings, checkConflicts, conflictData, setConflictData, updateLocalFromRemote, pushSettings
   } = useFinance();
+
+  // Handle URL parameters for landing actions
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("demo") === "true") {
+      // Trigger demo logic if needed, or just let useFinance handle local state
+      window.history.replaceState({}, "", "/");
+      setCurrentPath("/");
+    }
+    if (params.get("connect") === "true") {
+      window.history.replaceState({}, "", "/");
+      setCurrentPath("/");
+      // We'll open the account modal after a short delay
+      setTimeout(() => setAccountModal({ isOpen: true, account: null }), 1000);
+    }
+  }, []);
 
   const [isSplashVisible, setIsSplashVisible] = React.useState(true);
   const [mode, setMode] = React.useState<"expense" | "income">("expense");
@@ -288,6 +314,10 @@ export default function App() {
   ]);
 
   const activeItemData = activeDragId ? (activeDragType === 'account' ? accounts.find(a => a.id === activeDragId) : activeDragType === 'category' ? categories.find(c => c.id === activeDragId) : incomes.find(i => i.id === activeDragId)) : null;
+
+  if (currentPath === "/landing") {
+    return <LandingPage />;
+  }
 
   return (
     <DndContext 

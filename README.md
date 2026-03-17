@@ -32,6 +32,12 @@ View your app in AI Studio: <https://ai.studio/apps/15577583-bfd2-424e-a4b9-4c4e
 - **Калькулятор (Numpad):** Встроенный калькулятор с поддержкой тегов и быстрым выбором даты (Сегодня/Вчера).
 - **Лента транзакций:** Улучшенный интерфейс сгруппированной истории с выделением тегов на второй строке.
 
+### Интерфейс и Темы
+
+| Light Theme | Dark Theme | Midnight Gold |
+|:---:|:---:|:---:|
+| <img src="screenshots/light_theme.png" width="250" alt="Light Theme" /> | <img src="screenshots/dark_theme.png" width="250" alt="Dark Theme" /> | <img src="screenshots/midnight_theme.png" width="250" alt="Midnight Gold Theme" /> |
+
 ### Управление кошельками
 
   1. **Клик/Удержание (0.8с):** Редактирование счета.
