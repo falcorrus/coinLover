@@ -43,6 +43,17 @@ export interface Transaction {
   comment?: string;
 }
 
+export type DragItemType = "account" | "category" | "income";
+
+export type Entity = Account | Category | IncomeSource;
+
+export interface HistoryModalState {
+  isOpen: boolean;
+  entity: Entity | { name: string; icon: string } | null;
+  type: DragItemType | "tag" | "feed" | null;
+  customTransactions?: Transaction[];
+}
+
 export interface NumpadData {
   isOpen: boolean;
   type: TransactionType;
@@ -58,8 +69,6 @@ export interface NumpadData {
   comment: string;
   date?: string;
 }
-
-export type DragItemType = "account" | "category" | "income";
 
 export interface SyncSettingsFields {
   accounts: Account[];

@@ -11,8 +11,9 @@ import {
 } from "lucide-react";
 
 // Modules
-import { Account, IncomeSource, Category, NumpadData, DragItemType, Transaction } from "./types";
+import { Account, IncomeSource, Category, NumpadData, DragItemType, Transaction, HistoryModalState } from "./types";
 import { IconMap } from "./constants";
+import { APP_SETTINGS } from "./constants/settings";
 import { useFinance } from "./hooks/useFinance";
 import { RatesService } from "./services/RatesService";
 import { AccountItem } from "./components/AccountItem";
@@ -58,17 +59,20 @@ export default function App() {
       window.history.replaceState({}, "", "/");
       setCurrentPath("/");
       // We'll open the account modal after a short delay
-      setTimeout(() => setAccountModal({ isOpen: true, account: null }), 1000);
+      setTimeout(() => setAccountModal({ isOpen: true, account: null }), APP_SETTINGS.ACCOUNT_MODAL_AUTO_OPEN_DELAY);
     }
   }, []);
 
   const [isSplashVisible, setIsSplashVisible] = React.useState(true);
   const [mode, setMode] = React.useState<"expense" | "income">("expense");
-  const [pillMode, setPillMode] = React.useState<"expense" | "income" | "balance">(() => (localStorage.getItem("cl_pill_mode") as any) || "expense");
+  const [pillMode, setPillMode] = React.useState<"expense" | "income" | "balance">(() => {
+    const saved = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.PILL_MODE);
+    return (saved as "expense" | "income" | "balance") || "expense";
+  });
 
   // Persist pill mode changes
   React.useEffect(() => {
-    localStorage.setItem("cl_pill_mode", pillMode);
+    localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.PILL_MODE, pillMode);
   }, [pillMode]);
   const [isIncomeCollapsed, setIsIncomeCollapsed] = React.useState(true);
   const [activeDragId, setActiveDragId] = React.useState<string | null>(null);
@@ -77,13 +81,13 @@ export default function App() {
   const [hasMovedDuringDrag, setHasMovedDuringDrag] = React.useState(false);
   const [overId, setOverId] = React.useState<string | null>(null);
   const [isSettingsMenuOpen, setIsSettingsMenuOpen] = React.useState(false);
-  const [theme, setTheme] = React.useState<"light" | "dark" | "midnight">(() => (localStorage.getItem("coinlover_theme") as "light" | "dark" | "midnight") || "dark");
+  const [theme, setTheme] = React.useState<"light" | "dark" | "midnight">(() => (localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.THEME) as "light" | "dark" | "midnight") || "dark");
   const [editingTxId, setEditingTxId] = React.useState<string | null>(null);
 
   const [accountModal, setAccountModal] = React.useState<{ isOpen: boolean; account: Account | null }>({ isOpen: false, account: null });
   const [incomeModal, setIncomeModal] = React.useState<{ isOpen: boolean; income: IncomeSource | null }>({ isOpen: false, income: null });
   const [categoryModal, setCategoryModal] = React.useState<{ isOpen: boolean; category: Category | null }>({ isOpen: false, category: null });
-  const [historyModal, setHistoryModal] = React.useState<{ isOpen: boolean; entity: any; type: "account" | "category" | "income" | "tag" | "feed" | null; customTransactions?: Transaction[]; }>({ isOpen: false, entity: null, type: null });
+  const [historyModal, setHistoryModal] = React.useState<HistoryModalState>({ isOpen: false, entity: null, type: null });
   const [analyticsModal, setAnalyticsModal] = React.useState<{ isOpen: boolean; type: "expense" | "income" }>({ isOpen: false, type: "expense" });
   const [calendarAnalyticsModal, setCalendarAnalyticsModal] = React.useState({ isOpen: false });
   const [confirmDelete, setConfirmDelete] = React.useState<{ isOpen: boolean; title: string; message: string; onConfirm: () => void; }>({ isOpen: false, title: "", message: "", onConfirm: () => { } });
@@ -97,31 +101,31 @@ export default function App() {
   const sortingTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const demoClickCount = React.useRef(0);
   const demoTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isDemo = window.localStorage.getItem("coinlover_demo") !== "false";
+  const isDemo = window.localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE) !== "false";
 
   React.useEffect(() => {
     RatesService.syncRatesInBackground();
-    setTimeout(() => setIsSplashVisible(false), 600);
-    setTimeout(() => checkConflicts(), 1500);
+    setTimeout(() => setIsSplashVisible(false), APP_SETTINGS.SPLASH_SCREEN_DURATION);
+    setTimeout(() => checkConflicts(), APP_SETTINGS.CONFLICT_CHECK_DELAY);
   }, [checkConflicts]);
 
   React.useEffect(() => {
     document.documentElement.classList.remove("light", "midnight");
     if (theme !== "dark") document.documentElement.classList.add(theme);
-    localStorage.setItem("coinlover_theme", theme);
+    localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.THEME, theme);
   }, [theme]);
 
   const toggleTheme = () => { 
     setTheme(prev => prev === "light" ? "dark" : prev === "dark" ? "midnight" : "light"); 
-    if (navigator.vibrate) navigator.vibrate(50); 
+    if (navigator.vibrate) navigator.vibrate(APP_SETTINGS.HAPTIC_FEEDBACK_DURATION_MEDIUM); 
   };
   const toggleMode = (target: 'demo' | 'real') => {
-    localStorage.removeItem("cl_accounts");
-    localStorage.removeItem("cl_categories");
-    localStorage.removeItem("cl_incomes");
-    localStorage.removeItem("cl_transactions");
-    localStorage.removeItem("cl_last_sync");
-    window.localStorage.setItem("coinlover_demo", target === 'demo' ? "true" : "false");
+    localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.ACCOUNTS);
+    localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.CATEGORIES);
+    localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.INCOMES);
+    localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.TRANSACTIONS);
+    localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC);
+    window.localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE, target === 'demo' ? "true" : "false");
     window.location.reload();
   };
   const handleDemoClick = () => {
@@ -131,7 +135,7 @@ export default function App() {
       toggleMode(isDemo ? 'real' : 'demo');
       demoClickCount.current = 0;
     } else {
-      demoTimerRef.current = setTimeout(() => { demoClickCount.current = 0; }, 2000);
+      demoTimerRef.current = setTimeout(() => { demoClickCount.current = 0; }, APP_SETTINGS.DEMO_MODE_RESET_TIMER);
     }
   };
 
@@ -146,7 +150,7 @@ export default function App() {
     } catch { return str; }
   };
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 10 } }));
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: APP_SETTINGS.DND_ACTIVATION_DISTANCE } }));
   const toggleIncome = () => { const next = !isIncomeCollapsed; setIsIncomeCollapsed(next); setMode(next ? "expense" : "income"); };
 
   const handleDragStart = (e: DragStartEvent) => {
@@ -157,8 +161,8 @@ export default function App() {
     if (sortingTimerRef.current) clearTimeout(sortingTimerRef.current);
     sortingTimerRef.current = setTimeout(() => {
       setIsSortingMode(true);
-      if (navigator.vibrate) navigator.vibrate(50);
-    }, 600);
+      if (navigator.vibrate) navigator.vibrate(APP_SETTINGS.HAPTIC_FEEDBACK_DURATION_MEDIUM);
+    }, APP_SETTINGS.DND_SORTING_MODE_DELAY);
 
     const clearOnUp = () => {
       if (sortingTimerRef.current) clearTimeout(sortingTimerRef.current);
@@ -174,7 +178,7 @@ export default function App() {
     if (!hasMovedDuringDrag) setHasMovedDuringDrag(true);
     if (sortingTimerRef.current && !isSortingMode) {
       const { delta } = e;
-      if (Math.abs(delta.x) > 30 || Math.abs(delta.y) > 30) {
+      if (Math.abs(delta.x) > APP_SETTINGS.DND_DRAG_MOVE_THRESHOLD || Math.abs(delta.y) > APP_SETTINGS.DND_DRAG_MOVE_THRESHOLD) {
         clearTimeout(sortingTimerRef.current);
         sortingTimerRef.current = null;
       }
@@ -520,9 +524,9 @@ export default function App() {
       </div>
 
       <DragOverlay dropAnimation={null}>
-        {activeDragId ? (
+        {activeDragId && activeItemData ? (
           <div className={`draggable-coin grabbed-elevation pointer-events-none ${activeDragType === 'category' ? 'coin-category' : 'coin-wallet'}`}>
-            {React.createElement(IconMap[(activeItemData as any)?.icon] || Wallet, { size: 28, color: (activeItemData as any)?.color })}
+            {React.createElement(IconMap[activeItemData.icon] || Wallet, { size: APP_SETTINGS.UI.ICON_SIZE_OVERLAY, color: activeItemData.color })}
           </div>
         ) : null}
       </DragOverlay>

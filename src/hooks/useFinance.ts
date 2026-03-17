@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Account, Transaction, Category, IncomeSource, TransactionType } from "../types";
-import { googleSheetsService } from "../services/googleSheets";
-import { DEFAULT_CATEGORIES, INITIAL_INCOMES, INITIAL_ACCOUNTS } from "../constants";
-import { RatesService } from "../services/RatesService";
+import { APP_SETTINGS } from "../constants/settings";
+import { Account, Transaction, Category, IncomeSource, TransactionType, SyncSettingsFields } from "../types";
 
 export type SyncStatus = "idle" | "loading" | "error" | "success";
 
@@ -21,31 +19,31 @@ const enrichAccountsWithUSD = (accs: Account[]): Account[] => {
 
 export const useFinance = () => {
   const [accounts, setAccounts] = useState<Account[]>(() => {
-    const saved = localStorage.getItem("cl_accounts");
+    const saved = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.ACCOUNTS);
     return saved ? JSON.parse(saved) : [];
   });
   const [categories, setCategories] = useState<Category[]>(() => {
-    const saved = localStorage.getItem("cl_categories");
+    const saved = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.CATEGORIES);
     return saved ? JSON.parse(saved) : [];
   });
   const [incomes, setIncomes] = useState<IncomeSource[]>(() => {
-    const saved = localStorage.getItem("cl_incomes");
+    const saved = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.INCOMES);
     return saved ? JSON.parse(saved) : [];
   });
   const [transactions, setTransactions] = useState<Transaction[]>(() => {
-    const saved = localStorage.getItem("cl_transactions");
+    const saved = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.TRANSACTIONS);
     return saved ? JSON.parse(saved) : [];
   });
 
   const [syncStatus, setSyncStatus] = useState<SyncStatus>("idle");
-  const [conflictData, setConflictData] = useState<any | null>(null);
+  const [conflictData, setConflictData] = useState<SyncSettingsFields | null>(null);
   const isInitialLoad = useRef(true);
 
-  const updateLocalFromRemote = useCallback((data: any) => {
+  const updateLocalFromRemote = useCallback((data: SyncSettingsFields & { transactions?: Transaction[] }) => {
     if (data.accounts) setAccounts(data.accounts);
     if (data.categories) setCategories(data.categories);
     if (data.incomes) setIncomes(data.incomes);
-    if (data.timestamp) localStorage.setItem("cl_last_sync", data.timestamp);
+    if (data.timestamp) localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC, data.timestamp);
     if (data.transactions && Array.isArray(data.transactions)) {
       setTransactions([...data.transactions].sort((a, b) => new Date(b.date.replace(/-/g, '/').replace('T', ' ')).getTime() - new Date(a.date.replace(/-/g, '/').replace('T', ' ')).getTime()));
     }
@@ -74,7 +72,7 @@ export const useFinance = () => {
   useEffect(() => {
     if (isInitialLoad.current) {
       isInitialLoad.current = false;
-      const hasData = localStorage.getItem("cl_accounts");
+      const hasData = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.ACCOUNTS);
       if (!hasData) {
         pullSettings();
       }
@@ -82,10 +80,10 @@ export const useFinance = () => {
   }, [pullSettings]);
 
   // Persistent storage effects
-  useEffect(() => { if (accounts.length > 0) localStorage.setItem("cl_accounts", JSON.stringify(accounts)); }, [accounts]);
-  useEffect(() => { if (categories.length > 0) localStorage.setItem("cl_categories", JSON.stringify(categories)); }, [categories]);
-  useEffect(() => { if (incomes.length > 0) localStorage.setItem("cl_incomes", JSON.stringify(incomes)); }, [incomes]);
-  useEffect(() => { if (transactions.length > 0) localStorage.setItem("cl_transactions", JSON.stringify(transactions)); }, [transactions]);
+  useEffect(() => { if (accounts.length > 0) localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.ACCOUNTS, JSON.stringify(accounts)); }, [accounts]);
+  useEffect(() => { if (categories.length > 0) localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.CATEGORIES, JSON.stringify(categories)); }, [categories]);
+  useEffect(() => { if (incomes.length > 0) localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.INCOMES, JSON.stringify(incomes)); }, [incomes]);
+  useEffect(() => { if (transactions.length > 0) localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.TRANSACTIONS, JSON.stringify(transactions)); }, [transactions]);
 
   const addTransaction = async (type: TransactionType, source: Account | IncomeSource, destination: Account | Category, sourceAmount: number, targetAmount?: number, tag?: string, customDate?: string, comment?: string, customCurrency?: string) => {
     const date = customDate ? getLocalTimeString(customDate) : getLocalTimeString();
@@ -257,7 +255,7 @@ export const useFinance = () => {
       const remote = await googleSheetsService.fetchSettings();
       if (!remote || !remote.timestamp) return;
       
-      const localLastSync = localStorage.getItem("cl_last_sync");
+      const localLastSync = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC);
       if (!localLastSync) {
         updateLocalFromRemote(remote);
         return;
@@ -281,7 +279,7 @@ export const useFinance = () => {
     setSyncStatus("loading");
     const ts = getLocalTimeString();
     const ok = await googleSheetsService.syncToSheets({ action: "syncSettings", targetSheet: "Configs", accounts: enrichAccountsWithUSD(a), categories: c, incomes: i, timestamp: ts });
-    if (ok) { localStorage.setItem("cl_last_sync", ts); setSyncStatus("success"); } else setSyncStatus("error");
+    if (ok) { localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC, ts); setSyncStatus("success"); } else setSyncStatus("error");
   }, []);
 
   return {
