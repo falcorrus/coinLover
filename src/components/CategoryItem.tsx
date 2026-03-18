@@ -16,10 +16,13 @@ interface Props {
   onClick?: (category: Category) => void;
   activeDragType: DragItemType | null;
   theme?: string;
+  currencyMode?: "usd" | "local";
+  currencySymbol?: string;
 }
 
 export const CategoryItem: React.FC<Props> = ({
-  category, spent, isDragging, isSortingMode, onSortingMode, onLongPress, onClick, activeDragType, isOver, theme
+  category, spent, isDragging, isSortingMode, onSortingMode, onLongPress, onClick, activeDragType, isOver, theme,
+  currencyMode = "usd", currencySymbol = "USD"
 }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isOver: isSortableOver } = useSortable({
     id: category.id,
@@ -143,7 +146,10 @@ export const CategoryItem: React.FC<Props> = ({
           <span className={`font-technical text-[10px] font-bold mt-0.5 ${
             theme === 'modern' ? 'text-slate-300 opacity-60' : 'text-[var(--text-main)] opacity-80'
           }`}>
-            -${spent.toLocaleString()}
+            <span className={currencyMode === 'local' ? 'text-[var(--primary-color)]' : ''}>
+              {currencyMode === 'local' ? `${currencySymbol.charAt(0).toUpperCase()}$ ` : '-$'}
+            </span>
+            {spent.toLocaleString()}
           </span>
         )}
       </div>

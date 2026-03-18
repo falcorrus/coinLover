@@ -272,13 +272,32 @@ export default function App() {
               <SortableContext items={categories.map(c => c.id)} strategy={rectSortingStrategy}>
                 <div className="grid grid-cols-4 gap-y-6 gap-x-2 pb-4">
                   {categories.map(cat => {
-                    const spent = Math.round(currentMonthTransactions.filter(t => t.type === "expense" && t.targetId === cat.id).reduce((s, t) => {
+                    const catTx = currentMonthTransactions.filter(t => t.type === "expense" && t.targetId === cat.id);
+                    const spent = Math.round(catTx.reduce((s, t) => {
                       const amt = categoryCurrencyMode === "usd" 
                         ? (t.sourceAmountUSD ?? t.targetAmountUSD ?? t.sourceAmount ?? 0)
                         : (t.targetAmount ?? t.sourceAmount ?? 0);
                       return s + amt;
                     }, 0));
-                    return (<CategoryItem key={cat.id} category={cat} spent={spent} isDragging={activeDragId === cat.id} onSortingMode={() => setIsSortingMode(true)} isSortingMode={isSortingMode} isOver={overId === cat.id} onLongPress={(c) => { setIsSortingMode(false); setCategoryModal({ isOpen: true, category: c }); }} onClick={(category) => setHistoryModal({ isOpen: true, entity: category, type: "category" })} activeDragType={activeDragType} />);
+                    
+                    const localSymbol = catTx[0]?.targetCurrency || accounts[0]?.currency || "RSD";
+
+                    return (
+                      <CategoryItem 
+                        key={cat.id} 
+                        category={cat} 
+                        spent={spent} 
+                        isDragging={activeDragId === cat.id} 
+                        onSortingMode={() => setIsSortingMode(true)} 
+                        isSortingMode={isSortingMode} 
+                        isOver={overId === cat.id} 
+                        onLongPress={(c) => { setIsSortingMode(false); setCategoryModal({ isOpen: true, category: c }); }} 
+                        onClick={(category) => setHistoryModal({ isOpen: true, entity: category, type: "category" })} 
+                        activeDragType={activeDragType}
+                        currencyMode={categoryCurrencyMode}
+                        currencySymbol={localSymbol}
+                      />
+                    );
                   })}
                 </div>
               </SortableContext>
