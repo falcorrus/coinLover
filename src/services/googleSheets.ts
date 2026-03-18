@@ -9,7 +9,8 @@ import { SyncPayload } from "../types";
 export const googleSheetsService = {
   async fetchSettings(ssId?: string, retries = 2): Promise<any> {
     try {
-      const isDemo = window.localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE) !== "false";
+      // If ssId is provided, it's definitely NOT a demo
+      const isDemo = ssId ? false : (window.localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE) !== "false");
       let url = isDemo ? `${GOOGLE_SCRIPT_URL}?demo=true` : GOOGLE_SCRIPT_URL;
       
       if (ssId) {
@@ -35,7 +36,7 @@ export const googleSheetsService = {
 
   async fetchMonthData(month: string, ssId?: string): Promise<any> {
     try {
-      const isDemo = window.localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE) !== "false";
+      const isDemo = ssId ? false : (window.localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE) !== "false");
       let url = `${GOOGLE_SCRIPT_URL}?month=${month}${isDemo ? '&demo=true' : ''}`;
       
       if (ssId) {
@@ -59,7 +60,8 @@ export const googleSheetsService = {
    */
   async syncToSheets(data: SyncPayload): Promise<boolean> {
     try {
-      const isDemo = window.localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE) !== "false";
+      // Force demo false if payload has specific ssId
+      const isDemo = data.ssId ? false : (window.localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE) !== "false");
       const payload = { ...data, demo: isDemo };
       
       await fetch(GOOGLE_SCRIPT_URL, {

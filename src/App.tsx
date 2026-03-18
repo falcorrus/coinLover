@@ -89,14 +89,16 @@ export default function App() {
     localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.INCOMES);
     localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.TRANSACTIONS);
     localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC);
+    localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE, "false");
     
     // 2. Switch the active ID
     switchTable(id);
     
-    // 3. Close modal
+    // 3. Close modal and RELOAD to ensure clean hooks state
     setIsUsersModalOpen(false);
-    
-    // 4. useFinance will automatically trigger pullSettings because hasData will be false
+    setTimeout(() => {
+      window.location.href = window.location.pathname; // Reload without params
+    }, 100);
   };
 
   // DnD Logic
@@ -118,6 +120,7 @@ export default function App() {
     // Automatic connection via link: ?ssId=...
     const urlSsId = params.get("ssId");
     if (urlSsId && urlSsId !== activeTableId) {
+      localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE, "false");
       handleSwitchTable(urlSsId);
       window.history.replaceState({}, "", window.location.pathname);
       return;
