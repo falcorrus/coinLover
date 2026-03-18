@@ -15,10 +15,11 @@ interface Props {
   onLongPress?: (category: Category) => void;
   onClick?: (category: Category) => void;
   activeDragType: DragItemType | null;
+  theme?: string;
 }
 
 export const CategoryItem: React.FC<Props> = ({
-  category, spent, isDragging, isSortingMode, onSortingMode, onLongPress, onClick, activeDragType, isOver
+  category, spent, isDragging, isSortingMode, onSortingMode, onLongPress, onClick, activeDragType, isOver, theme
 }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isOver: isSortableOver } = useSortable({
     id: category.id,
@@ -113,7 +114,10 @@ export const CategoryItem: React.FC<Props> = ({
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
-        style={{ touchAction: "none" }}
+        style={{ 
+          touchAction: "none",
+          filter: theme === 'modern' ? `drop-shadow(0 0 10px ${category.color}80)` : 'none'
+        }}
         className={`draggable-coin coin-category transition-all duration-300 ${
           isDragging ? "grabbed-elevation" :
           (isPressing && isSortingMode) ? "scale-110 border-[var(--primary-color)] shadow-[0_0_20px_rgba(109,93,252,0.4)] ring-4 ring-[var(--primary-color)]/20" :
@@ -122,7 +126,7 @@ export const CategoryItem: React.FC<Props> = ({
           isSortingMode && isDragging ? "shadow-2xl shadow-[var(--shadow-color)] border-[var(--primary-color)] ring-4 ring-[var(--primary-color)]/20" : ""
         }`}
       >
-        <Icon size={26} color={isTarget ? "var(--text-main)" : category.color} />
+        <Icon size={theme === 'modern' ? 32 : 26} color={isTarget ? "var(--text-main)" : category.color} strokeWidth={theme === 'modern' ? 2.5 : 2} />
       </div>
       <div className="flex flex-col items-center pb-2 pointer-events-none select-none">
         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center truncate w-full max-w-[70px] leading-tight break-words whitespace-pre-wrap">{category.name}</span>

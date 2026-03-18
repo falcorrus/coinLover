@@ -69,6 +69,27 @@
   --pull-indicator: #334155;
 }
 
+:root.modern {
+  /* Modern Glow - "Borderless Style" */
+  --bg-color: #0D1117;
+  --primary-color: #a78bfa;
+  --danger-color: #f43f5e;
+  --success-color: #10b981;
+  --text-main: #ffffff;
+  --text-muted: rgba(255, 255, 255, 0.5);
+  --glass-bg: rgba(255, 255, 255, 0.02);
+  --glass-card-bg: rgba(255, 255, 255, 0.03);
+  --glass-item-bg: transparent;
+  --glass-item-active: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.06);
+  --glass-border-highlight: rgba(255, 255, 255, 0.1);
+  --numpad-bg: #0a0c10;
+  --panel-bg: #0D1117;
+  --btn-equals: rgba(167, 139, 250, 0.2);
+  --shadow-color: rgba(0, 0, 0, 0.4);
+  --pull-indicator: #1e293b;
+}
+
 body {
   background-color: var(--bg-color);
   color: var(--text-main);
@@ -197,6 +218,20 @@ body {
 /* Category style: More "squarish" but Apple-like */
 .coin-category {
   border-radius: 18px;
+}
+
+/* Modern Theme: No border, no background, just glow */
+.modern .coin-category {
+  background: transparent !important;
+  border-color: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+}
+
+.modern .coin-category:active {
+  transform: scale(0.9);
+  filter: brightness(1.2);
 }
 
 /* Wallet style: Perfectly round */

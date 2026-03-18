@@ -14,6 +14,7 @@ import { CalendarAnalyticsModal } from "./CalendarAnalyticsModal";
 import { ConfirmModal } from "./ConfirmModal";
 import { TagModal } from "./TagModal";
 import { UsersModal } from "./UsersModal";
+import { ThemeModal } from "./ThemeModal";
 
 interface ModalManagerProps {
   // Modal States
@@ -27,6 +28,8 @@ interface ModalManagerProps {
   numpad: NumpadData;
   isTagModalOpen: boolean;
   isUsersModalOpen: boolean;
+  isThemeModalOpen: boolean;
+  theme: "light" | "dark" | "midnight" | "modern";
   conflictData: any; // Keep as any if dynamic from GAS, but better SyncSettingsFields | null
   editingTxId: string | null;
   
@@ -50,6 +53,8 @@ interface ModalManagerProps {
   setNumpad: React.Dispatch<React.SetStateAction<NumpadData>>;
   setIsTagModalOpen: (v: boolean) => void;
   setIsUsersModalOpen: (v: boolean) => void;
+  setIsThemeModalOpen: (v: boolean) => void;
+  setTheme: (v: "light" | "dark" | "midnight" | "modern") => void;
   setEditingTxId: (v: string | null) => void;
   setConflictData: (v: any) => void;
   
@@ -71,9 +76,11 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
   const {
     accountModal, incomeModal, categoryModal, historyModal, analyticsModal,
     calendarAnalyticsModal, confirmDelete, numpad, isTagModalOpen, isUsersModalOpen, conflictData, editingTxId,
+    isThemeModalOpen, theme,
     accounts, categories, incomes, transactions, allExistingTags, users, activeTableId,
     setAccountModal, setIncomeModal, setCategoryModal, setHistoryModal, setAnalyticsModal,
     setCalendarAnalyticsModal, setConfirmDelete, setNumpad, setIsTagModalOpen, setIsUsersModalOpen, setEditingTxId, setConflictData,
+    setIsThemeModalOpen, setTheme,
     addTransaction, updateTransaction, deleteTransaction, saveAccount, deleteAccount, 
     saveCategory, deleteCategory, saveIncome, deleteIncome, updateLocalFromRemote,
     onSwitchTable
@@ -191,6 +198,16 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
         isOpen={isUsersModalOpen} onClose={() => setIsUsersModalOpen(false)} 
         users={users} activeTableId={activeTableId} 
         onSwitchTable={onSwitchTable} 
+      />
+
+      <ThemeModal 
+        isOpen={isThemeModalOpen} 
+        onClose={() => setIsThemeModalOpen(false)} 
+        currentTheme={theme} 
+        onSelect={(t) => { 
+          setTheme(t); 
+          setIsThemeModalOpen(false);
+        }} 
       />
 
       {conflictData && (

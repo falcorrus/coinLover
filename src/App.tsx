@@ -50,7 +50,7 @@ export default function App() {
 
   const [isIncomeCollapsed, setIsIncomeCollapsed] = React.useState(true);
   const [isSettingsMenuOpen, setIsSettingsMenuOpen] = React.useState(false);
-  const [theme, setTheme] = React.useState<"light" | "dark" | "midnight">(() => (localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.THEME) as "light" | "dark" | "midnight") || "dark");
+  const [theme, setTheme] = React.useState<"light" | "dark" | "midnight" | "modern">(() => (localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.THEME) as "light" | "dark" | "midnight" | "modern") || "dark");
   const [editingTxId, setEditingTxId] = React.useState<string | null>(null);
 
   // Modal States
@@ -63,6 +63,7 @@ export default function App() {
   const [confirmDelete, setConfirmDelete] = React.useState<{ isOpen: boolean; title: string; message: string; onConfirm: () => void; }>({ isOpen: false, title: "", message: "", onConfirm: () => { } });
   const [isTagModalOpen, setIsTagModalOpen] = React.useState(false);
   const [isUsersModalOpen, setIsUsersModalOpen] = React.useState(false);
+  const [isThemeModalOpen, setIsThemeModalOpen] = React.useState(false);
   const [numpad, setNumpad] = React.useState<NumpadData>({
     isOpen: false, type: "expense", source: null, destination: null,
     sourceAmount: "0", sourceCurrency: "USD", targetAmount: "0", targetCurrency: "USD", targetLinked: true, activeField: "source", tag: null, comment: ""
@@ -144,13 +145,13 @@ export default function App() {
   }, [checkConflicts]);
 
   React.useEffect(() => {
-    document.documentElement.classList.remove("light", "midnight");
+    document.documentElement.classList.remove("light", "midnight", "modern");
     if (theme !== "dark") document.documentElement.classList.add(theme);
     localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.THEME, theme);
   }, [theme]);
 
   const toggleTheme = () => { 
-    setTheme(prev => prev === "light" ? "dark" : prev === "dark" ? "midnight" : "light"); 
+    setTheme(prev => prev === "light" ? "dark" : prev === "dark" ? "midnight" : prev === "midnight" ? "modern" : "light"); 
     if (navigator.vibrate) navigator.vibrate(APP_SETTINGS.HAPTIC_FEEDBACK_DURATION_MEDIUM); 
   };
   
@@ -284,7 +285,10 @@ export default function App() {
                   <>
                     <div className="fixed inset-0 z-[200] bg-black/40 backdrop-blur-[2px]" onClick={() => setIsSettingsMenuOpen(false)} />
                     <div className="absolute top-12 right-0 w-48 bg-[var(--bg-color)] border border-[var(--glass-border)] rounded-2xl shadow-2xl flex flex-col z-[201] p-2 animate-in fade-in zoom-in-95 origin-top-right">
-                      <div className="px-1 py-1 mb-1"><div className="flex items-center gap-1 bg-[var(--glass-item-bg)] p-1 rounded-xl border border-[var(--glass-border)]"><button onClick={() => { setTheme("light"); setIsSettingsMenuOpen(false); }} className={`flex-1 h-9 rounded-lg flex items-center justify-center transition-all ${theme === 'light' ? 'bg-white text-amber-500 shadow-sm' : 'text-slate-500 hover:text-white'}`}><Sun size={16} /></button><button onClick={() => { setTheme("dark"); setIsSettingsMenuOpen(false); }} className={`flex-1 h-9 rounded-lg flex items-center justify-center transition-all ${theme === 'dark' ? 'bg-[#1e293b] text-blue-400 shadow-sm' : 'text-slate-500 hover:text-white'}`}><Moon size={16} /></button><button onClick={() => { setTheme("midnight"); setIsSettingsMenuOpen(false); }} className={`flex-1 h-9 rounded-lg flex items-center justify-center transition-all ${theme === 'midnight' ? 'bg-[#F59E0B]/20 text-[#F59E0B] shadow-sm' : 'text-slate-500 hover:text-white'}`}><Sparkles size={16} /></button></div></div>
+                      <button onClick={() => { setIsSettingsMenuOpen(false); setIsThemeModalOpen(true); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left border-b border-[var(--glass-border)]/50 mb-1 rounded-b-none">
+                        <Sparkles size={16} className="text-amber-400" />
+                        <span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Оформление</span>
+                      </button>
                       <button onClick={() => { setIsSettingsMenuOpen(false); pullSettings(); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><RefreshCcw size={16} className={`text-amber-500 ${syncStatus === 'loading' ? 'animate-spin' : ''}`} /><span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Обновить</span></button>
                       <button onClick={() => { setIsSettingsMenuOpen(false); setHistoryModal({ isOpen: true, entity: { name: "Лента", icon: "list" }, type: "feed" }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><List size={16} className="text-[var(--primary-color)]" /><span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Лента</span></button>
                       <button onClick={() => { setIsSettingsMenuOpen(false); setCalendarAnalyticsModal({ isOpen: true }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><Calendar size={16} className="text-emerald-500" /><span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Календарь</span></button>
@@ -323,7 +327,7 @@ export default function App() {
                 <div className="grid grid-cols-4 gap-y-6 gap-x-2 pb-4">
                   {categories.map(cat => {
                     const spent = Math.round(currentMonthTransactions.filter(t => t.type === "expense" && t.targetId === cat.id).reduce((s, t) => s + (t.sourceAmountUSD ?? t.amountUSD ?? t.sourceAmount ?? t.amount ?? 0), 0));
-                    return (<CategoryItem key={cat.id} category={cat} spent={spent} isDragging={activeDragId === cat.id} onSortingMode={() => setIsSortingMode(true)} isSortingMode={isSortingMode} isOver={overId === cat.id} onLongPress={(c) => { setIsSortingMode(false); setCategoryModal({ isOpen: true, category: c }); }} onClick={(category) => setHistoryModal({ isOpen: true, entity: category, type: "category" })} activeDragType={activeDragType} />);
+                    return (<CategoryItem key={cat.id} category={cat} spent={spent} isDragging={activeDragId === cat.id} onSortingMode={() => setIsSortingMode(true)} isSortingMode={isSortingMode} isOver={overId === cat.id} onLongPress={(c) => { setIsSortingMode(false); setCategoryModal({ isOpen: true, category: c }); }} onClick={(category) => setHistoryModal({ isOpen: true, entity: category, type: "category" })} activeDragType={activeDragType} theme={theme} />);
                   })}
                 </div>
               </SortableContext>
@@ -335,11 +339,13 @@ export default function App() {
           accountModal={accountModal} incomeModal={incomeModal} categoryModal={categoryModal} historyModal={historyModal}
           analyticsModal={analyticsModal} calendarAnalyticsModal={calendarAnalyticsModal} confirmDelete={confirmDelete}
           numpad={numpad} isTagModalOpen={isTagModalOpen} isUsersModalOpen={isUsersModalOpen} conflictData={conflictData} editingTxId={editingTxId}
+          isThemeModalOpen={isThemeModalOpen} theme={theme}
           accounts={accounts} categories={categories} incomes={incomes} transactions={transactions} allExistingTags={allExistingTags}
           users={users} activeTableId={activeTableId}
           setAccountModal={setAccountModal} setIncomeModal={setIncomeModal} setCategoryModal={setCategoryModal} setHistoryModal={setHistoryModal}
           setAnalyticsModal={setAnalyticsModal} setCalendarAnalyticsModal={setCalendarAnalyticsModal} setConfirmDelete={setConfirmDelete}
           setNumpad={setNumpad} setIsTagModalOpen={setIsTagModalOpen} setIsUsersModalOpen={setIsUsersModalOpen} setEditingTxId={setEditingTxId} setConflictData={setConflictData}
+          setIsThemeModalOpen={setIsThemeModalOpen} setTheme={setTheme}
           addTransaction={addTransaction} updateTransaction={updateTransaction} deleteTransaction={deleteTransaction}
           saveAccount={saveAccount} deleteAccount={deleteAccount} saveCategory={saveCategory} deleteCategory={deleteCategory}
           saveIncome={saveIncome} deleteIncome={deleteIncome} updateLocalFromRemote={updateLocalFromRemote}
