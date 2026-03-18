@@ -40,6 +40,20 @@ const saveStoredSelections = (selections: Record<string, Set<string>>) => {
     localStorage.setItem("cl_analytics_selections", JSON.stringify({ date: new Date().toDateString(), data }));
 };
 
+const TAG_COLORS = [
+    "#ef4444", "#f59e0b", "#10b981", "#3b82f6", "#6366f1", "#8b5cf6", "#d946ef", "#ec4899",
+    "#f43f5e", "#fb923c", "#34d399", "#60a5fa", "#a78bfa", "#f472b6"
+];
+
+const getTagColor = (name: string) => {
+    if (name === "Без тега") return "#94a3b8";
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+        hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return TAG_COLORS[Math.abs(hash) % TAG_COLORS.length];
+};
+
 // --- Sub-components ---
 
 interface DetailItemProps {
@@ -115,7 +129,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                 const tagName = t.tag?.trim() || "Без тега";
                 tagMap.set(tagName, (tagMap.get(tagName) || 0) + getTxUSD(t));
             });
-            tagMap.forEach((amount, id) => items.push({ id, name: id, icon: Tag, color: "var(--primary-color)", amount, percent: 0 }));
+            tagMap.forEach((amount, id) => items.push({ id, name: id, icon: Tag, color: getTagColor(id), amount, percent: 0 }));
         }
         items.sort((a, b) => b.amount - a.amount);
         const total = items.reduce((s, i) => s + i.amount, 0);
@@ -190,7 +204,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
             const subTx = filteredTx.filter(t => t.targetId === item.id);
             const map = new Map<string, number>();
             subTx.forEach(t => { const n = t.tag?.trim() || "Без тега"; map.set(n, (map.get(n) || 0) + getTxUSD(t)); });
-            map.forEach((amount, name) => details.push({ id: name, name, icon: Tag, color: item.color, amount, percent: item.amount > 0 ? (amount / item.amount) * 100 : 0 }));
+            map.forEach((amount, name) => details.push({ id: name, name, icon: Tag, color: getTagColor(name), amount, percent: item.amount > 0 ? (amount / item.amount) * 100 : 0 }));
         } else {
             const subTx = filteredTx.filter(t => (t.tag?.trim() || "Без тега") === item.name);
             const map = new Map<string, number>();
