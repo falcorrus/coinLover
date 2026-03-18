@@ -133,9 +133,19 @@ export const CategoryItem: React.FC<Props> = ({
           strokeWidth={1.5}
         />
       </div>
-      <div className="flex flex-col items-center pointer-events-none select-none w-full">
-        <span className="font-label text-[9px] font-black text-[var(--on-surface-variant)] uppercase tracking-[0.15em] text-center truncate w-full px-1">{category.name}</span>
-        {spent > 0 && <span className="font-technical text-[10px] font-bold text-[var(--text-main)] mt-0.5 opacity-80">-${spent.toLocaleString()}</span>}
+      <div className="flex flex-col items-center pointer-events-none select-none w-full pt-1">
+        <span className={`font-label text-[9px] uppercase tracking-[0.12em] text-center leading-tight break-words line-clamp-2 w-full px-0.5 ${
+          theme === 'modern' ? 'font-medium text-slate-400 opacity-80' : 'font-black text-[var(--on-surface-variant)]'
+        }`}>
+          {category.name}
+        </span>
+        {spent > 0 && (
+          <span className={`font-technical text-[10px] font-bold mt-0.5 ${
+            theme === 'modern' ? 'text-slate-300 opacity-60' : 'text-[var(--text-main)] opacity-80'
+          }`}>
+            -${spent.toLocaleString()}
+          </span>
+        )}
       </div>
     </div>
   );
