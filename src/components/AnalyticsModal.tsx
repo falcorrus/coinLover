@@ -90,7 +90,8 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
     }), [transactions, analysisType, currentDate]);
 
     const getTxUSD = (t: Transaction) => {
-        return t.sourceAmountUSD || t.targetAmountUSD || t.sourceAmount || 0;
+        const val = t.sourceAmountUSD || t.targetAmountUSD || t.sourceAmount || 0;
+        return isNaN(Number(val)) ? 0 : Number(val);
     };
 
     const listItems = useMemo(() => {

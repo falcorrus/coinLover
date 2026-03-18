@@ -1,6 +1,6 @@
 /**
  * CoinLover Backend (GAS)
- * Fix: Full field mapping for transactions saving.
+ * Fix: NaN protection and robust field parsing.
  */
 
 const MASTER_SS_ID = "1IQCs35RQlMMQsGB-CRczJeuRqa8WIxW4Sy_kjZyHP2M";
@@ -13,8 +13,14 @@ function getSS(e, data) {
     if (ssId) return SpreadsheetApp.openById(ssId);
     return SpreadsheetApp.getActiveSpreadsheet();
   } catch (err) {
-    throw new Error("Access denied. Shared with analytics-mcp-account@baonlineru.iam.gserviceaccount.com?");
+    throw new Error("Access denied. Ensure spreadsheet is shared with the service account.");
   }
+}
+
+function parseNum(val, fallback = 0) {
+  if (val === undefined || val === null || val === "") return fallback;
+  const n = parseFloat(val);
+  return isNaN(n) ? fallback : n;
 }
 
 function ensureInitialized(ss) {
@@ -44,9 +50,8 @@ function doGet(e) {
     const ss = getSS(e);
     const ssId = ss.getId();
     const isMaster = (ssId === MASTER_SS_ID);
-    const isDemo = e && e.parameter && e.parameter.demo === 'true';
-    const configSheetName = isDemo ? "Configs-demo" : "Configs";
-    const txSheetName = isDemo ? "Transactions-demo" : "Transactions";
+    const configSheetName = (e && e.parameter && e.parameter.demo === 'true') ? "Configs-demo" : "Configs";
+    const txSheetName = (e && e.parameter && e.parameter.demo === 'true') ? "Transactions-demo" : "Transactions";
     
     let sheet = ss.getSheetByName(configSheetName);
     if (!sheet || sheet.getLastRow() === 0) sheet = ensureInitialized(ss);
@@ -67,7 +72,7 @@ function doGet(e) {
       if (!f || f === "ID" || f === "NAME") continue;
       
       const r = rows[i];
-      if (section === "acc") data.accounts.push({ id: String(r[0]), name: String(r[1]), balance: Number(r[2]), balanceUSD: hasUSDCol ? Number(r[3]) : undefined, color: hasUSDCol ? r[4] : r[3], icon: (hasUSDCol ? r[5] : r[4]) || "wallet", currency: (hasUSDCol ? row[6] : row[5]) || "" });
+      if (section === "acc") data.accounts.push({ id: String(r[0]), name: String(r[1]), balance: parseNum(r[2]), balanceUSD: hasUSDCol ? parseNum(r[3]) : undefined, color: hasUSDCol ? r[4] : r[3], icon: (hasUSDCol ? r[5] : r[4]) || "wallet", currency: (hasUSDCol ? r[6] : r[5]) || "USD" });
       else if (section === "cat") data.categories.push({ id: String(r[0]), name: String(r[1]), color: r[2], icon: r[3] || "more", tags: r[4] ? String(r[4]).split(",").map(t => t.trim()) : [] });
       else if (section === "inc") data.incomes.push({ id: String(r[0]), name: String(r[1]), color: r[2], icon: r[3] || "business", tags: r[4] ? String(r[4]).split(",").map(t => t.trim()) : [] });
       else if (section === "usr" && isMaster) data.users.push({ name: String(r[0]).trim(), id: String(r[1]).trim() });
@@ -79,6 +84,7 @@ function doGet(e) {
         const txRows = txSheet.getDataRange().getValues();
         const headers = txRows[0].map(v => String(v).trim());
         const col = {}; headers.forEach((v, i) => col[v] = i);
+        
         const accMap = {}; data.accounts.forEach(a => accMap[a.name] = a.id);
         const catMap = {}; data.categories.forEach(c => catMap[c.name] = c.id);
         const incMap = {}; data.incomes.forEach(i => incMap[i.name] = i.id);
@@ -95,19 +101,19 @@ function doGet(e) {
 
           const dt = new Date(r[col["Date"]]);
           const iso = Utilities.formatDate(dt, ss.getSpreadsheetTimeZone(), "yyyy-MM-dd'T'HH:mm:ss");
-          const sAmt = parseFloat(r[col["Source Amount"]] || r[col["Amount"]] || 0);
-          const tAmt = parseFloat(r[col["Target Amount"]] || r[col["Amount"]] || sAmt);
+          const sAmt = parseNum(r[col["Source Amount"]] || r[col["Amount"]]);
+          const tAmt = parseNum(r[col["Target Amount"]] || r[col["Amount"]], sAmt);
           
           data.transactions.push({
             id: col["ID"] !== undefined ? String(r[col["ID"]]) : `${iso}_${i}`,
             type, accountId: aid, targetId: tid,
             sourceAmount: sAmt,
             sourceCurrency: String(r[col["Source Currency"]] || "USD"),
-            sourceAmountUSD: parseFloat(r[col["Source Amount USD"]] || r[col["Amount USD"]] || sAmt),
+            sourceAmountUSD: parseNum(r[col["Source Amount USD"]] || r[col["Amount USD"]], sAmt),
             targetAmount: tAmt,
             targetCurrency: String(r[col["Target Currency"]] || "USD"),
-            targetAmountUSD: parseFloat(r[col["Target USD"]] || r[col["Amount USD"]] || tAmt),
-            date: iso, tag: r[col["Tag"]], comment: r[col["Comment"]]
+            targetAmountUSD: parseNum(r[col["Target USD"]] || r[col["Amount USD"]], tAmt),
+            date: iso, tag: r[col["Tag"]] ? String(r[col["Tag"]]) : undefined, comment: r[col["Comment"]] ? String(r[col["Comment"]]) : undefined
           });
         }
       }
