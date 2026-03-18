@@ -89,11 +89,15 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
         return txDate.getFullYear() === currentDate.getFullYear() && txDate.getMonth() === currentDate.getMonth();
     }), [transactions, analysisType, currentDate]);
 
+    const getTxUSD = (t: Transaction) => {
+        return t.sourceAmountUSD || t.targetAmountUSD || t.sourceAmount || 0;
+    };
+
     const listItems = useMemo(() => {
         let items: { id: string, name: string, icon: any, color: string, amount: number, percent: number }[] = [];
         if (tab === "categories") {
             const itemMap = new Map<string, number>();
-            filteredTx.forEach(t => itemMap.set(t.targetId, (itemMap.get(t.targetId) || 0) + (t.sourceAmountUSD || 0)));
+            filteredTx.forEach(t => itemMap.set(t.targetId, (itemMap.get(t.targetId) || 0) + getTxUSD(t)));
             itemMap.forEach((amount, id) => {
                 if (analysisType === "expense") {
                     const cat = categories.find(c => c.id === id);
@@ -107,7 +111,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
             const tagMap = new Map<string, number>();
             filteredTx.forEach(t => {
                 const tagName = t.tag?.trim() || "Без тега";
-                tagMap.set(tagName, (tagMap.get(tagName) || 0) + (t.sourceAmountUSD || 0));
+                tagMap.set(tagName, (tagMap.get(tagName) || 0) + getTxUSD(t));
             });
             tagMap.forEach((amount, id) => items.push({ id, name: id, icon: Tag, color: "var(--primary-color)", amount, percent: 0 }));
         }
@@ -183,12 +187,12 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
         if (tab === "categories") {
             const subTx = filteredTx.filter(t => t.targetId === item.id);
             const map = new Map<string, number>();
-            subTx.forEach(t => { const n = t.tag?.trim() || "Без тега"; map.set(n, (map.get(n) || 0) + (t.sourceAmountUSD || 0)); });
+            subTx.forEach(t => { const n = t.tag?.trim() || "Без тега"; map.set(n, (map.get(n) || 0) + getTxUSD(t)); });
             map.forEach((amount, name) => details.push({ id: name, name, icon: Tag, color: item.color, amount, percent: item.amount > 0 ? (amount / item.amount) * 100 : 0 }));
         } else {
             const subTx = filteredTx.filter(t => (t.tag?.trim() || "Без тега") === item.name);
             const map = new Map<string, number>();
-            subTx.forEach(t => map.set(t.targetId, (map.get(t.targetId) || 0) + (t.sourceAmountUSD || 0)));
+            subTx.forEach(t => map.set(t.targetId, (map.get(t.targetId) || 0) + getTxUSD(t)));
             map.forEach((amount, id) => {
                 if (analysisType === "expense") {
                     const cat = categories.find(c => c.id === id);

@@ -96,13 +96,18 @@ function doGet(e) {
 
           const dt = new Date(r[col["Date"]]);
           const iso = Utilities.formatDate(dt, ss.getSpreadsheetTimeZone(), "yyyy-MM-dd'T'HH:mm:ss");
+          const sAmt = parseFloat(r[col["Source Amount"]] || r[col["Amount"]] || 0);
+          const tAmt = parseFloat(r[col["Target Amount"]] || r[col["Amount"]] || 0);
+          
           data.transactions.push({
             id: col["ID"] !== undefined ? String(r[col["ID"]]) : `${iso}_${i}`,
             type, accountId: aid, targetId: tid,
-            sourceAmount: parseFloat(r[col["Source Amount"]] || r[col["Amount"]] || 0),
+            sourceAmount: sAmt,
             sourceCurrency: String(r[col["Source Currency"]] || "USD"),
-            targetAmount: parseFloat(r[col["Target Amount"]] || r[col["Amount"]] || 0),
+            sourceAmountUSD: parseFloat(r[col["Source Amount USD"]] || r[col["Amount USD"]] || sAmt), // Fallback to sAmt if USD missing
+            targetAmount: tAmt,
             targetCurrency: String(r[col["Target Currency"]] || "USD"),
+            targetAmountUSD: parseFloat(r[col["Target USD"]] || r[col["Amount USD"]] || tAmt), // Fallback
             date: iso, tag: r[col["Tag"]], comment: r[col["Comment"]]
           });
         }
