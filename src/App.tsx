@@ -2,8 +2,9 @@
 import * as React from "react";
 import {
   DndContext, DragOverlay, rectIntersection, PointerSensor, useSensor, useSensors,
+  DragStartEvent, DragMoveEvent, DragOverEvent, DragEndEvent
 } from "@dnd-kit/core";
-import { SortableContext, horizontalListSortingStrategy, rectSortingStrategy } from "@dnd-kit/sortable";
+import { SortableContext, horizontalListSortingStrategy, rectSortingStrategy, arrayMove } from "@dnd-kit/sortable";
 import {
   Plus, TrendingDown, ChevronRight, TrendingUp, Wallet, RefreshCcw,
   Heart, PieChart, List, Moon, Sun, Sparkles, Menu, Calendar, Database
@@ -50,7 +51,7 @@ export default function App() {
 
   const [isIncomeCollapsed, setIsIncomeCollapsed] = React.useState(true);
   const [isSettingsMenuOpen, setIsSettingsMenuOpen] = React.useState(false);
-  const [theme, setTheme] = React.useState<"light" | "dark" | "midnight" | "modern">(() => (localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.THEME) as "light" | "dark" | "midnight" | "modern") || "dark");
+  const [theme, setTheme] = React.useState<"light" | "dark" | "midnight">(() => (localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.THEME) as "light" | "dark" | "midnight") || "dark");
   const [editingTxId, setEditingTxId] = React.useState<string | null>(null);
 
   // Modal States
@@ -63,7 +64,6 @@ export default function App() {
   const [confirmDelete, setConfirmDelete] = React.useState<{ isOpen: boolean; title: string; message: string; onConfirm: () => void; }>({ isOpen: false, title: "", message: "", onConfirm: () => { } });
   const [isTagModalOpen, setIsTagModalOpen] = React.useState(false);
   const [isUsersModalOpen, setIsUsersModalOpen] = React.useState(false);
-  const [isThemeModalOpen, setIsThemeModalOpen] = React.useState(false);
   const [numpad, setNumpad] = React.useState<NumpadData>({
     isOpen: false, type: "expense", source: null, destination: null,
     sourceAmount: "0", sourceCurrency: "USD", targetAmount: "0", targetCurrency: "USD", targetLinked: true, activeField: "source", tag: null, comment: ""
@@ -80,7 +80,6 @@ export default function App() {
   };
 
   const handleSwitchTable = (id: string) => {
-    // 1. Clear local state to prevent data bleed
     setAccounts([]);
     setCategories([]);
     setIncomes([]);
@@ -92,13 +91,10 @@ export default function App() {
     localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC);
     localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE, "false");
     
-    // 2. Switch the active ID
     switchTable(id);
-    
-    // 3. Close modal and RELOAD to ensure clean hooks state
     setIsUsersModalOpen(false);
     setTimeout(() => {
-      window.location.href = window.location.pathname; // Reload without params
+      window.location.href = window.location.pathname;
     }, 100);
   };
 
@@ -111,30 +107,16 @@ export default function App() {
     syncAccountsOrder, syncCategories, syncIncomes, setNumpad
   });
 
-  const demoClickCount = React.useRef(0);
-  const demoTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const isDemo = window.localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE) !== "false";
 
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    
-    // Automatic connection via link: ?ssId=...
     const urlSsId = params.get("ssId");
     if (urlSsId && urlSsId !== activeTableId) {
       localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE, "false");
       handleSwitchTable(urlSsId);
       window.history.replaceState({}, "", window.location.pathname);
       return;
-    }
-
-    if (params.get("demo") === "true") {
-      window.history.replaceState({}, "", "/");
-      setCurrentPath("/");
-    }
-    if (params.get("connect") === "true") {
-      window.history.replaceState({}, "", "/");
-      setCurrentPath("/");
-      setTimeout(() => setAccountModal({ isOpen: true, account: null }), APP_SETTINGS.ACCOUNT_MODAL_AUTO_OPEN_DELAY);
     }
   }, [activeTableId]);
 
@@ -145,38 +127,11 @@ export default function App() {
   }, [checkConflicts]);
 
   React.useEffect(() => {
-    document.documentElement.classList.remove("light", "midnight", "modern");
+    document.documentElement.classList.remove("light", "midnight");
     if (theme !== "dark") document.documentElement.classList.add(theme);
     localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.THEME, theme);
   }, [theme]);
 
-  const toggleTheme = () => { 
-    setTheme(prev => prev === "light" ? "dark" : prev === "dark" ? "midnight" : prev === "midnight" ? "modern" : "light"); 
-    if (navigator.vibrate) navigator.vibrate(APP_SETTINGS.HAPTIC_FEEDBACK_DURATION_MEDIUM); 
-  };
-  
-  const toggleMode = (target: 'demo' | 'real') => {
-    localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.ACCOUNTS);
-    localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.CATEGORIES);
-    localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.INCOMES);
-    localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.TRANSACTIONS);
-    localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC);
-    window.localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE, target === 'demo' ? "true" : "false");
-    window.location.reload();
-  };
-
-  const handleDemoClick = () => {
-    demoClickCount.current += 1;
-    if (demoTimerRef.current) clearTimeout(demoTimerRef.current);
-    if (demoClickCount.current >= 5) {
-      toggleMode(isDemo ? 'real' : 'demo');
-      demoClickCount.current = 0;
-    } else {
-      demoTimerRef.current = setTimeout(() => { demoClickCount.current = 0; }, APP_SETTINGS.DEMO_MODE_RESET_TIMER);
-    }
-  };
-
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: APP_SETTINGS.DND_ACTIVATION_DISTANCE } }));
   const toggleIncome = () => { const next = !isIncomeCollapsed; setIsIncomeCollapsed(next); setMode(next ? "expense" : "income"); };
 
   const now = new Date();
@@ -185,8 +140,8 @@ export default function App() {
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   });
   const totalBalance = Math.round(accounts.reduce((s, a) => s + RatesService.convert(a.balance, a.currency || "USD", "USD"), 0));
-  const totalSpent = Math.round(currentMonthTransactions.filter(t => t.type === "expense").reduce((s, t) => s + (t.sourceAmountUSD ?? t.amountUSD ?? t.sourceAmount ?? t.amount ?? 0), 0));
-  const totalEarned = Math.round(currentMonthTransactions.filter(t => t.type === "income").reduce((s, t) => s + (t.sourceAmountUSD ?? t.amountUSD ?? t.sourceAmount ?? t.amount ?? 0), 0));
+  const totalSpent = Math.round(currentMonthTransactions.filter(t => t.type === "expense").reduce((s, t) => s + (t.sourceAmountUSD ?? t.targetAmountUSD ?? t.sourceAmount ?? t.amount ?? 0), 0));
+  const totalEarned = Math.round(currentMonthTransactions.filter(t => t.type === "income").reduce((s, t) => s + (t.sourceAmountUSD ?? t.targetAmountUSD ?? t.sourceAmount ?? t.amount ?? 0), 0));
 
   const allExistingTags = Array.from(new Set([
     ...categories.flatMap(c => c.tags || []),
@@ -199,28 +154,8 @@ export default function App() {
     if (anyModalOpen) {
       window.history.pushState({ modal: true }, "");
     }
-    
     const handlePopState = () => { if (anyModalOpen) closeAllModals(); };
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && anyModalOpen) {
-        closeAllModals();
-        if (window.history.state?.modal) window.history.back();
-      }
-    };
-
     const closeAllModals = () => {
-      if (numpad.isOpen && numpad.returnState) {
-        setHistoryModal(numpad.returnState);
-        setNumpad(p => ({ ...p, isOpen: false, returnState: undefined }));
-        return;
-      }
-      if (historyModal.isOpen && historyModal.returnTo) {
-        const returnTo = historyModal.returnTo;
-        setHistoryModal({ isOpen: false, entity: null, type: null });
-        if (returnTo === "calendar") setCalendarAnalyticsModal({ isOpen: true });
-        else if (returnTo === "analytics") setAnalyticsModal(p => ({ ...p, isOpen: true }));
-        return;
-      }
       setAccountModal(p => ({ ...p, isOpen: false }));
       setIncomeModal(p => ({ ...p, isOpen: false }));
       setCategoryModal(p => ({ ...p, isOpen: false }));
@@ -233,20 +168,13 @@ export default function App() {
       setIsTagModalOpen(false);
       setConflictData(null);
     };
-
     window.addEventListener("popstate", handlePopState);
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("popstate", handlePopState);
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [
-    anyModalOpen, setConflictData, historyModal.isOpen, historyModal.entity,
-    calendarAnalyticsModal.isOpen, numpad.isOpen, accountModal.isOpen, incomeModal.isOpen, 
-    categoryModal.isOpen, analyticsModal.isOpen, confirmDelete.isOpen, isSettingsMenuOpen, isTagModalOpen
-  ]);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [anyModalOpen]);
 
   const activeItemData = activeDragId ? (activeDragType === 'account' ? accounts.find(a => a.id === activeDragId) : activeDragType === 'category' ? categories.find(c => c.id === activeDragId) : incomes.find(i => i.id === activeDragId)) : null;
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: APP_SETTINGS.DND_ACTIVATION_DISTANCE } }));
 
   if (currentPath === "/landing") return <LandingPage />;
 
@@ -276,19 +204,16 @@ export default function App() {
             <div className="flex justify-between items-center mb-2">
               <button onClick={toggleIncome} className="glass-icon-btn w-10 h-10 relative">
                 <Plus size={APP_SETTINGS.UI.ICON_SIZE_LARGE} className={`text-[#10b981] transition-transform duration-300 ${!isIncomeCollapsed ? "rotate-45" : ""}`} />
-                {isDemo && <span onClick={(e) => { e.stopPropagation(); handleDemoClick(); }} className="absolute left-12 top-1/2 -translate-y-1/2 bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded-full text-[9px] font-black uppercase animate-pulse cursor-pointer hover:bg-amber-500/20 transition-colors">Demo</span>}
+                {isDemo && <span className="absolute left-12 top-1/2 -translate-y-1/2 bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded-full text-[9px] font-black uppercase">Demo</span>}
               </button>
-              <p onClick={() => { if(!isDemo) handleDemoClick(); }} className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] cursor-default">Total Balance</p>
+              <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Total Balance</p>
               <div className="relative">
                 <button {...settingsLongPress} onClick={handleMenuClick} className="glass-icon-btn w-10 h-10 text-slate-500"><Menu size={APP_SETTINGS.UI.ICON_SIZE_LARGE} className={`transition-transform duration-300 ${isSettingsMenuOpen ? "rotate-90" : ""}`} /></button>
                 {isSettingsMenuOpen && (
                   <>
                     <div className="fixed inset-0 z-[200] bg-black/40 backdrop-blur-[2px]" onClick={() => setIsSettingsMenuOpen(false)} />
                     <div className="absolute top-12 right-0 w-48 bg-[var(--bg-color)] border border-[var(--glass-border)] rounded-2xl shadow-2xl flex flex-col z-[201] p-2 animate-in fade-in zoom-in-95 origin-top-right">
-                      <button onClick={() => { setIsSettingsMenuOpen(false); setIsThemeModalOpen(true); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left border-b border-[var(--glass-border)]/50 mb-1 rounded-b-none">
-                        <Sparkles size={16} className="text-amber-400" />
-                        <span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Оформление</span>
-                      </button>
+                      <div className="px-1 py-1 mb-1"><div className="flex items-center gap-1 bg-[var(--glass-item-bg)] p-1 rounded-xl border border-[var(--glass-border)]"><button onClick={() => { setTheme("light"); setIsSettingsMenuOpen(false); }} className={`flex-1 h-9 rounded-lg flex items-center justify-center transition-all ${theme === 'light' ? 'bg-white text-amber-500 shadow-sm' : 'text-slate-500 hover:text-white'}`}><Sun size={16} /></button><button onClick={() => { setTheme("dark"); setIsSettingsMenuOpen(false); }} className={`flex-1 h-9 rounded-lg flex items-center justify-center transition-all ${theme === 'dark' ? 'bg-[#1e293b] text-blue-400 shadow-sm' : 'text-slate-500 hover:text-white'}`}><Moon size={16} /></button><button onClick={() => { setTheme("midnight"); setIsSettingsMenuOpen(false); }} className={`flex-1 h-9 rounded-lg flex items-center justify-center transition-all ${theme === 'midnight' ? 'bg-[#F59E0B]/20 text-[#F59E0B] shadow-sm' : 'text-slate-500 hover:text-white'}`}><Sparkles size={16} /></button></div></div>
                       <button onClick={() => { setIsSettingsMenuOpen(false); pullSettings(); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><RefreshCcw size={16} className={`text-amber-500 ${syncStatus === 'loading' ? 'animate-spin' : ''}`} /><span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Обновить</span></button>
                       <button onClick={() => { setIsSettingsMenuOpen(false); setHistoryModal({ isOpen: true, entity: { name: "Лента", icon: "list" }, type: "feed" }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><List size={16} className="text-[var(--primary-color)]" /><span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Лента</span></button>
                       <button onClick={() => { setIsSettingsMenuOpen(false); setCalendarAnalyticsModal({ isOpen: true }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><Calendar size={16} className="text-emerald-500" /><span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Календарь</span></button>
@@ -308,7 +233,7 @@ export default function App() {
             <SortableContext items={incomes.map(i => i.id)} strategy={horizontalListSortingStrategy}>
               <div className="flex gap-4 overflow-x-auto hide-scrollbar px-6 pb-4 pt-2">
                 {incomes.map(inc => {
-                  const monthlyAmount = Math.round(currentMonthTransactions.filter(t => t.type === "income" && t.targetId === inc.id).reduce((sum, t) => sum + (t.sourceAmountUSD ?? t.amountUSD ?? t.sourceAmount ?? t.amount ?? 0), 0));
+                  const monthlyAmount = Math.round(currentMonthTransactions.filter(t => t.type === "income" && t.targetId === inc.id).reduce((sum, t) => sum + (t.sourceAmountUSD ?? t.targetAmountUSD ?? t.sourceAmount ?? t.amount ?? 0), 0));
                   return (<DraggableIncomeItem key={inc.id} income={inc} isDragging={activeDragId === inc.id} onSortingMode={() => setIsSortingMode(true)} isSortingMode={isSortingMode} onLongPress={(i) => { setIsSortingMode(false); setIncomeModal({ isOpen: true, income: i }); }} onClick={(income) => setHistoryModal({ isOpen: true, entity: income, type: "income" })} monthlyAmount={monthlyAmount} />);
                 })}
               </div>
@@ -326,8 +251,8 @@ export default function App() {
               <SortableContext items={categories.map(c => c.id)} strategy={rectSortingStrategy}>
                 <div className="grid grid-cols-4 gap-y-6 gap-x-2 pb-4">
                   {categories.map(cat => {
-                    const spent = Math.round(currentMonthTransactions.filter(t => t.type === "expense" && t.targetId === cat.id).reduce((s, t) => s + (t.sourceAmountUSD ?? t.amountUSD ?? t.sourceAmount ?? t.amount ?? 0), 0));
-                    return (<CategoryItem key={cat.id} category={cat} spent={spent} isDragging={activeDragId === cat.id} onSortingMode={() => setIsSortingMode(true)} isSortingMode={isSortingMode} isOver={overId === cat.id} onLongPress={(c) => { setIsSortingMode(false); setCategoryModal({ isOpen: true, category: c }); }} onClick={(category) => setHistoryModal({ isOpen: true, entity: category, type: "category" })} activeDragType={activeDragType} theme={theme} />);
+                    const spent = Math.round(currentMonthTransactions.filter(t => t.type === "expense" && t.targetId === cat.id).reduce((s, t) => s + (t.sourceAmountUSD ?? t.targetAmountUSD ?? t.sourceAmount ?? t.amount ?? 0), 0));
+                    return (<CategoryItem key={cat.id} category={cat} spent={spent} isDragging={activeDragId === cat.id} onSortingMode={() => setIsSortingMode(true)} isSortingMode={isSortingMode} isOver={overId === cat.id} onLongPress={(c) => { setIsSortingMode(false); setCategoryModal({ isOpen: true, category: c }); }} onClick={(category) => setHistoryModal({ isOpen: true, entity: category, type: "category" })} activeDragType={activeDragType} />);
                   })}
                 </div>
               </SortableContext>
@@ -339,13 +264,11 @@ export default function App() {
           accountModal={accountModal} incomeModal={incomeModal} categoryModal={categoryModal} historyModal={historyModal}
           analyticsModal={analyticsModal} calendarAnalyticsModal={calendarAnalyticsModal} confirmDelete={confirmDelete}
           numpad={numpad} isTagModalOpen={isTagModalOpen} isUsersModalOpen={isUsersModalOpen} conflictData={conflictData} editingTxId={editingTxId}
-          isThemeModalOpen={isThemeModalOpen} theme={theme}
           accounts={accounts} categories={categories} incomes={incomes} transactions={transactions} allExistingTags={allExistingTags}
           users={users} activeTableId={activeTableId}
           setAccountModal={setAccountModal} setIncomeModal={setIncomeModal} setCategoryModal={setCategoryModal} setHistoryModal={setHistoryModal}
           setAnalyticsModal={setAnalyticsModal} setCalendarAnalyticsModal={setCalendarAnalyticsModal} setConfirmDelete={setConfirmDelete}
           setNumpad={setNumpad} setIsTagModalOpen={setIsTagModalOpen} setIsUsersModalOpen={setIsUsersModalOpen} setEditingTxId={setEditingTxId} setConflictData={setConflictData}
-          setIsThemeModalOpen={setIsThemeModalOpen} setTheme={setTheme}
           addTransaction={addTransaction} updateTransaction={updateTransaction} deleteTransaction={deleteTransaction}
           saveAccount={saveAccount} deleteAccount={deleteAccount} saveCategory={saveCategory} deleteCategory={deleteCategory}
           saveIncome={saveIncome} deleteIncome={deleteIncome} updateLocalFromRemote={updateLocalFromRemote}

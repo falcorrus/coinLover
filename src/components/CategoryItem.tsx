@@ -101,7 +101,7 @@ export const CategoryItem: React.FC<Props> = ({
       style={style}
       {...attributes}
       onContextMenu={e => e.preventDefault()}
-      className={`flex flex-col items-center gap-2 justify-start transition-all duration-300 cursor-pointer ${isDragging ? "opacity-30" : "opacity-100"}`}
+      className={`flex flex-col items-center gap-3 justify-start transition-all duration-300 cursor-pointer group ${isDragging ? "opacity-30" : "opacity-100"}`}
       onClick={() => {
         if (!didMoveRef.current && !isSortingMode) {
           onClick?.(category);
@@ -115,22 +115,27 @@ export const CategoryItem: React.FC<Props> = ({
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
         style={{ 
-          touchAction: "none",
-          filter: theme === 'modern' ? `drop-shadow(0 0 10px ${category.color}80)` : 'none'
+          touchAction: "none"
         }}
-        className={`draggable-coin coin-category transition-all duration-300 ${
-          isDragging ? "grabbed-elevation" :
-          (isPressing && isSortingMode) ? "scale-110 border-[var(--primary-color)] shadow-[0_0_20px_rgba(109,93,252,0.4)] ring-4 ring-[var(--primary-color)]/20" :
-          isPressing ? "scale-90 brightness-75 border-[var(--glass-border-highlight)]" : ""
-        } ${isTarget ? "coin-target-glow" : ""} ${
-          isSortingMode && isDragging ? "shadow-2xl shadow-[var(--shadow-color)] border-[var(--primary-color)] ring-4 ring-[var(--primary-color)]/20" : ""
-        }`}
+        className={`flex items-center justify-center transition-all duration-300 ${
+          isDragging ? "scale-110" :
+          (isPressing && isSortingMode) ? "scale-110 rotate-3" :
+          isPressing ? "scale-90" : "group-active:scale-90"
+        } ${isTarget ? "scale-125" : ""}`}
       >
-        <Icon size={theme === 'modern' ? 32 : 26} color={isTarget ? "var(--text-main)" : category.color} strokeWidth={theme === 'modern' ? 2.5 : 2} />
+        <Icon 
+          size={48} 
+          className="transition-all duration-300" 
+          style={{ 
+            color: isTarget ? "var(--primary-color)" : category.color,
+            fill: isTarget ? "transparent" : `${category.color}20` 
+          }} 
+          strokeWidth={1.5}
+        />
       </div>
-      <div className="flex flex-col items-center pb-2 pointer-events-none select-none">
-        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center truncate w-full max-w-[70px] leading-tight break-words whitespace-pre-wrap">{category.name}</span>
-        {spent > 0 && <span className="text-[11px] font-bold text-[#D4AF37] mt-0.5">-${spent.toLocaleString()}</span>}
+      <div className="flex flex-col items-center pointer-events-none select-none w-full">
+        <span className="font-label text-[9px] font-black text-[var(--on-surface-variant)] uppercase tracking-[0.15em] text-center truncate w-full px-1">{category.name}</span>
+        {spent > 0 && <span className="font-technical text-[10px] font-bold text-[var(--text-main)] mt-0.5 opacity-80">-${spent.toLocaleString()}</span>}
       </div>
     </div>
   );

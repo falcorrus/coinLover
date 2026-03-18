@@ -51,7 +51,7 @@
 :root.midnight {
   /* Midnight Gold - "AliGrids Style" */
   --bg-color: #0B0E14;
-  --primary-color: #F59E0B; /* Liquid Amber */
+  --primary-color: #F59E0B;
   --danger-color: #F43F5E;
   --success-color: #10B981;
   --text-main: #F8FAFC;
@@ -67,27 +67,6 @@
   --btn-equals: rgba(245, 158, 11, 0.3);
   --shadow-color: rgba(0, 0, 0, 0.8);
   --pull-indicator: #334155;
-}
-
-:root.modern {
-  /* Modern Glow - "Borderless Style" */
-  --bg-color: #0D1117;
-  --primary-color: #a78bfa;
-  --danger-color: #f43f5e;
-  --success-color: #10b981;
-  --text-main: #ffffff;
-  --text-muted: rgba(255, 255, 255, 0.5);
-  --glass-bg: rgba(255, 255, 255, 0.02);
-  --glass-card-bg: rgba(255, 255, 255, 0.03);
-  --glass-item-bg: transparent;
-  --glass-item-active: rgba(255, 255, 255, 0.05);
-  --glass-border: rgba(255, 255, 255, 0.06);
-  --glass-border-highlight: rgba(255, 255, 255, 0.1);
-  --numpad-bg: #0a0c10;
-  --panel-bg: #0D1117;
-  --btn-equals: rgba(167, 139, 250, 0.2);
-  --shadow-color: rgba(0, 0, 0, 0.4);
-  --pull-indicator: #1e293b;
 }
 
 body {
@@ -220,20 +199,6 @@ body {
   border-radius: 18px;
 }
 
-/* Modern Theme: No border, no background, just glow */
-.modern .coin-category {
-  background: transparent !important;
-  border-color: transparent !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  box-shadow: none !important;
-}
-
-.modern .coin-category:active {
-  transform: scale(0.9);
-  filter: brightness(1.2);
-}
-
 /* Wallet style: Perfectly round */
 .coin-wallet {
   border-radius: 50%;
@@ -266,85 +231,12 @@ body {
   border-radius: 2px;
 }
 
-/* Premium Landing Page Styles */
-.landing-mesh-glow {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 600px;
-  height: 600px;
-  background: radial-gradient(circle, rgba(109, 93, 252, 0.15) 0%, rgba(5, 5, 5, 0) 70%);
-  filter: blur(80px);
-  pointer-events: none;
-  z-index: 0;
-}
-
-.glass-glow-purple {
-  position: relative;
-  overflow: hidden;
-}
-
-.glass-glow-purple::after {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle, rgba(109, 93, 252, 0.1) 0%, transparent 60%);
-  pointer-events: none;
-  transition: opacity 0.3s ease;
-  opacity: 0;
-}
-
-.glass-glow-purple:hover::after {
-  opacity: 1;
-}
-
-.ai-shimmer {
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(109, 93, 252, 0.2) 50%,
-    rgba(255, 255, 255, 0) 100%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 3s infinite linear;
-}
-
-@keyframes shimmer {
-  from { background-position: 200% 0; }
-  to { background-position: -200% 0; }
-}
-
-.text-gradient-purple {
-  background: linear-gradient(135deg, #ffffff 0%, #a78bfa 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.landing-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 24px;
-}
-
 /* Modal Animations (Tailwind v4 compat) */
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes zoom-in { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
 @keyframes slide-in-right { from { transform: translateX(100%); } to { transform: translateX(0); } }
 @keyframes slide-in-bottom { from { transform: translateY(100%); } to { transform: translateY(0); } }
 @keyframes slide-in-top-2 { from { transform: translateY(-0.5rem); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-@keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-20px); }
-  100% { transform: translateY(0px); }
-}
-
-.animate-float {
-  animation: float 6s ease-in-out infinite;
-}
 
 .animate-in {
   animation-duration: 500ms;
@@ -360,4 +252,3 @@ body {
 
 .duration-300 { animation-duration: 300ms; }
 .duration-500 { animation-duration: 500ms; }
-.duration-1000 { animation-duration: 1000ms; }
