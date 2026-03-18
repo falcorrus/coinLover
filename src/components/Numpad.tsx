@@ -33,6 +33,37 @@ export const Numpad: React.FC<Props> = ({
 
   React.useEffect(() => { if (isCommentOpen) setCommentDraft(data.comment); }, [isCommentOpen, data.comment]);
 
+  React.useEffect(() => {
+    if (!data.isOpen || isCommentOpen || isCalendarOpen || currencyPicker.isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Numbers and basic operators
+      if (/^[0-9]$/.test(e.key)) {
+        onPress(e.key);
+      } else if (["+", "-", "*", "/", "%", ".", ","].includes(e.key)) {
+        onPress(e.key === "," ? "." : e.key);
+      } else if (e.key === "=") {
+        onPress("=");
+      } else if (e.key === "Backspace") {
+        onDelete();
+      } else if (e.key === "Enter") {
+        if (data.sourceAmount !== "0") onSubmit();
+      } else if (e.key === "Escape") {
+        onClose();
+      } else if (e.key === "c" || e.key === "C") {
+        onPress("C");
+      } else if (e.key === "Tab") {
+        e.preventDefault();
+        onFieldChange(data.activeField === "source" ? "destination" : "source");
+      } else if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+        onFieldChange(data.activeField === "source" ? "destination" : "source");
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [data.isOpen, data.activeField, data.sourceAmount, isCommentOpen, isCalendarOpen, currencyPicker.isOpen, onPress, onDelete, onSubmit, onClose, onFieldChange]);
+
   if (!data.isOpen) return null;
 
   const handleYesterday = () => { const date = new Date(); date.setDate(date.getDate() - 1); onSubmit(date.toISOString()); };
