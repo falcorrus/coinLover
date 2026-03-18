@@ -12,9 +12,18 @@ export const LandingPage: React.FC = () => {
   const [isConnectOpen, setIsConnectOpen] = React.useState(false);
   const [contact, setContact] = React.useState("");
   const [isSent, setIsSent] = React.useState(false);
+  const [analyticsImageIndex, setAnalyticsImageIndex] = React.useState(0);
 
   const { scrollYProgress } = useScroll();
   
+  // Analytics slideshow logic
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      setAnalyticsImageIndex((prev) => (prev === 0 ? 1 : 0));
+    }, 4000);
+    return () => clearInterval(timer);
+  }, []);
+
   const handleDemo = () => { window.location.href = "/?demo=true"; };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,14 +46,27 @@ export const LandingPage: React.FC = () => {
       }
     } catch (err) {
       console.error("Error sending lead:", err);
-      // Fallback: show success anyway to not annoy user, but log error
       setIsSent(true);
       setTimeout(() => setIsConnectOpen(false), 2500);
     }
   };
 
+  const wallets = [
+    { name: "Cash", icon: <Banknote size={48} />, color: "#10b981", active: false },
+    { name: "Bank", icon: <Wallet size={48} />, color: "#06b6d4", active: true },
+    { name: "Exchange", icon: <TrendingUp size={48} />, color: "#3b82f6", active: false },
+  ];
+
+  const categories = [
+    { name: "Food", icon: <Utensils size={24} />, color: "#f59e0b" },
+    { name: "Transport", icon: <Car size={24} />, color: "#3b82f6" },
+    { name: "Coffee", icon: <Coffee size={24} />, color: "#8b5cf6" },
+    { name: "Shopping", icon: <ShoppingBag size={24} />, color: "#10b981" },
+    { name: "Fun", icon: <Film size={24} />, color: "#ec4899" },
+  ];
+
   return (
-    <div className="min-h-[500vh] bg-[#050505] text-white selection:bg-[#6d5dfc]/30 font-sans overflow-x-hidden focus:outline-none">
+    <div className="min-h-[650vh] bg-[#050505] text-white selection:bg-[#6d5dfc]/30 font-sans overflow-x-hidden focus:outline-none">
       <style>{`* { -webkit-tap-highlight-color: transparent; outline: none !important; } .text-gradient-purple { background: linear-gradient(135deg, #fff 0%, #6d5dfc 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }`}</style>
       
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
@@ -80,7 +102,6 @@ export const LandingPage: React.FC = () => {
             <p className="text-base md:text-xl text-white/60 max-w-2xl mx-auto mb-10 md:mb-12">Посмотрите, как магия транзакций оживает в CoinLover.</p>
           </motion.div>
 
-          {/* Hero Video Section */}
           <div className="relative flex justify-center mt-12 mb-20 group">
             <div className="absolute -inset-4 bg-[#6d5dfc]/10 blur-3xl opacity-50 group-hover:opacity-100 transition-opacity duration-1000 rounded-full" />
             <motion.div 
@@ -89,15 +110,8 @@ export const LandingPage: React.FC = () => {
               transition={{ duration: 1, delay: 0.4 }}
               className="glass-panel p-2 border-white/10 shadow-2xl relative z-10 overflow-hidden w-fit max-w-[280px] md:max-w-[320px] mx-auto rounded-[40px]"
             >
-              <video 
-                autoPlay 
-                muted 
-                loop 
-                playsInline 
-                className="w-full h-auto rounded-[32px] block shadow-2xl"
-              >
+              <video autoPlay muted loop playsInline className="w-full h-auto rounded-[32px] block shadow-2xl">
                 <source src="/hero-demo.mp4" type="video/mp4" />
-                Your browser does not support the video tag.
               </video>
               <div className="absolute inset-0 bg-gradient-to-t from-[#050505]/20 to-transparent pointer-events-none rounded-[32px]" />
             </motion.div>
@@ -107,19 +121,34 @@ export const LandingPage: React.FC = () => {
 
       <div className="max-w-6xl mx-auto space-y-32 md:space-y-60 py-10 md:py-20 px-6">
         
-        {/* Analytics Section */}
+        {/* Analytics Section with Slideshow */}
         <section className="flex flex-col md:flex-row items-center gap-16 md:gap-20">
           <div className="flex-1 text-center md:text-left">
             <span className="text-[#6d5dfc] font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">Visual Clarity</span>
             <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">Аналитика, которая <br /> не пугает.</h2>
             <p className="text-lg text-white/50 mb-8 leading-relaxed">CoinLover превращает сухие цифры в наглядную историю ваших трат. Один взгляд — и вы знаете, куда ушел бюджет.</p>
           </div>
-          <div className="flex-1 relative group flex justify-center md:justify-end">
-            <div className="absolute -inset-4 bg-[#6d5dfc]/5 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000 rounded-full" />
-            <motion.div initial={{ opacity: 0, y: 40, rotateX: 10, rotateY: -10 }} whileInView={{ opacity: 1, y: 0, rotateX: 0, rotateY: 0 }} viewport={{ once: false, amount: 0.3 }} transition={{ type: "spring", stiffness: 50, damping: 20 }} className="glass-panel p-2 border-white/10 shadow-2xl relative z-10 overflow-hidden w-fit perspective-1000">
-              <motion.img animate={{ y: [0, -10, 0], rotate: [0, 0.5, 0] }} transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }} src="/analytics-preview.png" alt="CoinLover Analytics" className="block w-full h-auto max-h-[450px] md:max-h-[600px] rounded-[20px]" />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#050505]/40 to-transparent pointer-events-none" />
-            </motion.div>
+          <div className="flex-1 relative group flex justify-center md:justify-end min-h-[450px] md:min-h-[600px]">
+            <div className="absolute -inset-4 bg-[#6d5dfc]/10 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000 rounded-full" />
+            <AnimatePresence mode="wait">
+              <motion.div 
+                key={analyticsImageIndex}
+                initial={{ opacity: 0, x: 20, scale: 0.95 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                exit={{ opacity: 0, x: -20, scale: 0.95 }}
+                transition={{ duration: 0.8, ease: "easeInOut" }}
+                className="glass-panel p-2 border-white/10 shadow-2xl relative z-10 overflow-hidden w-fit perspective-1000 h-fit"
+              >
+                <motion.img 
+                  animate={{ y: [0, -5, 0], rotate: [0, 0.5, 0] }}
+                  transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+                  src={analyticsImageIndex === 0 ? "/analytics-preview.png" : "/analytics-pie-preview.png"} 
+                  alt="CoinLover Analytics" 
+                  className="block w-full h-auto max-h-[450px] md:max-h-[600px] rounded-[20px]"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#050505]/40 to-transparent pointer-events-none" />
+              </motion.div>
+            </AnimatePresence>
           </div>
         </section>
 
@@ -174,13 +203,7 @@ export const LandingPage: React.FC = () => {
                   <span className="text-[8px] font-bold uppercase tracking-widest">Desktop</span>
                 </motion.div>
               </div>
-              <motion.div 
-                animate={{ rotate: 360 }}
-                transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-                className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-10"
-              >
-                <RefreshCw size={200} className="text-[#6d5dfc]" />
-              </motion.div>
+              <motion.div animate={{ rotate: 360 }} transition={{ duration: 10, repeat: Infinity, ease: "linear" }} className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-10"><RefreshCw size={200} className="text-[#6d5dfc]" /></motion.div>
             </div>
           </div>
           <div className="flex-1 text-center md:text-left order-1 md:order-2">
@@ -219,6 +242,29 @@ export const LandingPage: React.FC = () => {
               <img src="/sheets-preview.png" alt="Google Sheets Sync" className="block w-full h-auto max-h-[400px] rounded-[20px] object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#050505]/40 to-transparent pointer-events-none" />
             </motion.div>
+          </div>
+        </section>
+
+        {/* AI Roadmap */}
+        <section className="text-center">
+          <h2 className="text-4xl font-bold mb-16 text-gradient-purple">Будущее CoinLover</h2>
+          <div className="grid md:grid-cols-2 gap-8 text-left">
+            <div className="glass-card p-10 border-[#6d5dfc]/20 relative overflow-hidden group">
+              <div className="absolute inset-0 ai-shimmer opacity-20" />
+              <div className="relative z-10">
+                <div className="flex items-center gap-3 mb-6">
+                  <Sparkles className="w-6 h-6 text-[#6d5dfc]" />
+                  <span className="text-xs font-bold tracking-widest uppercase text-[#6d5dfc]">In Development</span>
+                </div>
+                <h3 className="text-2xl font-bold mb-4">AI Assistant</h3>
+                <p className="text-white/60 leading-relaxed">Ваш личный финансовый директор на базе нейросетей. Автоматическое распределение трат и советы по экономии в реальном времени.</p>
+              </div>
+            </div>
+            <div className="glass-card p-10 border-white/5 opacity-60">
+               <Database className="w-6 h-6 text-white/40 mb-6" />
+               <h3 className="text-2xl font-bold mb-4">Family Sync</h3>
+               <p className="text-white/60 leading-relaxed">Поддержка командных бюджетов и общих таблиц для всей семьи. Следите за общим капиталом вместе.</p>
+            </div>
           </div>
         </section>
 
@@ -262,7 +308,7 @@ export const LandingPage: React.FC = () => {
       <footer className="py-16 px-6 border-t border-white/5 text-white/20 text-xs">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="flex items-center gap-3"><div className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center"><Coins className="w-4 h-4 text-white/40" /></div><span className="font-bold text-white/30 tracking-widest uppercase text-xs">CoinLover</span></div>
-          <div className="tracking-widest uppercase">© 2026 CoinLover Project. Own your data.</div>
+          <button onClick={() => setIsConnectOpen(true)} className="tracking-widest uppercase hover:text-white transition-colors outline-none">Пишите на почту или Телеграм</button>
         </div>
       </footer>
     </div>
