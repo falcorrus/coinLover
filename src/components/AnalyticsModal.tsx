@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { X, ChevronLeft, ChevronRight, PieChart, Tag, RefreshCcw, MoreHorizontal, TrendingUp, TrendingDown, CheckCircle2, Circle } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, PieChart, List, Tag, RefreshCcw, MoreHorizontal, TrendingUp, TrendingDown, CheckCircle2, Circle } from "lucide-react";
 import { Transaction, Category, IncomeSource, Account } from "../types";
 import { IconMap } from "../constants";
 import { googleSheetsService } from "../services/googleSheets";
@@ -74,6 +74,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
     const [analysisType, setAnalysisType] = useState<"expense" | "income">(initialType);
     const [tab, setTab] = useState<"categories" | "tags">("categories");
     const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
+    const [viewType, setViewType] = useState<"list" | "chart">("list");
     const initializedKeys = useRef<Set<string>>(new Set());
 
     const [selections, setSelections] = useState<Record<string, Set<string>>>(() => 
@@ -251,17 +252,79 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                         <span className={`text-3xl font-black ${analysisType === "income" ? 'text-[var(--success-color)]' : 'text-[var(--text-main)]'}`}>${displayedTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
 
-                    <div className="px-6 pb-2 shrink-0">
+                    <div className="px-6 pb-2 shrink-0 flex justify-between items-center">
                         <button onClick={toggleAll} className="flex items-center gap-2 text-[10px] font-black text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors uppercase tracking-widest group">
                             <div className={`w-5 h-5 rounded flex items-center justify-center border transition-all ${isAllVisibleSelected ? 'bg-[var(--primary-color)]/20 border-[var(--primary-color)] text-[var(--primary-color)]' : 'bg-transparent border-[var(--glass-border)] text-[var(--text-muted)]'}`}>{isAllVisibleSelected ? <CheckCircle2 size={12} /> : <Circle size={12} />}</div>
                             {isAllVisibleSelected ? "Снять все" : "Выбрать все"}
                         </button>
+                        <button 
+                            onClick={() => { setViewType(v => v === "list" ? "chart" : "list"); if (navigator.vibrate) navigator.vibrate(10); }}
+                            className="w-8 h-8 rounded-lg bg-[var(--glass-item-bg)] border border-[var(--glass-border)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-main)] transition-all"
+                        >
+                            {viewType === "list" ? <PieChart size={16} /> : <List size={16} />}
+                        </button>
                     </div>
 
-                    {/* List */}
+                    {/* Content View (List or Chart) */}
                     <div className="flex-1 overflow-y-auto hide-scrollbar px-6 pb-6 relative">
                         {listItems.length === 0 && !isLoading ? (
                             <div className="absolute inset-0 flex items-center justify-center text-[var(--text-muted)] text-xs uppercase font-bold tracking-widest">Нет данных</div>
+                        ) : viewType === "chart" ? (
+                            <div className="flex flex-col items-center justify-center h-full animate-in zoom-in-95 duration-500">
+                                <div className="relative w-64 h-64 mb-8">
+                                    <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
+                                        {(() => {
+                                            let currentAngle = 0;
+                                            const total = displayedTotal;
+                                            return listItems.map(item => {
+                                                if (!selectedIds.has(item.id)) return null;
+                                                const slicePercent = (item.amount / total) * 100;
+                                                const largeArcFlag = slicePercent > 50 ? 1 : 0;
+                                                
+                                                const startX = 50 + 45 * Math.cos((currentAngle * Math.PI) / 50);
+                                                const startY = 50 + 45 * Math.sin((currentAngle * Math.PI) / 50);
+                                                currentAngle += slicePercent;
+                                                const endX = 50 + 45 * Math.cos((currentAngle * Math.PI) / 50);
+                                                const endY = 50 + 45 * Math.sin((currentAngle * Math.PI) / 50);
+
+                                                return (
+                                                    <path
+                                                        key={item.id}
+                                                        d={`M 50 50 L ${startX} ${startY} A 45 45 0 ${largeArcFlag} 1 ${endX} ${endY} Z`}
+                                                        fill={item.color}
+                                                        className="transition-all duration-500 hover:opacity-80 cursor-pointer"
+                                                        onClick={() => setExpandedItemId(expandedItemId === item.id ? null : item.id)}
+                                                        style={{ 
+                                                            filter: expandedItemId === item.id ? 'brightness(1.2) drop-shadow(0 0 5px rgba(255,255,255,0.2))' : 'none',
+                                                            transform: expandedItemId === item.id ? 'scale(1.05)' : 'none',
+                                                            transformOrigin: 'center'
+                                                        }}
+                                                    />
+                                                );
+                                            });
+                                        })()}
+                                        <circle cx="50" cy="50" r="25" fill="var(--bg-color)" />
+                                    </svg>
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                        <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] tracking-tighter mb-0.5">Total</span>
+                                        <span className="text-sm font-black text-[var(--text-main)]">${Math.round(displayedTotal).toLocaleString()}</span>
+                                    </div>
+                                </div>
+                                
+                                {/* Chart Legend */}
+                                <div className="grid grid-cols-2 gap-x-6 gap-y-3 w-full">
+                                    {listItems.filter(i => selectedIds.has(i.id)).slice(0, 6).map(item => (
+                                        <div key={item.id} className="flex items-center gap-2 min-w-0" onClick={() => setExpandedItemId(expandedItemId === item.id ? null : item.id)}>
+                                            <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                                            <span className="text-[10px] font-bold text-[var(--text-main)] truncate uppercase tracking-widest">{item.name}</span>
+                                            <span className="text-[9px] font-medium text-[var(--text-muted)] ml-auto">{item.percent.toFixed(0)}%</span>
+                                        </div>
+                                    ))}
+                                    {listItems.filter(i => selectedIds.has(i.id)).length > 6 && (
+                                        <div className="col-span-2 text-center text-[9px] text-[var(--text-muted)] uppercase font-bold mt-2 opacity-50">и еще {listItems.filter(i => selectedIds.has(i.id)).length - 6} категорий</div>
+                                    )}
+                                </div>
+                            </div>
                         ) : (
                             <div className="flex flex-col gap-4 mt-2">
                                 {listItems.map(item => {
