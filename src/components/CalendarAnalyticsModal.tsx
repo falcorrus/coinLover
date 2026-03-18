@@ -170,6 +170,11 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
         const sAmt = tx.sourceAmount ?? tx.amount ?? 0;
         const sAmtUsd = tx.sourceAmountUSD ?? tx.amountUSD;
         const sCurr = tx.sourceCurrency ?? (accounts.find(a => a.id === tx.accountId)?.currency || "USD");
+        const tAmt = tx.targetAmount ?? tx.amountLocal ?? sAmt;
+        const tCurr = tx.targetCurrency ?? tx.currencyLocal ?? sCurr;
+
+        let displayAmount = tAmt;
+        let displayCurrency = tCurr;
 
         const txType = tx.type?.toLowerCase();
         const color = txType === "transfer" 
@@ -181,8 +186,8 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
         const sign = txType === "transfer" ? "" : (isOutflow ? "-" : "+");
 
         return {
-            amount: `${sign}${sAmt.toLocaleString()} ${sCurr}`,
-            usdAmount: (sCurr !== "USD" && sAmtUsd) ? `${sign}$${sAmtUsd.toLocaleString()}` : null,
+            amount: `${sign}${displayAmount.toLocaleString()} ${displayCurrency}`,
+            usdAmount: (displayCurrency !== "USD" && sAmtUsd) ? `${sign}$${sAmtUsd.toLocaleString()}` : null,
             color
         };
     };
