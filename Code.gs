@@ -1,6 +1,6 @@
 /**
  * CoinLover Backend (GAS)
- * Fix: NaN protection and robust field parsing.
+ * Fix: Variable naming bug and robust parsing.
  */
 
 const MASTER_SS_ID = "1IQCs35RQlMMQsGB-CRczJeuRqa8WIxW4Sy_kjZyHP2M";
@@ -19,7 +19,7 @@ function getSS(e, data) {
 
 function parseNum(val, fallback = 0) {
   if (val === undefined || val === null || val === "") return fallback;
-  const n = parseFloat(val);
+  const n = parseFloat(String(val).replace(',', '.'));
   return isNaN(n) ? fallback : n;
 }
 
@@ -58,24 +58,27 @@ function doGet(e) {
     
     const rows = sheet.getDataRange().getValues();
     let hasUSDCol = false;
-    for (let r of rows) { if (String(r[0]).includes("ID") && String(r[3]).includes("USD")) { hasUSDCol = true; break; } }
+    for (let r of rows) { if (r[0] && String(r[0]).includes("ID") && r[3] && String(r[3]).includes("USD")) { hasUSDCol = true; break; } }
 
     const data = { accounts: [], categories: [], incomes: [], transactions: [], users: [] };
     let section = "";
     for (let i = 0; i < rows.length; i++) {
-      const f = String(rows[i][0]).trim().toUpperCase();
-      if (f.startsWith("UPDATED")) { data.timestamp = String(rows[i][0]).split("Updated")[1]?.trim() || rows[i][1]; continue; }
+      const row = rows[i];
+      const f = String(row[0]).trim().toUpperCase();
+      if (f.startsWith("UPDATED")) { 
+        data.timestamp = row[1] || String(row[0]).split("Updated")[1]?.trim(); 
+        continue; 
+      }
       if (f.includes("WALLETS")) { section = "acc"; continue; }
       if (f.includes("CATEGORIES")) { section = "cat"; continue; }
       if (f.includes("INCOMES")) { section = "inc"; continue; }
       if (isMaster && f.includes("USERS")) { section = "usr"; continue; }
       if (!f || f === "ID" || f === "NAME") continue;
       
-      const r = rows[i];
-      if (section === "acc") data.accounts.push({ id: String(r[0]), name: String(r[1]), balance: parseNum(r[2]), balanceUSD: hasUSDCol ? parseNum(r[3]) : undefined, color: hasUSDCol ? r[4] : r[3], icon: (hasUSDCol ? r[5] : r[4]) || "wallet", currency: (hasUSDCol ? r[6] : r[5]) || "USD" });
-      else if (section === "cat") data.categories.push({ id: String(r[0]), name: String(r[1]), color: r[2], icon: r[3] || "more", tags: r[4] ? String(r[4]).split(",").map(t => t.trim()) : [] });
-      else if (section === "inc") data.incomes.push({ id: String(r[0]), name: String(r[1]), color: r[2], icon: r[3] || "business", tags: r[4] ? String(r[4]).split(",").map(t => t.trim()) : [] });
-      else if (section === "usr" && isMaster) data.users.push({ name: String(r[0]).trim(), id: String(r[1]).trim() });
+      if (section === "acc") data.accounts.push({ id: String(row[0]), name: String(row[1]), balance: parseNum(row[2]), balanceUSD: hasUSDCol ? parseNum(row[3]) : undefined, color: hasUSDCol ? row[4] : row[3], icon: (hasUSDCol ? row[5] : row[4]) || "wallet", currency: (hasUSDCol ? row[6] : row[5]) || "USD" });
+      else if (section === "cat") data.categories.push({ id: String(row[0]), name: String(row[1]), color: row[2], icon: row[3] || "more", tags: row[4] ? String(row[4]).split(",").map(t => t.trim()) : [] });
+      else if (section === "inc") data.incomes.push({ id: String(row[0]), name: String(row[1]), color: row[2], icon: row[3] || "business", tags: row[4] ? String(row[4]).split(",").map(t => t.trim()) : [] });
+      else if (section === "usr" && isMaster) data.users.push({ name: String(row[0]).trim(), id: String(row[1]).trim() });
     }
 
     try {
@@ -84,7 +87,6 @@ function doGet(e) {
         const txRows = txSheet.getDataRange().getValues();
         const headers = txRows[0].map(v => String(v).trim());
         const col = {}; headers.forEach((v, i) => col[v] = i);
-        
         const accMap = {}; data.accounts.forEach(a => accMap[a.name] = a.id);
         const catMap = {}; data.categories.forEach(c => catMap[c.name] = c.id);
         const incMap = {}; data.incomes.forEach(i => incMap[i.name] = i.id);
@@ -100,6 +102,7 @@ function doGet(e) {
           else if (type === "transfer") { aid = accMap[src] || src; tid = accMap[dst] || dst; }
 
           const dt = new Date(r[col["Date"]]);
+          if (isNaN(dt.getTime())) continue;
           const iso = Utilities.formatDate(dt, ss.getSpreadsheetTimeZone(), "yyyy-MM-dd'T'HH:mm:ss");
           const sAmt = parseNum(r[col["Source Amount"]] || r[col["Amount"]]);
           const tAmt = parseNum(r[col["Target Amount"]] || r[col["Amount"]], sAmt);
@@ -107,11 +110,9 @@ function doGet(e) {
           data.transactions.push({
             id: col["ID"] !== undefined ? String(r[col["ID"]]) : `${iso}_${i}`,
             type, accountId: aid, targetId: tid,
-            sourceAmount: sAmt,
-            sourceCurrency: String(r[col["Source Currency"]] || "USD"),
+            sourceAmount: sAmt, sourceCurrency: String(r[col["Source Currency"]] || "USD"),
             sourceAmountUSD: parseNum(r[col["Source Amount USD"]] || r[col["Amount USD"]], sAmt),
-            targetAmount: tAmt,
-            targetCurrency: String(r[col["Target Currency"]] || "USD"),
+            targetAmount: tAmt, targetCurrency: String(r[col["Target Currency"]] || "USD"),
             targetAmountUSD: parseNum(r[col["Target USD"]] || r[col["Amount USD"]], tAmt),
             date: iso, tag: r[col["Tag"]] ? String(r[col["Tag"]]) : undefined, comment: r[col["Comment"]] ? String(r[col["Comment"]]) : undefined
           });
@@ -130,8 +131,6 @@ function doPost(e) {
     lock.waitLock(30000);
     const data = JSON.parse(e.postData.contents);
     const ss = getSS(e, data);
-    const ssId = ss.getId();
-    const isMaster = (ssId === MASTER_SS_ID);
     const isDemo = data.demo === true;
     const configSheetName = isDemo ? "Configs-demo" : "Configs";
     const txSheetName = isDemo ? "Transactions-demo" : "Transactions";
@@ -143,7 +142,7 @@ function doPost(e) {
       if (!settingsData.accounts || settingsData.accounts.length === 0) return { status: "error", message: "Empty config" };
       let sheet = ss.getSheetByName(configSheetName) || ss.insertSheet(configSheetName);
       let existingUsers = [];
-      if (isMaster) {
+      if (ss.getId() === MASTER_SS_ID) {
         try {
           const oldRows = sheet.getDataRange().getValues();
           let inUsers = false;
@@ -167,7 +166,7 @@ function doPost(e) {
       pushRow([""]); pushRow([" === INCOMES ==="]);
       pushRow(["ID", "Name", "Color", "Icon", "Tags"]);
       if (settingsData.incomes) settingsData.incomes.forEach(i => pushRow([i.id, i.name, i.color, i.icon, Array.isArray(i.tags) ? i.tags.join(", ") : i.tags]));
-      if (isMaster) {
+      if (ss.getId() === MASTER_SS_ID) {
         pushRow([""]); pushRow([" === USERS ==="]);
         pushRow(["Name", "Spreadsheet ID"]);
         existingUsers.forEach(u => pushRow([u[0], u[1]]));
