@@ -7,7 +7,8 @@ import {
 import { SortableContext, horizontalListSortingStrategy, rectSortingStrategy, arrayMove } from "@dnd-kit/sortable";
 import {
   Plus, TrendingDown, ChevronRight, TrendingUp, Wallet, RefreshCcw,
-  Heart, PieChart, List, Moon, Sun, Sparkles, Menu, Calendar, Database
+  Heart, PieChart, List, Moon, Sun, Sparkles, Menu, Calendar, Database,
+  ArrowRightLeft
 } from "lucide-react";
 
 // Modules
@@ -64,6 +65,13 @@ export default function App() {
   const [confirmDelete, setConfirmDelete] = React.useState<{ isOpen: boolean; title: string; message: string; onConfirm: () => void; }>({ isOpen: false, title: "", message: "", onConfirm: () => { } });
   const [isTagModalOpen, setIsTagModalOpen] = React.useState(false);
   const [isUsersModalOpen, setIsUsersModalOpen] = React.useState(false);
+  const [categoryCurrencyMode, setCategoryCurrencyMode] = React.useState<"usd" | "local">(() => {
+    return (localStorage.getItem("cl_category_currency_mode") as "usd" | "local") || "usd";
+  });
+
+  React.useEffect(() => {
+    localStorage.setItem("cl_category_currency_mode", categoryCurrencyMode);
+  }, [categoryCurrencyMode]);
   const [numpad, setNumpad] = React.useState<NumpadData>({
     isOpen: false, type: "expense", source: null, destination: null,
     sourceAmount: "0", sourceCurrency: "USD", targetAmount: "0", targetCurrency: "USD", targetLinked: true, activeField: "source", tag: null, comment: ""
@@ -247,11 +255,29 @@ export default function App() {
 
           <section className={`px-0 flex-1 pt-4 pb-8 overflow-y-auto hide-scrollbar z-10 relative transition-all duration-500 ${mode === "income" ? "opacity-30 pointer-events-none grayscale" : "opacity-100"}`}>
             <div className="px-6 py-2">
-              <div className="flex justify-between items-center mb-6"><h2 className="text-[10px] font-black text-slate-500 uppercase">Расходы</h2><div className="flex items-center gap-3"><button onClick={() => setAnalyticsModal({ isOpen: true, type: "expense" })} className="w-8 h-8 rounded-xl bg-[var(--primary-color)]/10 border border-[var(--primary-color)]/20 text-[var(--primary-color)] flex items-center justify-center hover:bg-[var(--primary-color)]/20 transition-all shadow-sm"><PieChart size={14} /></button><button onClick={() => setCategoryModal({ isOpen: true, category: null })} className="w-8 h-8 rounded-xl bg-[var(--glass-item-bg)] border border-[var(--glass-border)] text-[var(--text-main)] flex items-center justify-center hover:bg-[var(--glass-item-active)] transition-all shadow-sm"><Plus size={16} /></button></div></div>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-[10px] font-black text-slate-500 uppercase">Расходы</h2>
+                <div className="flex items-center gap-3">
+                  <button 
+                    onClick={() => { setCategoryCurrencyMode(p => p === "usd" ? "local" : "usd"); if (navigator.vibrate) navigator.vibrate(10); }}
+                    className="w-8 h-8 rounded-xl bg-[var(--glass-item-bg)] border border-[var(--glass-border)] text-[var(--text-muted)] hover:text-[var(--text-main)] flex items-center justify-center transition-all shadow-sm"
+                    title={categoryCurrencyMode === "usd" ? "Показать в местной валюте" : "Показать в USD"}
+                  >
+                    <ArrowRightLeft size={14} className={categoryCurrencyMode === 'local' ? 'text-[var(--primary-color)]' : ''} />
+                  </button>
+                  <button onClick={() => setAnalyticsModal({ isOpen: true, type: "expense" })} className="w-8 h-8 rounded-xl bg-[var(--primary-color)]/10 border border-[var(--primary-color)]/20 text-[var(--primary-color)] flex items-center justify-center hover:bg-[var(--primary-color)]/20 transition-all shadow-sm"><PieChart size={14} /></button>
+                  <button onClick={() => setCategoryModal({ isOpen: true, category: null })} className="w-8 h-8 rounded-xl bg-[var(--glass-item-bg)] border border-[var(--glass-border)] text-[var(--text-main)] flex items-center justify-center hover:bg-[var(--glass-item-active)] transition-all shadow-sm"><Plus size={16} /></button>
+                </div>
+              </div>
               <SortableContext items={categories.map(c => c.id)} strategy={rectSortingStrategy}>
                 <div className="grid grid-cols-4 gap-y-6 gap-x-2 pb-4">
                   {categories.map(cat => {
-                    const spent = Math.round(currentMonthTransactions.filter(t => t.type === "expense" && t.targetId === cat.id).reduce((s, t) => s + (t.sourceAmountUSD ?? t.targetAmountUSD ?? t.sourceAmount ?? t.amount ?? 0), 0));
+                    const spent = Math.round(currentMonthTransactions.filter(t => t.type === "expense" && t.targetId === cat.id).reduce((s, t) => {
+                      const amt = categoryCurrencyMode === "usd" 
+                        ? (t.sourceAmountUSD ?? t.targetAmountUSD ?? t.sourceAmount ?? 0)
+                        : (t.targetAmount ?? t.sourceAmount ?? 0);
+                      return s + amt;
+                    }, 0));
                     return (<CategoryItem key={cat.id} category={cat} spent={spent} isDragging={activeDragId === cat.id} onSortingMode={() => setIsSortingMode(true)} isSortingMode={isSortingMode} isOver={overId === cat.id} onLongPress={(c) => { setIsSortingMode(false); setCategoryModal({ isOpen: true, category: c }); }} onClick={(category) => setHistoryModal({ isOpen: true, entity: category, type: "category" })} activeDragType={activeDragType} />);
                   })}
                 </div>
