@@ -15,28 +15,31 @@ interface SyncStateProps {
   incomes: IncomeSource[];
   setIncomes: (i: IncomeSource[]) => void;
   setTransactions: (t: Transaction[]) => void;
+  setUsers: (u: { name: string; id: string }[]) => void;
+  ssId?: string;
 }
 
 export const useSync = ({
-  accounts, setAccounts, categories, setCategories, incomes, setIncomes, setTransactions
+  accounts, setAccounts, categories, setCategories, incomes, setIncomes, setTransactions, setUsers, ssId
 }: SyncStateProps) => {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>("idle");
   const [conflictData, setConflictData] = useState<SyncSettingsFields | null>(null);
 
-  const updateLocalFromRemote = useCallback((data: SyncSettingsFields & { transactions?: Transaction[] }) => {
+  const updateLocalFromRemote = useCallback((data: SyncSettingsFields & { transactions?: Transaction[], users?: { name: string; id: string }[] }) => {
     if (data.accounts) setAccounts(data.accounts);
     if (data.categories) setCategories(data.categories);
     if (data.incomes) setIncomes(data.incomes);
+    if (data.users) setUsers(data.users);
     if (data.timestamp) localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC, data.timestamp);
     if (data.transactions && Array.isArray(data.transactions)) {
       setTransactions([...data.transactions].sort((a, b) => new Date(b.date.replace(/-/g, '/').replace('T', ' ')).getTime() - new Date(a.date.replace(/-/g, '/').replace('T', ' ')).getTime()));
     }
     setConflictData(null);
-  }, [setAccounts, setCategories, setIncomes, setTransactions]);
+  }, [setAccounts, setCategories, setIncomes, setTransactions, setUsers]);
 
   const pullSettings = useCallback(async () => {
     setSyncStatus("loading");
-    const data = await googleSheetsService.fetchSettings();
+    const data = await googleSheetsService.fetchSettings(ssId);
     if (data) {
       updateLocalFromRemote(data);
       setSyncStatus("success");
@@ -50,11 +53,11 @@ export const useSync = ({
     }
     setSyncStatus("error");
     return false;
-  }, [updateLocalFromRemote, accounts.length, setAccounts, setCategories, setIncomes]);
+  }, [updateLocalFromRemote, accounts.length, setAccounts, setCategories, setIncomes, ssId]);
 
   const checkConflicts = useCallback(async () => {
     try {
-      const remote = await googleSheetsService.fetchSettings();
+      const remote = await googleSheetsService.fetchSettings(ssId);
       if (!remote || !remote.timestamp) return;
       
       const localLastSync = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC);
@@ -72,12 +75,12 @@ export const useSync = ({
     } catch (e) {
       console.error("Conflict check failed:", e);
     }
-  }, [updateLocalFromRemote]);
+  }, [updateLocalFromRemote, ssId]);
 
   const pushSettings = useCallback(async (a: Account[], c: Category[], i: IncomeSource[]) => {
     setSyncStatus("loading");
     const ts = getLocalTimeString();
-    const ok = await googleSheetsService.syncToSheets({ action: "syncSettings", targetSheet: "Configs", accounts: enrichAccountsWithUSD(a), categories: c, incomes: i, timestamp: ts });
+    const ok = await googleSheetsService.syncToSheets({ action: "syncSettings", targetSheet: "Configs", accounts: enrichAccountsWithUSD(a), categories: c, incomes: i, timestamp: ts, ssId });
     if (ok) { 
       localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC, ts); 
       setSyncStatus("success"); 
@@ -86,7 +89,7 @@ export const useSync = ({
       setSyncStatus("error");
       return false;
     }
-  }, []);
+  }, [ssId]);
 
   return {
     syncStatus, setSyncStatus, conflictData, setConflictData, 

@@ -13,6 +13,7 @@ import { AnalyticsModal } from "./AnalyticsModal";
 import { CalendarAnalyticsModal } from "./CalendarAnalyticsModal";
 import { ConfirmModal } from "./ConfirmModal";
 import { TagModal } from "./TagModal";
+import { UsersModal } from "./UsersModal";
 
 interface ModalManagerProps {
   // Modal States
@@ -25,6 +26,7 @@ interface ModalManagerProps {
   confirmDelete: { isOpen: boolean; title: string; message: string; onConfirm: () => void };
   numpad: NumpadData;
   isTagModalOpen: boolean;
+  isUsersModalOpen: boolean;
   conflictData: any; // Keep as any if dynamic from GAS, but better SyncSettingsFields | null
   editingTxId: string | null;
   
@@ -34,6 +36,8 @@ interface ModalManagerProps {
   incomes: IncomeSource[];
   transactions: Transaction[];
   allExistingTags: string[];
+  users: { name: string; id: string }[];
+  activeTableId: string;
   
   // Handlers
   setAccountModal: React.Dispatch<React.SetStateAction<{ isOpen: boolean; account: Account | null }>>;
@@ -45,6 +49,7 @@ interface ModalManagerProps {
   setConfirmDelete: React.Dispatch<React.SetStateAction<{ isOpen: boolean; title: string; message: string; onConfirm: () => void }>>;
   setNumpad: React.Dispatch<React.SetStateAction<NumpadData>>;
   setIsTagModalOpen: (v: boolean) => void;
+  setIsUsersModalOpen: (v: boolean) => void;
   setEditingTxId: (v: string | null) => void;
   setConflictData: (v: any) => void;
   
@@ -59,17 +64,19 @@ interface ModalManagerProps {
   saveIncome: (income: Partial<IncomeSource>) => Promise<void>;
   deleteIncome: (id: string) => Promise<void>;
   updateLocalFromRemote: (data: any) => void;
+  onSwitchTable: (id: string) => void;
 }
 
 export const ModalManager: React.FC<ModalManagerProps> = (props) => {
   const {
     accountModal, incomeModal, categoryModal, historyModal, analyticsModal,
-    calendarAnalyticsModal, confirmDelete, numpad, isTagModalOpen, conflictData, editingTxId,
-    accounts, categories, incomes, transactions, allExistingTags,
+    calendarAnalyticsModal, confirmDelete, numpad, isTagModalOpen, isUsersModalOpen, conflictData, editingTxId,
+    accounts, categories, incomes, transactions, allExistingTags, users, activeTableId,
     setAccountModal, setIncomeModal, setCategoryModal, setHistoryModal, setAnalyticsModal,
-    setCalendarAnalyticsModal, setConfirmDelete, setNumpad, setIsTagModalOpen, setEditingTxId, setConflictData,
+    setCalendarAnalyticsModal, setConfirmDelete, setNumpad, setIsTagModalOpen, setIsUsersModalOpen, setEditingTxId, setConflictData,
     addTransaction, updateTransaction, deleteTransaction, saveAccount, deleteAccount, 
-    saveCategory, deleteCategory, saveIncome, deleteIncome, updateLocalFromRemote
+    saveCategory, deleteCategory, saveIncome, deleteIncome, updateLocalFromRemote,
+    onSwitchTable
   } = props;
 
   // Helper for safeEval
@@ -133,7 +140,7 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
           return { ...p, [key]: nv };
         })}
         onTagSelect={(t) => setNumpad(p => ({ ...p, tag: t }))} onCommentChange={(c) => setNumpad(p => ({ ...p, comment: c }))}
-        onRemove={() => { if (editingTxId) setConfirmDelete({ isOpen: true, title: "Удалить операцию?", message: "Транзакция будет удалена, балансы кошельков будут скорректированы автоматически.", onConfirm: () => { deleteTransaction(editingTxId); setEditingTxId(null); setNumpad(p => ({ ...p, isOpen: false, sourceAmount: "0", targetAmount: "0", comment: "", returnState: p.returnState })); if (p.returnState) setHistoryModal(p.returnState); setConfirmDelete(p => ({ ...p, isOpen: false })); } }); }}
+        onRemove={() => { if (editingTxId) setConfirmDelete({ isOpen: true, title: "Удалить операцию?", message: "Транзакция будет удалена, балансы кошельков будут скорректированы автоматически.", onConfirm: () => { deleteTransaction(editingTxId); setEditingTxId(null); setNumpad(p => ({ ...p, isOpen: false, sourceAmount: "0", targetAmount: "0", comment: "" })); setConfirmDelete(p => ({ ...p, isOpen: false })); } }); }}
         onSubmit={(date?: string) => {
           const fs = parseFloat(safeEval(numpad.sourceAmount)); const ft = parseFloat(safeEval(numpad.targetAmount));
           const customCurr = numpad.type === "income" ? numpad.sourceCurrency : numpad.targetCurrency;
@@ -178,6 +185,12 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
             const updated = { ...inc, tags: newTags }; saveIncome(updated); setNumpad(p => ({ ...p, source: updated, tag: tag }));
           } else { setNumpad(p => ({ ...p, tag: tag })); }
         }}
+      />
+
+      <UsersModal 
+        isOpen={isUsersModalOpen} onClose={() => setIsUsersModalOpen(false)} 
+        users={users} activeTableId={activeTableId} 
+        onSwitchTable={onSwitchTable} 
       />
 
       {conflictData && (

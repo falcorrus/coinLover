@@ -7,10 +7,14 @@ import { SyncPayload } from "../types";
  * Handles data persistence and retrieval with an offline-first approach.
  */
 export const googleSheetsService = {
-  async fetchSettings(retries = 2): Promise<any> {
+  async fetchSettings(ssId?: string, retries = 2): Promise<any> {
     try {
       const isDemo = window.localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE) !== "false";
-      const url = isDemo ? `${GOOGLE_SCRIPT_URL}?demo=true` : GOOGLE_SCRIPT_URL;
+      let url = isDemo ? `${GOOGLE_SCRIPT_URL}?demo=true` : GOOGLE_SCRIPT_URL;
+      
+      if (ssId) {
+        url += (url.includes('?') ? '&' : '?') + `ssId=${ssId}`;
+      }
       
       const response = await fetch(url);
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -22,17 +26,21 @@ export const googleSheetsService = {
       if (retries > 0) {
         console.warn(`Fetch settings failed, retrying... (${retries} left)`, error);
         await new Promise(res => setTimeout(res, 1000));
-        return this.fetchSettings(retries - 1);
+        return this.fetchSettings(ssId, retries - 1);
       }
       console.error("Fetch from Sheets failed after retries:", error);
       return null;
     }
   },
 
-  async fetchMonthData(month: string): Promise<any> {
+  async fetchMonthData(month: string, ssId?: string): Promise<any> {
     try {
       const isDemo = window.localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE) !== "false";
-      const url = `${GOOGLE_SCRIPT_URL}?month=${month}${isDemo ? '&demo=true' : ''}`;
+      let url = `${GOOGLE_SCRIPT_URL}?month=${month}${isDemo ? '&demo=true' : ''}`;
+      
+      if (ssId) {
+        url += `&ssId=${ssId}`;
+      }
       
       const response = await fetch(url);
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -48,9 +56,6 @@ export const googleSheetsService = {
 
   /**
    * Pushes data to Google Sheets. 
-   * NOTE: Using 'no-cors' mode because GAS returns a 302 redirect which 
-   * browser fetch blocks if CORS is not perfectly configured on the redirect target.
-   * Drawback: We cannot see if the server returned an error (status 0).
    */
   async syncToSheets(data: SyncPayload): Promise<boolean> {
     try {
@@ -64,11 +69,14 @@ export const googleSheetsService = {
         body: JSON.stringify(payload),
       });
       
-      // In no-cors mode, we assume success if no exception was thrown during fetch setup/execution
       return true;
     } catch (error) {
       console.error("Sync to Sheets failed:", error);
       return false;
     }
   },
+
+  async initTable(ssId: string): Promise<boolean> {
+    return this.syncToSheets({ action: "initTable", ssId });
+  }
 };

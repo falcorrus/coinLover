@@ -79,7 +79,14 @@ export interface SyncSettingsFields {
   timestamp: string;
 }
 
+export interface ManagedTable {
+  id: string;
+  name: string;
+  isMaster?: boolean;
+}
+
 export type SyncPayload =
+  | ({ action: "initTable" } & Partial<SyncSettingsFields> & { ssId?: string })
   | ({
     action: "addTransaction";
     targetSheet: "Transactions";
@@ -96,6 +103,7 @@ export type SyncPayload =
     targetCurrency: string;
     targetAmountUSD: number;
     comment?: string;
+    ssId?: string;
   } & Partial<SyncSettingsFields>)
   | ({
     action: "updateTransaction";
@@ -113,13 +121,16 @@ export type SyncPayload =
     targetCurrency: string;
     targetAmountUSD: number;
     comment?: string;
+    ssId?: string;
   } & Partial<SyncSettingsFields>)
   | ({
     action: "syncSettings";
     targetSheet: "Configs";
+    ssId?: string;
   } & SyncSettingsFields)
   | ({
     action: "deleteTransaction";
     targetSheet: "Transactions";
     id: string;
+    ssId?: string;
   } & Partial<SyncSettingsFields>);

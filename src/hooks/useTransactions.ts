@@ -12,10 +12,11 @@ interface TransactionStateProps {
   transactions: Transaction[];
   setTransactions: (t: Transaction[] | ((prev: Transaction[]) => Transaction[])) => void;
   setSyncStatus: (s: "idle" | "loading" | "error" | "success") => void;
+  ssId?: string;
 }
 
 export const useTransactions = ({
-  accounts, setAccounts, categories, incomes, transactions, setTransactions, setSyncStatus
+  accounts, setAccounts, categories, incomes, transactions, setTransactions, setSyncStatus, ssId
 }: TransactionStateProps) => {
 
   const addTransaction = useCallback(async (type: TransactionType, source: Account | IncomeSource, destination: Account | Category, sourceAmount: number, targetAmount?: number, tag?: string, customDate?: string, comment?: string, customCurrency?: string) => {
@@ -84,10 +85,11 @@ export const useTransactions = ({
         accounts: enrichAccountsWithUSD(updatedAccounts), 
         categories, 
         incomes, 
-        timestamp: date 
+        timestamp: date,
+        ssId
     });
     setSyncStatus(ok ? "success" : "error");
-  }, [accounts, categories, incomes, setAccounts, setTransactions, setSyncStatus]);
+  }, [accounts, categories, incomes, setAccounts, setTransactions, setSyncStatus, ssId]);
 
   const updateTransaction = useCallback(async (txId: string, type: TransactionType, source: Account | IncomeSource, destination: Account | Category, sourceAmount: number, targetAmount?: number, tag?: string, customDate?: string, comment?: string, customCurrency?: string) => {
     const oldTx = transactions.find(t => t.id === txId); if (!oldTx) return;
@@ -156,10 +158,11 @@ export const useTransactions = ({
         accounts: enrichAccountsWithUSD(updatedAccounts), 
         categories, 
         incomes, 
-        timestamp: date 
+        timestamp: date,
+        ssId
     });
     setSyncStatus(ok ? "success" : "error");
-  }, [accounts, categories, incomes, transactions, setAccounts, setTransactions, setSyncStatus]);
+  }, [accounts, categories, incomes, transactions, setAccounts, setTransactions, setSyncStatus, ssId]);
 
   const deleteTransaction = useCallback(async (txId: string) => {
     const tx = transactions.find((t) => t.id === txId); if (!tx) return;
@@ -181,10 +184,11 @@ export const useTransactions = ({
         timestamp, 
         accounts: enrichAccountsWithUSD(updatedAccounts), 
         categories, 
-        incomes 
+        incomes,
+        ssId
     });
     setSyncStatus(ok ? "success" : "error");
-  }, [accounts, categories, incomes, transactions, setAccounts, setTransactions, setSyncStatus]);
+  }, [accounts, categories, incomes, transactions, setAccounts, setTransactions, setSyncStatus, ssId]);
 
   return { addTransaction, updateTransaction, deleteTransaction };
 };

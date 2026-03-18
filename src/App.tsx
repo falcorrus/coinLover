@@ -6,7 +6,7 @@ import {
 import { SortableContext, horizontalListSortingStrategy, rectSortingStrategy } from "@dnd-kit/sortable";
 import {
   Plus, TrendingDown, ChevronRight, TrendingUp, Wallet, RefreshCcw,
-  Heart, PieChart, List, Moon, Sun, Sparkles, Menu, Calendar
+  Heart, PieChart, List, Moon, Sun, Sparkles, Menu, Calendar, Database
 } from "lucide-react";
 
 // Modules
@@ -16,6 +16,8 @@ import { APP_SETTINGS } from "./constants/settings";
 import { useFinance } from "./hooks/useFinance";
 import { RatesService } from "./services/RatesService";
 import { useAppDnD } from "./hooks/useAppDnD";
+import { useUsers } from "./hooks/useUsers";
+import { useLongPress } from "./hooks/useLongPress";
 import { AccountItem } from "./components/AccountItem";
 import { CategoryItem } from "./components/CategoryItem";
 import { DraggableIncomeItem } from "./components/DraggableIncomeItem";
@@ -25,19 +27,15 @@ import { LandingPage } from "./components/LandingPage";
 export default function App() {
   const [currentPath, setCurrentPath] = React.useState(window.location.pathname);
 
-  // Simple routing logic
-  React.useEffect(() => {
-    const handleLocationChange = () => setCurrentPath(window.location.pathname);
-    window.addEventListener("popstate", handleLocationChange);
-    return () => window.removeEventListener("popstate", handleLocationChange);
-  }, []);
+  // Users & Multi-table logic
+  const { activeTableId, switchTable } = useUsers();
 
   const {
     accounts, setAccounts, categories, setCategories, incomes, setIncomes,
-    transactions, syncStatus, addTransaction, updateTransaction, deleteTransaction, saveAccount, deleteAccount,
+    transactions, setTransactions, syncStatus, users, addTransaction, updateTransaction, deleteTransaction, saveAccount, deleteAccount,
     saveCategory, deleteCategory, saveIncome, deleteIncome, syncCategories, syncIncomes, syncAccountsOrder,
     pullSettings, checkConflicts, conflictData, setConflictData, updateLocalFromRemote
-  } = useFinance();
+  } = useFinance(activeTableId);
 
   const [isSplashVisible, setIsSplashVisible] = React.useState(true);
   const [mode, setMode] = React.useState<"expense" | "income">("expense");
@@ -64,10 +62,42 @@ export default function App() {
   const [calendarAnalyticsModal, setCalendarAnalyticsModal] = React.useState({ isOpen: false });
   const [confirmDelete, setConfirmDelete] = React.useState<{ isOpen: boolean; title: string; message: string; onConfirm: () => void; }>({ isOpen: false, title: "", message: "", onConfirm: () => { } });
   const [isTagModalOpen, setIsTagModalOpen] = React.useState(false);
+  const [isUsersModalOpen, setIsUsersModalOpen] = React.useState(false);
   const [numpad, setNumpad] = React.useState<NumpadData>({
     isOpen: false, type: "expense", source: null, destination: null,
     sourceAmount: "0", sourceCurrency: "USD", targetAmount: "0", targetCurrency: "USD", targetLinked: true, activeField: "source", tag: null, comment: ""
   });
+
+  const settingsLongPress = useLongPress(() => {
+    setIsSettingsMenuOpen(false);
+    setIsUsersModalOpen(true);
+    if (navigator.vibrate) navigator.vibrate(APP_SETTINGS.HAPTIC_FEEDBACK_DURATION_MEDIUM);
+  }, 3000);
+
+  const handleMenuClick = () => {
+    setIsSettingsMenuOpen(!isSettingsMenuOpen);
+  };
+
+  const handleSwitchTable = (id: string) => {
+    // 1. Clear local state to prevent data bleed
+    setAccounts([]);
+    setCategories([]);
+    setIncomes([]);
+    setTransactions([]);
+    localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.ACCOUNTS);
+    localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.CATEGORIES);
+    localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.INCOMES);
+    localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.TRANSACTIONS);
+    localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC);
+    
+    // 2. Switch the active ID
+    switchTable(id);
+    
+    // 3. Close modal
+    setIsUsersModalOpen(false);
+    
+    // 4. useFinance will automatically trigger pullSettings because hasData will be false
+  };
 
   // DnD Logic
   const {
@@ -84,6 +114,15 @@ export default function App() {
 
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    
+    // Automatic connection via link: ?ssId=...
+    const urlSsId = params.get("ssId");
+    if (urlSsId && urlSsId !== activeTableId) {
+      handleSwitchTable(urlSsId);
+      window.history.replaceState({}, "", window.location.pathname);
+      return;
+    }
+
     if (params.get("demo") === "true") {
       window.history.replaceState({}, "", "/");
       setCurrentPath("/");
@@ -93,7 +132,7 @@ export default function App() {
       setCurrentPath("/");
       setTimeout(() => setAccountModal({ isOpen: true, account: null }), APP_SETTINGS.ACCOUNT_MODAL_AUTO_OPEN_DELAY);
     }
-  }, []);
+  }, [activeTableId]);
 
   React.useEffect(() => {
     RatesService.syncRatesInBackground();
@@ -237,7 +276,7 @@ export default function App() {
               </button>
               <p onClick={() => { if(!isDemo) handleDemoClick(); }} className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] cursor-default">Total Balance</p>
               <div className="relative">
-                <button onClick={() => setIsSettingsMenuOpen(!isSettingsMenuOpen)} className="glass-icon-btn w-10 h-10 text-slate-500"><Menu size={APP_SETTINGS.UI.ICON_SIZE_LARGE} className={`transition-transform duration-300 ${isSettingsMenuOpen ? "rotate-90" : ""}`} /></button>
+                <button {...settingsLongPress} onClick={handleMenuClick} className="glass-icon-btn w-10 h-10 text-slate-500"><Menu size={APP_SETTINGS.UI.ICON_SIZE_LARGE} className={`transition-transform duration-300 ${isSettingsMenuOpen ? "rotate-90" : ""}`} /></button>
                 {isSettingsMenuOpen && (
                   <>
                     <div className="fixed inset-0 z-[200] bg-black/40 backdrop-blur-[2px]" onClick={() => setIsSettingsMenuOpen(false)} />
@@ -292,14 +331,16 @@ export default function App() {
         <ModalManager
           accountModal={accountModal} incomeModal={incomeModal} categoryModal={categoryModal} historyModal={historyModal}
           analyticsModal={analyticsModal} calendarAnalyticsModal={calendarAnalyticsModal} confirmDelete={confirmDelete}
-          numpad={numpad} isTagModalOpen={isTagModalOpen} conflictData={conflictData} editingTxId={editingTxId}
+          numpad={numpad} isTagModalOpen={isTagModalOpen} isUsersModalOpen={isUsersModalOpen} conflictData={conflictData} editingTxId={editingTxId}
           accounts={accounts} categories={categories} incomes={incomes} transactions={transactions} allExistingTags={allExistingTags}
+          users={users} activeTableId={activeTableId}
           setAccountModal={setAccountModal} setIncomeModal={setIncomeModal} setCategoryModal={setCategoryModal} setHistoryModal={setHistoryModal}
           setAnalyticsModal={setAnalyticsModal} setCalendarAnalyticsModal={setCalendarAnalyticsModal} setConfirmDelete={setConfirmDelete}
-          setNumpad={setNumpad} setIsTagModalOpen={setIsTagModalOpen} setEditingTxId={setEditingTxId} setConflictData={setConflictData}
+          setNumpad={setNumpad} setIsTagModalOpen={setIsTagModalOpen} setIsUsersModalOpen={setIsUsersModalOpen} setEditingTxId={setEditingTxId} setConflictData={setConflictData}
           addTransaction={addTransaction} updateTransaction={updateTransaction} deleteTransaction={deleteTransaction}
           saveAccount={saveAccount} deleteAccount={deleteAccount} saveCategory={saveCategory} deleteCategory={deleteCategory}
           saveIncome={saveIncome} deleteIncome={deleteIncome} updateLocalFromRemote={updateLocalFromRemote}
+          onSwitchTable={handleSwitchTable}
         />
       </div>
 

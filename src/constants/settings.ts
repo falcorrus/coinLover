@@ -32,6 +32,8 @@ export const APP_SETTINGS = {
     ANALYTICS_SELECTIONS: "cl_analytics_selections",
     EXCHANGE_RATES: "cl_exchange_rates",
     RATES_LAST_SYNC: "cl_rates_last_sync",
+    MANAGED_TABLES: "cl_managed_tables",
+    ACTIVE_TABLE_ID: "cl_active_table_id",
   },
 
   // Rates Service

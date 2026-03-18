@@ -5,7 +5,7 @@ import { useSync } from "./useSync";
 import { useTransactions } from "./useTransactions";
 import { useEntities } from "./useEntities";
 
-export const useFinance = () => {
+export const useFinance = (ssId?: string) => {
   const [accounts, setAccounts] = useState<Account[]>(() => {
     const saved = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.ACCOUNTS);
     return saved ? JSON.parse(saved) : [];
@@ -22,6 +22,7 @@ export const useFinance = () => {
     const saved = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.TRANSACTIONS);
     return saved ? JSON.parse(saved) : [];
   });
+  const [users, setUsers] = useState<{ name: string; id: string }[]>([]);
 
   const isInitialLoad = useRef(true);
 
@@ -30,12 +31,12 @@ export const useFinance = () => {
     syncStatus, setSyncStatus, conflictData, setConflictData,
     pullSettings, pushSettings, checkConflicts, updateLocalFromRemote
   } = useSync({
-    accounts, setAccounts, categories, setCategories, incomes, setIncomes, setTransactions
+    accounts, setAccounts, categories, setCategories, incomes, setIncomes, setTransactions, setUsers, ssId
   });
 
   // 2. Hook: Transaction CRUD
   const { addTransaction, updateTransaction, deleteTransaction } = useTransactions({
-    accounts, setAccounts, categories, incomes, transactions, setTransactions, setSyncStatus
+    accounts, setAccounts, categories, incomes, transactions, setTransactions, setSyncStatus, ssId
   });
 
   // 3. Hook: Entity CRUD
@@ -46,16 +47,14 @@ export const useFinance = () => {
     accounts, setAccounts, categories, setCategories, incomes, setIncomes, pushSettings
   });
 
-  // Initial load effect
+  // Effect to pull data when table ID changes or on initial load if no data
   useEffect(() => {
-    if (isInitialLoad.current) {
+    const hasData = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.ACCOUNTS);
+    if (!hasData || isInitialLoad.current) {
+      pullSettings();
       isInitialLoad.current = false;
-      const hasData = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.ACCOUNTS);
-      if (!hasData) {
-        pullSettings();
-      }
     }
-  }, [pullSettings]);
+  }, [ssId, pullSettings]);
 
   // Persistent storage effects
   useEffect(() => { if (accounts.length > 0) localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.ACCOUNTS, JSON.stringify(accounts)); }, [accounts]);
@@ -64,9 +63,10 @@ export const useFinance = () => {
   useEffect(() => { if (transactions.length > 0) localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.TRANSACTIONS, JSON.stringify(transactions)); }, [transactions]);
 
   return {
-    accounts, setAccounts, categories, setCategories, incomes, setIncomes, transactions, syncStatus,
-    addTransaction, updateTransaction, deleteTransaction, saveAccount, deleteAccount, saveCategory, deleteCategory, saveIncome, deleteIncome,
+    accounts, setAccounts, categories, setCategories, incomes, setIncomes, transactions, setTransactions, syncStatus,
+    users, addTransaction, updateTransaction, deleteTransaction, saveAccount, deleteAccount, saveCategory, deleteCategory, saveIncome, deleteIncome,
     syncCategories, syncIncomes, syncAccountsOrder, pullSettings, checkConflicts, conflictData, setConflictData, updateLocalFromRemote,
-    pushSettings: () => pushSettings(accounts, categories, incomes)
+    pushSettings: () => pushSettings(accounts, categories, incomes, ssId)
   };
 };
+
