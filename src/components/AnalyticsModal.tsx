@@ -327,13 +327,20 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                                 
                                 {/* Chart Legend */}
                                 <div className="grid grid-cols-2 gap-x-6 gap-y-3 w-full">
-                                    {listItems.filter(i => selectedIds.has(i.id)).slice(0, 6).map(item => (
-                                        <div key={item.id} className="flex items-center gap-2 min-w-0" onClick={() => setExpandedItemId(expandedItemId === item.id ? null : item.id)}>
-                                            <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
-                                            <span className="text-[10px] font-bold text-[var(--text-main)] truncate uppercase tracking-widest">{item.name}</span>
-                                            <span className="text-[9px] font-medium text-[var(--text-muted)] ml-auto">{item.percent.toFixed(0)}%</span>
-                                        </div>
-                                    ))}
+                                    {listItems.filter(i => selectedIds.has(i.id)).slice(0, 6).map(item => {
+                                        const isSelected = expandedItemId === item.id;
+                                        return (
+                                            <div 
+                                                key={item.id} 
+                                                className={`flex items-center gap-2 min-w-0 transition-all duration-300 cursor-pointer ${isSelected ? 'scale-110' : 'opacity-70 hover:opacity-100'}`} 
+                                                onClick={() => { setExpandedItemId(isSelected ? null : item.id); if (navigator.vibrate) navigator.vibrate(10); }}
+                                            >
+                                                <div className={`w-2.5 h-2.5 rounded-full shrink-0 transition-transform ${isSelected ? 'scale-125 shadow-[0_0_8px_currentcolor]' : ''}`} style={{ backgroundColor: item.color }} />
+                                                <span className={`text-[10px] font-bold truncate uppercase tracking-widest transition-colors ${isSelected ? 'text-[var(--text-main)]' : 'text-[var(--text-muted)]'}`}>{item.name}</span>
+                                                <span className={`text-[9px] font-medium ml-auto ${isSelected ? 'text-[var(--text-main)]' : 'text-[var(--text-muted)]'}`}>{item.percent.toFixed(0)}%</span>
+                                            </div>
+                                        );
+                                    })}
                                     {listItems.filter(i => selectedIds.has(i.id)).length > 6 && (
                                         <div className="col-span-2 text-center text-[9px] text-[var(--text-muted)] uppercase font-bold mt-2 opacity-50">и еще {listItems.filter(i => selectedIds.has(i.id)).length - 6} категорий</div>
                                     )}
