@@ -1,6 +1,6 @@
 /**
  * CoinLover Backend (GAS)
- * Corrected transaction mapping for all types.
+ * Fix: Full field mapping for transactions saving.
  */
 
 const MASTER_SS_ID = "1IQCs35RQlMMQsGB-CRczJeuRqa8WIxW4Sy_kjZyHP2M";
@@ -44,8 +44,9 @@ function doGet(e) {
     const ss = getSS(e);
     const ssId = ss.getId();
     const isMaster = (ssId === MASTER_SS_ID);
-    const configSheetName = (e && e.parameter && e.parameter.demo === 'true') ? "Configs-demo" : "Configs";
-    const txSheetName = (e && e.parameter && e.parameter.demo === 'true') ? "Transactions-demo" : "Transactions";
+    const isDemo = e && e.parameter && e.parameter.demo === 'true';
+    const configSheetName = isDemo ? "Configs-demo" : "Configs";
+    const txSheetName = isDemo ? "Transactions-demo" : "Transactions";
     
     let sheet = ss.getSheetByName(configSheetName);
     if (!sheet || sheet.getLastRow() === 0) sheet = ensureInitialized(ss);
@@ -66,7 +67,7 @@ function doGet(e) {
       if (!f || f === "ID" || f === "NAME") continue;
       
       const r = rows[i];
-      if (section === "acc") data.accounts.push({ id: String(r[0]), name: String(r[1]), balance: Number(r[2]), balanceUSD: hasUSDCol ? Number(r[3]) : undefined, color: hasUSDCol ? r[4] : r[3], icon: (hasUSDCol ? r[5] : r[4]) || "wallet", currency: (hasUSDCol ? r[6] : r[5]) || "" });
+      if (section === "acc") data.accounts.push({ id: String(r[0]), name: String(r[1]), balance: Number(r[2]), balanceUSD: hasUSDCol ? Number(r[3]) : undefined, color: hasUSDCol ? r[4] : r[3], icon: (hasUSDCol ? r[5] : r[4]) || "wallet", currency: (hasUSDCol ? row[6] : row[5]) || "" });
       else if (section === "cat") data.categories.push({ id: String(r[0]), name: String(r[1]), color: r[2], icon: r[3] || "more", tags: r[4] ? String(r[4]).split(",").map(t => t.trim()) : [] });
       else if (section === "inc") data.incomes.push({ id: String(r[0]), name: String(r[1]), color: r[2], icon: r[3] || "business", tags: r[4] ? String(r[4]).split(",").map(t => t.trim()) : [] });
       else if (section === "usr" && isMaster) data.users.push({ name: String(r[0]).trim(), id: String(r[1]).trim() });
@@ -78,7 +79,6 @@ function doGet(e) {
         const txRows = txSheet.getDataRange().getValues();
         const headers = txRows[0].map(v => String(v).trim());
         const col = {}; headers.forEach((v, i) => col[v] = i);
-        
         const accMap = {}; data.accounts.forEach(a => accMap[a.name] = a.id);
         const catMap = {}; data.categories.forEach(c => catMap[c.name] = c.id);
         const incMap = {}; data.incomes.forEach(i => incMap[i.name] = i.id);
@@ -88,7 +88,6 @@ function doGet(e) {
           const type = String(r[col["Type"]] || "").trim();
           const src = String(r[col["Source"]] || "").trim();
           const dst = String(r[col["Destination"]] || "").trim();
-          
           let aid = "", tid = "";
           if (type === "expense") { aid = accMap[src] || src; tid = catMap[dst] || dst; }
           else if (type === "income") { aid = accMap[dst] || dst; tid = incMap[src] || src; }
@@ -97,17 +96,17 @@ function doGet(e) {
           const dt = new Date(r[col["Date"]]);
           const iso = Utilities.formatDate(dt, ss.getSpreadsheetTimeZone(), "yyyy-MM-dd'T'HH:mm:ss");
           const sAmt = parseFloat(r[col["Source Amount"]] || r[col["Amount"]] || 0);
-          const tAmt = parseFloat(r[col["Target Amount"]] || r[col["Amount"]] || 0);
+          const tAmt = parseFloat(r[col["Target Amount"]] || r[col["Amount"]] || sAmt);
           
           data.transactions.push({
             id: col["ID"] !== undefined ? String(r[col["ID"]]) : `${iso}_${i}`,
             type, accountId: aid, targetId: tid,
             sourceAmount: sAmt,
             sourceCurrency: String(r[col["Source Currency"]] || "USD"),
-            sourceAmountUSD: parseFloat(r[col["Source Amount USD"]] || r[col["Amount USD"]] || sAmt), // Fallback to sAmt if USD missing
+            sourceAmountUSD: parseFloat(r[col["Source Amount USD"]] || r[col["Amount USD"]] || sAmt),
             targetAmount: tAmt,
             targetCurrency: String(r[col["Target Currency"]] || "USD"),
-            targetAmountUSD: parseFloat(r[col["Target USD"]] || r[col["Amount USD"]] || tAmt), // Fallback
+            targetAmountUSD: parseFloat(r[col["Target USD"]] || r[col["Amount USD"]] || tAmt),
             date: iso, tag: r[col["Tag"]], comment: r[col["Comment"]]
           });
         }
@@ -173,9 +172,19 @@ function doPost(e) {
 
     if (["addTransaction", "updateTransaction", "deleteTransaction"].includes(data.action)) {
       let txSheet = ss.getSheetByName(txSheetName) || ss.insertSheet(txSheetName);
-      if (txSheet.getLastRow() === 0) { const h = ["Date", "Type", "Source", "Destination", "Tag", "Source Amount", "Source Currency", "Source Amount USD", "Target Amount", "Target Currency", "Target USD", "Comment", "ID"]; txSheet.appendRow(h); }
+      if (txSheet.getLastRow() === 0) { 
+        const h = ["Date", "Type", "Source", "Destination", "Tag", "Source Amount", "Source Currency", "Source Amount USD", "Target Amount", "Target Currency", "Target USD", "Comment", "ID"]; 
+        txSheet.appendRow(h); 
+      }
       const headers = txSheet.getRange(1, 1, 1, txSheet.getLastColumn()).getValues()[0].map(h => String(h).trim());
-      const f = { "Date": parseDateSafe(data.date), "Type": data.type, "Source": data.sourceName, "Destination": data.destinationName, "Tag": data.tagName || "", "Source Amount": data.sourceAmount, "Source Currency": data.sourceCurrency, "Target Amount": data.targetAmount || data.sourceAmount, "Target Currency": data.targetCurrency, "Comment": data.comment || "", "ID": data.id };
+      const f = { 
+        "Date": parseDateSafe(data.date), "Type": data.type, "Source": data.sourceName, "Destination": data.destinationName,
+        "Tag": data.tagName || "", "Source Amount": data.sourceAmount, "Source Currency": data.sourceCurrency,
+        "Source Amount USD": data.sourceAmountUSD || "",
+        "Target Amount": data.targetAmount || data.sourceAmount, "Target Currency": data.targetCurrency,
+        "Target USD": data.targetAmountUSD || "",
+        "Comment": data.comment || "", "ID": data.id 
+      };
       const rowData = headers.map(h => f[h] !== undefined ? f[h] : "");
       if (data.action === "addTransaction") txSheet.appendRow(rowData);
       else if (data.action === "updateTransaction") {
