@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Design Demo - CoinLover</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #FDFDFF;
+            --primary-color: #006A60;
+            --text-main: #1A1C1E;
+            --text-muted: #44474E;
+            --glass-item-bg: #F7F9FC;
+            --glass-border: rgba(116, 119, 127, 0.1);
+        }
+        body {
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .app-container {
+            width: 375px;
+            background: white;
+            border-radius: 40px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+            overflow: hidden;
+            padding: 24px;
+        }
+        /* Pill Toggle Styling */
+        .pill-toggle {
+            background: var(--glass-item-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 2px;
+            display: flex;
+            width: fit-content;
+        }
+        .pill-btn {
+            padding: 4px 12px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 800;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .pill-btn.active {
+            background: var(--primary-color);
+            color: white;
+            box-shadow: 0 2px 8px rgba(0, 106, 96, 0.3);
+        }
+        .pill-btn.inactive {
+            color: var(--text-muted);
+        }
+        /* Category Item Styling */
+        .category-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+        .icon-circle {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #f59e0b; /* Category color example */
+        }
+        .spent-amount {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--text-main);
+            opacity: 0.8;
+            position: relative;
+            padding-bottom: 2px;
+        }
+        .accent-prefix {
+            color: var(--primary-color);
+        }
+        .neon-line {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 1.5px;
+            background: var(--primary-color);
+            border-radius: 1px;
+            opacity: 0.4;
+            box-shadow: 0 0 5px var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container space-y-12">
+        <!-- Section Header Demo -->
+        <div class="flex justify-between items-center">
+            <h2 style="font-size: 10px; font-weight: 900; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em;">Расходы</h2>
+            <div class="pill-toggle">
+                <div class="pill-btn inactive">$</div>
+                <div class="pill-btn active">L</div>
+            </div>
+        </div>
+
+        <!-- Category Grid Demo -->
+        <div class="grid grid-cols-2 gap-8">
+            <!-- USD Mode (Normal) -->
+            <div class="category-item">
+                <div class="icon-circle">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                </div>
+                <div class="text-center">
+                    <div style="font-size: 9px; font-weight: 900; color: var(--text-muted); text-transform: uppercase;">Магазины</div>
+                    <div class="spent-amount" style="opacity: 0.5;">
+                        <span>-$</span>1,450
+                    </div>
+                </div>
+                <span style="font-size: 8px; color: #94a3b8;">(USD Режим)</span>
+            </div>
+
+            <!-- Local Mode (Accent) -->
+            <div class="category-item">
+                <div class="icon-circle">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                </div>
+                <div class="text-center">
+                    <div style="font-size: 9px; font-weight: 900; color: var(--text-muted); text-transform: uppercase;">Магазины</div>
+                    <div class="spent-amount">
+                        <span class="accent-prefix">R$ </span>124,500
+                        <div class="neon-line"></div>
+                    </div>
+                </div>
+                <span style="font-size: 8px; color: var(--primary-color); font-weight: bold;">(Local Режим)</span>
+            </div>
+        </div>
+        
+        <p class="text-center" style="font-size: 10px; color: #94a3b8; line-height: 1.5;">
+            В локальном режиме (справа) префикс валюты выделен цветом, а под суммой появляется мягкая неоновая линия.
+        </p>
+    </div>
+</body>
+</html>

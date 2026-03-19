@@ -8,7 +8,7 @@ import { SortableContext, horizontalListSortingStrategy, rectSortingStrategy, ar
 import {
   Plus, TrendingDown, ChevronRight, TrendingUp, Wallet, RefreshCcw,
   Heart, PieChart, List, Moon, Sun, Sparkles, Menu, Calendar, Database,
-  ArrowRightLeft
+  ArrowRightLeft, DollarSign
 } from "lucide-react";
 
 // Modules
@@ -260,10 +260,14 @@ export default function App() {
                 <div className="flex items-center gap-3">
                   <button 
                     onClick={() => { setCategoryCurrencyMode(p => p === "usd" ? "local" : "usd"); if (navigator.vibrate) navigator.vibrate(10); }}
-                    className="w-8 h-8 rounded-xl bg-[var(--glass-item-bg)] border border-[var(--glass-border)] text-[var(--text-muted)] hover:text-[var(--text-main)] flex items-center justify-center transition-all shadow-sm"
+                    className={`w-8 h-8 rounded-xl border transition-all shadow-sm flex items-center justify-center ${
+                      categoryCurrencyMode === 'usd' 
+                        ? 'bg-[var(--glass-item-bg)] border-[var(--glass-border)] text-[var(--text-muted)]' 
+                        : 'bg-[var(--primary-color)]/10 border-[var(--primary-color)]/30 text-[var(--primary-color)]'
+                    }`}
                     title={categoryCurrencyMode === "usd" ? "Показать в местной валюте" : "Показать в USD"}
                   >
-                    <ArrowRightLeft size={14} className={categoryCurrencyMode === 'local' ? 'text-[var(--primary-color)]' : ''} />
+                    {categoryCurrencyMode === "usd" ? <DollarSign size={14} /> : <span className="text-[10px] font-black">L</span>}
                   </button>
                   <button onClick={() => setAnalyticsModal({ isOpen: true, type: "expense" })} className="w-8 h-8 rounded-xl bg-[var(--primary-color)]/10 border border-[var(--primary-color)]/20 text-[var(--primary-color)] flex items-center justify-center hover:bg-[var(--primary-color)]/20 transition-all shadow-sm"><PieChart size={14} /></button>
                   <button onClick={() => setCategoryModal({ isOpen: true, category: null })} className="w-8 h-8 rounded-xl bg-[var(--glass-item-bg)] border border-[var(--glass-border)] text-[var(--text-main)] flex items-center justify-center hover:bg-[var(--glass-item-active)] transition-all shadow-sm"><Plus size={16} /></button>
@@ -280,7 +284,7 @@ export default function App() {
                       return s + amt;
                     }, 0));
                     
-                    const localSymbol = catTx[0]?.targetCurrency || accounts[0]?.currency || "RSD";
+                    const currentLocal = numpad.targetCurrency !== 'USD' ? numpad.targetCurrency : (localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY) || accounts[0]?.currency || "RSD");
 
                     return (
                       <CategoryItem 
@@ -295,7 +299,7 @@ export default function App() {
                         onClick={(category) => setHistoryModal({ isOpen: true, entity: category, type: "category" })} 
                         activeDragType={activeDragType}
                         currencyMode={categoryCurrencyMode}
-                        currencySymbol={localSymbol}
+                        currencySymbol={currentLocal}
                       />
                     );
                   })}
