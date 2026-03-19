@@ -36,8 +36,19 @@ export default function App() {
     accounts, setAccounts, categories, setCategories, incomes, setIncomes,
     transactions, setTransactions, syncStatus, users, addTransaction, updateTransaction, deleteTransaction, saveAccount, deleteAccount,
     saveCategory, deleteCategory, saveIncome, deleteIncome, syncCategories, syncIncomes, syncAccountsOrder,
-    pullSettings, checkConflicts, conflictData, setConflictData, updateLocalFromRemote
+    pullSettings: originalPullSettings, checkConflicts, conflictData, setConflictData, updateLocalFromRemote
   } = useFinance(activeTableId);
+
+  const pullSettings = React.useCallback(async () => {
+    const ok = await originalPullSettings();
+    if (ok) {
+      const bc = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY);
+      if (!bc && activeTableId) {
+        setIsCurrencyModalOpen(true);
+      }
+    }
+    return ok;
+  }, [originalPullSettings, activeTableId]);
 
   const [isSplashVisible, setIsSplashVisible] = React.useState(true);
   const [mode, setMode] = React.useState<"expense" | "income">("expense");
@@ -52,7 +63,7 @@ export default function App() {
 
   const [isIncomeCollapsed, setIsIncomeCollapsed] = React.useState(true);
   const [isSettingsMenuOpen, setIsSettingsMenuOpen] = React.useState(false);
-  const [theme, setTheme] = React.useState<"light" | "dark" | "midnight">(() => (localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.THEME) as "light" | "dark" | "midnight") || "dark");
+  const [theme, setTheme] = React.useState<"light" | "dark" | "midnight" | "modern">(() => (localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.THEME) as "light" | "dark" | "midnight" | "modern") || "dark");
   const [editingTxId, setEditingTxId] = React.useState<string | null>(null);
 
   // Modal States
@@ -65,13 +76,9 @@ export default function App() {
   const [confirmDelete, setConfirmDelete] = React.useState<{ isOpen: boolean; title: string; message: string; onConfirm: () => void; }>({ isOpen: false, title: "", message: "", onConfirm: () => { } });
   const [isTagModalOpen, setIsTagModalOpen] = React.useState(false);
   const [isUsersModalOpen, setIsUsersModalOpen] = React.useState(false);
-  const [categoryCurrencyMode, setCategoryCurrencyMode] = React.useState<"usd" | "local">(() => {
-    return (localStorage.getItem("cl_category_currency_mode") as "usd" | "local") || "usd";
-  });
+  const [isThemeModalOpen, setIsThemeModalOpen] = React.useState(false);
+  const [isCurrencyModalOpen, setIsCurrencyModalOpen] = React.useState(false);
 
-  React.useEffect(() => {
-    localStorage.setItem("cl_category_currency_mode", categoryCurrencyMode);
-  }, [categoryCurrencyMode]);
   const [numpad, setNumpad] = React.useState<NumpadData>({
     isOpen: false, type: "expense", source: null, destination: null,
     sourceAmount: "0", sourceCurrency: "USD", targetAmount: "0", targetCurrency: "USD", targetLinked: true, activeField: "source", tag: null, comment: ""
@@ -142,14 +149,17 @@ export default function App() {
 
   const toggleIncome = () => { const next = !isIncomeCollapsed; setIsIncomeCollapsed(next); setMode(next ? "expense" : "income"); };
 
+  const baseCurrency = RatesService.getBaseCurrency();
+  const baseSymbol = baseCurrency === "EUR" ? "€" : "$";
+
   const now = new Date();
   const currentMonthTransactions = transactions.filter(t => {
     const d = new Date(t.date.replace(/-/g, '/').replace('T', ' '));
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   });
-  const totalBalance = Math.round(accounts.reduce((s, a) => s + RatesService.convert(a.balance, a.currency || "USD", "USD"), 0));
-  const totalSpent = Math.round(currentMonthTransactions.filter(t => t.type === "expense").reduce((s, t) => s + (t.sourceAmountUSD ?? t.targetAmountUSD ?? t.sourceAmount ?? t.amount ?? 0), 0));
-  const totalEarned = Math.round(currentMonthTransactions.filter(t => t.type === "income").reduce((s, t) => s + (t.sourceAmountUSD ?? t.targetAmountUSD ?? t.sourceAmount ?? t.amount ?? 0), 0));
+  const totalBalance = Math.round(accounts.reduce((s, a) => s + RatesService.convert(a.balance, a.currency || baseCurrency, baseCurrency), 0));
+  const totalSpent = Math.round(currentMonthTransactions.filter(t => t.type === "expense").reduce((s, t) => s + (t.targetAmountUSD ?? t.sourceAmountUSD ?? t.sourceAmount ?? t.amount ?? 0), 0));
+  const totalEarned = Math.round(currentMonthTransactions.filter(t => t.type === "income").reduce((s, t) => s + (t.targetAmountUSD ?? t.sourceAmountUSD ?? t.sourceAmount ?? t.amount ?? 0), 0));
 
   const allExistingTags = Array.from(new Set([
     ...categories.flatMap(c => c.tags || []),
@@ -181,6 +191,13 @@ export default function App() {
   }, [anyModalOpen]);
 
   const activeItemData = activeDragId ? (activeDragType === 'account' ? accounts.find(a => a.id === activeDragId) : activeDragType === 'category' ? categories.find(c => c.id === activeDragId) : incomes.find(i => i.id === activeDragId)) : null;
+
+  const handleCurrencySelect = (curr: "USD" | "EUR") => {
+    localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY, curr);
+    setIsCurrencyModalOpen(false);
+    pushSettings(accounts, categories, incomes, activeTableId);
+    window.location.reload();
+  };
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: APP_SETTINGS.DND_ACTIVATION_DISTANCE } }));
 
@@ -232,7 +249,7 @@ export default function App() {
               </div>
             </div>
             <button onClick={() => setPillMode(p => p === "expense" ? "income" : p === "income" ? "balance" : "expense")} className="mt-2 mx-auto px-5 py-2 rounded-full bg-[var(--glass-item-bg)] border border-[var(--glass-border)] flex items-center gap-2 hover:bg-[var(--glass-item-active)] active:scale-95 transition-all shadow-sm">
-              {pillMode === "expense" ? (<><TrendingDown size={14} className="text-[#cda434]" /><span className="text-xs font-bold text-[#cda434]">-${totalSpent.toLocaleString()} в этом месяце</span></>) : pillMode === "income" ? (<><TrendingUp size={14} className="text-[#10b981]" /><span className="text-xs font-bold text-[#10b981]">+${totalEarned.toLocaleString()} в этом месяце</span></>) : (<><Wallet size={14} className="text-[var(--primary-color)]" /><span className="text-xs font-bold text-[var(--primary-color)]">Общий баланс: ${totalBalance.toLocaleString()}</span></>)}
+              {pillMode === "expense" ? (<><TrendingDown size={14} className="text-[#cda434]" /><span className="text-xs font-bold text-[#cda434]">-{baseSymbol}{totalSpent.toLocaleString()} в этом месяце</span></>) : pillMode === "income" ? (<><TrendingUp size={14} className="text-[#10b981]" /><span className="text-xs font-bold text-[#10b981]">+{baseSymbol}{totalEarned.toLocaleString()} в этом месяце</span></>) : (<><Wallet size={14} className="text-[var(--primary-color)]" /><span className="text-xs font-bold text-[var(--primary-color)]">Общий баланс: {baseSymbol}{totalBalance.toLocaleString()}</span></>)}
             </button>
           </header>
 
@@ -255,51 +272,30 @@ export default function App() {
 
           <section className={`px-0 flex-1 pt-4 pb-8 overflow-y-auto hide-scrollbar z-10 relative transition-all duration-500 ${mode === "income" ? "opacity-30 pointer-events-none grayscale" : "opacity-100"}`}>
             <div className="px-6 py-2">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-[10px] font-black text-slate-500 uppercase">Расходы</h2>
-                <div className="flex items-center gap-3">
-                  <button 
-                    onClick={() => { setCategoryCurrencyMode(p => p === "usd" ? "local" : "usd"); if (navigator.vibrate) navigator.vibrate(10); }}
-                    className={`w-8 h-8 rounded-xl border transition-all shadow-sm flex items-center justify-center ${
-                      categoryCurrencyMode === 'usd' 
-                        ? 'bg-[var(--glass-item-bg)] border-[var(--glass-border)] text-[var(--text-muted)]' 
-                        : 'bg-[var(--primary-color)]/10 border-[var(--primary-color)]/30 text-[var(--primary-color)]'
-                    }`}
-                    title={categoryCurrencyMode === "usd" ? "Показать в местной валюте" : "Показать в USD"}
-                  >
-                    {categoryCurrencyMode === "usd" ? <DollarSign size={14} /> : <span className="text-[10px] font-black">L</span>}
-                  </button>
-                  <button onClick={() => setAnalyticsModal({ isOpen: true, type: "expense" })} className="w-8 h-8 rounded-xl bg-[var(--primary-color)]/10 border border-[var(--primary-color)]/20 text-[var(--primary-color)] flex items-center justify-center hover:bg-[var(--primary-color)]/20 transition-all shadow-sm"><PieChart size={14} /></button>
-                  <button onClick={() => setCategoryModal({ isOpen: true, category: null })} className="w-8 h-8 rounded-xl bg-[var(--glass-item-bg)] border border-[var(--glass-border)] text-[var(--text-main)] flex items-center justify-center hover:bg-[var(--glass-item-active)] transition-all shadow-sm"><Plus size={16} /></button>
-                </div>
-              </div>
+              <div className="flex justify-between items-center mb-6"><h2 className="text-[10px] font-black text-slate-500 uppercase">Расходы</h2><div className="flex items-center gap-3"><button onClick={() => setAnalyticsModal({ isOpen: true, type: "expense" })} className="w-8 h-8 rounded-xl bg-[var(--primary-color)]/10 border border-[var(--primary-color)]/20 text-[var(--primary-color)] flex items-center justify-center hover:bg-[var(--primary-color)]/20 transition-all shadow-sm"><PieChart size={14} /></button><button onClick={() => setCategoryModal({ isOpen: true, category: null })} className="w-8 h-8 rounded-xl bg-[var(--glass-item-bg)] border border-[var(--glass-border)] text-[var(--text-main)] flex items-center justify-center hover:bg-[var(--glass-item-active)] transition-all shadow-sm"><Plus size={16} /></button></div></div>
+
               <SortableContext items={categories.map(c => c.id)} strategy={rectSortingStrategy}>
                 <div className="grid grid-cols-4 gap-y-6 gap-x-2 pb-4">
                   {categories.map(cat => {
                     const catTx = currentMonthTransactions.filter(t => t.type === "expense" && t.targetId === cat.id);
                     const spent = Math.round(catTx.reduce((s, t) => {
-                      const amt = categoryCurrencyMode === "usd" 
-                        ? (t.sourceAmountUSD ?? t.targetAmountUSD ?? t.sourceAmount ?? 0)
-                        : (t.targetAmount ?? t.sourceAmount ?? 0);
-                      return s + amt;
+                      return s + (t.targetAmountUSD ?? t.sourceAmountUSD ?? t.targetAmount ?? t.sourceAmount ?? 0);
                     }, 0));
                     
-                    const currentLocal = numpad.targetCurrency !== 'USD' ? numpad.targetCurrency : (localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY) || accounts[0]?.currency || "RSD");
-
                     return (
-                      <CategoryItem 
-                        key={cat.id} 
-                        category={cat} 
-                        spent={spent} 
-                        isDragging={activeDragId === cat.id} 
-                        onSortingMode={() => setIsSortingMode(true)} 
-                        isSortingMode={isSortingMode} 
-                        isOver={overId === cat.id} 
-                        onLongPress={(c) => { setIsSortingMode(false); setCategoryModal({ isOpen: true, category: c }); }} 
-                        onClick={(category) => setHistoryModal({ isOpen: true, entity: category, type: "category" })} 
+                      <CategoryItem
+                        key={cat.id}
+                        category={cat}
+                        spent={spent}
+                        isDragging={activeDragId === cat.id}
+                        onSortingMode={() => setIsSortingMode(true)}
+                        isSortingMode={isSortingMode}
+                        isOver={overId === cat.id}
+                        onLongPress={(c) => { setIsSortingMode(false); setCategoryModal({ isOpen: true, category: c }); }}
+                        onClick={(category) => setHistoryModal({ isOpen: true, entity: category, type: "category" })}
                         activeDragType={activeDragType}
-                        currencyMode={categoryCurrencyMode}
-                        currencySymbol={currentLocal}
+                        theme={theme}
+                        currencySymbol={baseSymbol}
                       />
                     );
                   })}
@@ -313,11 +309,13 @@ export default function App() {
           accountModal={accountModal} incomeModal={incomeModal} categoryModal={categoryModal} historyModal={historyModal}
           analyticsModal={analyticsModal} calendarAnalyticsModal={calendarAnalyticsModal} confirmDelete={confirmDelete}
           numpad={numpad} isTagModalOpen={isTagModalOpen} isUsersModalOpen={isUsersModalOpen} conflictData={conflictData} editingTxId={editingTxId}
+          isThemeModalOpen={isThemeModalOpen} theme={theme} isCurrencyModalOpen={isCurrencyModalOpen}
           accounts={accounts} categories={categories} incomes={incomes} transactions={transactions} allExistingTags={allExistingTags}
           users={users} activeTableId={activeTableId}
           setAccountModal={setAccountModal} setIncomeModal={setIncomeModal} setCategoryModal={setCategoryModal} setHistoryModal={setHistoryModal}
           setAnalyticsModal={setAnalyticsModal} setCalendarAnalyticsModal={setCalendarAnalyticsModal} setConfirmDelete={setConfirmDelete}
           setNumpad={setNumpad} setIsTagModalOpen={setIsTagModalOpen} setIsUsersModalOpen={setIsUsersModalOpen} setEditingTxId={setEditingTxId} setConflictData={setConflictData}
+          setIsThemeModalOpen={setIsThemeModalOpen} setTheme={setTheme} setIsCurrencyModalOpen={setIsCurrencyModalOpen} onCurrencySelect={handleCurrencySelect}
           addTransaction={addTransaction} updateTransaction={updateTransaction} deleteTransaction={deleteTransaction}
           saveAccount={saveAccount} deleteAccount={deleteAccount} saveCategory={saveCategory} deleteCategory={deleteCategory}
           saveIncome={saveIncome} deleteIncome={deleteIncome} updateLocalFromRemote={updateLocalFromRemote}

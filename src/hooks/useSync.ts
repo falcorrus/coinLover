@@ -30,6 +30,7 @@ export const useSync = ({
     if (data.categories) setCategories(data.categories);
     if (data.incomes) setIncomes(data.incomes);
     if (data.users) setUsers(data.users);
+    if (data.baseCurrency) localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY, data.baseCurrency);
     if (data.timestamp) localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC, data.timestamp);
     if (data.transactions && Array.isArray(data.transactions)) {
       setTransactions([...data.transactions].sort((a, b) => new Date(b.date.replace(/-/g, '/').replace('T', ' ')).getTime() - new Date(a.date.replace(/-/g, '/').replace('T', ' ')).getTime()));
@@ -80,7 +81,8 @@ export const useSync = ({
   const pushSettings = useCallback(async (a: Account[], c: Category[], i: IncomeSource[]) => {
     setSyncStatus("loading");
     const ts = getLocalTimeString();
-    const ok = await googleSheetsService.syncToSheets({ action: "syncSettings", targetSheet: "Configs", accounts: enrichAccountsWithUSD(a), categories: c, incomes: i, timestamp: ts, ssId });
+    const bc = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY) || "USD";
+    const ok = await googleSheetsService.syncToSheets({ action: "syncSettings", targetSheet: "Configs", accounts: enrichAccountsWithUSD(a), categories: c, incomes: i, timestamp: ts, ssId, baseCurrency: bc });
     if (ok) { 
       localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC, ts); 
       setSyncStatus("success"); 

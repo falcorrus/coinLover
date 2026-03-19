@@ -3,13 +3,17 @@ import { APP_SETTINGS } from "../constants/settings";
 export class RatesService {
     static getCachedRates(): Record<string, number> | null {
         const cached = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.EXCHANGE_RATES);
-        if (!cached) return { USD: 1 };
+        if (!cached) return null;
 
         try {
             return JSON.parse(cached);
         } catch {
-            return { USD: 1 };
+            return null;
         }
+    }
+
+    static getBaseCurrency(): string {
+        return localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY) || "USD";
     }
 
     static shouldSyncRates(): boolean {
@@ -30,15 +34,16 @@ export class RatesService {
     static async syncRatesInBackground(): Promise<void> {
         if (!this.shouldSyncRates()) return;
 
+        const baseCurrency = this.getBaseCurrency();
         try {
-            const response = await fetch("https://open.er-api.com/v6/latest/USD");
+            const response = await fetch(`https://open.er-api.com/v6/latest/${baseCurrency}`);
             if (response.ok) {
                 const data = await response.json();
                 if (data && data.rates) {
                     const rates = data.rates;
                     localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.EXCHANGE_RATES, JSON.stringify(rates));
                     localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.RATES_LAST_SYNC, Date.now().toString());
-                    console.log("Exchange rates updated successfully");
+                    console.log(`Exchange rates for ${baseCurrency} updated successfully`);
                 }
             }
         } catch (error) {
@@ -52,19 +57,21 @@ export class RatesService {
 
         const from = fromCurrency.toUpperCase();
         const to = toCurrency.toUpperCase();
+        const base = this.getBaseCurrency();
 
-        const rates: Record<string, number> = this.getCachedRates() || { USD: 1 };
+        const rates: Record<string, number> = this.getCachedRates() || { [base]: 1 };
 
-        const rateFrom = rates[from] || (from === "USD" ? 1 : null);
-        const rateTo = rates[to] || (to === "USD" ? 1 : null);
+        // The API returns rates relative to the selected base currency
+        const rateFrom = rates[from] || (from === base ? 1 : null);
+        const rateTo = rates[to] || (to === base ? 1 : null);
 
         if (!rateFrom || !rateTo) {
-            console.warn(`Missing rate for ${from} or ${to}. Conversion failed.`);
-            if (to === "USD") return 0;
+            console.warn(`Missing rate for ${from} or ${to} relative to ${base}. Conversion failed.`);
+            if (to === base) return 0;
             return amount;
         }
 
-        const amountInUsd = amount / rateFrom;
-        return amountInUsd * rateTo;
+        const amountInBase = amount / rateFrom;
+        return amountInBase * rateTo;
     }
 }

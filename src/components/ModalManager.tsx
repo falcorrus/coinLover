@@ -15,6 +15,7 @@ import { ConfirmModal } from "./ConfirmModal";
 import { TagModal } from "./TagModal";
 import { UsersModal } from "./UsersModal";
 import { ThemeModal } from "./ThemeModal";
+import { CurrencySetupModal } from "./CurrencySetupModal";
 
 interface ModalManagerProps {
   // Modal States
@@ -29,6 +30,7 @@ interface ModalManagerProps {
   isTagModalOpen: boolean;
   isUsersModalOpen: boolean;
   isThemeModalOpen: boolean;
+  isCurrencyModalOpen: boolean;
   theme: "light" | "dark" | "midnight" | "modern";
   conflictData: any; // Keep as any if dynamic from GAS, but better SyncSettingsFields | null
   editingTxId: string | null;
@@ -54,7 +56,9 @@ interface ModalManagerProps {
   setIsTagModalOpen: (v: boolean) => void;
   setIsUsersModalOpen: (v: boolean) => void;
   setIsThemeModalOpen: (v: boolean) => void;
+  setIsCurrencyModalOpen: (v: boolean) => void;
   setTheme: (v: "light" | "dark" | "midnight" | "modern") => void;
+  onCurrencySelect: (curr: "USD" | "EUR") => void;
   setEditingTxId: (v: string | null) => void;
   setConflictData: (v: any) => void;
   
@@ -76,11 +80,11 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
   const {
     accountModal, incomeModal, categoryModal, historyModal, analyticsModal,
     calendarAnalyticsModal, confirmDelete, numpad, isTagModalOpen, isUsersModalOpen, conflictData, editingTxId,
-    isThemeModalOpen, theme,
+    isThemeModalOpen, theme, isCurrencyModalOpen,
     accounts, categories, incomes, transactions, allExistingTags, users, activeTableId,
     setAccountModal, setIncomeModal, setCategoryModal, setHistoryModal, setAnalyticsModal,
     setCalendarAnalyticsModal, setConfirmDelete, setNumpad, setIsTagModalOpen, setIsUsersModalOpen, setEditingTxId, setConflictData,
-    setIsThemeModalOpen, setTheme,
+    setIsThemeModalOpen, setTheme, setIsCurrencyModalOpen, onCurrencySelect,
     addTransaction, updateTransaction, deleteTransaction, saveAccount, deleteAccount, 
     saveCategory, deleteCategory, saveIncome, deleteIncome, updateLocalFromRemote,
     onSwitchTable
@@ -208,6 +212,11 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
           setTheme(t); 
           setIsThemeModalOpen(false);
         }} 
+      />
+
+      <CurrencySetupModal 
+        isOpen={isCurrencyModalOpen} 
+        onSelect={onCurrencySelect} 
       />
 
       {conflictData && (

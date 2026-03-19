@@ -28,7 +28,7 @@ function ensureInitialized(ss) {
   let txs = ss.getSheetByName("Transactions") || ss.insertSheet("Transactions");
   if (conf.getLastRow() === 0) {
     const initialConfigs = [
-      ["Updated", new Date().toISOString()], [""], [" === WALLETS ==="],
+      ["Updated", new Date().toISOString()], ["Base_Currency", "USD"], [""], [" === WALLETS ==="],
       ["ID", "Name", "Balance", "Balance USD", "Color", "Icon", "Currency"],
       ["acc-1", "Наличные", 0, 0, "#10b981", "wallet", "USD"], [""], [" === CATEGORIES ==="],
       ["ID", "Name", "Color", "Icon", "Tags"],
@@ -60,7 +60,7 @@ function doGet(e) {
     let hasUSDCol = false;
     for (let r of rows) { if (r[0] && String(r[0]).includes("ID") && r[3] && String(r[3]).includes("USD")) { hasUSDCol = true; break; } }
 
-    const data = { accounts: [], categories: [], incomes: [], transactions: [], users: [] };
+    const data = { accounts: [], categories: [], incomes: [], transactions: [], users: [], baseCurrency: "USD" };
     let section = "";
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
@@ -68,6 +68,10 @@ function doGet(e) {
       if (f.startsWith("UPDATED")) { 
         data.timestamp = row[1] || String(row[0]).split("Updated")[1]?.trim(); 
         continue; 
+      }
+      if (f.startsWith("BASE_CURRENCY")) {
+        data.baseCurrency = String(row[1]).trim() || "USD";
+        continue;
       }
       if (f.includes("WALLETS")) { section = "acc"; continue; }
       if (f.includes("CATEGORIES")) { section = "cat"; continue; }
@@ -157,6 +161,7 @@ function doPost(e) {
       const rows = [];
       const pushRow = (arr) => { const r = new Array(8).fill(""); arr.forEach((v, i) => r[i] = v); rows.push(r); };
       pushRow(["Updated", settingsData.timestamp]);
+      pushRow(["Base_Currency", settingsData.baseCurrency || "USD"]);
       pushRow([""]); pushRow([" === WALLETS ==="]);
       pushRow(["ID", "Name", "Balance", "Balance USD", "Color", "Icon", "Currency"]);
       settingsData.accounts.forEach(a => pushRow([a.id, a.name, a.balance, a.balanceUSD || "", a.color, a.icon, a.currency]));
