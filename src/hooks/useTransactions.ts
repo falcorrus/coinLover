@@ -35,8 +35,9 @@ export const useTransactions = ({
       tCurr = (destination as Account).currency; 
     }
 
-    const sAmountUSD = RatesService.convert(sourceAmount, sCurr, "USD");
-    const tAmountUSD = RatesService.convert(finalTargetAmount, tCurr, "USD");
+    const baseCur = RatesService.getBaseCurrency();
+    const sAmountUSD = RatesService.convert(sourceAmount, sCurr, baseCur);
+    const tAmountUSD = RatesService.convert(finalTargetAmount, tCurr, baseCur);
     
     const newTx: Transaction = { 
       id: Date.now().toString(), 
@@ -108,8 +109,9 @@ export const useTransactions = ({
       tCurr = (destination as Account).currency; 
     }
 
-    const sAmountUSD = RatesService.convert(sourceAmount, sCurr, "USD");
-    const tAmountUSD = RatesService.convert(finalTargetAmount, tCurr, "USD");
+    const baseCur = RatesService.getBaseCurrency();
+    const sAmountUSD = RatesService.convert(sourceAmount, sCurr, baseCur);
+    const tAmountUSD = RatesService.convert(finalTargetAmount, tCurr, baseCur);
     
     const updatedTx: Transaction = { 
       ...oldTx, 

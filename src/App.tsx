@@ -25,6 +25,10 @@ import { CategoryItem } from "./components/CategoryItem";
 import { DraggableIncomeItem } from "./components/DraggableIncomeItem";
 import { ModalManager } from "./components/ModalManager";
 import { LandingPage } from "./components/LandingPage";
+import { OnboardingModal } from "./components/OnboardingModal";
+import { INITIAL_ACCOUNTS, DEFAULT_CATEGORIES, INITIAL_INCOMES } from "./constants";
+
+import { googleSheetsService } from "./services/googleSheets";
 
 export default function App() {
   const [currentPath, setCurrentPath] = React.useState(window.location.pathname);
@@ -36,10 +40,63 @@ export default function App() {
     accounts, setAccounts, categories, setCategories, incomes, setIncomes,
     transactions, setTransactions, syncStatus, users, addTransaction, updateTransaction, deleteTransaction, saveAccount, deleteAccount,
     saveCategory, deleteCategory, saveIncome, deleteIncome, syncCategories, syncIncomes, syncAccountsOrder,
-    pullSettings, checkConflicts, conflictData, setConflictData, updateLocalFromRemote
+    pullSettings, checkConflicts, conflictData, setConflictData, updateLocalFromRemote, pushSettings
   } = useFinance(activeTableId);
 
   const [isSplashVisible, setIsSplashVisible] = React.useState(true);
+  const [isOnboarding, setIsOnboarding] = React.useState(false);
+
+  React.useEffect(() => {
+    if (syncStatus === "success") {
+      const isCompletelyEmpty = accounts.length === 0;
+
+      if (isCompletelyEmpty) {
+        // DB is literally empty (only headers exist), MUST show onboarding
+        localStorage.removeItem("cl_onboarding_completed");
+        setIsOnboarding(true);
+      } else {
+        // If we have data, we are onboarded.
+        localStorage.setItem("cl_onboarding_completed", "true");
+        setIsOnboarding(false);
+      }
+    }
+  }, [syncStatus, accounts.length]);
+
+  const handleOnboardingComplete = async (currency: string, useTemplate: boolean) => {
+    localStorage.setItem("cl_onboarding_completed", "true");
+    setIsOnboarding(false);
+    
+    let newAccounts = [];
+    let newCategories = [];
+    let newIncomes = [];
+
+    if (useTemplate) {
+      const tmpl = await googleSheetsService.fetchTemplate();
+      if (tmpl && tmpl.accounts && tmpl.accounts.length > 0) {
+        newAccounts = tmpl.accounts;
+        newCategories = tmpl.categories || [];
+        newIncomes = tmpl.incomes || [];
+      } else {
+        // Fallback
+        newAccounts = accounts.length > 0 ? [...accounts] : [...INITIAL_ACCOUNTS];
+        newCategories = [...DEFAULT_CATEGORIES];
+        newIncomes = [...INITIAL_INCOMES];
+      }
+    } else {
+      newAccounts = [
+        { id: `acc-${Date.now()}`, name: "Наличные", balance: 0, currency: currency, color: "#10b981", icon: "wallet" }
+      ];
+      newCategories = [];
+      newIncomes = [];
+    }
+
+    if (newAccounts.length > 0) newAccounts[0].currency = currency;
+    
+    setAccounts(newAccounts);
+    setCategories(newCategories);
+    setIncomes(newIncomes);
+    await pushSettings(newAccounts, newCategories, newIncomes);
+  };
   const [mode, setMode] = React.useState<"expense" | "income">("expense");
   const [pillMode, setPillMode] = React.useState<"expense" | "income" | "balance">(() => {
     const saved = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.PILL_MODE);
@@ -148,7 +205,7 @@ export default function App() {
     const d = new Date(t.date.replace(/-/g, '/').replace('T', ' '));
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   });
-  const totalBalance = Math.round(accounts.reduce((s, a) => s + RatesService.convert(a.balance, a.currency || "USD", "USD"), 0));
+  const totalBalance = Math.round(accounts.reduce((s, a) => s + RatesService.convert(a.balance, a.currency || "USD", RatesService.getBaseCurrency()), 0));
   const totalSpent = Math.round(currentMonthTransactions.filter(t => t.type === "expense").reduce((s, t) => s + (t.sourceAmountUSD ?? t.targetAmountUSD ?? t.sourceAmount ?? t.amount ?? 0), 0));
   const totalEarned = Math.round(currentMonthTransactions.filter(t => t.type === "income").reduce((s, t) => s + (t.sourceAmountUSD ?? t.targetAmountUSD ?? t.sourceAmount ?? t.amount ?? 0), 0));
 
@@ -334,6 +391,8 @@ export default function App() {
           saveIncome={saveIncome} deleteIncome={deleteIncome} updateLocalFromRemote={updateLocalFromRemote}
           onSwitchTable={handleSwitchTable}
         />
+        
+        <OnboardingModal isOpen={isOnboarding} onComplete={handleOnboardingComplete} />
       </div>
 
       <DragOverlay dropAnimation={null}>

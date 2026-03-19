@@ -77,6 +77,7 @@ export interface SyncSettingsFields {
   categories: Category[];
   incomes: IncomeSource[];
   timestamp: string;
+  baseCurrency?: string;
 }
 
 export interface ManagedTable {
