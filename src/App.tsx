@@ -124,13 +124,17 @@ export default function App() {
   const [isTagModalOpen, setIsTagModalOpen] = React.useState(false);
   const [isUsersModalOpen, setIsUsersModalOpen] = React.useState(false);
   const [isThemeModalOpen, setIsThemeModalOpen] = React.useState(false);
-  const [categoryCurrencyMode, setCategoryCurrencyMode] = React.useState<"usd" | "local">(() => {
-    return (localStorage.getItem("cl_category_currency_mode") as "usd" | "local") || "usd";
+  
+  const [categoryCurrencyMode, setCategoryCurrencyMode] = React.useState<"base" | "local">(() => {
+    const saved = localStorage.getItem("cl_category_currency_mode");
+    if (saved === "usd") return "base"; // Migration
+    return (saved as "base" | "local") || "base";
   });
 
   React.useEffect(() => {
     localStorage.setItem("cl_category_currency_mode", categoryCurrencyMode);
   }, [categoryCurrencyMode]);
+
   const [numpad, setNumpad] = React.useState<NumpadData>({
     isOpen: false, type: "expense", source: null, destination: null,
     sourceAmount: "0", sourceCurrency: "USD", targetAmount: "0", targetCurrency: "USD", targetLinked: true, activeField: "source", tag: null, comment: ""
@@ -201,14 +205,87 @@ export default function App() {
 
   const toggleIncome = () => { const next = !isIncomeCollapsed; setIsIncomeCollapsed(next); setMode(next ? "expense" : "income"); };
 
-  const now = new Date();
-  const currentMonthTransactions = transactions.filter(t => {
-    const d = new Date(t.date.replace(/-/g, '/').replace('T', ' '));
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-  });
-  const totalBalance = Math.round(accounts.reduce((s, a) => s + RatesService.convert(a.balance, a.currency || "USD", RatesService.getBaseCurrency()), 0));
-  const totalSpent = Math.round(currentMonthTransactions.filter(t => t.type === "expense").reduce((s, t) => s + (t.sourceAmountUSD ?? t.targetAmountUSD ?? t.sourceAmount ?? t.amount ?? 0), 0));
-  const totalEarned = Math.round(currentMonthTransactions.filter(t => t.type === "income").reduce((s, t) => s + (t.sourceAmountUSD ?? t.targetAmountUSD ?? t.sourceAmount ?? t.amount ?? 0), 0));
+  const currentMonthTransactions = React.useMemo(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    return transactions.filter(t => {
+      if (!t.date) return false;
+      try {
+        let d: Date;
+        const s = String(t.date).trim();
+        d = new Date(s);
+        if (isNaN(d.getTime())) d = new Date(s.replace(/-/g, '/').replace('T', ' '));
+        
+        if (isNaN(d.getTime()) && s.includes('/')) {
+          const p = s.split('/');
+          if (p.length >= 3) {
+            const m = parseInt(p[0]) - 1;
+            const day = parseInt(p[1]);
+            const y = parseInt(p[2].split(' ')[0]);
+            const year = y < 100 ? 2000 + y : y;
+            d = new Date(year, m, day);
+          }
+        }
+        
+        if (isNaN(d.getTime()) && s.includes('.')) {
+          const p = s.split('.');
+          if (p.length >= 3) {
+            const year = p[2].split(' ')[0].length === 4 ? parseInt(p[2]) : 2000 + parseInt(p[2]);
+            d = new Date(year, parseInt(p[1]) - 1, parseInt(p[0]));
+          }
+        }
+        
+        return !isNaN(d.getTime()) && d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+      } catch (e) { return false; }
+    });
+  }, [transactions]);
+
+  const baseCurrency = RatesService.getBaseCurrency();
+  
+  const getSymbol = (code: string) => {
+    if (!code || !isNaN(Number(code))) return "$";
+    const symbols: Record<string, string> = { "USD": "$", "EUR": "€", "GBP": "£", "RUB": "₽", "RSD": "din", "BRL": "R$", "ARS": "ARS" };
+    return symbols[code.toUpperCase()] || code;
+  };
+
+  const baseSymbol = getSymbol(baseCurrency);
+
+  const totalBalanceBase = Math.round(accounts.reduce((s, a) => {
+    const aCurr = (a.currency && isNaN(Number(a.currency))) ? a.currency : "USD";
+    return s + RatesService.convert(a.balance, aCurr, baseCurrency);
+  }, 0));
+  
+  const totalSpentBase = Math.round(currentMonthTransactions.filter(t => String(t.type).toLowerCase() === "expense").reduce((s, t) => {
+    const sCurr = (t.sourceCurrency && isNaN(Number(t.sourceCurrency))) ? t.sourceCurrency : "USD";
+    // If our system base is USD, we can use sourceAmountUSD. Otherwise, convert sourceAmount to base.
+    const val = (t.sourceAmountUSD && t.sourceAmountUSD !== 0 && baseCurrency === 'USD') 
+      ? t.sourceAmountUSD 
+      : RatesService.convert(t.sourceAmount || 0, sCurr, baseCurrency);
+    return s + val;
+  }, 0));
+
+  const totalEarnedBase = Math.round(currentMonthTransactions.filter(t => String(t.type).toLowerCase() === "income").reduce((s, t) => {
+    const tCurr = (t.targetCurrency && isNaN(Number(t.targetCurrency))) ? t.targetCurrency : "USD";
+    const val = (t.targetAmountUSD && t.targetAmountUSD !== 0 && baseCurrency === 'USD')
+      ? t.targetAmountUSD
+      : RatesService.convert(t.targetAmount || 0, tCurr, baseCurrency);
+    return s + val;
+  }, 0));
+
+  const { displaySpent, displayEarned, displayBalance, currentSymbol, localCurrencyCode, localSymbol } = React.useMemo(() => {
+    const localCur = localStorage.getItem("cl_numpad_pref_currency") || baseCurrency;
+    const localSym = getSymbol(localCur);
+    
+    const isBase = categoryCurrencyMode === 'base';
+    const spent = isBase ? totalSpentBase : Math.round(RatesService.convert(totalSpentBase, baseCurrency, localCur));
+    const earned = isBase ? totalEarnedBase : Math.round(RatesService.convert(totalEarnedBase, baseCurrency, localCur));
+    const balance = isBase ? totalBalanceBase : Math.round(RatesService.convert(totalBalanceBase, baseCurrency, localCur));
+    const symbol = isBase ? baseSymbol : localSym;
+    
+    return { displaySpent: spent, displayEarned: earned, displayBalance: balance, currentSymbol: symbol, localCurrencyCode: localCur, localSymbol: localSym };
+  }, [categoryCurrencyMode, totalSpentBase, totalEarnedBase, totalBalanceBase, baseCurrency, baseSymbol]);
 
   const allExistingTags = Array.from(new Set([
     ...categories.flatMap(c => c.tags || []),
@@ -234,6 +311,7 @@ export default function App() {
       setIsSettingsMenuOpen(false);
       setIsTagModalOpen(false);
       setConflictData(null);
+      setEditingTxId(null);
     };
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
@@ -294,7 +372,7 @@ export default function App() {
               </div>
             </div>
             <button onClick={() => setPillMode(p => p === "expense" ? "income" : p === "income" ? "balance" : "expense")} className="mt-2 mx-auto px-5 py-2 rounded-full bg-[var(--glass-item-bg)] border border-[var(--glass-border)] flex items-center gap-2 hover:bg-[var(--glass-item-active)] active:scale-95 transition-all shadow-sm">
-              {pillMode === "expense" ? (<><TrendingDown size={14} className="text-[#cda434]" /><span className="text-xs font-bold text-[#cda434]">-${totalSpent.toLocaleString()} в этом месяце</span></>) : pillMode === "income" ? (<><TrendingUp size={14} className="text-[#10b981]" /><span className="text-xs font-bold text-[#10b981]">+${totalEarned.toLocaleString()} в этом месяце</span></>) : (<><Wallet size={14} className="text-[var(--primary-color)]" /><span className="text-xs font-bold text-[var(--primary-color)]">Общий баланс: ${totalBalance.toLocaleString()}</span></>)}
+              {pillMode === "expense" ? (<><TrendingDown size={14} className="text-[#cda434]" /><span className="text-xs font-bold text-[#cda434]">-{currentSymbol} {displaySpent.toLocaleString()} в этом месяце</span></>) : pillMode === "income" ? (<><TrendingUp size={14} className="text-[#10b981]" /><span className="text-xs font-bold text-[#10b981]">+{currentSymbol} {displayEarned.toLocaleString()} в этом месяце</span></>) : (<><Wallet size={14} className="text-[var(--primary-color)]" /><span className="text-xs font-bold text-[var(--primary-color)]">Общий баланс: {currentSymbol} {displayBalance.toLocaleString()}</span></>)}
             </button>
           </header>
 
@@ -303,7 +381,14 @@ export default function App() {
             <SortableContext items={incomes.map(i => i.id)} strategy={horizontalListSortingStrategy}>
               <div className="flex gap-4 overflow-x-auto hide-scrollbar px-6 pb-4 pt-2">
                 {incomes.map(inc => {
-                  const monthlyAmount = Math.round(currentMonthTransactions.filter(t => t.type === "income" && t.targetId === inc.id).reduce((sum, t) => sum + (t.sourceAmountUSD ?? t.targetAmountUSD ?? t.sourceAmount ?? t.amount ?? 0), 0));
+                  const monthlyAmount = Math.round(currentMonthTransactions
+                    .filter(t => String(t.type).toLowerCase() === "income" && t.targetId === inc.id)
+                    .reduce((sum, t) => {
+                      const val = (t.targetAmountUSD && t.targetAmountUSD !== 0 && baseCurrency === 'USD')
+                        ? t.targetAmountUSD
+                        : RatesService.convert(t.targetAmount || 0, t.targetCurrency || "USD", baseCurrency);
+                      return sum + val;
+                    }, 0));
                   return (<DraggableIncomeItem key={inc.id} income={inc} isDragging={activeDragId === inc.id} onSortingMode={() => setIsSortingMode(true)} isSortingMode={isSortingMode} onLongPress={(i) => { setIsSortingMode(false); setIncomeModal({ isOpen: true, income: i }); }} onClick={(income) => setHistoryModal({ isOpen: true, entity: income, type: "income" })} monthlyAmount={monthlyAmount} />);
                 })}
               </div>
@@ -321,15 +406,15 @@ export default function App() {
                 <h2 className="text-[10px] font-black text-slate-500 uppercase">Расходы</h2>
                 <div className="flex items-center gap-3">
                   <button
-                    onClick={() => { setCategoryCurrencyMode(p => p === "usd" ? "local" : "usd"); if (navigator.vibrate) navigator.vibrate(10); }}
+                    onClick={() => { setCategoryCurrencyMode(p => p === "base" ? "local" : "base"); if (navigator.vibrate) navigator.vibrate(10); }}
                     className={`w-8 h-8 rounded-xl border transition-all shadow-sm flex items-center justify-center ${
-                      categoryCurrencyMode === 'usd'
-                        ? 'bg-[var(--glass-item-bg)] border-[var(--glass-border)] text-[var(--text-muted)]'
-                        : 'bg-[var(--primary-color)]/10 border-[var(--primary-color)]/30 text-[var(--primary-color)]'
+                      categoryCurrencyMode === 'base'
+                        ? 'bg-[var(--primary-color)]/10 border-[var(--primary-color)]/30 text-[var(--primary-color)]'
+                        : 'bg-[var(--glass-item-bg)] border-[var(--glass-border)] text-[var(--text-muted)]'
                     }`}
-                    title={categoryCurrencyMode === "usd" ? `Показать в местной валюте` : `Показать в ${RatesService.getBaseCurrency()}`}
+                    title={categoryCurrencyMode === "base" ? `Показать в местной валюте (${localCurrencyCode})` : `Показать в базовой валюте (${baseCurrency})`}
                   >
-                    {categoryCurrencyMode === "usd" ? <span>{RatesService.getBaseCurrency() === 'EUR' ? '€' : '$'}</span> : <span className="text-[10px] font-black">L</span>}
+                    <span className="text-[10px] font-black">{categoryCurrencyMode === "base" ? "B" : "L"}</span>
                   </button>
 
                   <button onClick={() => setAnalyticsModal({ isOpen: true, type: "expense" })} className="w-8 h-8 rounded-xl bg-[var(--primary-color)]/10 border border-[var(--primary-color)]/20 text-[var(--primary-color)] flex items-center justify-center hover:bg-[var(--primary-color)]/20 transition-all shadow-sm"><PieChart size={14} /></button>
@@ -339,19 +424,20 @@ export default function App() {
               <SortableContext items={categories.map(c => c.id)} strategy={rectSortingStrategy}>
                 <div className="grid grid-cols-4 gap-y-6 gap-x-2 pb-4">
                   {categories.map(cat => {
-                    const catTx = currentMonthTransactions.filter(t => t.type === "expense" && t.targetId === cat.id);
-                    const baseCurrency = RatesService.getBaseCurrency();
-                    const baseSymbol = baseCurrency === "EUR" ? "€" : "$";
-
-                    const spent = Math.round(catTx.reduce((s, t) => {
-                      const amt = categoryCurrencyMode === "usd" 
-                        ? (t.targetAmountUSD ?? t.sourceAmountUSD ?? t.sourceAmount ?? 0)
-                        : (t.targetAmount ?? t.sourceAmount ?? 0);
-                      return s + amt;
-                    }, 0));
+                    const catTx = currentMonthTransactions.filter(t => String(t.type).toLowerCase() === "expense" && t.targetId === cat.id);
                     
-                    const currentLocal = numpad.targetCurrency !== 'USD' ? numpad.targetCurrency : (localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY) || accounts[0]?.currency || "RSD");
+                    const spentBase = Math.round(catTx.reduce((s, t) => {
+                      const sCurr = (t.sourceCurrency && isNaN(Number(t.sourceCurrency))) ? t.sourceCurrency : "USD";
+                      const val = (t.sourceAmountUSD && t.sourceAmountUSD !== 0 && baseCurrency === 'USD')
+                        ? t.sourceAmountUSD
+                        : RatesService.convert(t.sourceAmount || 0, sCurr, baseCurrency);
+                      return s + val;
+                    }, 0));
 
+                    const spent = categoryCurrencyMode === 'base'
+                      ? spentBase
+                      : Math.round(RatesService.convert(spentBase, baseCurrency, localCurrencyCode));
+                    
                     return (
                       <CategoryItem 
                         key={cat.id} 
@@ -366,7 +452,7 @@ export default function App() {
                         activeDragType={activeDragType}
                         theme={theme}
                         currencyMode={categoryCurrencyMode}
-                        currencySymbol={categoryCurrencyMode === 'usd' ? baseSymbol : currentLocal}
+                        currencySymbol={categoryCurrencyMode === 'base' ? baseSymbol : localSymbol}
                       />
                     );
                   })}

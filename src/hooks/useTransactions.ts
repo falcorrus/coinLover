@@ -26,7 +26,7 @@ export const useTransactions = ({
     
     if (type === "expense") { 
       sCurr = (source as Account).currency; 
-      tCurr = customCurrency || "USD"; 
+      tCurr = customCurrency || RatesService.getBaseCurrency(); 
     } else if (type === "income") { 
       tCurr = (destination as Account).currency;
       sCurr = customCurrency || tCurr; 

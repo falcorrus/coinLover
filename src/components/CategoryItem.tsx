@@ -147,7 +147,7 @@ export const CategoryItem: React.FC<Props> = ({
           <span className={`font-technical text-[10px] font-bold mt-0.5 ${
             theme === 'modern' ? 'text-slate-300 opacity-60' : 'text-[var(--text-main)] opacity-60'
           }`}>
-            {currencyMode === 'local' ? `${currencySymbol} ${spent.toLocaleString()}` : `-${currencySymbol}${spent.toLocaleString()}`}
+            {currencyMode === 'local' ? `${currencySymbol} ${spent.toLocaleString()}` : `-${currencySymbol} ${spent.toLocaleString()}`}
           </span>
         )}
       </div>

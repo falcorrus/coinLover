@@ -119,16 +119,23 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
         onFieldChange={(f) => setNumpad(p => ({ ...p, activeField: f }))}
         onManageTags={() => setIsTagModalOpen(true)}
         onLinkToggle={() => { setNumpad(p => ({ ...p, targetLinked: !p.targetLinked })); if (navigator.vibrate) navigator.vibrate(10); }}
-        onCurrencyChange={(field, curr) => setNumpad(p => {
-          const evalAmt = parseFloat(safeEval(p.sourceAmount));
-          if (field === "source") {
-            const newTarget = p.targetLinked && evalAmt > 0 ? (Math.round(RatesService.convert(evalAmt, curr, p.targetCurrency) * 100) / 100).toString() : p.targetAmount;
-            return { ...p, sourceCurrency: curr, targetAmount: newTarget };
-          } else {
-            const newTarget = p.targetLinked && evalAmt > 0 ? (Math.round(RatesService.convert(evalAmt, p.sourceCurrency, curr) * 100) / 100).toString() : p.targetAmount;
-            return { ...p, targetCurrency: curr, targetAmount: newTarget };
+        onCurrencyChange={(field, curr) => {
+          // Persistence: if we change target currency, save it as numpad preference
+          if (field === "target") {
+            localStorage.setItem("cl_numpad_pref_currency", curr);
           }
-        })}
+          
+          setNumpad(p => {
+            const evalAmt = parseFloat(safeEval(p.sourceAmount));
+            if (field === "source") {
+              const newTarget = p.targetLinked && evalAmt > 0 ? (Math.round(RatesService.convert(evalAmt, curr, p.targetCurrency) * 100) / 100).toString() : p.targetAmount;
+              return { ...p, sourceCurrency: curr, targetAmount: newTarget };
+            } else {
+              const newTarget = p.targetLinked && evalAmt > 0 ? (Math.round(RatesService.convert(evalAmt, p.sourceCurrency, curr) * 100) / 100).toString() : p.targetAmount;
+              return { ...p, targetCurrency: curr, targetAmount: newTarget };
+            }
+          });
+        }}
         onPress={(val) => setNumpad(p => {
           const isSource = p.activeField === "source"; const key = isSource ? "sourceAmount" : "targetAmount"; const currStr = p[key];
           const computeTarget = (s: string): string => { const amt = parseFloat(safeEval(s)); return isNaN(amt) || amt === 0 ? "0" : (Math.round(RatesService.convert(amt, p.sourceCurrency, p.targetCurrency) * 100) / 100).toString(); };
@@ -151,6 +158,12 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
         onSubmit={(date?: string) => {
           const fs = parseFloat(safeEval(numpad.sourceAmount)); const ft = parseFloat(safeEval(numpad.targetAmount));
           const customCurr = numpad.type === "income" ? numpad.sourceCurrency : numpad.targetCurrency;
+          
+          // Persistence: ensure the currency used in the transaction is saved as preferred
+          if (customCurr) {
+            localStorage.setItem("cl_numpad_pref_currency", customCurr);
+          }
+          
           if (editingTxId) updateTransaction(editingTxId, numpad.type, numpad.source!, numpad.destination!, fs, ft, numpad.tag || undefined, date, numpad.comment || undefined, customCurr);
           else addTransaction(numpad.type, numpad.source!, numpad.destination!, fs, ft, numpad.tag || undefined, date, numpad.comment || undefined, customCurr);
           if (numpad.returnState) setHistoryModal(numpad.returnState);

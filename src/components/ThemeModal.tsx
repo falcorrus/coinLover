@@ -52,19 +52,8 @@ const PREVIEW_CATEGORIES = [
   { icon: Zap, color: "#fbbf24", name: "Bills" },
 ];
 
-const POPULAR_CURRENCIES = ["USD", "EUR", "GBP"];
-
 export const ThemeModal: React.FC<Props> = ({ isOpen, onClose, currentTheme, onSelect }) => {
   if (!isOpen) return null;
-
-  const handleCurrencyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY, e.target.value);
-    RatesService.syncRatesInBackground();
-    // Simply reload to apply globally for now
-    setTimeout(() => {
-      window.location.reload();
-    }, 100);
-  };
 
   return (
     <div className="fixed inset-0 z-[600] flex items-end justify-center animate-in fade-in duration-300">
@@ -74,7 +63,7 @@ export const ThemeModal: React.FC<Props> = ({ isOpen, onClose, currentTheme, onS
         <div className="p-6 flex justify-between items-center shrink-0 border-b border-[var(--glass-border)]/50">
           <div>
             <h2 className="text-xl font-black uppercase tracking-tight">Настройки</h2>
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-0.5">Внешний вид и валюта</p>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-0.5">Внешний вид</p>
           </div>
           <button onClick={onClose} className="w-10 h-10 rounded-full bg-[var(--glass-item-bg)] flex items-center justify-center text-slate-400 hover:text-white transition-colors">
             <X size={20} />
@@ -83,24 +72,6 @@ export const ThemeModal: React.FC<Props> = ({ isOpen, onClose, currentTheme, onS
 
         <div className="flex-1 overflow-y-auto hide-scrollbar p-4 flex flex-col gap-6 pb-12">
           
-          <div className="flex flex-col gap-3">
-            <h3 className="text-xs font-black uppercase tracking-wider text-slate-500 px-2">Базовая валюта</h3>
-            <div className="relative">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
-                <DollarSign size={18} />
-              </div>
-              <select 
-                value={RatesService.getBaseCurrency()}
-                onChange={handleCurrencyChange}
-                className="w-full bg-[var(--glass-item-bg)] border border-[var(--glass-border)] rounded-2xl py-4 pl-12 pr-4 appearance-none outline-none text-[var(--text-main)] font-black tracking-wider shadow-sm"
-              >
-                {POPULAR_CURRENCIES.map(c => (
-                  <option key={c} value={c} className="bg-[var(--bg-color)] text-[var(--text-main)]">{c}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
           <div className="flex flex-col gap-3">
             <h3 className="text-xs font-black uppercase tracking-wider text-slate-500 px-2">Оформление</h3>
             <div className="flex flex-col gap-4">

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { X, ArrowDownLeft, ArrowUpRight, ArrowRight, Wallet, Pencil, Tag, ArrowRightLeft, AlertCircle, Check } from "lucide-react";
 import { Transaction, Account, Category, IncomeSource } from "../types";
 import { IconMap } from "../constants";
+import { RatesService } from "../services/RatesService";
 
 interface HistoryModalProps {
     isOpen: boolean;
@@ -89,8 +90,14 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
         const tAmt = tx.targetAmount ?? tx.amountLocal ?? sAmt;
         const tCurr = tx.targetCurrency ?? tx.currencyLocal ?? sCurr;
 
+        const getSymbol = (code: string) => {
+            const symbols: Record<string, string> = { "USD": "$", "EUR": "€", "GBP": "£", "RUB": "₽", "RSD": "din", "BRL": "R$", "ARS": "ARS" };
+            return symbols[code.toUpperCase()] || code;
+        };
+
         let displayAmount = entityType === "account" ? sAmt : tAmt;
         let displayCurrency = entityType === "account" ? sCurr : tCurr;
+        const displaySymbol = getSymbol(displayCurrency);
 
         // Transfers are neutral in total balance, use Indigo color to distinguish from expenses/income
         const txType = tx.type?.toLowerCase();
@@ -104,8 +111,8 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
         const sign = (txType === "transfer" && entityType === "feed") ? "" : (isOutflow ? "-" : "+");
 
         return {
-            amount: `${sign}${displayAmount.toLocaleString()} ${displayCurrency}`,
-            usdAmount: (displayCurrency !== "USD" && sAmtUsd) ? `${sign}$${sAmtUsd.toLocaleString()}` : null,
+            amount: `${sign}${displaySymbol} ${displayAmount.toLocaleString()}`,
+            usdAmount: (displayCurrency !== "USD" && sAmtUsd) ? `${sign}$ ${Math.round(sAmtUsd).toLocaleString()}` : null,
             color
         };
     };

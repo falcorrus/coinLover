@@ -3,6 +3,7 @@ import { X, ChevronLeft, ChevronRight, PieChart, List, Tag, RefreshCcw, MoreHori
 import { Transaction, Category, IncomeSource, Account } from "../types";
 import { IconMap } from "../constants";
 import { googleSheetsService } from "../services/googleSheets";
+import { RatesService } from "../services/RatesService";
 
 interface AnalyticsModalProps {
     isOpen: boolean;
@@ -62,20 +63,29 @@ interface DetailItemProps {
     onClick: () => void;
 }
 
-const DetailItem: React.FC<DetailItemProps> = ({ detail, analysisType, onClick }) => (
-    <div className="flex justify-between items-center cursor-pointer group" onClick={(e) => { e.stopPropagation(); onClick(); }}>
-        <div className="flex items-center gap-2">
-            <detail.icon size={10} style={{ color: detail.color }} className="shrink-0" />
-            <span className="text-xs font-medium text-[var(--text-muted)] group-hover:text-[var(--text-main)] transition-colors">{detail.name}</span>
+const DetailItem: React.FC<DetailItemProps> = ({ detail, analysisType, onClick }) => {
+    const baseCur = RatesService.getBaseCurrency();
+    const getSymbol = (code: string) => {
+        const symbols: Record<string, string> = { "USD": "$", "EUR": "€", "GBP": "£", "RUB": "₽", "RSD": "din", "BRL": "R$", "ARS": "ARS" };
+        return symbols[code.toUpperCase()] || code;
+    };
+    const symbol = getSymbol(baseCur);
+
+    return (
+        <div className="flex justify-between items-center cursor-pointer group" onClick={(e) => { e.stopPropagation(); onClick(); }}>
+            <div className="flex items-center gap-2">
+                <detail.icon size={10} style={{ color: detail.color }} className="shrink-0" />
+                <span className="text-xs font-medium text-[var(--text-muted)] group-hover:text-[var(--text-main)] transition-colors">{detail.name}</span>
+            </div>
+            <div className="flex items-center gap-2">
+                <span className={`text-xs font-bold ${analysisType === 'income' ? 'text-[var(--success-color)]' : 'text-[var(--text-main)]'}`}>
+                    {symbol} {Math.round(detail.amount).toLocaleString()}
+                </span>
+                <span className="text-[9px] font-bold text-[var(--text-muted)] w-8 text-right">{detail.percent.toFixed(0)}%</span>
+            </div>
         </div>
-        <div className="flex items-center gap-2">
-            <span className={`text-xs font-bold ${analysisType === 'income' ? 'text-[var(--success-color)]' : 'text-[var(--text-main)]'}`}>
-                ${detail.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-            </span>
-            <span className="text-[9px] font-bold text-[var(--text-muted)] w-8 text-right">{detail.percent.toFixed(0)}%</span>
-        </div>
-    </div>
-);
+    );
+};
 
 // --- Main Component ---
 
@@ -321,7 +331,16 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                                     </svg>
                                     <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                                         <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] tracking-tighter mb-0.5">Total</span>
-                                        <span className="text-sm font-black text-[var(--text-main)]">${Math.round(displayedTotal).toLocaleString()}</span>
+                                        <span className="text-sm font-black text-[var(--text-main)]">
+                                            {(() => {
+                                                const baseCur = RatesService.getBaseCurrency();
+                                                const getSymbol = (code: string) => {
+                                                    const symbols: Record<string, string> = { "USD": "$", "EUR": "€", "GBP": "£", "RUB": "₽", "RSD": "din", "BRL": "R$", "ARS": "ARS" };
+                                                    return symbols[code.toUpperCase()] || code;
+                                                };
+                                                return getSymbol(baseCur);
+                                            })()}&nbsp;{Math.round(displayedTotal).toLocaleString()}
+                                        </span>
                                     </div>
                                 </div>
                                 

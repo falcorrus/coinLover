@@ -171,30 +171,36 @@ function doGet(e) {
       const txSheet = ss.getSheetByName(txSheetName);
       if (txSheet && txSheet.getLastRow() > 1) {
         const txRows = txSheet.getDataRange().getValues();
-        // Look for headers in row 0 or 1
         let headerRow = txRows[0];
         let dataStartIndex = 1;
         if (txRows.length > 1 && String(txRows[1][0]).trim().toLowerCase() === "дата") {
-          dataStartIndex = 2; // skip second header row
+          dataStartIndex = 2;
         }
 
-        const ids = headerRow.map(v => String(v).trim().toLowerCase());
-        const col = {}; ids.forEach((v, i) => col[v] = i);
+        const headers = headerRow.map(v => String(v).trim().toLowerCase());
+        const col = {}; headers.forEach((v, i) => col[v] = i);
         
-        // Support old and new column names
-        const c_date = col["date"] !== undefined ? col["date"] : col["дата"];
-        const c_type = col["type"] !== undefined ? col["type"] : col["тип"];
-        const c_src = col["src"] !== undefined ? col["src"] : (col["source"] !== undefined ? col["source"] : col["источник"]);
-        const c_dst = col["dst"] !== undefined ? col["dst"] : (col["destination"] !== undefined ? col["destination"] : col["назначение"]);
-        const c_tag = col["tag"] !== undefined ? col["tag"] : col["тег"];
-        const c_s_amt = col["s_amt"] !== undefined ? col["s_amt"] : (col["source_amount"] !== undefined ? col["source_amount"] : col["сумма (исх)"]);
-        const c_s_curr = col["s_curr"] !== undefined ? col["s_curr"] : (col["source_currency"] !== undefined ? col["source_currency"] : col["валюта (исх)"]);
-        const c_s_base = col["s_base"] !== undefined ? col["s_base"] : col["сумма (база)"];
-        const c_t_amt = col["t_amt"] !== undefined ? col["t_amt"] : (col["target_amount"] !== undefined ? col["target_amount"] : col["сумма (цель)"]);
-        const c_t_curr = col["t_curr"] !== undefined ? col["t_curr"] : (col["target_currency"] !== undefined ? col["target_currency"] : col["валюта (цель)"]);
-        const c_t_base = col["t_base"] !== undefined ? col["t_base"] : col["цель (база)"];
-        const c_comment = col["comment"] !== undefined ? col["comment"] : col["коментарий"];
-        const c_id = col["id"] !== undefined ? col["id"] : col["id"];
+        // Helper to find column by multiple possible names
+        const findCol = (names) => {
+          for (let n of names) {
+            if (col[n.toLowerCase()] !== undefined) return col[n.toLowerCase()];
+          }
+          return undefined;
+        };
+
+        const c_date = findCol(["date", "дата", "день"]);
+        const c_type = findCol(["type", "тип"]);
+        const c_src = findCol(["src", "source", "источник", "откуда", "из"]);
+        const c_dst = findCol(["dst", "destination", "назначение", "куда", "цель"]);
+        const c_tag = findCol(["tag", "тег", "метка"]);
+        const c_s_amt = findCol(["s_amt", "source_amount", "amount", "сумма (исх)", "сумма", "расход"]);
+        const c_s_curr = findCol(["s_curr", "source_currency", "currency", "валюта (исх)", "валюта"]);
+        const c_s_base = findCol(["s_base", "source_base", "сумма (база)", "base_amount"]);
+        const c_t_amt = findCol(["t_amt", "target_amount", "сумма (цель)", "получено"]);
+        const c_t_curr = findCol(["t_curr", "target_currency", "валюта (цель)"]);
+        const c_t_base = findCol(["t_base", "target_base", "цель (база)"]);
+        const c_comment = findCol(["comment", "примечание", "комментарий", "коментарий"]);
+        const c_id = findCol(["id", "идентификатор"]);
         
         if (c_date !== undefined) {
           const accMap = {}; data.accounts.forEach(a => { accMap[a.name] = a.id; accMap[a.id] = a.id; });
@@ -203,10 +209,15 @@ function doGet(e) {
 
           for (let i = dataStartIndex; i < txRows.length; i++) {
             const r = txRows[i]; 
-            const dateVal = String(r[c_date]);
-            if (!dateVal || dateVal.toLowerCase().indexOf("date") !== -1 || dateVal.toLowerCase().indexOf("дата") !== -1) continue;
+            const dateRaw = r[c_date];
+            if (!dateRaw || String(dateRaw).toLowerCase().indexOf("date") !== -1 || String(dateRaw).toLowerCase().indexOf("дата") !== -1) continue;
             
-            const type = String(r[c_type] || "").trim();
+            let rawType = String(r[c_type] || "").trim().toLowerCase();
+            let type = "expense";
+            if (rawType.indexOf("inc") !== -1 || rawType.indexOf("доход") !== -1 || rawType.indexOf("приход") !== -1 || rawType === "in") type = "income";
+            else if (rawType.indexOf("trans") !== -1 || rawType.indexOf("перевод") !== -1) type = "transfer";
+            else if (rawType.indexOf("exp") !== -1 || rawType.indexOf("расход") !== -1 || rawType === "out") type = "expense";
+
             const srcRaw = String(r[c_src] || "").trim();
             const dstRaw = String(r[c_dst] || "").trim();
             
@@ -215,17 +226,42 @@ function doGet(e) {
             else if (type === "income") { aid = accMap[dstRaw] || dstRaw; tid = incMap[srcRaw] || srcRaw; }
             else if (type === "transfer") { aid = accMap[srcRaw] || srcRaw; tid = accMap[dstRaw] || dstRaw; }
 
-            const dt = new Date(r[c_date]);
-            if (isNaN(dt.getTime())) continue;
+            let dt;
+            if (dateRaw instanceof Date) {
+              dt = dateRaw;
+            } else {
+              let s = String(dateRaw).trim().replace(/-/g, '/');
+              // Handle DD.MM.YY or DD.MM.YYYY
+              if (s.includes('.')) {
+                const p = s.split('.');
+                if (p.length === 3) {
+                  let year = parseInt(p[2]);
+                  if (year < 100) year += 2000;
+                  dt = new Date(year, parseInt(p[1]) - 1, parseInt(p[0]));
+                }
+              }
+              if (!dt || isNaN(dt.getTime())) dt = new Date(s);
+            }
+
+            if (!dt || isNaN(dt.getTime())) continue;
             const iso = Utilities.formatDate(dt, ss.getSpreadsheetTimeZone(), "yyyy-MM-dd'T'HH:mm:ss");
             
+            const s_amt = parseNum(r[c_s_amt]);
+            const t_amt = c_t_amt !== undefined ? parseNum(r[c_t_amt]) : s_amt;
+
             data.transactions.push({
-              id: String(r[c_id] || i), type, accountId: aid, targetId: tid,
-              sourceAmount: parseNum(r[c_s_amt]), sourceCurrency: String(r[c_s_curr] || "USD"),
+              id: String(c_id !== undefined ? r[c_id] : i), 
+              type: type, 
+              accountId: aid, targetId: tid,
+              sourceAmount: s_amt, 
+              sourceCurrency: String(c_s_curr !== undefined ? r[c_s_curr] : "USD"),
               sourceAmountUSD: parseNum(r[c_s_base]),
-              targetAmount: parseNum(r[c_t_amt]), targetCurrency: String(r[c_t_curr] || "USD"),
+              targetAmount: t_amt, 
+              targetCurrency: String(c_t_curr !== undefined ? r[c_t_curr] : "USD"),
               targetAmountUSD: parseNum(r[c_t_base]),
-              date: iso, tag: r[c_tag] ? String(r[c_tag]) : undefined, comment: r[c_comment] ? String(r[c_comment]) : undefined
+              date: iso, 
+              tag: c_tag !== undefined ? String(r[c_tag]) : undefined, 
+              comment: c_comment !== undefined ? String(r[c_comment]) : undefined
             });
           }
         }
