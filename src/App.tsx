@@ -29,6 +29,7 @@ import { OnboardingModal } from "./components/OnboardingModal";
 import { INITIAL_ACCOUNTS, DEFAULT_CATEGORIES, INITIAL_INCOMES } from "./constants";
 
 import { googleSheetsService } from "./services/googleSheets";
+import { setGAUser, trackScreen, trackEvent } from "./services/analytics";
 
 export default function App() {
   const [currentPath, setCurrentPath] = React.useState(window.location.pathname);
@@ -293,6 +294,52 @@ export default function App() {
   ])).sort();
 
   const anyModalOpen = accountModal.isOpen || incomeModal.isOpen || categoryModal.isOpen || historyModal.isOpen || analyticsModal.isOpen || calendarAnalyticsModal.isOpen || numpad.isOpen || confirmDelete.isOpen || isSettingsMenuOpen || isTagModalOpen || !!conflictData;
+
+  React.useEffect(() => {
+    if (activeTableId) {
+      setGAUser(activeTableId);
+    }
+  }, [activeTableId]);
+
+  React.useEffect(() => {
+    if (accountModal.isOpen) trackScreen("AccountModal");
+  }, [accountModal.isOpen]);
+
+  React.useEffect(() => {
+    if (incomeModal.isOpen) trackScreen("IncomeModal");
+  }, [incomeModal.isOpen]);
+
+  React.useEffect(() => {
+    if (categoryModal.isOpen) trackScreen("CategoryModal");
+  }, [categoryModal.isOpen]);
+
+  React.useEffect(() => {
+    if (historyModal.isOpen) trackScreen(`HistoryModal_${historyModal.type}`);
+  }, [historyModal.isOpen, historyModal.type]);
+
+  React.useEffect(() => {
+    if (analyticsModal.isOpen) trackScreen(`AnalyticsModal_${analyticsModal.type}`);
+  }, [analyticsModal.isOpen, analyticsModal.type]);
+
+  React.useEffect(() => {
+    if (calendarAnalyticsModal.isOpen) trackScreen("CalendarAnalyticsModal");
+  }, [calendarAnalyticsModal.isOpen]);
+
+  React.useEffect(() => {
+    if (numpad.isOpen) trackScreen(`Numpad_${numpad.type}`);
+  }, [numpad.isOpen, numpad.type]);
+
+  React.useEffect(() => {
+    if (isTagModalOpen) trackScreen("TagModal");
+  }, [isTagModalOpen]);
+
+  React.useEffect(() => {
+    if (isUsersModalOpen) trackScreen("UsersModal");
+  }, [isUsersModalOpen]);
+
+  React.useEffect(() => {
+    if (isThemeModalOpen) trackScreen("ThemeModal");
+  }, [isThemeModalOpen]);
 
   React.useEffect(() => {
     if (anyModalOpen) {
