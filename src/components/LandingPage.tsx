@@ -8,15 +8,128 @@ import {
   Fingerprint, Move
 } from "lucide-react";
 
+type Language = "ru" | "en";
+
+const translations = {
+  ru: {
+    demo: "Демо",
+    cta: "Хочу!",
+    sloganMain: "Твои деньги.",
+    sloganSub: "Твой учет. Твой стиль.",
+    scrollHint: "Посмотрите, как магия транзакций оживает в CoinLover.",
+    analyticsTag: "Визуальная ясность",
+    analyticsTitle: "Аналитика, которая не пугает.",
+    analyticsText: "CoinLover превращает сухие цифры в наглядную историю ваших трат. Один взгляд — и вы знаете, куда ушел бюджет.",
+    customTag: "Полный контроль",
+    customTitle: "Настрой всё под себя.",
+    customText: "Полная свобода действий. Долгое нажатие открывает редактор: меняй иконки, названия и лимиты. Не нравится порядок? Просто перетащи кошелек или категорию в любое место жестом.",
+    historyTag: "Умная история",
+    historyTitle: "Найти и изменить — проще простого.",
+    historyText: "Интуитивный поиск и история транзакций. Забыли, сколько потратили вчера в магазине? Один тап — и вся история перед глазами. Любую запись можно мгновенно отредактировать.",
+    multiTag: "Всегда с тобой",
+    multiTitle: "Настоящая мультиплатформенность.",
+    multiText: "Доступ через браузер (PWA) на смартфоне, планшете или компьютере. Не нужно ничего скачивать из сторов. Пользуйся на любом устройстве одновременно — данные синхронизируются мгновенно.",
+    devices: { mobile: "Смартфон", tablet: "Планшет", desktop: "Компьютер" },
+    currencyTag: "Глобальная свобода",
+    currencyTitle: "Трать в любой валюте.",
+    currencyText: "CoinLover автоматически обновляет курсы валют. Плати в лирах, тенге или батах — приложение само пересчитает всё в твою базовую валюту для точности отчетов.",
+    sheetsTag: "Владение данными",
+    sheetsTitle: "Твои данные — в твоих таблицах.",
+    sheetsText: "Никаких закрытых баз данных. Каждая транзакция мгновенно улетает в твою личную Google Таблицу. Полная свобода и контроль над информацией.",
+    roadmapTitle: "Будущее CoinLover",
+    aiTag: "В разработке",
+    aiTitle: "ИИ-ассистент",
+    aiText: "Ваш личный финансовый директор на базе нейросетей. Автоматическое распределение трат и советы по экономии в реальном времени.",
+    familyTitle: "Семейная синхронизация",
+    familyText: "Поддержка командных бюджетов и общих таблиц для всей семьи. Следите за общим капиталом вместе.",
+    finalCta: "Верни себе контроль.",
+    modalTitle: "Начнем настройку?",
+    modalSub: "Оставьте свой Email или Telegram. Мы свяжемся с вами и поможем подключить вашу Google Таблицу к CoinLover за 5 минут.",
+    studioTitle: "Мы на связи для любых проектов",
+    studioSub: "Оставьте свой Email или Telegram. Мы свяжемся с вами в течение дня.",
+    modalPlaceholder: "@username или email...",
+    modalSend: "Отправить",
+    modalSuccess: "Принято!",
+    modalSuccessSub: "Мы скоро свяжемся с вами.",
+    footerStudio: "2026 Сделано Broz Studio",
+    wallets: { cash: "Наличные", bank: "Банк", exchange: "Биржа" },
+    categories: { food: "Еда", transport: "Транспорт", coffee: "Кофе", shopping: "Покупки", fun: "Отдых" }
+  },
+  en: {
+    demo: "Demo",
+    cta: "I want it!",
+    sloganMain: "Your money.",
+    sloganSub: "Your tracking. Your style.",
+    scrollHint: "See how transaction magic comes to life in CoinLover.",
+    analyticsTag: "Visual Clarity",
+    analyticsTitle: "Analytics that doesn't scare.",
+    analyticsText: "CoinLover turns dry numbers into a visual story of your spending. One look - and you know where your budget went.",
+    customTag: "Total Control",
+    customTitle: "Customize everything.",
+    customText: "Complete freedom. Long press opens the editor: change icons, names, and limits. Don't like the order? Just drag a wallet or category anywhere with a gesture.",
+    historyTag: "Smart History",
+    historyTitle: "Find and edit — easy as pie.",
+    historyText: "Intuitive search and transaction history. Forgot how much you spent at the store yesterday? One tap - and the whole history is before your eyes. Any entry can be instantly edited.",
+    multiTag: "Always with you",
+    multiTitle: "True Multi-platform.",
+    multiText: "Access via browser (PWA) on smartphone, tablet, or computer. No need to download from stores. Use on any device simultaneously — data syncs instantly.",
+    devices: { mobile: "Smartphone", tablet: "Tablet", desktop: "Computer" },
+    currencyTag: "Global Freedom",
+    currencyTitle: "Spend in any currency.",
+    currencyText: "CoinLover automatically updates exchange rates. Pay in Lira, Tenge, or Baht — the app recalculates everything into your base currency for accurate reports.",
+    sheetsTag: "Data Ownership",
+    sheetsTitle: "Your data — in your sheets.",
+    sheetsText: "No locked databases. Every transaction instantly flies into your personal Google Sheet. Full freedom and control over your information.",
+    roadmapTitle: "Future of CoinLover",
+    aiTag: "In Development",
+    aiTitle: "AI Assistant",
+    aiText: "Your personal AI-powered financial director. Automatic expense categorization and real-time saving tips.",
+    familyTitle: "Family Sync",
+    familyText: "Support for team budgets and shared sheets for the whole family. Track common capital together.",
+    finalCta: "Take back control.",
+    modalTitle: "Let's get started",
+    modalSub: "Leave your Email or Telegram. We'll contact you to help connect your Google Sheet to CoinLover in 5 minutes.",
+    studioTitle: "Available for any projects",
+    studioSub: "Leave your Email or Telegram. We will contact you within 24 hours.",
+    modalPlaceholder: "@username or email...",
+    modalSend: "Send",
+    modalSuccess: "Received!",
+    modalSuccessSub: "We will contact you soon.",
+    footerStudio: "2026 Made by Broz Studio",
+    wallets: { cash: "Cash", bank: "Bank", exchange: "Exchange" },
+    categories: { food: "Food", transport: "Transport", coffee: "Coffee", shopping: "Shopping", fun: "Fun" }
+  }
+};
+
 export const LandingPage: React.FC = () => {
+  const [lang, setLang] = React.useState<Language>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("cl_lang") as Language;
+      if (saved) return saved;
+      return window.navigator.language.startsWith("ru") ? "ru" : "en";
+    }
+    return "en";
+  });
+
   const [isConnectOpen, setIsConnectOpen] = React.useState(false);
+  const [modalType, setModalType] = React.useState<"onboarding" | "studio">("onboarding");
   const [contact, setContact] = React.useState("");
   const [isSent, setIsSent] = React.useState(false);
   const [analyticsImageIndex, setAnalyticsImageIndex] = React.useState(0);
 
+  const t = translations[lang];
+
+  const handleOpenModal = (type: "onboarding" | "studio") => {
+    setModalType(type);
+    setIsConnectOpen(true);
+  };
+
+  React.useEffect(() => {
+    localStorage.setItem("cl_lang", lang);
+  }, [lang]);
+
   const { scrollYProgress } = useScroll();
   
-  // Analytics slideshow logic
   React.useEffect(() => {
     const timer = setInterval(() => {
       setAnalyticsImageIndex((prev) => (prev === 0 ? 1 : 0));
@@ -28,41 +141,34 @@ export const LandingPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!contact) return;
-
     try {
       const response = await fetch("/api/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ contact }),
       });
-
       if (response.ok) {
         setIsSent(true);
-        setTimeout(() => { 
-          setIsConnectOpen(false); 
-          setIsSent(false); 
-          setContact(""); 
-        }, 2500);
+        setTimeout(() => { setIsConnectOpen(false); setIsSent(false); setContact(""); }, 2500);
       }
     } catch (err) {
-      console.error("Error sending lead:", err);
       setIsSent(true);
       setTimeout(() => setIsConnectOpen(false), 2500);
     }
   };
 
   const wallets = [
-    { name: "Наличные", icon: <Banknote size={48} />, color: "#10b981", active: false },
-    { name: "Банк", icon: <Wallet size={48} />, color: "#06b6d4", active: true },
-    { name: "Биржа", icon: <TrendingUp size={48} />, color: "#3b82f6", active: false },
+    { name: t.wallets.cash, icon: <Banknote size={48} />, color: "#10b981", active: false },
+    { name: t.wallets.bank, icon: <Wallet size={48} />, color: "#06b6d4", active: true },
+    { name: t.wallets.exchange, icon: <TrendingUp size={48} />, color: "#3b82f6", active: false },
   ];
 
   const categories = [
-    { name: "Еда", icon: <Utensils size={24} />, color: "#f59e0b" },
-    { name: "Транспорт", icon: <Car size={24} />, color: "#3b82f6" },
-    { name: "Кофе", icon: <Coffee size={24} />, color: "#8b5cf6" },
-    { name: "Покупки", icon: <ShoppingBag size={24} />, color: "#10b981" },
-    { name: "Отдых", icon: <Film size={24} />, color: "#ec4899" },
+    { name: t.categories.food, icon: <Utensils size={24} />, color: "#f59e0b" },
+    { name: t.categories.transport, icon: <Car size={24} />, color: "#3b82f6" },
+    { name: t.categories.coffee, icon: <Coffee size={24} />, color: "#8b5cf6" },
+    { name: t.categories.shopping, icon: <ShoppingBag size={24} />, color: "#10b981" },
+    { name: t.categories.fun, icon: <Film size={24} />, color: "#ec4899" },
   ];
 
   return (
@@ -83,9 +189,19 @@ export const LandingPage: React.FC = () => {
             <span className="text-base md:text-xl font-bold tracking-tight text-white/90">CoinLover</span>
           </div>
           <div className="flex items-center gap-2 md:gap-4">
-            <button onClick={handleDemo} className="px-2 md:px-4 py-2 text-[10px] md:text-sm font-medium text-white/70 hover:text-white transition-colors outline-none">Демо</button>
-            <button onClick={() => setIsConnectOpen(true)} className="px-3 md:px-4 py-2 bg-[#6d5dfc] hover:bg-[#5b4ce3] text-white text-[10px] md:text-sm font-semibold rounded-xl transition-all shadow-lg shadow-[#6d5dfc]/20 whitespace-nowrap outline-none">
-              <span>Хочу!</span>
+            <div className="flex bg-white/5 rounded-lg p-1 mr-2 border border-white/5">
+              <button 
+                onClick={() => setLang("ru")}
+                className={`px-2 py-1 text-[10px] font-bold rounded transition-all ${lang === 'ru' ? 'bg-[#6d5dfc] text-white' : 'text-white/40'}`}
+              >RU</button>
+              <button 
+                onClick={() => setLang("en")}
+                className={`px-2 py-1 text-[10px] font-bold rounded transition-all ${lang === 'en' ? 'bg-[#6d5dfc] text-white' : 'text-white/40'}`}
+              >EN</button>
+            </div>
+            <button onClick={handleDemo} className="px-2 md:px-4 py-2 text-[10px] md:text-sm font-medium text-white/70 hover:text-white transition-colors outline-none">{t.demo}</button>
+            <button onClick={() => handleOpenModal("onboarding")} className="px-3 md:px-4 py-2 bg-[#6d5dfc] hover:bg-[#5b4ce3] text-white text-[10px] md:text-sm font-semibold rounded-xl transition-all shadow-lg shadow-[#6d5dfc]/20 whitespace-nowrap outline-none">
+              <span>{t.cta}</span>
             </button>
           </div>
         </div>
@@ -95,10 +211,10 @@ export const LandingPage: React.FC = () => {
         <div className="max-w-4xl mx-auto text-center relative z-10">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
             <h1 className="text-3xl md:text-7xl font-extrabold mb-6 md:mb-8 tracking-tight leading-[1.2] md:leading-[1.1]">
-              Твои деньги. <br />
-              <span className="text-gradient-purple">Твой учет. Твой стиль.</span>
+              {t.sloganMain} <br />
+              <span className="text-gradient-purple">{t.sloganSub}</span>
             </h1>
-            <p className="text-base md:text-xl text-white/60 max-w-2xl mx-auto mb-10 md:mb-12">Посмотрите, как магия транзакций оживает в CoinLover.</p>
+            <p className="text-base md:text-xl text-white/60 max-w-2xl mx-auto mb-10 md:mb-12">{t.scrollHint}</p>
           </motion.div>
 
           <div className="relative flex justify-center mt-12 mb-20 group">
@@ -119,161 +235,127 @@ export const LandingPage: React.FC = () => {
       </section>
 
       <div className="max-w-6xl mx-auto space-y-32 md:space-y-60 py-10 md:py-20 px-6">
-        
-        {/* Analytics Section with Slideshow */}
         <section className="flex flex-col md:flex-row items-center gap-16 md:gap-20">
           <div className="flex-1 text-center md:text-left">
-            <span className="text-[#6d5dfc] font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">Визуальная ясность</span>
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">Аналитика, которая <br /> не пугает.</h2>
-            <p className="text-lg text-white/50 mb-8 leading-relaxed">CoinLover превращает сухие цифры в наглядную историю ваших трат. Один взгляд — и вы знаете, куда ушел бюджет.</p>
+            <span className="text-[#6d5dfc] font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">{t.analyticsTag}</span>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">{t.analyticsTitle}</h2>
+            <p className="text-lg text-white/50 mb-8 leading-relaxed">{t.analyticsText}</p>
           </div>
           <div className="flex-1 relative group flex justify-center md:justify-end min-h-[450px] md:min-h-[600px]">
             <div className="absolute -inset-4 bg-[#6d5dfc]/10 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000 rounded-full" />
             <AnimatePresence mode="wait">
-              <motion.div 
-                key={analyticsImageIndex}
-                initial={{ opacity: 0, x: 20, scale: 0.95 }}
-                animate={{ opacity: 1, x: 0, scale: 1 }}
-                exit={{ opacity: 0, x: -20, scale: 0.95 }}
-                transition={{ duration: 0.8, ease: "easeInOut" }}
-                className="glass-panel p-2 border-white/10 shadow-2xl relative z-10 overflow-hidden w-fit perspective-1000 h-fit"
-              >
-                <motion.img 
-                  animate={{ y: [0, -5, 0], rotate: [0, 0.5, 0] }}
-                  transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-                  src={analyticsImageIndex === 0 ? "/analytics-preview.png" : "/analytics-pie-preview.png"} 
-                  alt="CoinLover Analytics" 
-                  className="block w-full h-auto max-h-[450px] md:max-h-[600px] rounded-[20px]"
-                />
+              <motion.div key={analyticsImageIndex} initial={{ opacity: 0, x: 20, scale: 0.95 }} animate={{ opacity: 1, x: 0, scale: 1 }} exit={{ opacity: 0, x: -20, scale: 0.95 }} transition={{ duration: 0.8, ease: "easeInOut" }} className="glass-panel p-2 border-white/10 shadow-2xl relative z-10 overflow-hidden w-fit perspective-1000 h-fit">
+                <motion.img animate={{ y: [0, -5, 0], rotate: [0, 0.5, 0] }} transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }} src={analyticsImageIndex === 0 ? "/analytics-preview.png" : "/analytics-pie-preview.png"} alt="Analytics" className="block w-full h-auto max-h-[450px] md:max-h-[600px] rounded-[20px]" />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#050505]/40 to-transparent pointer-events-none" />
               </motion.div>
             </AnimatePresence>
           </div>
         </section>
 
-        {/* Customization Section */}
         <section className="flex flex-col md:flex-row-reverse items-center gap-16 md:gap-20">
           <div className="flex-1 text-center md:text-left">
-            <span className="text-orange-400 font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">Полный контроль</span>
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">Настрой всё <br /> под себя.</h2>
-            <p className="text-lg text-white/50 mb-8 leading-relaxed">Полная свобода действий. Долгое нажатие открывает редактор: меняй иконки, названия и лимиты. Не нравится порядок? Просто перетащи кошелек или категорию в любое место жестом.</p>
+            <span className="text-orange-400 font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">{t.customTag}</span>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">{t.customTitle}</h2>
+            <p className="text-lg text-white/50 mb-8 leading-relaxed">{t.customText}</p>
           </div>
           <div className="flex-1 relative group flex justify-center md:justify-start">
             <div className="absolute -inset-4 bg-orange-500/5 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000 rounded-full" />
             <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.3 }} className="glass-panel p-2 border-white/10 shadow-2xl relative z-10 overflow-hidden w-fit">
-              <img src="/edit-preview.png" alt="Edit Wallet Modal" className="block w-full h-auto max-h-[450px] md:max-h-[550px] rounded-[20px] object-contain" />
+              <img src="/edit-preview.png" alt="Edit" className="block w-full h-auto max-h-[450px] md:max-h-[550px] rounded-[20px] object-contain" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#050505]/40 to-transparent pointer-events-none" />
             </motion.div>
           </div>
         </section>
 
-        {/* History & Search Section */}
         <section className="flex flex-col md:flex-row items-center gap-16 md:gap-20">
           <div className="flex-1 text-center md:text-left">
-            <span className="text-yellow-500 font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">Умная история</span>
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">Найти и изменить — <br /> проще простого.</h2>
-            <p className="text-lg text-white/50 mb-8 leading-relaxed">Интуитивный поиск и история транзакций. Забыли, сколько потратили вчера в магазине? Один тап — и вся история перед глазами. Любую запись можно мгновенно отредактировать.</p>
+            <span className="text-yellow-500 font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">{t.historyTag}</span>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">{t.historyTitle}</h2>
+            <p className="text-lg text-white/50 mb-8 leading-relaxed">{t.historyText}</p>
           </div>
           <div className="flex-1 relative group flex justify-center md:justify-end">
             <div className="absolute -inset-4 bg-yellow-500/5 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000 rounded-full" />
             <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.3 }} className="glass-panel p-2 border-white/10 shadow-2xl relative z-10 overflow-hidden w-fit">
-              <img src="/history-preview.png" alt="Transaction History" className="block w-full h-auto max-h-[450px] md:max-h-[550px] rounded-[20px] object-contain" />
+              <img src="/history-preview.png" alt="History" className="block w-full h-auto max-h-[450px] md:max-h-[550px] rounded-[20px] object-contain" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#050505]/40 to-transparent pointer-events-none" />
             </motion.div>
           </div>
         </section>
 
-        {/* Multiplatform Section */}
         <section className="flex flex-col md:flex-row items-center gap-16 md:gap-20">
           <div className="flex-1 text-center md:text-left order-2 md:order-1">
             <div className="relative inline-block group mb-10">
               <div className="absolute -inset-10 bg-[#6d5dfc]/10 blur-3xl opacity-50 rounded-full" />
               <div className="relative grid grid-cols-3 gap-8 md:gap-12">
-                <motion.div whileHover={{ scale: 1.1 }} className="flex flex-col items-center gap-4 text-white/40 group-hover:text-[#6d5dfc] transition-colors">
-                  <Smartphone size={40} className="md:w-16 md:h-16" />
-                  <span className="text-[8px] font-bold uppercase tracking-widest">Смартфон</span>
-                </motion.div>
-                <motion.div whileHover={{ scale: 1.1 }} className="flex flex-col items-center gap-4 text-white/40 group-hover:text-white transition-colors">
-                  <Tablet size={48} className="md:w-20 md:h-20" />
-                  <span className="text-[8px] font-bold uppercase tracking-widest">Планшет</span>
-                </motion.div>
-                <motion.div whileHover={{ scale: 1.1 }} className="flex flex-col items-center gap-4 text-white/40 group-hover:text-[#6d5dfc] transition-colors">
-                  <Laptop size={56} className="md:w-24 md:h-24" />
-                  <span className="text-[8px] font-bold uppercase tracking-widest">Компьютер</span>
-                </motion.div>
+                <div className="flex flex-col items-center gap-4 text-white/40"><Smartphone size={40} className="md:w-16 md:h-16" /><span className="text-[8px] font-bold uppercase tracking-widest">{t.devices.mobile}</span></div>
+                <div className="flex flex-col items-center gap-4 text-white/40"><Tablet size={48} className="md:w-20 md:h-20" /><span className="text-[8px] font-bold uppercase tracking-widest">{t.devices.tablet}</span></div>
+                <div className="flex flex-col items-center gap-4 text-white/40"><Laptop size={56} className="md:w-24 md:h-24" /><span className="text-[8px] font-bold uppercase tracking-widest">{t.devices.desktop}</span></div>
               </div>
               <motion.div animate={{ rotate: 360 }} transition={{ duration: 10, repeat: Infinity, ease: "linear" }} className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-10"><RefreshCw size={200} className="text-[#6d5dfc]" /></motion.div>
             </div>
           </div>
           <div className="flex-1 text-center md:text-left order-1 md:order-2">
-            <span className="text-purple-400 font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">Всегда с тобой</span>
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">Настоящая <br /> мультиплатформенность.</h2>
-            <p className="text-lg text-white/50 mb-8 leading-relaxed">Доступ через браузер (PWA) на смартфоне, планшете или компьютере. Не нужно ничего скачивать из сторов. Пользуйся на любом устройстве одновременно — данные синхронизируются мгновенно.</p>
+            <span className="text-purple-400 font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">{t.multiTag}</span>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">{t.multiTitle}</h2>
+            <p className="text-lg text-white/50 mb-8 leading-relaxed">{t.multiText}</p>
           </div>
         </section>
 
-        {/* Multi-Currency Section */}
         <section className="flex flex-col md:flex-row items-center gap-16 md:gap-20">
           <div className="flex-1 text-center md:text-left">
-            <span className="text-blue-400 font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">Глобальная свобода</span>
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">Трать в любой валюте.</h2>
-            <p className="text-lg text-white/50 mb-8 leading-relaxed">CoinLover автоматически обновляет курсы валют. Плати в лирах, тенге или батах — приложение само пересчитает всё в твою базовую валюту для точности отчетов.</p>
+            <span className="text-blue-400 font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">{t.currencyTag}</span>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">{t.currencyTitle}</h2>
+            <p className="text-lg text-white/50 mb-8 leading-relaxed">{t.currencyText}</p>
           </div>
           <div className="flex-1 relative group flex justify-center md:justify-end">
             <div className="absolute -inset-4 bg-blue-500/5 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000 rounded-full" />
             <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.3 }} className="glass-panel p-2 border-white/10 shadow-2xl relative z-10 overflow-hidden w-fit">
-              <img src="/currency-preview.png" alt="Multi-Currency Support" className="block w-full h-auto max-h-[450px] md:max-h-[550px] rounded-[20px] object-contain" />
+              <img src="/currency-preview.png" alt="Currency" className="block w-full h-auto max-h-[450px] md:max-h-[550px] rounded-[20px] object-contain" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#050505]/40 to-transparent pointer-events-none" />
             </motion.div>
           </div>
         </section>
 
-        {/* Google Sheets Section */}
         <section className="flex flex-col md:flex-row-reverse items-center gap-16 md:gap-20">
           <div className="flex-1 text-center md:text-left">
-            <span className="text-green-500 font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">Владение данными</span>
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">Твои данные — <br /> в твоих таблицах.</h2>
-            <p className="text-lg text-white/50 mb-8 leading-relaxed">Никаких закрытых баз данных. Каждая транзакция мгновенно улетает в твою личную Google Таблицу. Полная свобода и контроль над информацией.</p>
+            <span className="text-green-500 font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">{t.sheetsTag}</span>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">{t.sheetsTitle}</h2>
+            <p className="text-lg text-white/50 mb-8 leading-relaxed">{t.sheetsText}</p>
           </div>
           <div className="flex-1 relative group flex justify-center md:justify-start">
             <div className="absolute -inset-4 bg-green-500/5 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000 rounded-full" />
             <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.3 }} className="glass-panel p-2 border-white/10 shadow-2xl relative z-10 overflow-hidden w-fit">
-              <img src="/sheets-preview.png" alt="Google Sheets Sync" className="block w-full h-auto max-h-[400px] rounded-[20px] object-cover" />
+              <img src="/sheets-preview.png" alt="Sheets" className="block w-full h-auto max-h-[400px] rounded-[20px] object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#050505]/40 to-transparent pointer-events-none" />
             </motion.div>
           </div>
         </section>
 
-        {/* AI Roadmap */}
         <section className="text-center">
-          <h2 className="text-4xl font-bold mb-16 text-gradient-purple">Будущее CoinLover</h2>
+          <h2 className="text-4xl font-bold mb-16 text-gradient-purple">{t.roadmapTitle}</h2>
           <div className="grid md:grid-cols-2 gap-8 text-left">
             <div className="glass-card p-10 border-[#6d5dfc]/20 relative overflow-hidden group">
               <div className="absolute inset-0 ai-shimmer opacity-20" />
               <div className="relative z-10">
-                <div className="flex items-center gap-3 mb-6">
-                  <Sparkles className="w-6 h-6 text-[#6d5dfc]" />
-                  <span className="text-xs font-bold tracking-widest uppercase text-[#6d5dfc]">В разработке</span>
-                </div>
-                <h3 className="text-2xl font-bold mb-4">ИИ-ассистент</h3>
-                <p className="text-white/60 leading-relaxed">Ваш личный финансовый директор на базе нейросетей. Автоматическое распределение трат и советы по экономии в реальном времени.</p>
+                <div className="flex items-center gap-3 mb-6"><Sparkles className="w-6 h-6 text-[#6d5dfc]" /><span className="text-xs font-bold tracking-widest uppercase text-[#6d5dfc]">{t.aiTag}</span></div>
+                <h3 className="text-2xl font-bold mb-4">{t.aiTitle}</h3>
+                <p className="text-white/60 leading-relaxed">{t.aiText}</p>
               </div>
             </div>
             <div className="glass-card p-10 border-white/5 opacity-60">
                <RefreshCw className="w-6 h-6 text-white/40 mb-6" />
-               <h3 className="text-2xl font-bold mb-4">Семейная синхронизация</h3>
-               <p className="text-white/60 leading-relaxed">Поддержка командных бюджетов и общих таблиц для всей семьи. Следите за общим капиталом вместе.</p>
+               <h3 className="text-2xl font-bold mb-4">{t.familyTitle}</h3>
+               <p className="text-white/60 leading-relaxed">{t.familyText}</p>
             </div>
           </div>
         </section>
 
-        {/* Final CTA */}
         <section className="text-center py-20 relative">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#6d5dfc]/5 blur-[120px] rounded-full pointer-events-none" />
-          <h2 className="text-5xl md:text-7xl font-bold mb-12 tracking-tight">Верни себе контроль.</h2>
+          <h2 className="text-5xl md:text-7xl font-bold mb-12 tracking-tight">{t.finalCta}</h2>
           <div className="flex flex-col sm:flex-row gap-6 justify-center relative z-10 px-4">
-            <button onClick={() => setIsConnectOpen(true)} className="px-8 md:px-12 py-4 md:py-6 bg-[#6d5dfc] hover:bg-[#5b4ce3] text-white font-bold rounded-2xl transition-all shadow-2xl shadow-[#6d5dfc]/40 text-base md:text-lg outline-none">Подключить свою таблицу</button>
-            <button onClick={handleDemo} className="px-8 md:px-12 py-4 md:py-6 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold rounded-2xl transition-all text-base md:text-lg outline-none">Попробовать демо</button>
+            <button onClick={() => handleOpenModal("onboarding")} className="px-8 md:px-12 py-4 md:py-6 bg-[#6d5dfc] hover:bg-[#5b4ce3] text-white font-bold rounded-2xl transition-all shadow-2xl shadow-[#6d5dfc]/40 text-base md:text-lg outline-none">{t.cta}</button>
+            <button onClick={handleDemo} className="px-8 md:px-12 py-4 md:py-6 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold rounded-2xl transition-all text-base md:text-lg outline-none">{t.demo}</button>
           </div>
         </section>
       </div>
@@ -287,16 +369,20 @@ export const LandingPage: React.FC = () => {
               {!isSent ? (
                 <form onSubmit={handleSubmit}>
                   <div className="w-16 h-16 bg-[#6d5dfc]/10 rounded-2xl flex items-center justify-center mb-8"><Database className="w-8 h-8 text-[#6d5dfc]" /></div>
-                  <h2 className="text-3xl font-bold mb-3">Мы на связи для любых проектов</h2>
-                  <p className="text-white/50 mb-10 leading-relaxed text-sm">Оставьте свой Email или Telegram. Мы свяжемся с вами за 5 минут.</p>
-                  <input required type="text" placeholder="@username или email..." value={contact} onChange={(e) => setContact(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-5 text-white focus:border-[#6d5dfc]/50 transition-all outline-none text-lg mb-8" />
-                  <button className="w-full py-5 bg-[#6d5dfc] hover:bg-[#5b4ce3] text-white font-bold rounded-2xl flex items-center justify-center gap-3 transition-all text-lg shadow-xl shadow-[#6d5dfc]/20 outline-none">Отправить <Send size={20} /></button>
+                  <h2 className="text-3xl font-bold mb-3">
+                    {modalType === "onboarding" ? t.modalTitle : t.studioTitle}
+                  </h2>
+                  <p className="text-white/50 mb-10 leading-relaxed text-sm">
+                    {modalType === "onboarding" ? t.modalSub : t.studioSub}
+                  </p>
+                  <input required type="text" placeholder={t.modalPlaceholder} value={contact} onChange={(e) => setContact(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-5 text-white focus:border-[#6d5dfc]/50 transition-all outline-none text-lg mb-8" />
+                  <button className="w-full py-5 bg-[#6d5dfc] hover:bg-[#5b4ce3] text-white font-bold rounded-2xl flex items-center justify-center gap-3 transition-all text-lg shadow-xl shadow-[#6d5dfc]/20 outline-none">{t.modalSend} <Send size={20} /></button>
                 </form>
               ) : (
                 <div className="text-center py-12">
                   <div className="w-24 h-24 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-8 shadow-[0_0_30px_rgba(34,197,94,0.2)]"><Sparkles className="w-12 h-12 text-green-500" /></div>
-                  <h2 className="text-3xl font-bold mb-3">Принято!</h2>
-                  <p className="text-white/50 text-lg">Мы скоро свяжемся с вами.</p>
+                  <h2 className="text-3xl font-bold mb-3">{t.modalSuccess}</h2>
+                  <p className="text-white/50 text-lg">{t.modalSuccessSub}</p>
                 </div>
               )}
             </motion.div>
@@ -308,10 +394,10 @@ export const LandingPage: React.FC = () => {
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="flex items-center gap-3"><div className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center"><Coins className="w-4 h-4 text-white/40" /></div><span className="font-bold text-white/30 tracking-widest uppercase text-xs">CoinLover</span></div>
           <button 
-            onClick={() => setIsConnectOpen(true)}
-            className="tracking-widest uppercase text-white/60 hover:text-white font-bold transition-colors outline-none text-[10px] md:text-xs"
+            onClick={() => handleOpenModal("studio")}
+            className="tracking-widest uppercase text-white/30 hover:text-white transition-colors outline-none text-[10px] md:text-xs"
           >
-            2026 Сделано Broz Studio
+            {t.footerStudio}
           </button>
         </div>
       </footer>
