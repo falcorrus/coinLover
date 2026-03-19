@@ -62,7 +62,7 @@ export default function App() {
     }
   }, [syncStatus, accounts.length]);
 
-  const handleOnboardingComplete = async (currency: string, useTemplate: boolean) => {
+  const handleOnboardingComplete = async (currency: string, localCurrency: string, useTemplate: boolean) => {
     localStorage.setItem("cl_onboarding_completed", "true");
     setIsOnboarding(false);
     
@@ -84,13 +84,14 @@ export default function App() {
       }
     } else {
       newAccounts = [
-        { id: `acc-${Date.now()}`, name: "Наличные", balance: 0, currency: currency, color: "#10b981", icon: "wallet" }
+        { id: `acc-${Date.now()}`, name: "Наличные", balance: 0, currency: localCurrency, color: "#10b981", icon: "wallet" }
       ];
       newCategories = [];
       newIncomes = [];
     }
 
-    if (newAccounts.length > 0) newAccounts[0].currency = currency;
+    // Set the first account to the chosen local currency
+    if (newAccounts.length > 0) newAccounts[0].currency = localCurrency;
     
     setAccounts(newAccounts);
     setCategories(newCategories);
