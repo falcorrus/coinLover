@@ -11,3 +11,13 @@ The background is a deep, immersive **Midnight Blue (#0F172A)**, suggesting a pr
 
 ## 4. Rhythm and Craftsmanship
 Visual hierarchy is achieved through scale and glow. Important data points "shine" with a subtle outer glow, while secondary information remains muted in slate tones. Interaction is characterized by smooth, physics-based transitions (250ms). This philosophy demands **master-level execution**: every alignment is perfect, every shadow is soft and multi-layered, and every pixel is placed with painstaking attention to detail. The final result looks like a product of deep expertise, labored over with care for the discerning user.
+
+## 5. Modern Glow: The Borderless Artifact (New)
+The "Modern Glow" style takes the Artifact philosophy to its logical conclusion by removing the "container" entirely. In this mode, categories are not "in" boxes; they **are** the light sources. 
+
+### Key Principles:
+- **Zero-Borders:** All background plates and strokes are removed to let the icon's silhouette breathe. 
+- **The Halo Effect:** Each artifact emits a soft, 10px Gaussian glow (`drop-shadow`) in its own signature color. This creates a "Neon Floating" effect that guides the eye through color alone.
+- **Typography as Texture:** Labels are rendered in a lighter weight (`font-medium`) with expanded tracking (`0.12em`). This transforms the text from "data" into a "label tag" that supports the icon without competing with its glow.
+- **Visual Weight:** Icons are scaled up by ~20% compared to bordered themes to maintain the same visual footprint and hit-box intuition.
+- **Immersion:** Best experienced on a **Deep Void (#0D1117)** background, where the lack of borders creates an infinite, gallery-like space for your finances.

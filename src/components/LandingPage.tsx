@@ -52,17 +52,17 @@ export const LandingPage: React.FC = () => {
   };
 
   const wallets = [
-    { name: "Cash", icon: <Banknote size={48} />, color: "#10b981", active: false },
-    { name: "Bank", icon: <Wallet size={48} />, color: "#06b6d4", active: true },
-    { name: "Exchange", icon: <TrendingUp size={48} />, color: "#3b82f6", active: false },
+    { name: "Наличные", icon: <Banknote size={48} />, color: "#10b981", active: false },
+    { name: "Банк", icon: <Wallet size={48} />, color: "#06b6d4", active: true },
+    { name: "Биржа", icon: <TrendingUp size={48} />, color: "#3b82f6", active: false },
   ];
 
   const categories = [
-    { name: "Food", icon: <Utensils size={24} />, color: "#f59e0b" },
-    { name: "Transport", icon: <Car size={24} />, color: "#3b82f6" },
-    { name: "Coffee", icon: <Coffee size={24} />, color: "#8b5cf6" },
-    { name: "Shopping", icon: <ShoppingBag size={24} />, color: "#10b981" },
-    { name: "Fun", icon: <Film size={24} />, color: "#ec4899" },
+    { name: "Еда", icon: <Utensils size={24} />, color: "#f59e0b" },
+    { name: "Транспорт", icon: <Car size={24} />, color: "#3b82f6" },
+    { name: "Кофе", icon: <Coffee size={24} />, color: "#8b5cf6" },
+    { name: "Покупки", icon: <ShoppingBag size={24} />, color: "#10b981" },
+    { name: "Отдых", icon: <Film size={24} />, color: "#ec4899" },
   ];
 
   return (
@@ -83,10 +83,9 @@ export const LandingPage: React.FC = () => {
             <span className="text-base md:text-xl font-bold tracking-tight text-white/90">CoinLover</span>
           </div>
           <div className="flex items-center gap-2 md:gap-4">
-            <button onClick={handleDemo} className="px-2 md:px-4 py-2 text-[10px] md:text-sm font-medium text-white/70 hover:text-white transition-colors outline-none">Demo</button>
+            <button onClick={handleDemo} className="px-2 md:px-4 py-2 text-[10px] md:text-sm font-medium text-white/70 hover:text-white transition-colors outline-none">Демо</button>
             <button onClick={() => setIsConnectOpen(true)} className="px-3 md:px-4 py-2 bg-[#6d5dfc] hover:bg-[#5b4ce3] text-white text-[10px] md:text-sm font-semibold rounded-xl transition-all shadow-lg shadow-[#6d5dfc]/20 whitespace-nowrap outline-none">
-              <span className="hidden sm:inline">I want it</span>
-              <span className="sm:hidden">I want it</span>
+              <span>Хочу!</span>
             </button>
           </div>
         </div>
@@ -124,7 +123,7 @@ export const LandingPage: React.FC = () => {
         {/* Analytics Section with Slideshow */}
         <section className="flex flex-col md:flex-row items-center gap-16 md:gap-20">
           <div className="flex-1 text-center md:text-left">
-            <span className="text-[#6d5dfc] font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">Visual Clarity</span>
+            <span className="text-[#6d5dfc] font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">Визуальная ясность</span>
             <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">Аналитика, которая <br /> не пугает.</h2>
             <p className="text-lg text-white/50 mb-8 leading-relaxed">CoinLover превращает сухие цифры в наглядную историю ваших трат. Один взгляд — и вы знаете, куда ушел бюджет.</p>
           </div>
@@ -155,7 +154,7 @@ export const LandingPage: React.FC = () => {
         {/* Customization Section */}
         <section className="flex flex-col md:flex-row-reverse items-center gap-16 md:gap-20">
           <div className="flex-1 text-center md:text-left">
-            <span className="text-orange-400 font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">Total Control</span>
+            <span className="text-orange-400 font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">Полный контроль</span>
             <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">Настрой всё <br /> под себя.</h2>
             <p className="text-lg text-white/50 mb-8 leading-relaxed">Полная свобода действий. Долгое нажатие открывает редактор: меняй иконки, названия и лимиты. Не нравится порядок? Просто перетащи кошелек или категорию в любое место жестом.</p>
           </div>
@@ -171,7 +170,7 @@ export const LandingPage: React.FC = () => {
         {/* History & Search Section */}
         <section className="flex flex-col md:flex-row items-center gap-16 md:gap-20">
           <div className="flex-1 text-center md:text-left">
-            <span className="text-yellow-500 font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">Smart History</span>
+            <span className="text-yellow-500 font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">Умная история</span>
             <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">Найти и изменить — <br /> проще простого.</h2>
             <p className="text-lg text-white/50 mb-8 leading-relaxed">Интуитивный поиск и история транзакций. Забыли, сколько потратили вчера в магазине? Один тап — и вся история перед глазами. Любую запись можно мгновенно отредактировать.</p>
           </div>
@@ -192,22 +191,22 @@ export const LandingPage: React.FC = () => {
               <div className="relative grid grid-cols-3 gap-8 md:gap-12">
                 <motion.div whileHover={{ scale: 1.1 }} className="flex flex-col items-center gap-4 text-white/40 group-hover:text-[#6d5dfc] transition-colors">
                   <Smartphone size={40} className="md:w-16 md:h-16" />
-                  <span className="text-[8px] font-bold uppercase tracking-widest">Mobile</span>
+                  <span className="text-[8px] font-bold uppercase tracking-widest">Смартфон</span>
                 </motion.div>
                 <motion.div whileHover={{ scale: 1.1 }} className="flex flex-col items-center gap-4 text-white/40 group-hover:text-white transition-colors">
                   <Tablet size={48} className="md:w-20 md:h-20" />
-                  <span className="text-[8px] font-bold uppercase tracking-widest">Tablet</span>
+                  <span className="text-[8px] font-bold uppercase tracking-widest">Планшет</span>
                 </motion.div>
                 <motion.div whileHover={{ scale: 1.1 }} className="flex flex-col items-center gap-4 text-white/40 group-hover:text-[#6d5dfc] transition-colors">
                   <Laptop size={56} className="md:w-24 md:h-24" />
-                  <span className="text-[8px] font-bold uppercase tracking-widest">Desktop</span>
+                  <span className="text-[8px] font-bold uppercase tracking-widest">Компьютер</span>
                 </motion.div>
               </div>
               <motion.div animate={{ rotate: 360 }} transition={{ duration: 10, repeat: Infinity, ease: "linear" }} className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-10"><RefreshCw size={200} className="text-[#6d5dfc]" /></motion.div>
             </div>
           </div>
           <div className="flex-1 text-center md:text-left order-1 md:order-2">
-            <span className="text-purple-400 font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">Always with you</span>
+            <span className="text-purple-400 font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">Всегда с тобой</span>
             <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">Настоящая <br /> мультиплатформенность.</h2>
             <p className="text-lg text-white/50 mb-8 leading-relaxed">Доступ через браузер (PWA) на смартфоне, планшете или компьютере. Не нужно ничего скачивать из сторов. Пользуйся на любом устройстве одновременно — данные синхронизируются мгновенно.</p>
           </div>
@@ -216,9 +215,9 @@ export const LandingPage: React.FC = () => {
         {/* Multi-Currency Section */}
         <section className="flex flex-col md:flex-row items-center gap-16 md:gap-20">
           <div className="flex-1 text-center md:text-left">
-            <span className="text-blue-400 font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">Global Freedom</span>
+            <span className="text-blue-400 font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">Глобальная свобода</span>
             <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">Трать в любой валюте.</h2>
-            <p className="text-lg text-white/50 mb-8 leading-relaxed">CoinLover автоматически обновляет курсы валют. Плати в лирах, тенге или батах — приложение само пересчитает всё в твою основную валюту для точности отчетов.</p>
+            <p className="text-lg text-white/50 mb-8 leading-relaxed">CoinLover автоматически обновляет курсы валют. Плати в лирах, тенге или батах — приложение само пересчитает всё в твою базовую валюту для точности отчетов.</p>
           </div>
           <div className="flex-1 relative group flex justify-center md:justify-end">
             <div className="absolute -inset-4 bg-blue-500/5 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000 rounded-full" />
@@ -232,7 +231,7 @@ export const LandingPage: React.FC = () => {
         {/* Google Sheets Section */}
         <section className="flex flex-col md:flex-row-reverse items-center gap-16 md:gap-20">
           <div className="flex-1 text-center md:text-left">
-            <span className="text-green-500 font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">Data Ownership</span>
+            <span className="text-green-500 font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">Владение данными</span>
             <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">Твои данные — <br /> в твоих таблицах.</h2>
             <p className="text-lg text-white/50 mb-8 leading-relaxed">Никаких закрытых баз данных. Каждая транзакция мгновенно улетает в твою личную Google Таблицу. Полная свобода и контроль над информацией.</p>
           </div>
@@ -254,15 +253,15 @@ export const LandingPage: React.FC = () => {
               <div className="relative z-10">
                 <div className="flex items-center gap-3 mb-6">
                   <Sparkles className="w-6 h-6 text-[#6d5dfc]" />
-                  <span className="text-xs font-bold tracking-widest uppercase text-[#6d5dfc]">In Development</span>
+                  <span className="text-xs font-bold tracking-widest uppercase text-[#6d5dfc]">В разработке</span>
                 </div>
-                <h3 className="text-2xl font-bold mb-4">AI Assistant</h3>
+                <h3 className="text-2xl font-bold mb-4">ИИ-ассистент</h3>
                 <p className="text-white/60 leading-relaxed">Ваш личный финансовый директор на базе нейросетей. Автоматическое распределение трат и советы по экономии в реальном времени.</p>
               </div>
             </div>
             <div className="glass-card p-10 border-white/5 opacity-60">
-               <Database className="w-6 h-6 text-white/40 mb-6" />
-               <h3 className="text-2xl font-bold mb-4">Family Sync</h3>
+               <RefreshCw className="w-6 h-6 text-white/40 mb-6" />
+               <h3 className="text-2xl font-bold mb-4">Семейная синхронизация</h3>
                <p className="text-white/60 leading-relaxed">Поддержка командных бюджетов и общих таблиц для всей семьи. Следите за общим капиталом вместе.</p>
             </div>
           </div>
@@ -288,9 +287,9 @@ export const LandingPage: React.FC = () => {
               {!isSent ? (
                 <form onSubmit={handleSubmit}>
                   <div className="w-16 h-16 bg-[#6d5dfc]/10 rounded-2xl flex items-center justify-center mb-8"><Database className="w-8 h-8 text-[#6d5dfc]" /></div>
-                  <h2 className="text-3xl font-bold mb-3">Начнем настройку?</h2>
+                  <h2 className="text-3xl font-bold mb-3">Мы на связи для любых проектов</h2>
                   <p className="text-white/50 mb-10 leading-relaxed text-sm">Оставьте свой Email или Telegram. Мы свяжемся с вами за 5 минут.</p>
-                  <input required type="text" placeholder="@username or email..." value={contact} onChange={(e) => setContact(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-5 text-white focus:border-[#6d5dfc]/50 transition-all outline-none text-lg mb-8" />
+                  <input required type="text" placeholder="@username или email..." value={contact} onChange={(e) => setContact(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-5 text-white focus:border-[#6d5dfc]/50 transition-all outline-none text-lg mb-8" />
                   <button className="w-full py-5 bg-[#6d5dfc] hover:bg-[#5b4ce3] text-white font-bold rounded-2xl flex items-center justify-center gap-3 transition-all text-lg shadow-xl shadow-[#6d5dfc]/20 outline-none">Отправить <Send size={20} /></button>
                 </form>
               ) : (
@@ -308,7 +307,12 @@ export const LandingPage: React.FC = () => {
       <footer className="py-16 px-6 border-t border-white/5 text-white/20 text-xs">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="flex items-center gap-3"><div className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center"><Coins className="w-4 h-4 text-white/40" /></div><span className="font-bold text-white/30 tracking-widest uppercase text-xs">CoinLover</span></div>
-          <button onClick={() => setIsConnectOpen(true)} className="tracking-widest uppercase hover:text-white transition-colors outline-none">Пишите на почту или Телеграм</button>
+          <button 
+            onClick={() => setIsConnectOpen(true)}
+            className="tracking-widest uppercase text-white/60 hover:text-white font-bold transition-colors outline-none text-[10px] md:text-xs"
+          >
+            2026 Сделано Broz Studio
+          </button>
         </div>
       </footer>
     </div>
