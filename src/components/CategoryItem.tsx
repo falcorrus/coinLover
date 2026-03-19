@@ -118,7 +118,8 @@ export const CategoryItem: React.FC<Props> = ({
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
         style={{ 
-          touchAction: "none"
+          touchAction: "none",
+          filter: theme === 'modern' ? `drop-shadow(0 0 10px ${category.color}80)` : 'none'
         }}
         className={`flex items-center justify-center transition-all duration-300 ${
           isDragging ? "scale-110" :
@@ -127,13 +128,13 @@ export const CategoryItem: React.FC<Props> = ({
         } ${isTarget ? "scale-125" : ""}`}
       >
         <Icon 
-          size={48} 
+          size={theme === 'modern' ? 52 : 48} 
           className="transition-all duration-300" 
           style={{ 
             color: isTarget ? "var(--primary-color)" : category.color,
-            fill: isTarget ? "transparent" : `${category.color}20` 
+            fill: theme === 'modern' ? 'transparent' : (isTarget ? "transparent" : `${category.color}20`) 
           }} 
-          strokeWidth={1.5}
+          strokeWidth={theme === 'modern' ? 2 : 1.5}
         />
       </div>
       <div className="flex flex-col items-center pointer-events-none select-none w-full pt-1">
@@ -146,7 +147,7 @@ export const CategoryItem: React.FC<Props> = ({
           <span className={`font-technical text-[10px] font-bold mt-0.5 ${
             theme === 'modern' ? 'text-slate-300 opacity-60' : 'text-[var(--text-main)] opacity-60'
           }`}>
-            {currencyMode === 'local' ? `${currencySymbol} ${spent.toLocaleString()}` : `-$${spent.toLocaleString()}`}
+            {currencyMode === 'local' ? `${currencySymbol} ${spent.toLocaleString()}` : `-${currencySymbol}${spent.toLocaleString()}`}
           </span>
         )}
       </div>

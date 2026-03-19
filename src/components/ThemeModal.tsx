@@ -26,7 +26,7 @@ const THEMES: ThemeOption[] = [
     id: "modern",
     name: "Modern Glow",
     description: "Безрамочный дизайн с мягким неоновым свечением.",
-    colors: ["#0B0E14", "#a78bfa", "transparent"]
+    colors: ["#0D1117", "#a78bfa", "transparent"]
   },
   {
     id: "midnight",
@@ -104,7 +104,6 @@ export const ThemeModal: React.FC<Props> = ({ isOpen, onClose, currentTheme, onS
                   )}
                 </div>
 
-                {/* Preview Strip */}
                 <div className="flex justify-between items-center px-2 py-3 rounded-xl bg-black/20">
                   {PREVIEW_CATEGORIES.map((cat, i) => (
                     <div key={i} className="flex flex-col items-center gap-1.5">
@@ -115,7 +114,7 @@ export const ThemeModal: React.FC<Props> = ({ isOpen, onClose, currentTheme, onS
                             : "w-10 h-10 rounded-xl border border-white/5 bg-white/5 shadow-lg"
                         }`}
                         style={{
-                          filter: theme.id === 'modern' ? `drop-shadow(0 0 6px ${cat.color})` : 'none'
+                          filter: theme.id === 'modern' ? `drop-shadow(0 0 6px ${cat.color}80)` : 'none'
                         }}
                       >
                         <cat.icon 

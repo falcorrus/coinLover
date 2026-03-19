@@ -52,7 +52,7 @@ export default function App() {
 
   const [isIncomeCollapsed, setIsIncomeCollapsed] = React.useState(true);
   const [isSettingsMenuOpen, setIsSettingsMenuOpen] = React.useState(false);
-  const [theme, setTheme] = React.useState<"light" | "dark" | "midnight">(() => (localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.THEME) as "light" | "dark" | "midnight") || "dark");
+  const [theme, setTheme] = React.useState<"light" | "dark" | "midnight" | "modern">(() => (localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.THEME) as "light" | "dark" | "midnight" | "modern") || "dark");
   const [editingTxId, setEditingTxId] = React.useState<string | null>(null);
 
   // Modal States
@@ -65,6 +65,7 @@ export default function App() {
   const [confirmDelete, setConfirmDelete] = React.useState<{ isOpen: boolean; title: string; message: string; onConfirm: () => void; }>({ isOpen: false, title: "", message: "", onConfirm: () => { } });
   const [isTagModalOpen, setIsTagModalOpen] = React.useState(false);
   const [isUsersModalOpen, setIsUsersModalOpen] = React.useState(false);
+  const [isThemeModalOpen, setIsThemeModalOpen] = React.useState(false);
   const [categoryCurrencyMode, setCategoryCurrencyMode] = React.useState<"usd" | "local">(() => {
     return (localStorage.getItem("cl_category_currency_mode") as "usd" | "local") || "usd";
   });
@@ -135,7 +136,7 @@ export default function App() {
   }, [checkConflicts]);
 
   React.useEffect(() => {
-    document.documentElement.classList.remove("light", "midnight");
+    document.documentElement.classList.remove("light", "midnight", "modern");
     if (theme !== "dark") document.documentElement.classList.add(theme);
     localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.THEME, theme);
   }, [theme]);
@@ -191,7 +192,7 @@ export default function App() {
       sensors={sensors} collisionDetection={rectIntersection} 
       onDragStart={handleDragStart} onDragMove={handleDragMove} onDragOver={handleDragOver} onDragEnd={handleDragEnd}
     >
-      <div className={`min-h-screen flex flex-col max-w-md mx-auto relative shadow-2xl overflow-hidden bg-[var(--bg-color)] text-[var(--text-main)] font-sans select-none transition-colors duration-300 ${theme === 'light' ? 'light' : ''}`}>
+      <div className={`min-h-screen flex flex-col max-w-md mx-auto relative shadow-2xl overflow-hidden bg-[var(--bg-color)] text-[var(--text-main)] font-sans select-none transition-colors duration-300 ${theme}`}>
         <style>{`body { overflow: hidden; overscroll-behavior: none; background: var(--bg-color); } * { -webkit-tap-highlight-color: transparent; }`}</style>
         
         {isSplashVisible && (
@@ -221,7 +222,10 @@ export default function App() {
                   <>
                     <div className="fixed inset-0 z-[200] bg-black/40 backdrop-blur-[2px]" onClick={() => setIsSettingsMenuOpen(false)} />
                     <div className="absolute top-12 right-0 w-48 bg-[var(--bg-color)] border border-[var(--glass-border)] rounded-2xl shadow-2xl flex flex-col z-[201] p-2 animate-in fade-in zoom-in-95 origin-top-right">
-                      <div className="px-1 py-1 mb-1"><div className="flex items-center gap-1 bg-[var(--glass-item-bg)] p-1 rounded-xl border border-[var(--glass-border)]"><button onClick={() => { setTheme("light"); setIsSettingsMenuOpen(false); }} className={`flex-1 h-9 rounded-lg flex items-center justify-center transition-all ${theme === 'light' ? 'bg-white text-amber-500 shadow-sm' : 'text-slate-500 hover:text-white'}`}><Sun size={16} /></button><button onClick={() => { setTheme("dark"); setIsSettingsMenuOpen(false); }} className={`flex-1 h-9 rounded-lg flex items-center justify-center transition-all ${theme === 'dark' ? 'bg-[#1e293b] text-blue-400 shadow-sm' : 'text-slate-500 hover:text-white'}`}><Moon size={16} /></button><button onClick={() => { setTheme("midnight"); setIsSettingsMenuOpen(false); }} className={`flex-1 h-9 rounded-lg flex items-center justify-center transition-all ${theme === 'midnight' ? 'bg-[#F59E0B]/20 text-[#F59E0B] shadow-sm' : 'text-slate-500 hover:text-white'}`}><Sparkles size={16} /></button></div></div>
+                      <button onClick={() => { setIsSettingsMenuOpen(false); setIsThemeModalOpen(true); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left border-b border-[var(--glass-border)]/50 mb-1 rounded-b-none">
+                        <Sparkles size={16} className="text-amber-400" />
+                        <span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Оформление</span>
+                      </button>
                       <button onClick={() => { setIsSettingsMenuOpen(false); pullSettings(); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><RefreshCcw size={16} className={`text-amber-500 ${syncStatus === 'loading' ? 'animate-spin' : ''}`} /><span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Обновить</span></button>
                       <button onClick={() => { setIsSettingsMenuOpen(false); setHistoryModal({ isOpen: true, entity: { name: "Лента", icon: "list" }, type: "feed" }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><List size={16} className="text-[var(--primary-color)]" /><span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Лента</span></button>
                       <button onClick={() => { setIsSettingsMenuOpen(false); setCalendarAnalyticsModal({ isOpen: true }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><Calendar size={16} className="text-emerald-500" /><span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Календарь</span></button>
@@ -258,17 +262,18 @@ export default function App() {
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-[10px] font-black text-slate-500 uppercase">Расходы</h2>
                 <div className="flex items-center gap-3">
-                  <button 
+                  <button
                     onClick={() => { setCategoryCurrencyMode(p => p === "usd" ? "local" : "usd"); if (navigator.vibrate) navigator.vibrate(10); }}
                     className={`w-8 h-8 rounded-xl border transition-all shadow-sm flex items-center justify-center ${
-                      categoryCurrencyMode === 'usd' 
-                        ? 'bg-[var(--glass-item-bg)] border-[var(--glass-border)] text-[var(--text-muted)]' 
+                      categoryCurrencyMode === 'usd'
+                        ? 'bg-[var(--glass-item-bg)] border-[var(--glass-border)] text-[var(--text-muted)]'
                         : 'bg-[var(--primary-color)]/10 border-[var(--primary-color)]/30 text-[var(--primary-color)]'
                     }`}
-                    title={categoryCurrencyMode === "usd" ? "Показать в местной валюте" : "Показать в USD"}
+                    title={categoryCurrencyMode === "usd" ? `Показать в местной валюте` : `Показать в ${RatesService.getBaseCurrency()}`}
                   >
-                    {categoryCurrencyMode === "usd" ? <DollarSign size={14} /> : <span className="text-[10px] font-black">L</span>}
+                    {categoryCurrencyMode === "usd" ? <span>{RatesService.getBaseCurrency() === 'EUR' ? '€' : '$'}</span> : <span className="text-[10px] font-black">L</span>}
                   </button>
+
                   <button onClick={() => setAnalyticsModal({ isOpen: true, type: "expense" })} className="w-8 h-8 rounded-xl bg-[var(--primary-color)]/10 border border-[var(--primary-color)]/20 text-[var(--primary-color)] flex items-center justify-center hover:bg-[var(--primary-color)]/20 transition-all shadow-sm"><PieChart size={14} /></button>
                   <button onClick={() => setCategoryModal({ isOpen: true, category: null })} className="w-8 h-8 rounded-xl bg-[var(--glass-item-bg)] border border-[var(--glass-border)] text-[var(--text-main)] flex items-center justify-center hover:bg-[var(--glass-item-active)] transition-all shadow-sm"><Plus size={16} /></button>
                 </div>
@@ -277,9 +282,12 @@ export default function App() {
                 <div className="grid grid-cols-4 gap-y-6 gap-x-2 pb-4">
                   {categories.map(cat => {
                     const catTx = currentMonthTransactions.filter(t => t.type === "expense" && t.targetId === cat.id);
+                    const baseCurrency = RatesService.getBaseCurrency();
+                    const baseSymbol = baseCurrency === "EUR" ? "€" : "$";
+
                     const spent = Math.round(catTx.reduce((s, t) => {
                       const amt = categoryCurrencyMode === "usd" 
-                        ? (t.sourceAmountUSD ?? t.targetAmountUSD ?? t.sourceAmount ?? 0)
+                        ? (t.targetAmountUSD ?? t.sourceAmountUSD ?? t.sourceAmount ?? 0)
                         : (t.targetAmount ?? t.sourceAmount ?? 0);
                       return s + amt;
                     }, 0));
@@ -298,8 +306,9 @@ export default function App() {
                         onLongPress={(c) => { setIsSortingMode(false); setCategoryModal({ isOpen: true, category: c }); }} 
                         onClick={(category) => setHistoryModal({ isOpen: true, entity: category, type: "category" })} 
                         activeDragType={activeDragType}
+                        theme={theme}
                         currencyMode={categoryCurrencyMode}
-                        currencySymbol={currentLocal}
+                        currencySymbol={categoryCurrencyMode === 'usd' ? baseSymbol : currentLocal}
                       />
                     );
                   })}
@@ -313,11 +322,13 @@ export default function App() {
           accountModal={accountModal} incomeModal={incomeModal} categoryModal={categoryModal} historyModal={historyModal}
           analyticsModal={analyticsModal} calendarAnalyticsModal={calendarAnalyticsModal} confirmDelete={confirmDelete}
           numpad={numpad} isTagModalOpen={isTagModalOpen} isUsersModalOpen={isUsersModalOpen} conflictData={conflictData} editingTxId={editingTxId}
+          isThemeModalOpen={isThemeModalOpen} theme={theme}
           accounts={accounts} categories={categories} incomes={incomes} transactions={transactions} allExistingTags={allExistingTags}
           users={users} activeTableId={activeTableId}
           setAccountModal={setAccountModal} setIncomeModal={setIncomeModal} setCategoryModal={setCategoryModal} setHistoryModal={setHistoryModal}
           setAnalyticsModal={setAnalyticsModal} setCalendarAnalyticsModal={setCalendarAnalyticsModal} setConfirmDelete={setConfirmDelete}
           setNumpad={setNumpad} setIsTagModalOpen={setIsTagModalOpen} setIsUsersModalOpen={setIsUsersModalOpen} setEditingTxId={setEditingTxId} setConflictData={setConflictData}
+          setIsThemeModalOpen={setIsThemeModalOpen} setTheme={setTheme}
           addTransaction={addTransaction} updateTransaction={updateTransaction} deleteTransaction={deleteTransaction}
           saveAccount={saveAccount} deleteAccount={deleteAccount} saveCategory={saveCategory} deleteCategory={deleteCategory}
           saveIncome={saveIncome} deleteIncome={deleteIncome} updateLocalFromRemote={updateLocalFromRemote}
