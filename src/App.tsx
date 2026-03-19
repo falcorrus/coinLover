@@ -467,6 +467,7 @@ export default function App() {
           analyticsModal={analyticsModal} calendarAnalyticsModal={calendarAnalyticsModal} confirmDelete={confirmDelete}
           numpad={numpad} isTagModalOpen={isTagModalOpen} isUsersModalOpen={isUsersModalOpen} conflictData={conflictData} editingTxId={editingTxId}
           isThemeModalOpen={isThemeModalOpen} theme={theme}
+          categoryCurrencyMode={categoryCurrencyMode} localCurrencyCode={localCurrencyCode}
           accounts={accounts} categories={categories} incomes={incomes} transactions={transactions} allExistingTags={allExistingTags}
           users={users} activeTableId={activeTableId}
           setAccountModal={setAccountModal} setIncomeModal={setIncomeModal} setCategoryModal={setCategoryModal} setHistoryModal={setHistoryModal}

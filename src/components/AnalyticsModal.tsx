@@ -13,6 +13,8 @@ interface AnalyticsModalProps {
     accounts: Account[];
     globalTransactions: Transaction[];
     initialType?: "expense" | "income";
+    currencyMode: "base" | "local";
+    localCurrencyCode: string;
     onItemClick?: (entity: any, type: "category" | "tag" | "income" | "account", transactions: Transaction[]) => void;
 }
 
@@ -60,16 +62,21 @@ const getTagColor = (name: string) => {
 interface DetailItemProps {
     detail: any;
     analysisType: "expense" | "income";
+    currencyMode: "base" | "local";
+    localCurrencyCode: string;
     onClick: () => void;
 }
 
-const DetailItem: React.FC<DetailItemProps> = ({ detail, analysisType, onClick }) => {
+const DetailItem: React.FC<DetailItemProps> = ({ detail, analysisType, currencyMode, localCurrencyCode, onClick }) => {
     const baseCur = RatesService.getBaseCurrency();
     const getSymbol = (code: string) => {
         const symbols: Record<string, string> = { "USD": "$", "EUR": "€", "GBP": "£", "RUB": "₽", "RSD": "din", "BRL": "R$", "ARS": "ARS" };
         return symbols[code.toUpperCase()] || code;
     };
-    const symbol = getSymbol(baseCur);
+    
+    const isBase = currencyMode === 'base';
+    const displayAmount = isBase ? detail.amount : RatesService.convert(detail.amount, baseCur, localCurrencyCode);
+    const symbol = isBase ? getSymbol(baseCur) : getSymbol(localCurrencyCode);
 
     return (
         <div className="flex justify-between items-center cursor-pointer group" onClick={(e) => { e.stopPropagation(); onClick(); }}>
@@ -79,7 +86,7 @@ const DetailItem: React.FC<DetailItemProps> = ({ detail, analysisType, onClick }
             </div>
             <div className="flex items-center gap-2">
                 <span className={`text-xs font-bold ${analysisType === 'income' ? 'text-[var(--success-color)]' : 'text-[var(--text-main)]'}`}>
-                    {symbol} {Math.round(detail.amount).toLocaleString()}
+                    {symbol} {Math.round(displayAmount).toLocaleString()}
                 </span>
                 <span className="text-[9px] font-bold text-[var(--text-muted)] w-8 text-right">{detail.percent.toFixed(0)}%</span>
             </div>
@@ -90,7 +97,8 @@ const DetailItem: React.FC<DetailItemProps> = ({ detail, analysisType, onClick }
 // --- Main Component ---
 
 export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ 
-    isOpen, onClose, categories, incomes, accounts, globalTransactions, initialType = "expense", onItemClick 
+    isOpen, onClose, categories, incomes, accounts, globalTransactions, initialType = "expense", 
+    currencyMode, localCurrencyCode, onItemClick 
 }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -147,6 +155,18 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
     }, [filteredTx, tab, analysisType, categories, incomes]);
 
     const displayedTotal = useMemo(() => listItems.filter(i => selectedIds.has(i.id)).reduce((s, i) => s + i.amount, 0), [listItems, selectedIds]);
+
+    const { displayTotal, displaySymbol } = useMemo(() => {
+        const baseCur = RatesService.getBaseCurrency();
+        const getSymbol = (code: string) => {
+            const symbols: Record<string, string> = { "USD": "$", "EUR": "€", "GBP": "£", "RUB": "₽", "RSD": "din", "BRL": "R$", "ARS": "ARS" };
+            return symbols[code.toUpperCase()] || code;
+        };
+        const isBase = currencyMode === 'base';
+        const amount = isBase ? displayedTotal : RatesService.convert(displayedTotal, baseCur, localCurrencyCode);
+        const symbol = isBase ? getSymbol(baseCur) : getSymbol(localCurrencyCode);
+        return { displayTotal: amount, displaySymbol: symbol };
+    }, [displayedTotal, currencyMode, localCurrencyCode]);
 
     useEffect(() => { if (isOpen) { setAnalysisType(initialType); setExpandedItemId(null); } }, [isOpen, initialType]);
 
@@ -273,7 +293,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
 
                     <div className="px-6 py-4 shrink-0 flex flex-col items-center relative">
                         <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] tracking-widest mb-1">{analysisType === "expense" ? "Всего потрачено" : "Всего получено"}</span>
-                        <span className={`text-3xl font-black ${analysisType === "income" ? 'text-[var(--success-color)]' : 'text-[var(--text-main)]'}`}>${displayedTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <span className={`text-3xl font-black ${analysisType === "income" ? 'text-[var(--success-color)]' : 'text-[var(--text-main)]'}`}>{displaySymbol} {Math.round(displayTotal).toLocaleString()}</span>
                     </div>
 
                     <div className="px-6 pb-2 shrink-0 flex justify-between items-center">
@@ -332,14 +352,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                                     <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                                         <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] tracking-tighter mb-0.5">Total</span>
                                         <span className="text-sm font-black text-[var(--text-main)]">
-                                            {(() => {
-                                                const baseCur = RatesService.getBaseCurrency();
-                                                const getSymbol = (code: string) => {
-                                                    const symbols: Record<string, string> = { "USD": "$", "EUR": "€", "GBP": "£", "RUB": "₽", "RSD": "din", "BRL": "R$", "ARS": "ARS" };
-                                                    return symbols[code.toUpperCase()] || code;
-                                                };
-                                                return getSymbol(baseCur);
-                                            })()}&nbsp;{Math.round(displayedTotal).toLocaleString()}
+                                            {displaySymbol} {Math.round(displayTotal).toLocaleString()}
                                         </span>
                                     </div>
                                 </div>
@@ -371,6 +384,8 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                                     const isExpanded = expandedItemId === item.id;
                                     const isSelected = selectedIds.has(item.id);
                                     const details = isExpanded ? getItemDetails(item) : [];
+                                    const baseCur = RatesService.getBaseCurrency();
+                                    const itemDisplayAmount = currencyMode === 'base' ? item.amount : RatesService.convert(item.amount, baseCur, localCurrencyCode);
 
                                     return (
                                         <div key={item.id} className={`flex flex-col transition-all duration-300 ${isSelected ? 'opacity-100' : 'opacity-30 grayscale'}`}>
@@ -381,7 +396,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                                                         <span className={`text-sm font-semibold truncate transition-colors ${isSelected ? 'text-[var(--text-main)]' : 'text-[var(--text-muted)]'}`}>{item.name}</span>
                                                     </div>
                                                     <div className="flex flex-col items-end">
-                                                        <span className={`text-sm font-bold ${!isSelected ? 'text-[var(--text-muted)]' : (analysisType === 'income' ? 'text-[var(--success-color)]' : 'text-[var(--text-main)]')}`}>${item.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                                        <span className={`text-sm font-bold ${!isSelected ? 'text-[var(--text-muted)]' : (analysisType === 'income' ? 'text-[var(--success-color)]' : 'text-[var(--text-main)]')}`}>{displaySymbol} {Math.round(itemDisplayAmount).toLocaleString()}</span>
                                                         <div className="flex items-center gap-1">
                                                             <span className="text-[10px] font-bold text-[var(--text-muted)]">{item.percent.toFixed(1)}%</span>
                                                             <ChevronRight size={10} className={`text-[var(--text-muted)] transition-transform duration-300 ${isExpanded ? 'rotate-90' : ''}`} />
@@ -393,7 +408,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                                             {isExpanded && details.length > 0 && (
                                                 <div className="mt-2 ml-11 flex flex-col gap-3 border-l-2 border-[var(--glass-border)] pl-4 animate-in slide-in-from-top-2 duration-300">
                                                     {details.map(detail => (
-                                                        <DetailItem key={detail.id} detail={detail} analysisType={analysisType} onClick={() => {
+                                                        <DetailItem key={detail.id} detail={detail} analysisType={analysisType} currencyMode={currencyMode} localCurrencyCode={localCurrencyCode} onClick={() => {
                                                             if (!onItemClick) return;
                                                             const eType = analysisType === "income" ? (tab === "categories" ? "income" : "tag") : (tab === "tags" ? "category" : "tag");
                                                             const filter = filteredTx.filter(t => {

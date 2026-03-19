@@ -32,6 +32,8 @@ interface ModalManagerProps {
   theme: "light" | "dark" | "midnight" | "modern";
   conflictData: any; // Keep as any if dynamic from GAS, but better SyncSettingsFields | null
   editingTxId: string | null;
+  categoryCurrencyMode: "base" | "local";
+  localCurrencyCode: string;
   
   // Data
   accounts: Account[];
@@ -77,6 +79,7 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
     accountModal, incomeModal, categoryModal, historyModal, analyticsModal,
     calendarAnalyticsModal, confirmDelete, numpad, isTagModalOpen, isUsersModalOpen, conflictData, editingTxId,
     isThemeModalOpen, theme,
+    categoryCurrencyMode, localCurrencyCode,
     accounts, categories, incomes, transactions, allExistingTags, users, activeTableId,
     setAccountModal, setIncomeModal, setCategoryModal, setHistoryModal, setAnalyticsModal,
     setCalendarAnalyticsModal, setConfirmDelete, setNumpad, setIsTagModalOpen, setIsUsersModalOpen, setEditingTxId, setConflictData,
@@ -189,7 +192,30 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
           setNumpad({ isOpen: true, type: tx.type, source, destination, sourceAmount: String(tx.sourceAmount), sourceCurrency: actualSourceCurrency, targetAmount: String(tx.targetAmount ?? tx.sourceAmount), targetCurrency: tx.targetCurrency, targetLinked: true, activeField: "source", tag: tx.tag ?? null, comment: tx.comment ?? "", returnState }); 
         }} 
       />
-      <AnalyticsModal isOpen={analyticsModal.isOpen} onClose={() => setAnalyticsModal(p => ({ ...p, isOpen: false }))} categories={categories} incomes={incomes} accounts={accounts} globalTransactions={transactions} initialType={analyticsModal.type} onItemClick={(item, type, monthTx) => { let entity = item; if (type === "category") { const cat = categories.find(c => c.id === item.id); if (cat) entity = cat; } else if (type === "income") { const inc = incomes.find(i => i.id === item.id); if (inc) entity = inc; } setAnalyticsModal(p => ({ ...p, isOpen: false })); setHistoryModal({ isOpen: true, entity, type, customTransactions: monthTx.filter(t => { if (type === "category") return t.targetId === item.id; if (type === "tag") return (t.tag?.trim() || "Без тега") === item.name; if (type === "income") return t.targetId === item.id; return false; }), returnTo: "analytics" }); }} />
+      <AnalyticsModal 
+        isOpen={analyticsModal.isOpen} 
+        onClose={() => setAnalyticsModal(p => ({ ...p, isOpen: false }))} 
+        categories={categories} incomes={incomes} accounts={accounts} globalTransactions={transactions} 
+        initialType={analyticsModal.type} 
+        currencyMode={categoryCurrencyMode}
+        localCurrencyCode={localCurrencyCode}
+        onItemClick={(item, type, monthTx) => { 
+          let entity = item; 
+          if (type === "category") { const cat = categories.find(c => c.id === item.id); if (cat) entity = cat; } 
+          else if (type === "income") { const inc = incomes.find(i => i.id === item.id); if (inc) entity = inc; } 
+          setAnalyticsModal(p => ({ ...p, isOpen: false })); 
+          setHistoryModal({ 
+            isOpen: true, entity, type, 
+            customTransactions: monthTx.filter(t => { 
+              if (type === "category") return t.targetId === item.id; 
+              if (type === "tag") return (t.tag?.trim() || "Без тега") === item.name; 
+              if (type === "income") return t.targetId === item.id; 
+              return false; 
+            }), 
+            returnTo: "analytics" 
+          }); 
+        }} 
+      />
       <CalendarAnalyticsModal isOpen={calendarAnalyticsModal.isOpen} onClose={() => setCalendarAnalyticsModal({ isOpen: false })} globalTransactions={transactions} accounts={accounts} categories={categories} incomes={incomes} onItemClick={(item, type, dayTx) => { setCalendarAnalyticsModal({ isOpen: false }); setHistoryModal({ isOpen: true, entity: item, type, customTransactions: dayTx, returnTo: "calendar" }); }} />
       <ConfirmModal isOpen={confirmDelete.isOpen} title={confirmDelete.title} message={confirmDelete.message} onConfirm={confirmDelete.onConfirm} onCancel={() => setConfirmDelete(p => ({ ...p, isOpen: false }))} />
       <TagModal 
