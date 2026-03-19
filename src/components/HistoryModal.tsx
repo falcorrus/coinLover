@@ -90,6 +90,8 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
         const tAmt = tx.targetAmount ?? tx.amountLocal ?? sAmt;
         const tCurr = tx.targetCurrency ?? tx.currencyLocal ?? sCurr;
 
+        const baseCurrency = RatesService.getBaseCurrency();
+
         const getSymbol = (code: string) => {
             const symbols: Record<string, string> = { "USD": "$", "EUR": "€", "GBP": "£", "RUB": "₽", "RSD": "din", "BRL": "R$", "ARS": "ARS" };
             return symbols[code.toUpperCase()] || code;
@@ -99,7 +101,17 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
         let displayCurrency = entityType === "account" ? sCurr : tCurr;
         const displaySymbol = getSymbol(displayCurrency);
 
-        // Transfers are neutral in total balance, use Indigo color to distinguish from expenses/income
+        const baseSymbol = getSymbol(baseCurrency);
+
+        // Calculate amount in base currency for secondary display
+        let secondaryAmount = null;
+        if (displayCurrency !== baseCurrency) {
+            const amtInBase = (baseCurrency === 'USD' && sAmtUsd) 
+                ? sAmtUsd 
+                : RatesService.convert(displayAmount, displayCurrency, baseCurrency);
+            secondaryAmount = Math.round(amtInBase);
+        }
+
         const txType = tx.type?.toLowerCase();
         const color = txType === "transfer" 
             ? "text-indigo-400" 
@@ -107,12 +119,11 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                 ? (txType === "expense" ? "text-[#D4AF37]" : "text-[var(--danger-color)]") 
                 : "text-[var(--success-color)]");
 
-        // No sign for transfers in general feed, but keep signs in specific account history
         const sign = (txType === "transfer" && entityType === "feed") ? "" : (isOutflow ? "-" : "+");
 
         return {
             amount: `${sign}${displaySymbol} ${displayAmount.toLocaleString()}`,
-            usdAmount: (displayCurrency !== "USD" && sAmtUsd) ? `${sign}$ ${Math.round(sAmtUsd).toLocaleString()}` : null,
+            secondaryAmount: secondaryAmount !== null ? `${sign}${baseSymbol} ${secondaryAmount.toLocaleString()}` : null,
             color
         };
     };
@@ -218,7 +229,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                                         </div>
                                         <div className="flex flex-col items-end shrink-0 pl-2">
                                             <span className={`text-sm font-black ${amountInfo.color} tracking-tight`}>{amountInfo.amount}</span>
-                                            {amountInfo.usdAmount && <span className="text-[10px] text-[var(--text-muted)] font-bold opacity-60">≈ {amountInfo.usdAmount}</span>}
+                                            {amountInfo.secondaryAmount && <span className="text-[10px] text-[var(--text-muted)] font-bold opacity-60">≈ {amountInfo.secondaryAmount}</span>}
                                             {status.isBroken && <span className="text-[9px] text-rose-500 font-bold uppercase mt-1 animate-pulse">Исправить</span>}
                                         </div>
                                     </div>
