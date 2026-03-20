@@ -104,7 +104,7 @@ export const CategoryItem: React.FC<Props> = ({
       style={style}
       {...attributes}
       onContextMenu={e => e.preventDefault()}
-      className={`relative flex flex-col items-center gap-3 justify-start transition-all duration-300 cursor-pointer group ${isDragging ? "opacity-30" : "opacity-100"} ${(isSortingMode && (isDragging || isPressing)) ? 'animate-wiggle' : ''}`}
+      className={`relative flex flex-col items-center gap-1 justify-start transition-all duration-300 cursor-pointer group ${isDragging ? "opacity-30" : "opacity-100"} ${(isSortingMode && (isDragging || isPressing)) ? 'animate-wiggle' : ''}`}
       onClick={() => {
         if (!didMoveRef.current && !isSortingMode) {
           onClick?.(category);
@@ -119,7 +119,7 @@ export const CategoryItem: React.FC<Props> = ({
         onPointerCancel={handlePointerUp}
         style={{ 
           touchAction: "none",
-          filter: theme === 'modern' ? `drop-shadow(0 0 10px ${category.color}80)` : 'none'
+          filter: theme === 'modern' ? `drop-shadow(0 0 15px ${category.color}60)` : 'none'
         }}
         className={`flex items-center justify-center transition-all duration-300 relative ${
           isDragging ? "scale-110" :
@@ -128,7 +128,7 @@ export const CategoryItem: React.FC<Props> = ({
         } ${isTarget ? "scale-125" : ""}`}
       >
         <Icon 
-          size={theme === 'modern' ? 52 : 48} 
+          size={52} 
           className="transition-all duration-300" 
           style={{ 
             color: isTarget ? "var(--primary-color)" : category.color,

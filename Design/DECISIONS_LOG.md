@@ -34,9 +34,10 @@ This document records major technical and visual decisions made during the evolu
 ### Decision: Frameless Category Grid
 **Context:** Experimented with a fully frameless "Stitch" design, decided to return to classic layout but keep large categories.
 **Implementation:**
-- **Category Items:** Large 48px icons without borders or backgrounds. Uses `lucide-react` icons with subtle 20% opacity fills.
+- **Category Items:** Unified large **52px** icons across all themes. Frameless appearance (no borders or backgrounds) in Modern theme, standard borders in others. Uses `lucide-react` icons with subtle 20% opacity fills.
 - **Typography:** Retained the professional **Inter** font for readability while using **Space Grotesk** for the splash screen brand identity.
 - **4-Column Grid:** Optimized for mobile reachability and quick visual scanning of expenses.
+- **Density:** Reduced vertical spacing between icons and labels (`gap-1`) for a tighter, high-information density layout.
 
 ---
 
