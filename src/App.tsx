@@ -454,10 +454,18 @@ export default function App() {
                   const monthlyAmount = Math.round(currentMonthTransactions
                     .filter(t => String(t.type).toLowerCase() === "income" && t.targetId === inc.id)
                     .reduce((sum, t) => {
-                      const val = (t.targetAmountUSD && t.targetAmountUSD !== 0 && baseCurrency === 'USD')
+                      const tCurr = t.targetCurrency || "USD";
+                      
+                      if (categoryCurrencyMode === 'local' && tCurr === localCurrencyCode) {
+                        // Точное отображение для доходов
+                        return sum + (t.targetAmount || 0);
+                      }
+
+                      const valBase = (t.targetAmountUSD && t.targetAmountUSD !== 0 && baseCurrency === 'USD')
                         ? t.targetAmountUSD
-                        : RatesService.convert(t.targetAmount || 0, t.targetCurrency || "USD", baseCurrency);
-                      return sum + val;
+                        : RatesService.convert(t.targetAmount || 0, tCurr, baseCurrency);
+                      
+                      return sum + (categoryCurrencyMode === 'base' ? valBase : RatesService.convert(valBase, baseCurrency, localCurrencyCode));
                     }, 0));
                   return (<DraggableIncomeItem key={inc.id} income={inc} isDragging={activeDragId === inc.id} onSortingMode={() => setIsSortingMode(true)} isSortingMode={isSortingMode} onLongPress={(i) => { setIsSortingMode(false); setIncomeModal({ isOpen: true, income: i }); }} onClick={(income) => setHistoryModal({ isOpen: true, entity: income, type: "income" })} monthlyAmount={monthlyAmount} />);
                 })}
@@ -496,17 +504,22 @@ export default function App() {
                   {categories.map(cat => {
                     const catTx = currentMonthTransactions.filter(t => String(t.type).toLowerCase() === "expense" && t.targetId === cat.id);
                     
-                    const spentBase = Math.round(catTx.reduce((s, t) => {
+                    const spent = Math.round(catTx.reduce((s, t) => {
+                      const tCurr = t.targetCurrency || "USD";
+                      
+                      if (categoryCurrencyMode === 'local' && tCurr === localCurrencyCode) {
+                        // Точное отображение: берем сумму напрямую, если валюты совпадают
+                        return s + (t.targetAmount || 0);
+                      }
+
+                      // Если валюты не совпадают или режим 'base', конвертируем через базу
                       const sCurr = (t.sourceCurrency && isNaN(Number(t.sourceCurrency))) ? t.sourceCurrency : "USD";
-                      const val = (t.sourceAmountUSD && t.sourceAmountUSD !== 0 && baseCurrency === 'USD')
+                      const valBase = (t.sourceAmountUSD && t.sourceAmountUSD !== 0 && baseCurrency === 'USD')
                         ? t.sourceAmountUSD
                         : RatesService.convert(t.sourceAmount || 0, sCurr, baseCurrency);
-                      return s + val;
+                      
+                      return s + (categoryCurrencyMode === 'base' ? valBase : RatesService.convert(valBase, baseCurrency, localCurrencyCode));
                     }, 0));
-
-                    const spent = categoryCurrencyMode === 'base'
-                      ? spentBase
-                      : Math.round(RatesService.convert(spentBase, baseCurrency, localCurrencyCode));
                     
                     return (
                       <CategoryItem 
