@@ -116,22 +116,63 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
     const currentKey = useMemo(() => analysisType === "income" ? (tab === "categories" ? "income" : "income_tags") : `expense_${tab}`, [analysisType, tab]);
     const selectedIds = useMemo(() => selections[currentKey] || new Set(), [selections, currentKey]);
 
+    const parseDate = (dateStr: string) => {
+        try {
+            const s = String(dateStr).trim();
+            let d = new Date(s);
+            if (!isNaN(d.getTime())) return d;
+            
+            d = new Date(s.replace(/-/g, '/').replace('T', ' '));
+            if (!isNaN(d.getTime())) return d;
+
+            if (s.includes('/')) {
+                const p = s.split('/');
+                if (p.length >= 3) {
+                    const m = parseInt(p[0]) - 1;
+                    const day = parseInt(p[1]);
+                    const y = parseInt(p[2].split(' ')[0]);
+                    const year = y < 100 ? 2000 + y : y;
+                    return new Date(year, m, day);
+                }
+            }
+            if (s.includes('.')) {
+                const p = s.split('.');
+                if (p.length >= 3) {
+                    const year = p[2].split(' ')[0].length === 4 ? parseInt(p[2]) : 2000 + parseInt(p[2]);
+                    return new Date(year, parseInt(p[1]) - 1, parseInt(p[0]));
+                }
+            }
+            return new Date(NaN);
+        } catch { return new Date(NaN); }
+    };
+
     const filteredTx = useMemo(() => transactions.filter(t => {
         if (t.type !== analysisType) return false;
-        const txDate = new Date(t.date.replace(/-/g, '/').replace('T', ' '));
-        return txDate.getFullYear() === currentDate.getFullYear() && txDate.getMonth() === currentDate.getMonth();
+        const txDate = parseDate(t.date);
+        return !isNaN(txDate.getTime()) && txDate.getFullYear() === currentDate.getFullYear() && txDate.getMonth() === currentDate.getMonth();
     }), [transactions, analysisType, currentDate]);
 
-    const getTxUSD = (t: Transaction) => {
-        const val = t.sourceAmountUSD || t.targetAmountUSD || t.sourceAmount || 0;
-        return isNaN(Number(val)) ? 0 : Number(val);
+    const getTxAmountInBase = (t: Transaction) => {
+        const baseCur = RatesService.getBaseCurrency();
+        const sCurr = (t.sourceCurrency && isNaN(Number(t.sourceCurrency))) ? t.sourceCurrency : "USD";
+        const tCurr = (t.targetCurrency && isNaN(Number(t.targetCurrency))) ? t.targetCurrency : "USD";
+        
+        if (analysisType === "expense") {
+            return (t.sourceAmountUSD && t.sourceAmountUSD !== 0 && baseCur === 'USD')
+                ? t.sourceAmountUSD
+                : RatesService.convert(t.sourceAmount || 0, sCurr, baseCur);
+        } else {
+            return (t.targetAmountUSD && t.targetAmountUSD !== 0 && baseCur === 'USD')
+                ? t.targetAmountUSD
+                : RatesService.convert(t.targetAmount || 0, tCurr, baseCur);
+        }
     };
 
     const listItems = useMemo(() => {
         let items: { id: string, name: string, icon: any, color: string, amount: number, percent: number }[] = [];
         if (tab === "categories") {
             const itemMap = new Map<string, number>();
-            filteredTx.forEach(t => itemMap.set(t.targetId, (itemMap.get(t.targetId) || 0) + getTxUSD(t)));
+            filteredTx.forEach(t => itemMap.set(t.targetId, (itemMap.get(t.targetId) || 0) + getTxAmountInBase(t)));
             itemMap.forEach((amount, id) => {
                 if (analysisType === "expense") {
                     const cat = categories.find(c => c.id === id);
@@ -145,7 +186,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
             const tagMap = new Map<string, number>();
             filteredTx.forEach(t => {
                 const tagName = t.tag?.trim() || "Без тега";
-                tagMap.set(tagName, (tagMap.get(tagName) || 0) + getTxUSD(t));
+                tagMap.set(tagName, (tagMap.get(tagName) || 0) + getTxAmountInBase(t));
             });
             tagMap.forEach((amount, id) => items.push({ id, name: id, icon: Tag, color: getTagColor(id), amount, percent: 0 }));
         }
@@ -190,8 +231,8 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
         const loadData = async () => {
             const cacheKey = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
             const globalMonthTx = globalTransactions.filter(t => {
-                const d = new Date(t.date.replace(/-/g, '/').replace('T', ' '));
-                return d.getFullYear() === currentDate.getFullYear() && (d.getMonth() + 1) === (currentDate.getMonth() + 1);
+                const d = parseDate(t.date);
+                return !isNaN(d.getTime()) && d.getFullYear() === currentDate.getFullYear() && (d.getMonth() + 1) === (currentDate.getMonth() + 1);
             });
             if (globalMonthTx.length > 0) { setTransactions(globalTransactions); globalAnalyticsCache.set(cacheKey, globalTransactions); return; }
             if (globalAnalyticsCache.has(cacheKey)) { setTransactions(globalAnalyticsCache.get(cacheKey)!); return; }
@@ -233,12 +274,12 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
         if (tab === "categories") {
             const subTx = filteredTx.filter(t => t.targetId === item.id);
             const map = new Map<string, number>();
-            subTx.forEach(t => { const n = t.tag?.trim() || "Без тега"; map.set(n, (map.get(n) || 0) + getTxUSD(t)); });
+            subTx.forEach(t => { const n = t.tag?.trim() || "Без тега"; map.set(n, (map.get(n) || 0) + getTxAmountInBase(t)); });
             map.forEach((amount, name) => details.push({ id: name, name, icon: Tag, color: getTagColor(name), amount, percent: item.amount > 0 ? (amount / item.amount) * 100 : 0 }));
         } else {
             const subTx = filteredTx.filter(t => (t.tag?.trim() || "Без тега") === item.name);
             const map = new Map<string, number>();
-            subTx.forEach(t => map.set(t.targetId, (map.get(t.targetId) || 0) + getTxUSD(t)));
+            subTx.forEach(t => map.set(t.targetId, (map.get(t.targetId) || 0) + getTxAmountInBase(t)));
             map.forEach((amount, id) => {
                 if (analysisType === "expense") {
                     const cat = categories.find(c => c.id === id);

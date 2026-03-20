@@ -304,43 +304,55 @@ export default function App() {
   }, [activeTableId]);
 
   React.useEffect(() => {
-    if (accountModal.isOpen) trackScreen("AccountModal");
+    if (accountModal.isOpen) trackScreen("Экран: Управление кошельком");
   }, [accountModal.isOpen]);
 
   React.useEffect(() => {
-    if (incomeModal.isOpen) trackScreen("IncomeModal");
+    if (incomeModal.isOpen) trackScreen("Экран: Управление доходами");
   }, [incomeModal.isOpen]);
 
   React.useEffect(() => {
-    if (categoryModal.isOpen) trackScreen("CategoryModal");
+    if (categoryModal.isOpen) trackScreen("Экран: Управление категориями");
   }, [categoryModal.isOpen]);
 
   React.useEffect(() => {
-    if (historyModal.isOpen) trackScreen(`HistoryModal_${historyModal.type}`);
+    if (historyModal.isOpen) {
+      const label = historyModal.type === "feed" ? "Лента операций" : 
+                    historyModal.type === "category" ? "История категории" :
+                    historyModal.type === "account" ? "История кошелька" : "История";
+      trackScreen(`Экран: ${label}`);
+    }
   }, [historyModal.isOpen, historyModal.type]);
 
   React.useEffect(() => {
-    if (analyticsModal.isOpen) trackScreen(`AnalyticsModal_${analyticsModal.type}`);
+    if (analyticsModal.isOpen) {
+      const label = analyticsModal.type === "expense" ? "Аналитика расходов" : "Аналитика доходов";
+      trackScreen(`Экран: ${label}`);
+    }
   }, [analyticsModal.isOpen, analyticsModal.type]);
 
   React.useEffect(() => {
-    if (calendarAnalyticsModal.isOpen) trackScreen("CalendarAnalyticsModal");
+    if (calendarAnalyticsModal.isOpen) trackScreen("Экран: Календарь");
   }, [calendarAnalyticsModal.isOpen]);
 
   React.useEffect(() => {
-    if (numpad.isOpen) trackScreen(`Numpad_${numpad.type}`);
+    if (numpad.isOpen) {
+      const label = numpad.type === "expense" ? "Ввод расхода" : 
+                    numpad.type === "income" ? "Ввод дохода" : "Перевод";
+      trackScreen(`Экран: ${label}`);
+    }
   }, [numpad.isOpen, numpad.type]);
 
   React.useEffect(() => {
-    if (isTagModalOpen) trackScreen("TagModal");
+    if (isTagModalOpen) trackScreen("Экран: Выбор тега");
   }, [isTagModalOpen]);
 
   React.useEffect(() => {
-    if (isUsersModalOpen) trackScreen("UsersModal");
+    if (isUsersModalOpen) trackScreen("Экран: Смена пользователя");
   }, [isUsersModalOpen]);
 
   React.useEffect(() => {
-    if (isThemeModalOpen) trackScreen("ThemeModal");
+    if (isThemeModalOpen) trackScreen("Экран: Настройки оформления");
   }, [isThemeModalOpen]);
 
   React.useEffect(() => {
@@ -348,6 +360,11 @@ export default function App() {
       window.history.pushState({ modal: true }, "");
     }
     const handlePopState = () => { if (anyModalOpen) closeAllModals(); };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && anyModalOpen) {
+        closeAllModals();
+      }
+    };
     const closeAllModals = () => {
       setAccountModal(p => ({ ...p, isOpen: false }));
       setIncomeModal(p => ({ ...p, isOpen: false }));
@@ -363,7 +380,11 @@ export default function App() {
       setEditingTxId(null);
     };
     window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, [anyModalOpen]);
 
   const activeItemData = activeDragId ? (activeDragType === 'account' ? accounts.find(a => a.id === activeDragId) : activeDragType === 'category' ? categories.find(c => c.id === activeDragId) : incomes.find(i => i.id === activeDragId)) : null;

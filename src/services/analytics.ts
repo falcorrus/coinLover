@@ -1,6 +1,6 @@
 import ReactGA from "react-ga4";
 
-const MEASUREMENT_IDS = ["G-X63WEFC7X3", "G-LG9JX54LWC", "G-8X16CXTT7F"];
+const MEASUREMENT_IDS = ["G-X63WEFC7X3", "G-LG9JX54LWC"];
 
 export const initGA = () => {
   ReactGA.initialize(MEASUREMENT_IDS.map(id => ({ trackingId: id })));
