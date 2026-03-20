@@ -164,6 +164,7 @@ export default function App() {
     localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE, "false");
     
     switchTable(id);
+    trackEvent("User", "SwitchTable", id);
     setIsUsersModalOpen(false);
     setTimeout(() => {
       window.location.href = window.location.pathname;
@@ -202,6 +203,7 @@ export default function App() {
     document.documentElement.classList.remove("light", "midnight", "modern");
     if (theme !== "dark") document.documentElement.classList.add(theme);
     localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.THEME, theme);
+    trackEvent("Settings", "ChangeTheme", theme);
   }, [theme]);
 
   const toggleIncome = () => { const next = !isIncomeCollapsed; setIsIncomeCollapsed(next); setMode(next ? "expense" : "income"); };

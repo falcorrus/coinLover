@@ -3,6 +3,7 @@ import { Account, Transaction, Category, IncomeSource, TransactionType } from ".
 import { googleSheetsService } from "../services/googleSheets";
 import { RatesService } from "../services/RatesService";
 import { getLocalTimeString, enrichAccountsWithUSD } from "./utils";
+import { trackEvent } from "../services/analytics";
 
 interface TransactionStateProps {
   accounts: Account[];
@@ -56,6 +57,7 @@ export const useTransactions = ({
     };
     
     setTransactions((prev) => [newTx, ...prev]);
+    trackEvent("Transaction", "Add", type);
     const updatedAccounts = accounts.map((a) => {
       if (type === "expense" && a.id === (source as Account).id) return { ...a, balance: a.balance - sourceAmount };
       if (type === "income" && a.id === (destination as Account).id) return { ...a, balance: a.balance + finalTargetAmount };
@@ -129,6 +131,7 @@ export const useTransactions = ({
       comment: comment || undefined 
     };
     setTransactions(prev => prev.map(t => t.id === txId ? updatedTx : t));
+    trackEvent("Transaction", "Update", type);
     const updatedAccounts = accounts.map(a => {
       let balance = a.balance;
       if (oldTx.type === "expense" && a.id === oldTx.accountId) balance += oldTx.sourceAmount;
@@ -169,6 +172,7 @@ export const useTransactions = ({
   const deleteTransaction = useCallback(async (txId: string) => {
     const tx = transactions.find((t) => t.id === txId); if (!tx) return;
     setTransactions((prev) => prev.filter((t) => t.id !== txId));
+    trackEvent("Transaction", "Delete", tx.type);
     const updatedAccounts = accounts.map((a) => {
       let balance = a.balance;
       if (tx.type === "expense" && a.id === tx.accountId) balance += tx.sourceAmount;
