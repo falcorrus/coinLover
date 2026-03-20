@@ -104,7 +104,7 @@ export const CategoryItem: React.FC<Props> = ({
       style={style}
       {...attributes}
       onContextMenu={e => e.preventDefault()}
-      className={`flex flex-col items-center gap-3 justify-start transition-all duration-300 cursor-pointer group ${isDragging ? "opacity-30" : "opacity-100"}`}
+      className={`relative flex flex-col items-center gap-3 justify-start transition-all duration-300 cursor-pointer group ${isDragging ? "opacity-30" : "opacity-100"} ${(isSortingMode && (isDragging || isPressing)) ? 'animate-wiggle' : ''}`}
       onClick={() => {
         if (!didMoveRef.current && !isSortingMode) {
           onClick?.(category);
@@ -121,7 +121,7 @@ export const CategoryItem: React.FC<Props> = ({
           touchAction: "none",
           filter: theme === 'modern' ? `drop-shadow(0 0 10px ${category.color}80)` : 'none'
         }}
-        className={`flex items-center justify-center transition-all duration-300 ${
+        className={`flex items-center justify-center transition-all duration-300 relative ${
           isDragging ? "scale-110" :
           (isPressing && isSortingMode) ? "scale-110 rotate-3" :
           isPressing ? "scale-90" : "group-active:scale-90"

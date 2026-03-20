@@ -23,7 +23,7 @@ export const AccountItem: React.FC<Props> = ({
   account, isDragging, onLongPress, onClick, activeDragType, isSortingMode, onSortingMode, isOver
 }) => {
   const {
-    attributes, listeners, setNodeRef, transform, transition, isOver: isSortableOver
+    attributes, listeners, setNodeRef, transform, transition
   } = useSortable({
     id: account.id,
     data: { type: "account", account }
@@ -107,7 +107,7 @@ export const AccountItem: React.FC<Props> = ({
       style={style}
       {...attributes}
       onContextMenu={e => e.preventDefault()}
-      className={`flex flex-col items-center gap-2 justify-start transition-all duration-300 w-[76px] shrink-0 cursor-pointer ${isDragging ? "opacity-30" : "opacity-100"}`}
+      className={`flex flex-col items-center gap-2 justify-start transition-all duration-300 w-[76px] shrink-0 cursor-pointer ${isDragging ? "opacity-30" : "opacity-100"} ${(isSortingMode && (isDragging || isPressing)) ? 'animate-wiggle' : ''}`}
       onClick={() => {
         if (!didMoveRef.current && !isSortingMode) {
           onClick?.(account);
@@ -121,7 +121,7 @@ export const AccountItem: React.FC<Props> = ({
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
         style={{ touchAction: "none" }}
-        className={`draggable-coin coin-wallet transition-all duration-300 ${
+        className={`draggable-coin coin-wallet transition-all duration-300 relative ${
           isDragging ? "grabbed-elevation" :
           (isPressing && isSortingMode) ? "scale-110 border-[var(--primary-color)] shadow-[0_0_20px_rgba(109,93,252,0.4)] ring-4 ring-[var(--primary-color)]/20" :
           isPressing ? "scale-90 brightness-75 border-[var(--glass-border-highlight)]" : ""
