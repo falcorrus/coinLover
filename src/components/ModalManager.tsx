@@ -113,6 +113,7 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
       <Numpad
         data={numpad} 
         availableCurrencies={Array.from(new Set([...accounts.map(a => a.currency), numpad.sourceCurrency, numpad.targetCurrency]))} 
+        transactions={transactions}
         isEditing={!!editingTxId}
         onClose={() => { 
           if (numpad.returnState) setHistoryModal(numpad.returnState);

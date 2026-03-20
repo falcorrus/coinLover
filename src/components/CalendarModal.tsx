@@ -1,13 +1,15 @@
 import React, { useState } from "react";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Transaction } from "../types";
 
 interface Props {
     isOpen: boolean;
     onClose: () => void;
     onSelect: (date: Date) => void;
+    transactions?: Transaction[];
 }
 
-export const CalendarModal: React.FC<Props> = ({ isOpen, onClose, onSelect }) => {
+export const CalendarModal: React.FC<Props> = ({ isOpen, onClose, onSelect, transactions = [] }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
 
     if (!isOpen) return null;
@@ -49,6 +51,23 @@ export const CalendarModal: React.FC<Props> = ({ isOpen, onClose, onSelect }) =>
         return today.getDate() === day && today.getMonth() === month && today.getFullYear() === year;
     };
 
+    const getDayInfo = (day: number) => {
+        if (!transactions.length) return null;
+        
+        const dayTx = transactions.filter(t => {
+            const d = new Date(t.date.replace(/-/g, '/').replace('T', ' '));
+            return d.getDate() === day && d.getMonth() === month && d.getFullYear() === year;
+        });
+
+        if (dayTx.length === 0) return null;
+
+        return {
+            hasIncome: dayTx.some(t => t.type === "income"),
+            hasExpense: dayTx.some(t => t.type === "expense"),
+            hasTransfer: dayTx.some(t => t.type === "transfer")
+        };
+    };
+
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[300] flex items-center justify-center p-6 animate-in fade-in">
             <div className="glass-panel w-full max-w-[340px] p-6 shadow-2xl shadow-[var(--shadow-color)] animate-in zoom-in-95 text-[var(--text-main)]">
@@ -78,29 +97,41 @@ export const CalendarModal: React.FC<Props> = ({ isOpen, onClose, onSelect }) =>
                 </div>
 
                 <div className="grid grid-cols-7 gap-1">
-                    {daysArr.map((day, i) => (
-                        <div key={i} className="aspect-square flex items-center justify-center">
-                            {day ? (
-                                <button
-                                    onClick={() => handleDateClick(day)}
-                                    className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm transition-all duration-300
-                    ${isToday(day)
-                                            ? "bg-[var(--primary-color)] text-white font-bold shadow-lg shadow-[var(--primary-color)]/30"
-                                            : "hover:bg-[var(--glass-item-active)] text-[var(--text-main)]"
-                                        }
-                  `}
-                                >
-                                    {day}
-                                </button>
-                            ) : null}
-                        </div>
-                    ))}
+                    {daysArr.map((day, i) => {
+                        const info = day ? getDayInfo(day) : null;
+                        const today = isToday(day || 0);
+                        
+                        return (
+                            <div key={i} className="aspect-square flex flex-col items-center justify-center">
+                                {day ? (
+                                    <button
+                                        onClick={() => handleDateClick(day)}
+                                        className={`w-10 h-10 rounded-xl flex flex-col items-center justify-center text-sm transition-all duration-300 relative
+                                            ${today
+                                                ? "bg-[var(--primary-color)] text-white font-bold shadow-lg shadow-[var(--primary-color)]/30"
+                                                : "hover:bg-[var(--glass-item-active)] text-[var(--text-main)]"
+                                            }
+                                        `}
+                                    >
+                                        <span>{day}</span>
+                                        {info && (
+                                            <div className="absolute bottom-1.5 flex gap-0.5">
+                                                {info.hasIncome && <div className={`w-0.5 h-0.5 rounded-full ${today ? 'bg-white' : 'bg-[var(--success-color)]'}`} />}
+                                                {info.hasExpense && <div className={`w-0.5 h-0.5 rounded-full ${today ? 'bg-white/70' : 'bg-[#D4AF37]'}`} />}
+                                                {info.hasTransfer && <div className={`w-0.5 h-0.5 rounded-full ${today ? 'bg-white/50' : 'bg-indigo-400'}`} />}
+                                            </div>
+                                        )}
+                                    </button>
+                                ) : null}
+                            </div>
+                        );
+                    })}
                 </div>
 
                 <div className="mt-6 pt-4 border-t border-[var(--glass-border)] flex justify-end">
                     <button
                         onClick={onClose}
-                        className="px-4 py-2 text-xs font-bold uppercase text-[var(--text-muted)] hover:text-[var(--text-main)]"
+                        className="px-4 py-2 text-xs font-black uppercase text-[var(--text-muted)] hover:text-[var(--text-main)]"
                     >
                         Отмена
                     </button>
@@ -109,3 +140,4 @@ export const CalendarModal: React.FC<Props> = ({ isOpen, onClose, onSelect }) =>
         </div>
     );
 };
+

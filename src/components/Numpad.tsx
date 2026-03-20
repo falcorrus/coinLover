@@ -1,6 +1,6 @@
 import React from "react";
 import { X, ChevronRight, Check, CalendarDays, Delete, Divide, Plus, Minus, Equal, Percent, MessageSquare, Link2, Trash2, ArrowDown, RotateCcw } from "lucide-react";
-import { NumpadData, Category, Account, IncomeSource } from "../types";
+import { NumpadData, Category, Account, IncomeSource, Transaction } from "../types";
 import { IconMap } from "../constants";
 import { CalendarModal } from "./CalendarModal";
 import { RatesService } from "../services/RatesService";
@@ -8,6 +8,7 @@ import { RatesService } from "../services/RatesService";
 interface Props {
   data: NumpadData;
   availableCurrencies: string[];
+  transactions?: Transaction[];
   onClose: () => void;
   onFieldChange: (field: "source" | "destination") => void;
   onCurrencyChange?: (field: "source" | "target", currency: string) => void;
@@ -23,7 +24,7 @@ interface Props {
 }
 
 export const Numpad: React.FC<Props> = ({ 
-  data, availableCurrencies, onClose, onFieldChange, onCurrencyChange, 
+  data, availableCurrencies, transactions = [], onClose, onFieldChange, onCurrencyChange, 
   onPress, onDelete, onSubmit, onTagSelect, onCommentChange, onLinkToggle, onRemove, onManageTags, isEditing 
 }) => {
   const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
@@ -236,7 +237,7 @@ export const Numpad: React.FC<Props> = ({
       </div>
     </div>
 
-      <CalendarModal isOpen={isCalendarOpen} onClose={() => setIsCalendarOpen(false)} onSelect={handleDateSelect} />
+      <CalendarModal isOpen={isCalendarOpen} onClose={() => setIsCalendarOpen(false)} onSelect={handleDateSelect} transactions={transactions} />
 
       {/* Currency Picker Modal */}
       {currencyPicker.isOpen && (

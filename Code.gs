@@ -39,8 +39,8 @@ function ensureInitialized(ss, configName = "Configs", txName = "Transactions") 
   }
   
   if (txs.getLastRow() === 0) {
-    const ids = ["date", "type", "src", "dst", "tag", "s_amt", "s_curr", "s_base", "t_amt", "t_curr", "t_base", "comment", "id"];
-    const labels = ["Дата", "Тип", "Источник", "Назначение", "Тег", "Сумма (исх)", "Валюта (исх)", "Сумма (база)", "Сумма (цель)", "Валюта (цель)", "Цель (база)", "Комментарий", "ID"];
+    const ids = ["date", "type", "src", "dst", "tag", "s_amt", "s_curr", "t_amt", "t_curr", "base_amt", "comment", "id"];
+    const labels = ["Дата", "Тип", "Источник", "Назначение", "Тег", "Сумма (исх)", "Валюта (исх)", "Сумма (цель)", "Валюта (цель)", "Цель (база)", "Комментарий", "ID"];
     txs.appendRow(ids);
     txs.appendRow(labels);
   }
@@ -352,8 +352,9 @@ function doPost(e) {
       
       const f = { 
         "date": parseDateSafe(data.date), "type": data.type, "src": data.sourceName, "dst": data.destinationName,
-        "tag": data.tagName || "", "s_amt": data.sourceAmount, "s_curr": data.sourceCurrency, "s_base": data.sourceAmountUSD || "",
-        "t_amt": data.targetAmount || data.sourceAmount, "t_curr": data.targetCurrency, "t_base": data.targetAmountUSD || "",
+        "tag": data.tagName || "", "s_amt": Number(data.sourceAmount), "s_curr": data.sourceCurrency,
+        "t_amt": Number(data.targetAmount || data.sourceAmount), "t_curr": data.targetCurrency,
+        "base_amt": Number(data.targetAmountUSD || ""),
         "comment": data.comment || "", "id": data.id 
       };
       const rowData = ids.map(h => f[h] !== undefined ? f[h] : "");
