@@ -12,8 +12,12 @@ export const useUsers = () => {
       // Если ID из URL отличается от сохраненного, нужно сбросить старые данные
       if (ssIdFromUrl !== currentStored) {
         console.log("New ssId detected in URL, clearing old data...");
-        localStorage.clear(); // Полная очистка для безопасности новой сессии
+        localStorage.clear(); 
         localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.ACTIVE_TABLE_ID, ssIdFromUrl);
+        localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE, "false");
+      } else {
+        // Даже если ID тот же, но мы зашли по прямой ссылке, убеждаемся что демо выключено
+        localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE, "false");
       }
       return ssIdFromUrl;
     }

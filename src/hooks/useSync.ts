@@ -43,6 +43,7 @@ export const useSync = ({
     const data = await googleSheetsService.fetchSettings(ssId);
     if (data) {
       updateLocalFromRemote(data);
+      if (ssId) localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE, "false");
       setSyncStatus("success");
       return true;
     }
