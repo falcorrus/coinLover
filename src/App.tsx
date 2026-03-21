@@ -277,7 +277,8 @@ export default function App() {
             setCategoryCurrencyMode={setCategoryCurrencyMode} baseCurrency={calculations.baseCurrency} baseSymbol={calculations.baseSymbol}
             localCurrencyCode={calculations.localCurrencyCode} localSymbol={calculations.localSymbol} activeDragId={activeDragId}
             activeDragType={activeDragType} overId={overId} isSortingMode={isSortingMode} setIsSortingMode={setIsSortingMode}
-            setAnalyticsModal={setAnalyticsModal} setCategoryModal={setCategoryModal} setHistoryModal={setHistoryModal} theme={theme}
+            setAnalyticsModal={setAnalyticsModal} setCategoryModal={setCategoryModal} setHistoryModal={setHistoryModal} 
+            setCalendarAnalyticsModal={setCalendarAnalyticsModal} theme={theme}
           />
         </div>
 

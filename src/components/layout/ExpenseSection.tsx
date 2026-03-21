@@ -1,6 +1,6 @@
 import * as React from "react";
 import { SortableContext, rectSortingStrategy } from "@dnd-kit/sortable";
-import { PieChart, Plus } from "lucide-react";
+import { PieChart, Plus, Calendar } from "lucide-react";
 import { Category, Transaction, HistoryModalState } from "../../types";
 import { RatesService } from "../../services/RatesService";
 import { CategoryItem } from "../CategoryItem";
@@ -23,13 +23,15 @@ interface ExpenseSectionProps {
   setAnalyticsModal: (val: { isOpen: boolean; type: "expense" | "income" }) => void;
   setCategoryModal: (val: { isOpen: boolean; category: Category | null }) => void;
   setHistoryModal: (val: HistoryModalState) => void;
+  setCalendarAnalyticsModal: (val: { isOpen: boolean }) => void;
   theme: string;
 }
 
 export function ExpenseSection({
   mode, categories, currentMonthTransactions, categoryCurrencyMode, setCategoryCurrencyMode,
   baseCurrency, baseSymbol, localCurrencyCode, localSymbol, activeDragId, activeDragType,
-  overId, isSortingMode, setIsSortingMode, setAnalyticsModal, setCategoryModal, setHistoryModal, theme
+  overId, isSortingMode, setIsSortingMode, setAnalyticsModal, setCategoryModal, setHistoryModal,
+  setCalendarAnalyticsModal, theme
 }: ExpenseSectionProps) {
   return (
     <section className={`px-0 flex-1 pt-4 pb-8 overflow-y-auto hide-scrollbar z-10 relative transition-all duration-500 ${mode === "income" ? "opacity-30 pointer-events-none grayscale" : "opacity-100"}`}>
@@ -48,6 +50,7 @@ export function ExpenseSection({
             >
               <span className="text-[10px] font-black">{categoryCurrencyMode === "base" ? "B" : "L"}</span>
             </button>
+            <button onClick={() => setCalendarAnalyticsModal({ isOpen: true })} className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 flex items-center justify-center hover:bg-emerald-500/20 transition-all shadow-sm"><Calendar size={14} /></button>
             <button onClick={() => setAnalyticsModal({ isOpen: true, type: "expense" })} className="w-8 h-8 rounded-xl bg-[var(--primary-color)]/10 border border-[var(--primary-color)]/20 text-[var(--primary-color)] flex items-center justify-center hover:bg-[var(--primary-color)]/20 transition-all shadow-sm"><PieChart size={14} /></button>
             <button onClick={() => setCategoryModal({ isOpen: true, category: null })} className="w-8 h-8 rounded-xl bg-[var(--glass-item-bg)] border border-[var(--glass-border)] text-[var(--text-main)] flex items-center justify-center hover:bg-[var(--glass-item-active)] transition-all shadow-sm"><Plus size={16} /></button>
           </div>
