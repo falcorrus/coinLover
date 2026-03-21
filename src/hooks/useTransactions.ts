@@ -21,6 +21,9 @@ export const useTransactions = ({
 }: TransactionStateProps) => {
 
   const addTransaction = useCallback(async (type: TransactionType, source: Account | IncomeSource, destination: Account | Category, sourceAmount: number, targetAmount?: number, tag?: string, customDate?: string, comment?: string, customCurrency?: string) => {
+    // Гарантируем наличие курсов перед расчетом
+    await RatesService.ensureRates();
+    
     const date = customDate ? getLocalTimeString(customDate) : getLocalTimeString();
     const finalTargetAmount = targetAmount ?? sourceAmount;
     let sCurr: string, tCurr: string;
@@ -95,6 +98,9 @@ export const useTransactions = ({
   }, [accounts, categories, incomes, setAccounts, setTransactions, setSyncStatus, ssId]);
 
   const updateTransaction = useCallback(async (txId: string, type: TransactionType, source: Account | IncomeSource, destination: Account | Category, sourceAmount: number, targetAmount?: number, tag?: string, customDate?: string, comment?: string, customCurrency?: string) => {
+    // Гарантируем наличие курсов перед расчетом
+    await RatesService.ensureRates();
+
     const oldTx = transactions.find(t => t.id === txId); if (!oldTx) return;
     const date = customDate ? getLocalTimeString(customDate) : oldTx.date;
     const finalTargetAmount = targetAmount ?? sourceAmount;
@@ -104,7 +110,6 @@ export const useTransactions = ({
 
     if (type === "expense") { 
       sCurr = (source as Account).currency; 
-      // Приоритет: 1. Валюта из нумпада (customCurrency) 2. Валюта из старой транзакции 3. База
       tCurr = customCurrency || oldTx.targetCurrency || baseCur; 
     } else if (type === "income") { 
       tCurr = (destination as Account).currency;
@@ -132,8 +137,6 @@ export const useTransactions = ({
       tag, 
       comment: comment || undefined 
     };
-
-    console.log(`Updating Tx ${txId}: ${sourceAmount} ${sCurr} (${sAmountUSD} USD) -> ${finalTargetAmount} ${tCurr} (${tAmountUSD} USD)`);
 
     setTransactions(prev => prev.map(t => t.id === txId ? updatedTx : t));
     trackEvent("Transaction", "Update", type);

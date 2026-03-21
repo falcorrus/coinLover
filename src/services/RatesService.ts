@@ -55,39 +55,36 @@ export class RatesService {
         }
     }
 
+    static async ensureRates(): Promise<void> {
+        if (!this.getCachedRates() || this.shouldSyncRates()) {
+            await this.syncRatesInBackground();
+        }
+    }
+
     static convert(amount: number, fromCurrency: string, toCurrency: string): number {
         if (!amount || isNaN(amount)) return 0;
         if (!fromCurrency || !toCurrency || fromCurrency === toCurrency) return amount;
 
-        // Defensive check: sometimes "12" or other numbers might leak as currency codes
-        if (typeof fromCurrency !== 'string' || typeof toCurrency !== 'string') {
-            console.error(`Invalid currency types: from=${typeof fromCurrency}(${fromCurrency}), to=${typeof toCurrency}(${toCurrency})`);
-            return amount;
-        }
-
-        const from = fromCurrency.toUpperCase();
-        const to = toCurrency.toUpperCase();
+        const from = String(fromCurrency).toUpperCase();
+        const to = String(toCurrency).toUpperCase();
         const base = this.getBaseCurrency();
 
-        const rates = this.getCachedRates() || { [base]: 1 };
-
-        const rateFrom = rates[from] || (from === base ? 1 : null);
-        const rateTo = rates[to] || (to === base ? 1 : null);
-
-        if (!rateFrom || !rateTo) {
-            // Enhanced logging to catch the "12" or "100" mystery
-            if (typeof fromCurrency === 'string' && fromCurrency.length > 5) {
-                // If it's a long string, it might be a date or error message leaking into currency field
-                console.warn(`Suspicious currency code: "${fromCurrency}". Check data mapping.`);
-            } else {
-                console.warn(`Missing rate for ${from} or ${to} relative to ${base}. (amount: ${amount}, from: ${fromCurrency}, to: ${toCurrency})`);
-            }
-            
-            // If conversion fails, return original amount instead of 0 to avoid "disappearing" data
+        const rates = this.getCachedRates();
+        
+        // Если курсов вообще нет в кэше, мы не можем считать
+        if (!rates) {
+            console.error("Exchange rates not found in cache. Conversion failed.");
             return amount;
         }
 
-        const amountInBase = amount / rateFrom;
-        return amountInBase * rateTo;
+        const rateFrom = rates[from] ?? (from === base ? 1 : null);
+        const rateTo = rates[to] ?? (to === base ? 1 : null);
+
+        if (rateFrom === null || rateTo === null) {
+            console.warn(`Missing rate for ${from} or ${to} relative to ${base}.`);
+            return amount;
+        }
+
+        return (amount / rateFrom) * rateTo;
     }
 }
