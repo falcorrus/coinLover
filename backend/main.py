@@ -9,7 +9,13 @@ app = FastAPI()
 # Разрешаем CORS для запросов с фронтенда
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://coin.reloto.ru",
+        "https://coinlover-dev.reloto.ru",
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://localhost:4173"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

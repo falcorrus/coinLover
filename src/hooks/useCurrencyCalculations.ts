@@ -1,0 +1,112 @@
+import * as React from "react";
+import { RatesService } from "../services/RatesService";
+import { Account, Transaction, Category, IncomeSource } from "../types";
+
+export function useCurrencyCalculations(
+  accounts: Account[],
+  currentMonthTransactions: Transaction[],
+  categories: Category[],
+  incomes: IncomeSource[],
+  categoryCurrencyMode: "base" | "local"
+) {
+  const baseCurrency = RatesService.getBaseCurrency();
+  
+  const getSymbol = React.useCallback((code: string) => {
+    if (!code || !isNaN(Number(code))) return "$";
+    const symbols: Record<string, string> = { "USD": "$", "EUR": "€", "GBP": "£", "RUB": "₽", "RSD": "din", "BRL": "R$", "ARS": "ARS" };
+    return symbols[code.toUpperCase()] || code;
+  }, []);
+
+  const baseSymbol = getSymbol(baseCurrency);
+
+  const totalBalanceBase = React.useMemo(() => Math.round(accounts.reduce((s, a) => {
+    const aCurr = (a.currency && isNaN(Number(a.currency))) ? a.currency : "USD";
+    return s + RatesService.convert(a.balance, aCurr, baseCurrency);
+  }, 0)), [accounts, baseCurrency]);
+  
+  const totalSpentBase = React.useMemo(() => Math.round(currentMonthTransactions.filter(t => String(t.type).toLowerCase() === "expense").reduce((s, t) => {
+    const sCurr = (t.sourceCurrency && isNaN(Number(t.sourceCurrency))) ? t.sourceCurrency : "USD";
+    const val = (t.sourceAmountUSD && t.sourceAmountUSD !== 0 && baseCurrency === 'USD') 
+      ? t.sourceAmountUSD 
+      : RatesService.convert(t.sourceAmount || 0, sCurr, baseCurrency);
+    return s + val;
+  }, 0)), [currentMonthTransactions, baseCurrency]);
+
+  const totalEarnedBase = React.useMemo(() => Math.round(currentMonthTransactions.filter(t => String(t.type).toLowerCase() === "income").reduce((s, t) => {
+    const tCurr = (t.targetCurrency && isNaN(Number(t.targetCurrency))) ? t.targetCurrency : "USD";
+    const val = (t.targetAmountUSD && t.targetAmountUSD !== 0 && baseCurrency === 'USD')
+      ? t.targetAmountUSD
+      : RatesService.convert(t.targetAmount || 0, tCurr, baseCurrency);
+    return s + val;
+  }, 0)), [currentMonthTransactions, baseCurrency]);
+
+  const stats = React.useMemo(() => {
+    const localCur = localStorage.getItem("cl_numpad_pref_currency") || baseCurrency;
+    const localSym = getSymbol(localCur);
+    const isBase = categoryCurrencyMode === 'base';
+
+    if (isBase) {
+      return { 
+        displaySpent: totalSpentBase, 
+        displayEarned: totalEarnedBase, 
+        displayBalance: totalBalanceBase, 
+        currentSymbol: baseSymbol, 
+        localCurrencyCode: localCur, 
+        localSymbol: localSym 
+      };
+    }
+
+    // Расчет в ЛОКАЛЬНОЙ ВАЛЮТЕ с приоритетом targetAmount
+    const spentLocal = Math.round(currentMonthTransactions
+      .filter(t => String(t.type).toLowerCase() === "expense")
+      .reduce((s, t) => {
+        // Если валюта цели совпадает с локальной - берем прямую цифру
+        if (t.targetCurrency === localCur && t.targetAmount) {
+          return s + t.targetAmount;
+        }
+        // Иначе конвертируем из базы (которая уже рассчитана с учетом sourceAmountUSD)
+        const sCurr = (t.sourceCurrency && isNaN(Number(t.sourceCurrency))) ? t.sourceCurrency : "USD";
+        const valBase = (t.sourceAmountUSD && t.sourceAmountUSD !== 0 && baseCurrency === 'USD') 
+          ? t.sourceAmountUSD 
+          : RatesService.convert(t.sourceAmount || 0, sCurr, baseCurrency);
+        
+        return s + RatesService.convert(valBase, baseCurrency, localCur);
+      }, 0));
+
+    const earnedLocal = Math.round(currentMonthTransactions
+      .filter(t => String(t.type).toLowerCase() === "income")
+      .reduce((s, t) => {
+        // Для доходов targetAmount - это сумма, пришедшая на счет
+        if (t.targetCurrency === localCur && t.targetAmount) {
+          return s + t.targetAmount;
+        }
+        const tCurr = (t.targetCurrency && isNaN(Number(t.targetCurrency))) ? t.targetCurrency : "USD";
+        const valBase = (t.targetAmountUSD && t.targetAmountUSD !== 0 && baseCurrency === 'USD')
+          ? t.targetAmountUSD
+          : RatesService.convert(t.targetAmount || 0, tCurr, baseCurrency);
+
+        return s + RatesService.convert(valBase, baseCurrency, localCur);
+      }, 0));
+
+    const balanceLocal = Math.round(RatesService.convert(totalBalanceBase, baseCurrency, localCur));
+
+    return { 
+      displaySpent: spentLocal, 
+      displayEarned: earnedLocal, 
+      displayBalance: balanceLocal, 
+      currentSymbol: localSym, 
+      localCurrencyCode: localCur, 
+      localSymbol: localSym 
+    };
+  }, [categoryCurrencyMode, totalSpentBase, totalEarnedBase, totalBalanceBase, baseCurrency, baseSymbol, getSymbol, currentMonthTransactions]);
+
+  return {
+    ...stats,
+    baseCurrency,
+    baseSymbol,
+    getSymbol,
+    totalSpentBase,
+    totalEarnedBase,
+    totalBalanceBase
+  };
+}

@@ -99,10 +99,11 @@ export const useAppDnD = ({
 
     if (activeData?.type === "account") {
       if (overData?.type === "category") {
-        const lastCur = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY) || "USD";
+        const baseCur = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY) || "USD";
+        const prefCur = localStorage.getItem("cl_numpad_pref_currency") || baseCur;
         setNumpad({
           isOpen: true, type: "expense", source: activeData.account, destination: overData.category,
-          sourceAmount: "0", sourceCurrency: activeData.account.currency, targetAmount: "0", targetCurrency: lastCur,
+          sourceAmount: "0", sourceCurrency: activeData.account.currency, targetAmount: "0", targetCurrency: prefCur,
           targetLinked: true, activeField: "source", tag: overData.category.tags?.[0] || null, comment: ""
         });
       } else if (overData?.type === "account" && active.id !== over.id && !sorting) {
@@ -113,10 +114,11 @@ export const useAppDnD = ({
         });
       }
     } else if (activeData?.type === "income" && overData?.type === "account") {
-      const lastCur = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY) || "USD";
+      const baseCur = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY) || "USD";
+      const prefCur = localStorage.getItem("cl_numpad_pref_currency") || baseCur;
       setNumpad({
         isOpen: true, type: "income", source: activeData.income, destination: overData.account,
-        sourceAmount: "0", sourceCurrency: lastCur, targetAmount: "0", targetCurrency: overData.account.currency,
+        sourceAmount: "0", sourceCurrency: prefCur, targetAmount: "0", targetCurrency: overData.account.currency,
         targetLinked: true, activeField: "source", tag: activeData.income.tags?.[0] || null, comment: ""
       });
     }

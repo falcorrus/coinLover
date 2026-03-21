@@ -6,7 +6,11 @@ export class RatesService {
         if (!cached) return null;
 
         try {
-            return JSON.parse(cached);
+            const parsed = JSON.parse(cached);
+            if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+                return parsed as Record<string, number>;
+            }
+            return null;
         } catch {
             return null;
         }
@@ -55,19 +59,31 @@ export class RatesService {
         if (!amount || isNaN(amount)) return 0;
         if (!fromCurrency || !toCurrency || fromCurrency === toCurrency) return amount;
 
+        // Defensive check: sometimes "12" or other numbers might leak as currency codes
+        if (typeof fromCurrency !== 'string' || typeof toCurrency !== 'string') {
+            console.error(`Invalid currency types: from=${typeof fromCurrency}(${fromCurrency}), to=${typeof toCurrency}(${toCurrency})`);
+            return amount;
+        }
+
         const from = fromCurrency.toUpperCase();
         const to = toCurrency.toUpperCase();
         const base = this.getBaseCurrency();
 
-        const rates: Record<string, number> = this.getCachedRates() || { [base]: 1 };
+        const rates = this.getCachedRates() || { [base]: 1 };
 
-        // The API returns rates relative to the selected base currency
         const rateFrom = rates[from] || (from === base ? 1 : null);
         const rateTo = rates[to] || (to === base ? 1 : null);
 
         if (!rateFrom || !rateTo) {
-            console.warn(`Missing rate for ${from} or ${to} relative to ${base}. Conversion failed.`);
-            if (to === base) return 0;
+            // Enhanced logging to catch the "12" or "100" mystery
+            if (typeof fromCurrency === 'string' && fromCurrency.length > 5) {
+                // If it's a long string, it might be a date or error message leaking into currency field
+                console.warn(`Suspicious currency code: "${fromCurrency}". Check data mapping.`);
+            } else {
+                console.warn(`Missing rate for ${from} or ${to} relative to ${base}. (amount: ${amount}, from: ${fromCurrency}, to: ${toCurrency})`);
+            }
+            
+            // If conversion fails, return original amount instead of 0 to avoid "disappearing" data
             return amount;
         }
 

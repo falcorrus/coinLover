@@ -104,7 +104,7 @@ export const CategoryItem: React.FC<Props> = ({
       style={style}
       {...attributes}
       onContextMenu={e => e.preventDefault()}
-      className={`flex flex-col items-center gap-3 justify-start transition-all duration-300 cursor-pointer group ${isDragging ? "opacity-30" : "opacity-100"}`}
+      className={`relative flex flex-col items-center gap-1 justify-start transition-all duration-300 cursor-pointer group ${isDragging ? "opacity-30" : "opacity-100"} ${(isSortingMode && (isDragging || isPressing)) ? 'animate-wiggle' : ''}`}
       onClick={() => {
         if (!didMoveRef.current && !isSortingMode) {
           onClick?.(category);
@@ -118,22 +118,23 @@ export const CategoryItem: React.FC<Props> = ({
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
         style={{ 
-          touchAction: "none"
+          touchAction: "none",
+          filter: theme === 'modern' ? `drop-shadow(0 0 15px ${category.color}60)` : 'none'
         }}
-        className={`flex items-center justify-center transition-all duration-300 ${
+        className={`flex items-center justify-center transition-all duration-300 relative ${
           isDragging ? "scale-110" :
           (isPressing && isSortingMode) ? "scale-110 rotate-3" :
           isPressing ? "scale-90" : "group-active:scale-90"
         } ${isTarget ? "scale-125" : ""}`}
       >
         <Icon 
-          size={48} 
+          size={52} 
           className="transition-all duration-300" 
           style={{ 
             color: isTarget ? "var(--primary-color)" : category.color,
-            fill: isTarget ? "transparent" : `${category.color}20` 
+            fill: theme === 'modern' ? 'transparent' : (isTarget ? "transparent" : `${category.color}20`) 
           }} 
-          strokeWidth={1.5}
+          strokeWidth={theme === 'modern' ? 2 : 1.5}
         />
       </div>
       <div className="flex flex-col items-center pointer-events-none select-none w-full pt-1">
@@ -146,7 +147,7 @@ export const CategoryItem: React.FC<Props> = ({
           <span className={`font-technical text-[10px] font-bold mt-0.5 ${
             theme === 'modern' ? 'text-slate-300 opacity-60' : 'text-[var(--text-main)] opacity-60'
           }`}>
-            -{currencySymbol}{spent.toLocaleString()}
+            {currencyMode === 'local' ? `${currencySymbol} ${spent.toLocaleString()}` : `-${currencySymbol} ${spent.toLocaleString()}`}
           </span>
         )}
       </div>

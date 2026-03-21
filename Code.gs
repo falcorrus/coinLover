@@ -1,6 +1,5 @@
 /**
- * CoinLover Backend (GAS)
- * Fix: Variable naming bug and robust parsing.
+ * CoinLover Backend (GAS) - Version 3 (Rectangular Array Fix)
  */
 
 const MASTER_SS_ID = "1IQCs35RQlMMQsGB-CRczJeuRqa8WIxW4Sy_kjZyHP2M";
@@ -13,7 +12,7 @@ function getSS(e, data) {
     if (ssId) return SpreadsheetApp.openById(ssId);
     return SpreadsheetApp.getActiveSpreadsheet();
   } catch (err) {
-    throw new Error("Access denied. Ensure spreadsheet is shared with the service account.");
+    throw new Error("Access denied. Ensure spreadsheet ID is correct and shared.");
   }
 }
 
@@ -23,106 +22,252 @@ function parseNum(val, fallback = 0) {
   return isNaN(n) ? fallback : n;
 }
 
-function ensureInitialized(ss) {
-  let conf = ss.getSheetByName("Configs") || ss.insertSheet("Configs");
-  let txs = ss.getSheetByName("Transactions") || ss.insertSheet("Transactions");
+function ensureInitialized(ss, configName = "Configs", txName = "Transactions") {
+  let conf = ss.getSheetByName(configName) || ss.insertSheet(configName);
+  let txs = ss.getSheetByName(txName) || ss.insertSheet(txName);
+  
   if (conf.getLastRow() === 0) {
-    const initialConfigs = [
-      ["Updated", new Date().toISOString()], ["Base_Currency", "USD"], [""], [" === WALLETS ==="],
-      ["ID", "Name", "Balance", "Balance USD", "Color", "Icon", "Currency"],
-      ["acc-1", "Наличные", 0, 0, "#10b981", "wallet", "USD"], [""], [" === CATEGORIES ==="],
-      ["ID", "Name", "Color", "Icon", "Tags"],
-      ["cat-1", "Магазины", "#f59e0b", "shop", "еда, покупки"], [""], [" === INCOMES ==="],
-      ["ID", "Name", "Color", "Icon", "Tags"],
-      ["inc-1", "Зарплата", "#10b981", "business", ""]
+    const configHeaders = [
+      ["Updated", new Date().toISOString(), "", "", "", "", ""],
+      ["Base_Currency", "USD", "", "", "", "", ""],
+      ["", "", "", "", "", "", ""],
+      [" === WALLETS ===", "", "", "", "", "", ""],
+      ["id", "name", "balance", "balance_base", "color", "icon", "currency"],
+      ["ID", "Название", "Баланс", "Баланс (база)", "Цвет", "Иконка", "Валюта"]
     ];
-    conf.getRange(1, 1, initialConfigs.length, initialConfigs[0].length).setValues(initialConfigs);
+    conf.getRange(1, 1, configHeaders.length, 7).setValues(configHeaders);
   }
+  
   if (txs.getLastRow() === 0) {
-    const h = ["Date", "Type", "Source", "Destination", "Tag", "Source Amount", "Source Currency", "Source Amount USD", "Target Amount", "Target Currency", "Target USD", "Comment", "ID"];
-    txs.appendRow(h); txs.getRange(1, 1, 1, h.length).setFontWeight("bold");
+    const ids = ["date", "type", "src", "dst", "tag", "s_amt", "s_curr", "t_amt", "t_curr", "base_amt", "comment", "id"];
+    const labels = ["Дата", "Тип", "Источник", "Назначение", "Тег", "Сумма (исх)", "Валюта (исх)", "Сумма (цель)", "Валюта (цель)", "Цель (база)", "Комментарий", "ID"];
+    txs.appendRow(ids);
+    txs.appendRow(labels);
   }
   return conf;
 }
 
 function doGet(e) {
   try {
+    if (e && e.parameter && e.parameter.action === 'template') {
+      const masterSs = SpreadsheetApp.openById(MASTER_SS_ID);
+      let tmplSheet = masterSs.getSheetByName("Template_Configs") || masterSs.getSheetByName("Configs");
+      if (tmplSheet) {
+        const rows = tmplSheet.getDataRange().getValues();
+        const tmplData = { accounts: [], categories: [], incomes: [] };
+        let tSec = "", tRowIdx = -1;
+        
+        for (let i = 0; i < rows.length; i++) {
+          const row = rows[i];
+          if (!row || !row[0]) continue;
+          const key = String(row[0]).trim().toLowerCase();
+          
+          if (key.indexOf("wallets") !== -1) { tSec = "acc"; tRowIdx = i + 1; continue; }
+          if (key.indexOf("categories") !== -1) { tSec = "cat"; tRowIdx = i + 1; continue; }
+          if (key.indexOf("incomes") !== -1) { tSec = "inc"; tRowIdx = i + 1; continue; }
+          if (key.indexOf("users") !== -1) { tSec = "usr"; tRowIdx = i + 1; continue; }
+          
+          if (tRowIdx === -1) continue;
+          if (i < tRowIdx) continue;
+          if (i === tRowIdx) continue;
+          if (i === tRowIdx + 1) {
+            const v0 = String(row[0]).trim().toLowerCase();
+            if (v0 === "id" || v0 === "name" || v0 === "имя" || v0 === "название") continue;
+          }
+
+          const col = {}; 
+          const idRow = rows[tRowIdx];
+          if (!idRow) continue;
+          idRow.forEach((v, idx) => { if(v) col[String(v).trim().toLowerCase()] = idx; });
+
+          try {
+            const uId = col["id"] !== undefined ? col["id"] : col["id"];
+            const uName = col["name"] !== undefined ? col["name"] : col["название"];
+            const uColor = col["color"] !== undefined ? col["color"] : col["цвет"];
+            const uIcon = col["icon"] !== undefined ? col["icon"] : col["иконка"];
+            const uTags = col["tags"] !== undefined ? col["tags"] : col["теги"];
+            const uBal = col["balance"] !== undefined ? col["balance"] : col["баланс"];
+            const uCurr = col["currency"] !== undefined ? col["currency"] : col["валюта"];
+
+            if (tSec === "acc" && (uId !== undefined || row[0])) {
+              tmplData.accounts.push({ id: String(uId !== undefined ? row[uId] : row[0]), name: String(uName !== undefined ? row[uName] : row[1]), balance: 0, balanceUSD: 0, color: uColor !== undefined ? row[uColor] : row[4], icon: uIcon !== undefined ? row[uIcon] : (row[5] || "wallet"), currency: uCurr !== undefined ? row[uCurr] : (row[6] || "USD") });
+            } else if (tSec === "cat" && (uId !== undefined || row[0])) {
+              tmplData.categories.push({ id: String(uId !== undefined ? row[uId] : row[0]), name: String(uName !== undefined ? row[uName] : row[1]), color: uColor !== undefined ? row[uColor] : row[2], icon: uIcon !== undefined ? row[uIcon] : (row[3] || "more"), tags: (uTags !== undefined ? row[uTags] : row[4]) ? String(uTags !== undefined ? row[uTags] : row[4]).split(",").map(t => t.trim()) : [] });
+            } else if (tSec === "inc" && (uId !== undefined || row[0])) {
+              tmplData.incomes.push({ id: String(uId !== undefined ? row[uId] : row[0]), name: String(uName !== undefined ? row[uName] : row[1]), color: uColor !== undefined ? row[uColor] : row[2], icon: uIcon !== undefined ? row[uIcon] : (row[3] || "business"), tags: (uTags !== undefined ? row[uTags] : row[4]) ? String(uTags !== undefined ? row[uTags] : row[4]).split(",").map(t => t.trim()) : [] });
+            }
+          } catch (e) {}
+        }
+        return ContentService.createTextOutput(JSON.stringify({ status: "success", data: tmplData })).setMimeType(ContentService.MimeType.JSON);
+      }
+    }
+
     const ss = getSS(e);
-    const ssId = ss.getId();
-    const isMaster = (ssId === MASTER_SS_ID);
     const configSheetName = (e && e.parameter && e.parameter.demo === 'true') ? "Configs-demo" : "Configs";
     const txSheetName = (e && e.parameter && e.parameter.demo === 'true') ? "Transactions-demo" : "Transactions";
     
     let sheet = ss.getSheetByName(configSheetName);
-    if (!sheet || sheet.getLastRow() === 0) sheet = ensureInitialized(ss);
+    if (!sheet) sheet = ensureInitialized(ss, configSheetName, txSheetName);
     
     const rows = sheet.getDataRange().getValues();
-    let hasUSDCol = false;
-    for (let r of rows) { if (r[0] && String(r[0]).includes("ID") && r[3] && String(r[3]).includes("USD")) { hasUSDCol = true; break; } }
-
     const data = { accounts: [], categories: [], incomes: [], transactions: [], users: [], baseCurrency: "USD" };
     let section = "";
+    let sectionIdRowIdx = -1;
+
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
-      const f = String(row[0]).trim().toUpperCase();
-      if (f.startsWith("UPDATED")) { 
-        data.timestamp = row[1] || String(row[0]).split("Updated")[1]?.trim(); 
-        continue; 
-      }
-      if (f.startsWith("BASE_CURRENCY")) {
-        data.baseCurrency = String(row[1]).trim() || "USD";
-        continue;
-      }
-      if (f.includes("WALLETS")) { section = "acc"; continue; }
-      if (f.includes("CATEGORIES")) { section = "cat"; continue; }
-      if (f.includes("INCOMES")) { section = "inc"; continue; }
-      if (isMaster && f.includes("USERS")) { section = "usr"; continue; }
-      if (!f || f === "ID" || f === "NAME") continue;
+      if (!row || !row[0]) continue;
+      const key = String(row[0]).trim().toLowerCase();
       
-      if (section === "acc") data.accounts.push({ id: String(row[0]), name: String(row[1]), balance: parseNum(row[2]), balanceUSD: hasUSDCol ? parseNum(row[3]) : undefined, color: hasUSDCol ? row[4] : row[3], icon: (hasUSDCol ? row[5] : row[4]) || "wallet", currency: (hasUSDCol ? row[6] : row[5]) || "USD" });
-      else if (section === "cat") data.categories.push({ id: String(row[0]), name: String(row[1]), color: row[2], icon: row[3] || "more", tags: row[4] ? String(row[4]).split(",").map(t => t.trim()) : [] });
-      else if (section === "inc") data.incomes.push({ id: String(row[0]), name: String(row[1]), color: row[2], icon: row[3] || "business", tags: row[4] ? String(row[4]).split(",").map(t => t.trim()) : [] });
-      else if (section === "usr" && isMaster) data.users.push({ name: String(row[0]).trim(), id: String(row[1]).trim() });
+      if (key.indexOf("updated") !== -1) { data.timestamp = row[1]; continue; }
+      if (key.indexOf("base_currency") !== -1) { data.baseCurrency = String(row[1]).trim() || "USD"; continue; }
+      
+      if (key.indexOf("wallets") !== -1) { section = "acc"; sectionIdRowIdx = i + 1; continue; }
+      if (key.indexOf("categories") !== -1) { section = "cat"; sectionIdRowIdx = i + 1; continue; }
+      if (key.indexOf("incomes") !== -1) { section = "inc"; sectionIdRowIdx = i + 1; continue; }
+      if (ss.getId() === MASTER_SS_ID && key.indexOf("users") !== -1) { section = "usr"; sectionIdRowIdx = i + 1; continue; }
+      
+      if (sectionIdRowIdx === -1) continue;
+      if (i < sectionIdRowIdx) continue;
+      if (i === sectionIdRowIdx) continue;
+
+      if (i === sectionIdRowIdx + 1) {
+        const val0 = String(row[0]).trim().toLowerCase();
+        if (val0 === "id" || val0 === "name" || val0 === "имя" || val0 === "название") {
+          continue;
+        }
+      }
+
+      const col = {}; 
+      const idRow = rows[sectionIdRowIdx];
+      if (!idRow) continue;
+      idRow.forEach((v, idx) => { if(v) col[String(v).trim().toLowerCase()] = idx; });
+
+      try {
+        const uId = col["id"] !== undefined ? col["id"] : col["id"];
+        const uName = col["name"] !== undefined ? col["name"] : col["название"];
+        const uColor = col["color"] !== undefined ? col["color"] : col["цвет"];
+        const uIcon = col["icon"] !== undefined ? col["icon"] : col["иконка"];
+        const uTags = col["tags"] !== undefined ? col["tags"] : col["теги"];
+        const uBal = col["balance"] !== undefined ? col["balance"] : col["баланс"];
+        const uBalBase = col["balance_base"] !== undefined ? col["balance_base"] : col["баланс (база)"];
+        const uCurr = col["currency"] !== undefined ? col["currency"] : col["валюта"];
+
+        if (section === "acc" && (uId !== undefined || row[0])) {
+          data.accounts.push({ id: String(uId !== undefined ? row[uId] : row[0]), name: String(uName !== undefined ? row[uName] : row[1]), balance: parseNum(uBal !== undefined ? row[uBal] : row[2]), balanceUSD: parseNum(uBalBase !== undefined ? row[uBalBase] : row[3]), color: uColor !== undefined ? row[uColor] : row[4], icon: uIcon !== undefined ? row[uIcon] : (row[5] || "wallet"), currency: uCurr !== undefined ? row[uCurr] : (row[6] || "USD") });
+        } else if (section === "cat" && (uId !== undefined || row[0])) {
+          data.categories.push({ id: String(uId !== undefined ? row[uId] : row[0]), name: String(uName !== undefined ? row[uName] : row[1]), color: uColor !== undefined ? row[uColor] : row[2], icon: uIcon !== undefined ? row[uIcon] : (row[3] || "more"), tags: (uTags !== undefined ? row[uTags] : row[4]) ? String(uTags !== undefined ? row[uTags] : row[4]).split(",").map(t => t.trim()) : [] });
+        } else if (section === "inc" && (uId !== undefined || row[0])) {
+          data.incomes.push({ id: String(uId !== undefined ? row[uId] : row[0]), name: String(uName !== undefined ? row[uName] : row[1]), color: uColor !== undefined ? row[uColor] : row[2], icon: uIcon !== undefined ? row[uIcon] : (row[3] || "business"), tags: (uTags !== undefined ? row[uTags] : row[4]) ? String(uTags !== undefined ? row[uTags] : row[4]).split(",").map(t => t.trim()) : [] });
+        } else if (section === "usr") {
+          let usId = col["id"] !== undefined ? row[col["id"]] : row[1];
+          let usName = col["name"] !== undefined ? row[col["name"]] : (col["имя"] !== undefined ? row[col["имя"]] : row[0]);
+          data.users.push({ name: String(usName || "").trim(), id: String(usId || "").trim() });
+        }
+      } catch (e) {}
     }
 
     try {
       const txSheet = ss.getSheetByName(txSheetName);
       if (txSheet && txSheet.getLastRow() > 1) {
         const txRows = txSheet.getDataRange().getValues();
-        const headers = txRows[0].map(v => String(v).trim());
+        let headerRow = txRows[0];
+        let dataStartIndex = 1;
+        if (txRows.length > 1 && String(txRows[1][0]).trim().toLowerCase() === "дата") {
+          dataStartIndex = 2;
+        }
+
+        const headers = headerRow.map(v => String(v).trim().toLowerCase());
         const col = {}; headers.forEach((v, i) => col[v] = i);
-        const accMap = {}; data.accounts.forEach(a => accMap[a.name] = a.id);
-        const catMap = {}; data.categories.forEach(c => catMap[c.name] = c.id);
-        const incMap = {}; data.incomes.forEach(i => incMap[i.name] = i.id);
+        
+        // Helper to find column by multiple possible names
+        const findCol = (names) => {
+          for (let n of names) {
+            if (col[n.toLowerCase()] !== undefined) return col[n.toLowerCase()];
+          }
+          return undefined;
+        };
 
-        for (let i = 1; i < txRows.length; i++) {
-          const r = txRows[i]; if (!r[col["Date"]]) continue;
-          const type = String(r[col["Type"]] || "").trim();
-          const src = String(r[col["Source"]] || "").trim();
-          const dst = String(r[col["Destination"]] || "").trim();
-          let aid = "", tid = "";
-          if (type === "expense") { aid = accMap[src] || src; tid = catMap[dst] || dst; }
-          else if (type === "income") { aid = accMap[dst] || dst; tid = incMap[src] || src; }
-          else if (type === "transfer") { aid = accMap[src] || src; tid = accMap[dst] || dst; }
+        const c_date = findCol(["date", "дата", "день"]);
+        const c_type = findCol(["type", "тип"]);
+        const c_src = findCol(["src", "source", "источник", "откуда", "из"]);
+        const c_dst = findCol(["dst", "destination", "назначение", "куда", "цель"]);
+        const c_tag = findCol(["tag", "тег", "метка"]);
+        const c_s_amt = findCol(["s_amt", "source_amount", "amount", "сумма (исх)", "сумма", "расход"]);
+        const c_s_curr = findCol(["s_curr", "source_currency", "currency", "валюта (исх)", "валюта"]);
+        const c_s_base = findCol(["s_base", "source_base", "сумма (база)", "base_amount"]);
+        const c_t_amt = findCol(["t_amt", "target_amount", "сумма (цель)", "получено"]);
+        const c_t_curr = findCol(["t_curr", "target_currency", "валюта (цель)"]);
+        const c_t_base = findCol(["t_base", "target_base", "цель (база)"]);
+        const c_comment = findCol(["comment", "примечание", "комментарий", "коментарий"]);
+        const c_id = findCol(["id", "идентификатор"]);
+        
+        if (c_date !== undefined) {
+          const accMap = {}; data.accounts.forEach(a => { accMap[a.name] = a.id; accMap[a.id] = a.id; });
+          const catMap = {}; data.categories.forEach(c => { catMap[c.name] = c.id; catMap[c.id] = c.id; });
+          const incMap = {}; data.incomes.forEach(i => { incMap[i.name] = i.id; incMap[i.id] = i.id; });
 
-          const dt = new Date(r[col["Date"]]);
-          if (isNaN(dt.getTime())) continue;
-          const iso = Utilities.formatDate(dt, ss.getSpreadsheetTimeZone(), "yyyy-MM-dd'T'HH:mm:ss");
-          const sAmt = parseNum(r[col["Source Amount"]] || r[col["Amount"]]);
-          const tAmt = parseNum(r[col["Target Amount"]] || r[col["Amount"]], sAmt);
-          
-          data.transactions.push({
-            id: col["ID"] !== undefined ? String(r[col["ID"]]) : `${iso}_${i}`,
-            type, accountId: aid, targetId: tid,
-            sourceAmount: sAmt, sourceCurrency: String(r[col["Source Currency"]] || "USD"),
-            sourceAmountUSD: parseNum(r[col["Source Amount USD"]] || r[col["Amount USD"]], sAmt),
-            targetAmount: tAmt, targetCurrency: String(r[col["Target Currency"]] || "USD"),
-            targetAmountUSD: parseNum(r[col["Target USD"]] || r[col["Amount USD"]], tAmt),
-            date: iso, tag: r[col["Tag"]] ? String(r[col["Tag"]]) : undefined, comment: r[col["Comment"]] ? String(r[col["Comment"]]) : undefined
-          });
+          for (let i = dataStartIndex; i < txRows.length; i++) {
+            const r = txRows[i]; 
+            const dateRaw = r[c_date];
+            if (!dateRaw || String(dateRaw).toLowerCase().indexOf("date") !== -1 || String(dateRaw).toLowerCase().indexOf("дата") !== -1) continue;
+            
+            let rawType = String(r[c_type] || "").trim().toLowerCase();
+            let type = "expense";
+            if (rawType.indexOf("inc") !== -1 || rawType.indexOf("доход") !== -1 || rawType.indexOf("приход") !== -1 || rawType === "in") type = "income";
+            else if (rawType.indexOf("trans") !== -1 || rawType.indexOf("перевод") !== -1) type = "transfer";
+            else if (rawType.indexOf("exp") !== -1 || rawType.indexOf("расход") !== -1 || rawType === "out") type = "expense";
+
+            const srcRaw = String(r[c_src] || "").trim();
+            const dstRaw = String(r[c_dst] || "").trim();
+            
+            let aid = "", tid = "";
+            if (type === "expense") { aid = accMap[srcRaw] || srcRaw; tid = catMap[dstRaw] || dstRaw; }
+            else if (type === "income") { aid = accMap[dstRaw] || dstRaw; tid = incMap[srcRaw] || srcRaw; }
+            else if (type === "transfer") { aid = accMap[srcRaw] || srcRaw; tid = accMap[dstRaw] || dstRaw; }
+
+            let dt;
+            if (dateRaw instanceof Date) {
+              dt = dateRaw;
+            } else {
+              let s = String(dateRaw).trim().replace(/-/g, '/');
+              // Handle DD.MM.YY or DD.MM.YYYY
+              if (s.includes('.')) {
+                const p = s.split('.');
+                if (p.length === 3) {
+                  let year = parseInt(p[2]);
+                  if (year < 100) year += 2000;
+                  dt = new Date(year, parseInt(p[1]) - 1, parseInt(p[0]));
+                }
+              }
+              if (!dt || isNaN(dt.getTime())) dt = new Date(s);
+            }
+
+            if (!dt || isNaN(dt.getTime())) continue;
+            const iso = Utilities.formatDate(dt, ss.getSpreadsheetTimeZone(), "yyyy-MM-dd'T'HH:mm:ss");
+            
+            const s_amt = parseNum(r[c_s_amt]);
+            const t_amt = c_t_amt !== undefined ? parseNum(r[c_t_amt]) : s_amt;
+
+            data.transactions.push({
+              id: String(c_id !== undefined ? r[c_id] : i), 
+              type: type, 
+              accountId: aid, targetId: tid,
+              sourceAmount: s_amt, 
+              sourceCurrency: String(c_s_curr !== undefined ? r[c_s_curr] : "USD"),
+              sourceAmountUSD: parseNum(r[c_s_base]),
+              targetAmount: t_amt, 
+              targetCurrency: String(c_t_curr !== undefined ? r[c_t_curr] : "USD"),
+              targetAmountUSD: parseNum(r[c_t_base]),
+              date: iso, 
+              tag: c_tag !== undefined ? String(r[c_tag]) : undefined, 
+              comment: c_comment !== undefined ? String(r[c_comment]) : undefined
+            });
+          }
         }
       }
     } catch (e) {}
+    
     return ContentService.createTextOutput(JSON.stringify({ status: "success", data })).setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
     return ContentService.createTextOutput(JSON.stringify({ status: "error", message: err.toString() })).setMimeType(ContentService.MimeType.JSON);
@@ -135,75 +280,90 @@ function doPost(e) {
     lock.waitLock(30000);
     const data = JSON.parse(e.postData.contents);
     const ss = getSS(e, data);
-    const isDemo = data.demo === true;
-    const configSheetName = isDemo ? "Configs-demo" : "Configs";
-    const txSheetName = isDemo ? "Transactions-demo" : "Transactions";
+    
+    const configSheetName = data.demo === true ? "Configs-demo" : "Configs";
+    const txSheetName = data.demo === true ? "Transactions-demo" : "Transactions";
+    
+    // Always ensure sheets and basic headers exist before any action
+    ensureInitialized(ss, configSheetName, txSheetName);
+    
     let responses = [];
 
-    if (data.action === "initTable") { ensureInitialized(ss); responses.push({ action: "initTable", status: "success" }); }
+    if (data.action === "initTable") { responses.push({ action: "initTable", status: "success" }); }
 
     const syncSettingsInternal = (settingsData) => {
-      if (!settingsData.accounts || settingsData.accounts.length === 0) return { status: "error", message: "Empty config" };
       let sheet = ss.getSheetByName(configSheetName) || ss.insertSheet(configSheetName);
+      
       let existingUsers = [];
       if (ss.getId() === MASTER_SS_ID) {
         try {
-          const oldRows = sheet.getDataRange().getValues();
+          const sheetData = sheet.getDataRange().getValues();
           let inUsers = false;
-          for (let r of oldRows) {
-            const f = String(r[0]).toUpperCase();
-            if (f.includes("USERS")) { inUsers = true; continue; }
-            if (inUsers && r[0] && f !== "NAME") existingUsers.push([r[0], r[1]]);
+          for (let i = 0; i < sheetData.length; i++) {
+            const val0 = String(sheetData[i][0]).trim().toLowerCase();
+            if (val0.indexOf("users") !== -1) { inUsers = true; continue; }
+            if (inUsers && sheetData[i][0] && val0 !== "name" && val0 !== "имя") {
+              existingUsers.push({ name: String(sheetData[i][0]), id: String(sheetData[i][1] || "") });
+            }
           }
         } catch (e) {}
       }
+
       sheet.clear();
       const rows = [];
-      const pushRow = (arr) => { const r = new Array(8).fill(""); arr.forEach((v, i) => r[i] = v); rows.push(r); };
+      const pushRow = (arr) => { 
+        const fixedRow = new Array(13).fill(""); // Ensure rectangular array (max columns)
+        arr.forEach((v, idx) => fixedRow[idx] = v);
+        rows.push(fixedRow); 
+      };
+      
       pushRow(["Updated", settingsData.timestamp]);
       pushRow(["Base_Currency", settingsData.baseCurrency || "USD"]);
       pushRow([""]); pushRow([" === WALLETS ==="]);
-      pushRow(["ID", "Name", "Balance", "Balance USD", "Color", "Icon", "Currency"]);
-      settingsData.accounts.forEach(a => pushRow([a.id, a.name, a.balance, a.balanceUSD || "", a.color, a.icon, a.currency]));
+      pushRow(["id", "name", "balance", "balance_base", "color", "icon", "currency"]);
+      pushRow(["ID", "Название", "Баланс", "Баланс (база)", "Цвет", "Иконка", "Валюта"]);
+      if (settingsData.accounts) settingsData.accounts.forEach(a => pushRow([a.id, a.name, a.balance, a.balanceUSD || "", a.color, a.icon, a.currency]));
+      
       pushRow([""]); pushRow([" === CATEGORIES ==="]);
-      pushRow(["ID", "Name", "Color", "Icon", "Tags"]);
+      pushRow(["id", "name", "color", "icon", "tags"]);
+      pushRow(["ID", "Название", "Цвет", "Иконка", "Теги"]);
       if (settingsData.categories) settingsData.categories.forEach(c => pushRow([c.id, c.name, c.color, c.icon, Array.isArray(c.tags) ? c.tags.join(", ") : c.tags]));
+      
       pushRow([""]); pushRow([" === INCOMES ==="]);
-      pushRow(["ID", "Name", "Color", "Icon", "Tags"]);
+      pushRow(["id", "name", "color", "icon", "tags"]);
+      pushRow(["ID", "Название", "Цвет", "Иконка", "Теги"]);
       if (settingsData.incomes) settingsData.incomes.forEach(i => pushRow([i.id, i.name, i.color, i.icon, Array.isArray(i.tags) ? i.tags.join(", ") : i.tags]));
-      if (ss.getId() === MASTER_SS_ID) {
+      
+      if (existingUsers.length > 0) {
         pushRow([""]); pushRow([" === USERS ==="]);
-        pushRow(["Name", "Spreadsheet ID"]);
-        existingUsers.forEach(u => pushRow([u[0], u[1]]));
+        pushRow(["Name", "ID"]);
+        existingUsers.forEach(u => pushRow([u.name, u.id]));
       }
-      if (rows.length > 0) sheet.getRange(1, 1, rows.length, 8).setValues(rows);
+      
+      if (rows.length > 0) sheet.getRange(1, 1, rows.length, 13).setValues(rows);
       return { status: "success" };
     };
 
     if (["addTransaction", "updateTransaction", "deleteTransaction"].includes(data.action)) {
       let txSheet = ss.getSheetByName(txSheetName) || ss.insertSheet(txSheetName);
-      if (txSheet.getLastRow() === 0) { 
-        const h = ["Date", "Type", "Source", "Destination", "Tag", "Source Amount", "Source Currency", "Source Amount USD", "Target Amount", "Target Currency", "Target USD", "Comment", "ID"]; 
-        txSheet.appendRow(h); 
-      }
-      const headers = txSheet.getRange(1, 1, 1, txSheet.getLastColumn()).getValues()[0].map(h => String(h).trim());
+      const all = txSheet.getDataRange().getValues();
+      const ids = all[0].map(h => String(h).trim().toLowerCase());
+      const col = {}; ids.forEach((v, i) => col[v] = i);
+      
       const f = { 
-        "Date": parseDateSafe(data.date), "Type": data.type, "Source": data.sourceName, "Destination": data.destinationName,
-        "Tag": data.tagName || "", "Source Amount": data.sourceAmount, "Source Currency": data.sourceCurrency,
-        "Source Amount USD": data.sourceAmountUSD || "",
-        "Target Amount": data.targetAmount || data.sourceAmount, "Target Currency": data.targetCurrency,
-        "Target USD": data.targetAmountUSD || "",
-        "Comment": data.comment || "", "ID": data.id 
+        "date": parseDateSafe(data.date), "type": data.type, "src": data.sourceName, "dst": data.destinationName,
+        "tag": data.tagName || "", "s_amt": Number(data.sourceAmount), "s_curr": data.sourceCurrency,
+        "t_amt": Number(data.targetAmount || data.sourceAmount), "t_curr": data.targetCurrency,
+        "base_amt": Number(data.targetAmountUSD || ""),
+        "comment": data.comment || "", "id": data.id 
       };
-      const rowData = headers.map(h => f[h] !== undefined ? f[h] : "");
+      const rowData = ids.map(h => f[h] !== undefined ? f[h] : "");
       if (data.action === "addTransaction") txSheet.appendRow(rowData);
       else if (data.action === "updateTransaction") {
-        const all = txSheet.getDataRange().getValues(); const idIdx = headers.indexOf("ID");
-        let r = -1; for(let i=1; i<all.length; i++) if(String(all[i][idIdx]) === String(data.id)) { r=i+1; break; }
-        if (r !== -1) txSheet.getRange(r, 1, 1, headers.length).setValues([rowData]);
+        let rIdx = -1; for(let i=1; i<all.length; i++) if(String(all[i][col["id"]]) === String(data.id)) { rIdx=i+1; break; }
+        if (rIdx !== -1) txSheet.getRange(rIdx, 1, 1, ids.length).setValues([rowData]);
       } else if (data.action === "deleteTransaction") {
-        const all = txSheet.getDataRange().getValues(); const idIdx = headers.indexOf("ID");
-        for(let i=all.length-1; i>=1; i--) if(String(all[i][idIdx]) === String(data.id)) txSheet.deleteRow(i+1);
+        for(let i=all.length-1; i>=1; i--) if(String(all[i][col["id"]]) === String(data.id)) txSheet.deleteRow(i+1);
       }
       responses.push({ action: data.action, status: "success" });
     }

@@ -144,9 +144,21 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
             const txDate = new Date(t.date.replace(/-/g, '/').replace('T', ' '));
             return txDate.getDate() === day;
         });
-        const expense = dayTx.filter(t => t.type === "expense").reduce((s, t) => s + (t.sourceAmountUSD || 0), 0);
-        const income = dayTx.filter(t => t.type === "income").reduce((s, t) => s + (t.sourceAmountUSD || 0), 0);
-        return { expense, income, transactions: dayTx };
+        const hasExpense = dayTx.some(t => t.type === "expense");
+        const hasIncome = dayTx.some(t => t.type === "income");
+        const hasTransfer = dayTx.some(t => t.type === "transfer");
+
+        const expenseSum = dayTx.filter(t => t.type === "expense").reduce((s, t) => s + (t.sourceAmountUSD || 0), 0);
+        const incomeSum = dayTx.filter(t => t.type === "income").reduce((s, t) => s + (t.sourceAmountUSD || 0), 0);
+        
+        return { 
+            expense: expenseSum, 
+            income: incomeSum, 
+            hasExpense, 
+            hasIncome, 
+            hasTransfer, 
+            transactions: dayTx 
+        };
     };
 
     const selectedDayData = selectedDay ? getDailyData(selectedDay) : null;
@@ -266,7 +278,7 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
                                     ))}
                                     {calendarDays.map((day, i) => {
                                         if (day === null) return <div key={`empty-${i}`} className="aspect-square" />;
-                                        const { expense, income, transactions: dayTx } = getDailyData(day);
+                                        const { hasExpense, hasIncome, hasTransfer, transactions: dayTx } = getDailyData(day);
                                         const hasData = dayTx.length > 0;
                                         const today = new Date();
                                         const isToday = today.getDate() === day && today.getMonth() === currentDate.getMonth() && today.getFullYear() === currentDate.getFullYear();
@@ -285,8 +297,9 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
                                             >
                                                 <span className={`text-xs font-bold ${isSelected || isToday ? 'text-[var(--primary-color)]' : 'text-[var(--text-main)]'}`}>{day}</span>
                                                 <div className="flex gap-0.5">
-                                                    {income > 0 && <div className="w-1 h-1 rounded-full bg-[var(--success-color)] shadow-[0_0_5px_var(--success-color)]" />}
-                                                    {expense > 0 && <div className="w-1 h-1 rounded-full bg-[var(--primary-color)] shadow-[0_0_5px_var(--primary-color)]" />}
+                                                    {hasIncome && <div className="w-1 h-1 rounded-full bg-[var(--success-color)] shadow-[0_0_5px_var(--success-color)]" />}
+                                                    {hasExpense && <div className="w-1 h-1 rounded-full bg-[#D4AF37] shadow-[0_0_5px_#D4AF37]" />}
+                                                    {hasTransfer && <div className="w-1 h-1 rounded-full bg-indigo-500 shadow-[0_0_5px_indigo-500]" />}
                                                 </div>
                                             </button>
                                         );
@@ -299,9 +312,8 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
                                 className="flex overflow-x-auto hide-scrollbar gap-2 px-6 py-8 animate-in slide-in-from-right-4 duration-300"
                             >
                                 {timelineDays.map((day) => {
-                                    const { expense, income, transactions: dayTx } = getDailyData(day);
-                                    const hasData = dayTx.length > 0;
-                                    const dateObj = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+                                    const { hasExpense, hasIncome, hasTransfer, transactions: dayTx } = getDailyData(day);
+                                    const hasData = dayTx.length > 0;                                    const dateObj = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
                                     const dName = dayNames[dateObj.getDay()];
                                     const today = new Date();
                                     const isToday = today.getDate() === day && today.getMonth() === currentDate.getMonth() && today.getFullYear() === currentDate.getFullYear();
@@ -326,8 +338,9 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
                                             <span className={`text-[10px] font-black uppercase tracking-widest ${isSelected ? 'text-white/70' : 'text-[var(--text-muted)]'}`}>{dName}</span>
                                             <span className="text-base font-black tracking-tight">{day}</span>
                                             <div className="flex gap-0.5 mt-1">
-                                                {income > 0 && <div className={`w-1 h-1 rounded-full ${isSelected ? 'bg-white' : 'bg-[var(--success-color)]'}`} />}
-                                                {expense > 0 && <div className={`w-1 h-1 rounded-full ${isSelected ? 'bg-white/50' : 'bg-[var(--primary-color)]'}`} />}
+                                                {hasIncome && <div className={`w-1 h-1 rounded-full ${isSelected ? 'bg-white' : 'bg-[var(--success-color)]'}`} />}
+                                                {hasExpense && <div className={`w-1 h-1 rounded-full ${isSelected ? 'bg-white/70' : 'bg-[#D4AF37]'}`} />}
+                                                {hasTransfer && <div className={`w-1 h-1 rounded-full ${isSelected ? 'bg-white/50' : 'bg-indigo-400'}`} />}
                                             </div>
                                         </button>
                                     );

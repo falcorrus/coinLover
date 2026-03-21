@@ -92,10 +92,6 @@ export const DraggableIncomeItem: React.FC<Props> = ({
 
   const handleContainerClick = (e: React.MouseEvent) => {
     const elapsed = Date.now() - startTimeRef.current;
-    // Only trigger click if:
-    // 1. We didn't move much (didMoveRef is false)
-    // 2. It's not sorting mode
-    // 3. It was a relatively quick tap (< 400ms)
     if (!didMoveRef.current && !isSortingMode && elapsed < 400) {
       onClick?.(income);
     }
@@ -123,7 +119,7 @@ export const DraggableIncomeItem: React.FC<Props> = ({
       {...attributes}
       onContextMenu={e => e.preventDefault()}
       onClick={handleContainerClick}
-      className={`flex flex-col items-center justify-start transition-opacity w-[64px] shrink-0 cursor-pointer ${isDragging ? "opacity-30" : "opacity-100"}`}
+      className={`flex flex-col items-center justify-start transition-opacity w-[64px] shrink-0 cursor-pointer ${isDragging ? "opacity-30" : "opacity-100"} ${(isSortingMode && (isDragging || isPressing)) ? 'animate-wiggle' : ''}`}
     >
       <div
         {...listeners}
@@ -131,8 +127,8 @@ export const DraggableIncomeItem: React.FC<Props> = ({
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
-        style={{ touchAction: "pan-x" }}
-        className={`draggable-coin coin-wallet w-[52px] h-[52px] mb-2 border border-[#10b981]/30 bg-[#10b981]/10 transition-all duration-300 ${isDragging ? "grabbed-elevation" :
+        style={{ touchAction: "none" }}
+        className={`draggable-coin coin-wallet w-[52px] h-[52px] mb-2 border border-[#10b981]/30 bg-[#10b981]/10 transition-all duration-300 relative ${isDragging ? "grabbed-elevation" :
           (isPressing && isSortingMode) ? "scale-110 border-[var(--primary-color)] shadow-[0_0_20px_rgba(109,93,252,0.4)] ring-4 ring-[var(--primary-color)]/20" :
           isPressing ? "scale-90 brightness-75 border-[#10b981]/50" : ""
           } ${isSortingMode && isDragging ? "shadow-2xl border-[var(--primary-color)] ring-2 ring-[var(--primary-color)]" : ""}`}

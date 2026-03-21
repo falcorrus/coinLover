@@ -3,6 +3,7 @@ import { X, ChevronLeft, ChevronRight, PieChart, List, Tag, RefreshCcw, MoreHori
 import { Transaction, Category, IncomeSource, Account } from "../types";
 import { IconMap } from "../constants";
 import { googleSheetsService } from "../services/googleSheets";
+import { RatesService } from "../services/RatesService";
 
 interface AnalyticsModalProps {
     isOpen: boolean;
@@ -12,6 +13,8 @@ interface AnalyticsModalProps {
     accounts: Account[];
     globalTransactions: Transaction[];
     initialType?: "expense" | "income";
+    currencyMode: "base" | "local";
+    localCurrencyCode: string;
     onItemClick?: (entity: any, type: "category" | "tag" | "income" | "account", transactions: Transaction[]) => void;
 }
 
@@ -59,28 +62,43 @@ const getTagColor = (name: string) => {
 interface DetailItemProps {
     detail: any;
     analysisType: "expense" | "income";
+    currencyMode: "base" | "local";
+    localCurrencyCode: string;
     onClick: () => void;
 }
 
-const DetailItem: React.FC<DetailItemProps> = ({ detail, analysisType, onClick }) => (
-    <div className="flex justify-between items-center cursor-pointer group" onClick={(e) => { e.stopPropagation(); onClick(); }}>
-        <div className="flex items-center gap-2">
-            <detail.icon size={10} style={{ color: detail.color }} className="shrink-0" />
-            <span className="text-xs font-medium text-[var(--text-muted)] group-hover:text-[var(--text-main)] transition-colors">{detail.name}</span>
+const DetailItem: React.FC<DetailItemProps> = ({ detail, analysisType, currencyMode, localCurrencyCode, onClick }) => {
+    const baseCur = RatesService.getBaseCurrency();
+    const getSymbol = (code: string) => {
+        const symbols: Record<string, string> = { "USD": "$", "EUR": "€", "GBP": "£", "RUB": "₽", "RSD": "din", "BRL": "R$", "ARS": "ARS" };
+        return symbols[code.toUpperCase()] || code;
+    };
+    
+    const isBase = currencyMode === 'base';
+    const displayAmount = isBase ? detail.amount : RatesService.convert(detail.amount, baseCur, localCurrencyCode);
+    const symbol = isBase ? getSymbol(baseCur) : getSymbol(localCurrencyCode);
+
+    return (
+        <div className="flex justify-between items-center cursor-pointer group" onClick={(e) => { e.stopPropagation(); onClick(); }}>
+            <div className="flex items-center gap-2">
+                <detail.icon size={10} style={{ color: detail.color }} className="shrink-0" />
+                <span className="text-xs font-medium text-[var(--text-muted)] group-hover:text-[var(--text-main)] transition-colors">{detail.name}</span>
+            </div>
+            <div className="flex items-center gap-2">
+                <span className={`text-xs font-bold ${analysisType === 'income' ? 'text-[var(--success-color)]' : 'text-[var(--text-main)]'}`}>
+                    {symbol} {Math.round(displayAmount).toLocaleString()}
+                </span>
+                <span className="text-[9px] font-bold text-[var(--text-muted)] w-8 text-right">{detail.percent.toFixed(0)}%</span>
+            </div>
         </div>
-        <div className="flex items-center gap-2">
-            <span className={`text-xs font-bold ${analysisType === 'income' ? 'text-[var(--success-color)]' : 'text-[var(--text-main)]'}`}>
-                ${detail.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-            </span>
-            <span className="text-[9px] font-bold text-[var(--text-muted)] w-8 text-right">{detail.percent.toFixed(0)}%</span>
-        </div>
-    </div>
-);
+    );
+};
 
 // --- Main Component ---
 
 export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ 
-    isOpen, onClose, categories, incomes, accounts, globalTransactions, initialType = "expense", onItemClick 
+    isOpen, onClose, categories, incomes, accounts, globalTransactions, initialType = "expense", 
+    currencyMode, localCurrencyCode, onItemClick 
 }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -98,22 +116,63 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
     const currentKey = useMemo(() => analysisType === "income" ? (tab === "categories" ? "income" : "income_tags") : `expense_${tab}`, [analysisType, tab]);
     const selectedIds = useMemo(() => selections[currentKey] || new Set(), [selections, currentKey]);
 
+    const parseDate = (dateStr: string) => {
+        try {
+            const s = String(dateStr).trim();
+            let d = new Date(s);
+            if (!isNaN(d.getTime())) return d;
+            
+            d = new Date(s.replace(/-/g, '/').replace('T', ' '));
+            if (!isNaN(d.getTime())) return d;
+
+            if (s.includes('/')) {
+                const p = s.split('/');
+                if (p.length >= 3) {
+                    const m = parseInt(p[0]) - 1;
+                    const day = parseInt(p[1]);
+                    const y = parseInt(p[2].split(' ')[0]);
+                    const year = y < 100 ? 2000 + y : y;
+                    return new Date(year, m, day);
+                }
+            }
+            if (s.includes('.')) {
+                const p = s.split('.');
+                if (p.length >= 3) {
+                    const year = p[2].split(' ')[0].length === 4 ? parseInt(p[2]) : 2000 + parseInt(p[2]);
+                    return new Date(year, parseInt(p[1]) - 1, parseInt(p[0]));
+                }
+            }
+            return new Date(NaN);
+        } catch { return new Date(NaN); }
+    };
+
     const filteredTx = useMemo(() => transactions.filter(t => {
         if (t.type !== analysisType) return false;
-        const txDate = new Date(t.date.replace(/-/g, '/').replace('T', ' '));
-        return txDate.getFullYear() === currentDate.getFullYear() && txDate.getMonth() === currentDate.getMonth();
+        const txDate = parseDate(t.date);
+        return !isNaN(txDate.getTime()) && txDate.getFullYear() === currentDate.getFullYear() && txDate.getMonth() === currentDate.getMonth();
     }), [transactions, analysisType, currentDate]);
 
-    const getTxUSD = (t: Transaction) => {
-        const val = t.sourceAmountUSD || t.targetAmountUSD || t.sourceAmount || 0;
-        return isNaN(Number(val)) ? 0 : Number(val);
+    const getTxAmountInBase = (t: Transaction) => {
+        const baseCur = RatesService.getBaseCurrency();
+        const sCurr = (t.sourceCurrency && isNaN(Number(t.sourceCurrency))) ? t.sourceCurrency : "USD";
+        const tCurr = (t.targetCurrency && isNaN(Number(t.targetCurrency))) ? t.targetCurrency : "USD";
+        
+        if (analysisType === "expense") {
+            return (t.sourceAmountUSD && t.sourceAmountUSD !== 0 && baseCur === 'USD')
+                ? t.sourceAmountUSD
+                : RatesService.convert(t.sourceAmount || 0, sCurr, baseCur);
+        } else {
+            return (t.targetAmountUSD && t.targetAmountUSD !== 0 && baseCur === 'USD')
+                ? t.targetAmountUSD
+                : RatesService.convert(t.targetAmount || 0, tCurr, baseCur);
+        }
     };
 
     const listItems = useMemo(() => {
         let items: { id: string, name: string, icon: any, color: string, amount: number, percent: number }[] = [];
         if (tab === "categories") {
             const itemMap = new Map<string, number>();
-            filteredTx.forEach(t => itemMap.set(t.targetId, (itemMap.get(t.targetId) || 0) + getTxUSD(t)));
+            filteredTx.forEach(t => itemMap.set(t.targetId, (itemMap.get(t.targetId) || 0) + getTxAmountInBase(t)));
             itemMap.forEach((amount, id) => {
                 if (analysisType === "expense") {
                     const cat = categories.find(c => c.id === id);
@@ -127,7 +186,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
             const tagMap = new Map<string, number>();
             filteredTx.forEach(t => {
                 const tagName = t.tag?.trim() || "Без тега";
-                tagMap.set(tagName, (tagMap.get(tagName) || 0) + getTxUSD(t));
+                tagMap.set(tagName, (tagMap.get(tagName) || 0) + getTxAmountInBase(t));
             });
             tagMap.forEach((amount, id) => items.push({ id, name: id, icon: Tag, color: getTagColor(id), amount, percent: 0 }));
         }
@@ -137,6 +196,18 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
     }, [filteredTx, tab, analysisType, categories, incomes]);
 
     const displayedTotal = useMemo(() => listItems.filter(i => selectedIds.has(i.id)).reduce((s, i) => s + i.amount, 0), [listItems, selectedIds]);
+
+    const { displayTotal, displaySymbol } = useMemo(() => {
+        const baseCur = RatesService.getBaseCurrency();
+        const getSymbol = (code: string) => {
+            const symbols: Record<string, string> = { "USD": "$", "EUR": "€", "GBP": "£", "RUB": "₽", "RSD": "din", "BRL": "R$", "ARS": "ARS" };
+            return symbols[code.toUpperCase()] || code;
+        };
+        const isBase = currencyMode === 'base';
+        const amount = isBase ? displayedTotal : RatesService.convert(displayedTotal, baseCur, localCurrencyCode);
+        const symbol = isBase ? getSymbol(baseCur) : getSymbol(localCurrencyCode);
+        return { displayTotal: amount, displaySymbol: symbol };
+    }, [displayedTotal, currencyMode, localCurrencyCode]);
 
     useEffect(() => { if (isOpen) { setAnalysisType(initialType); setExpandedItemId(null); } }, [isOpen, initialType]);
 
@@ -160,8 +231,8 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
         const loadData = async () => {
             const cacheKey = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
             const globalMonthTx = globalTransactions.filter(t => {
-                const d = new Date(t.date.replace(/-/g, '/').replace('T', ' '));
-                return d.getFullYear() === currentDate.getFullYear() && (d.getMonth() + 1) === (currentDate.getMonth() + 1);
+                const d = parseDate(t.date);
+                return !isNaN(d.getTime()) && d.getFullYear() === currentDate.getFullYear() && (d.getMonth() + 1) === (currentDate.getMonth() + 1);
             });
             if (globalMonthTx.length > 0) { setTransactions(globalTransactions); globalAnalyticsCache.set(cacheKey, globalTransactions); return; }
             if (globalAnalyticsCache.has(cacheKey)) { setTransactions(globalAnalyticsCache.get(cacheKey)!); return; }
@@ -203,12 +274,12 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
         if (tab === "categories") {
             const subTx = filteredTx.filter(t => t.targetId === item.id);
             const map = new Map<string, number>();
-            subTx.forEach(t => { const n = t.tag?.trim() || "Без тега"; map.set(n, (map.get(n) || 0) + getTxUSD(t)); });
+            subTx.forEach(t => { const n = t.tag?.trim() || "Без тега"; map.set(n, (map.get(n) || 0) + getTxAmountInBase(t)); });
             map.forEach((amount, name) => details.push({ id: name, name, icon: Tag, color: getTagColor(name), amount, percent: item.amount > 0 ? (amount / item.amount) * 100 : 0 }));
         } else {
             const subTx = filteredTx.filter(t => (t.tag?.trim() || "Без тега") === item.name);
             const map = new Map<string, number>();
-            subTx.forEach(t => map.set(t.targetId, (map.get(t.targetId) || 0) + getTxUSD(t)));
+            subTx.forEach(t => map.set(t.targetId, (map.get(t.targetId) || 0) + getTxAmountInBase(t)));
             map.forEach((amount, id) => {
                 if (analysisType === "expense") {
                     const cat = categories.find(c => c.id === id);
@@ -263,7 +334,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
 
                     <div className="px-6 py-4 shrink-0 flex flex-col items-center relative">
                         <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] tracking-widest mb-1">{analysisType === "expense" ? "Всего потрачено" : "Всего получено"}</span>
-                        <span className={`text-3xl font-black ${analysisType === "income" ? 'text-[var(--success-color)]' : 'text-[var(--text-main)]'}`}>${displayedTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <span className={`text-3xl font-black ${analysisType === "income" ? 'text-[var(--success-color)]' : 'text-[var(--text-main)]'}`}>{displaySymbol} {Math.round(displayTotal).toLocaleString()}</span>
                     </div>
 
                     <div className="px-6 pb-2 shrink-0 flex justify-between items-center">
@@ -321,7 +392,9 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                                     </svg>
                                     <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                                         <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] tracking-tighter mb-0.5">Total</span>
-                                        <span className="text-sm font-black text-[var(--text-main)]">${Math.round(displayedTotal).toLocaleString()}</span>
+                                        <span className="text-sm font-black text-[var(--text-main)]">
+                                            {displaySymbol} {Math.round(displayTotal).toLocaleString()}
+                                        </span>
                                     </div>
                                 </div>
                                 
@@ -352,6 +425,8 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                                     const isExpanded = expandedItemId === item.id;
                                     const isSelected = selectedIds.has(item.id);
                                     const details = isExpanded ? getItemDetails(item) : [];
+                                    const baseCur = RatesService.getBaseCurrency();
+                                    const itemDisplayAmount = currencyMode === 'base' ? item.amount : RatesService.convert(item.amount, baseCur, localCurrencyCode);
 
                                     return (
                                         <div key={item.id} className={`flex flex-col transition-all duration-300 ${isSelected ? 'opacity-100' : 'opacity-30 grayscale'}`}>
@@ -362,7 +437,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                                                         <span className={`text-sm font-semibold truncate transition-colors ${isSelected ? 'text-[var(--text-main)]' : 'text-[var(--text-muted)]'}`}>{item.name}</span>
                                                     </div>
                                                     <div className="flex flex-col items-end">
-                                                        <span className={`text-sm font-bold ${!isSelected ? 'text-[var(--text-muted)]' : (analysisType === 'income' ? 'text-[var(--success-color)]' : 'text-[var(--text-main)]')}`}>${item.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                                        <span className={`text-sm font-bold ${!isSelected ? 'text-[var(--text-muted)]' : (analysisType === 'income' ? 'text-[var(--success-color)]' : 'text-[var(--text-main)]')}`}>{displaySymbol} {Math.round(itemDisplayAmount).toLocaleString()}</span>
                                                         <div className="flex items-center gap-1">
                                                             <span className="text-[10px] font-bold text-[var(--text-muted)]">{item.percent.toFixed(1)}%</span>
                                                             <ChevronRight size={10} className={`text-[var(--text-muted)] transition-transform duration-300 ${isExpanded ? 'rotate-90' : ''}`} />
@@ -374,7 +449,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                                             {isExpanded && details.length > 0 && (
                                                 <div className="mt-2 ml-11 flex flex-col gap-3 border-l-2 border-[var(--glass-border)] pl-4 animate-in slide-in-from-top-2 duration-300">
                                                     {details.map(detail => (
-                                                        <DetailItem key={detail.id} detail={detail} analysisType={analysisType} onClick={() => {
+                                                        <DetailItem key={detail.id} detail={detail} analysisType={analysisType} currencyMode={currencyMode} localCurrencyCode={localCurrencyCode} onClick={() => {
                                                             if (!onItemClick) return;
                                                             const eType = analysisType === "income" ? (tab === "categories" ? "income" : "tag") : (tab === "tags" ? "category" : "tag");
                                                             const filter = filteredTx.filter(t => {

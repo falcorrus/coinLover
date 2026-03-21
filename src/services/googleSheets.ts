@@ -80,5 +80,22 @@ export const googleSheetsService = {
 
   async initTable(ssId: string): Promise<boolean> {
     return this.syncToSheets({ action: "initTable", ssId });
+  },
+
+  async fetchTemplate(): Promise<{ accounts?: any[], categories?: any[], incomes?: any[] } | null> {
+    try {
+      const url = `${GOOGLE_SCRIPT_URL}?action=template`;
+      const response = await fetch(url);
+      if (!response.ok) return null;
+      
+      const result = await response.json();
+      if (result.status === "success" && result.data) {
+        return result.data;
+      }
+      return null;
+    } catch (error) {
+      console.error("Failed to fetch template from GAS", error);
+      return null;
+    }
   }
 };
