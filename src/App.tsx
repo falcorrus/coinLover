@@ -129,7 +129,8 @@ export default function App() {
   }, [activeTableId, checkConflicts]);
 
   const toggleIncome = () => { const next = !isIncomeCollapsed; setIsIncomeCollapsed(next); setMode(next ? "expense" : "income"); };
-  const anyModalOpen = accountModal.isOpen || incomeModal.isOpen || categoryModal.isOpen || historyModal.isOpen || analyticsModal.isOpen || calendarAnalyticsModal.isOpen || numpad.isOpen || confirmDelete.isOpen || isSettingsMenuOpen || isTagModalOpen || !!conflictData;
+  const isFullModalOpen = accountModal.isOpen || incomeModal.isOpen || categoryModal.isOpen || historyModal.isOpen || analyticsModal.isOpen || calendarAnalyticsModal.isOpen || numpad.isOpen || confirmDelete.isOpen || isTagModalOpen || !!conflictData;
+  const anyModalOpen = isFullModalOpen || isSettingsMenuOpen;
 
   React.useEffect(() => {
     const closeAllModals = () => {
@@ -165,7 +166,7 @@ export default function App() {
 
         <div className="absolute top-4 right-4 z-50"><div className={`w-2 h-2 rounded-full ${syncStatus === "loading" ? "bg-amber-400 animate-pulse" : syncStatus === "success" ? "bg-emerald-500/50" : syncStatus === "error" ? "bg-rose-500" : "bg-white/10"}`} /></div>
 
-        <div className={`flex-1 flex flex-col overflow-hidden animate-in zoom-in-95 duration-500 transition-all duration-500 ease-out ${anyModalOpen ? "scale-[0.96] blur-[3px] opacity-60 pointer-events-none" : "scale-100 blur-0 opacity-100"}`}>
+        <div className={`flex-1 flex flex-col overflow-hidden animate-in zoom-in-95 duration-500 transition-all duration-500 ease-out ${isFullModalOpen ? "scale-[0.96] blur-[3px] opacity-60 pointer-events-none" : "scale-100 blur-0 opacity-100"}`}>
           <AppHeader 
             isIncomeCollapsed={isIncomeCollapsed} toggleIncome={toggleIncome} isDemo={localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE) !== "false"}
             settingsLongPress={settingsLongPress} handleMenuClick={handleMenuClick} isSettingsMenuOpen={isSettingsMenuOpen} setIsSettingsMenuOpen={setIsSettingsMenuOpen}
