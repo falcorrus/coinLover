@@ -12,6 +12,7 @@ app.add_middleware(
     allow_origins=[
         "https://coin.reloto.ru",
         "https://coinlover-dev.reloto.ru",
+        "http://localhost:3000",
         "http://localhost:5173",
         "http://localhost:4173"
     ],
