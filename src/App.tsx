@@ -35,17 +35,6 @@ export default function App() {
     pullSettings, checkConflicts, conflictData, setConflictData, updateLocalFromRemote, pushSettings
   } = useFinance(activeTableId);
 
-  const pullSettings = React.useCallback(async () => {
-    const ok = await originalPullSettings();
-    if (ok) {
-      const bc = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY);
-      if (!bc && activeTableId) {
-        setIsCurrencyModalOpen(true);
-      }
-    }
-    return ok;
-  }, [originalPullSettings, activeTableId]);
-
   const [isSplashVisible, setIsSplashVisible] = React.useState(true);
   const [isOnboarding, setIsOnboarding] = React.useState(false);
 
@@ -240,13 +229,6 @@ export default function App() {
   const toggleIncome = () => { const next = !isIncomeCollapsed; setIsIncomeCollapsed(next); setMode(next ? "expense" : "income"); };
   const isFullModalOpen = accountModal.isOpen || incomeModal.isOpen || categoryModal.isOpen || historyModal.isOpen || analyticsModal.isOpen || calendarAnalyticsModal.isOpen || numpad.isOpen || confirmDelete.isOpen || isTagModalOpen || !!conflictData;
   const anyModalOpen = isFullModalOpen || isSettingsMenuOpen;
-
-  const handleCurrencySelect = (curr: "USD" | "EUR") => {
-    localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY, curr);
-    setIsCurrencyModalOpen(false);
-    pushSettings(accounts, categories, incomes, activeTableId);
-    window.location.reload();
-  };
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: APP_SETTINGS.DND_ACTIVATION_DISTANCE } }));
   if (currentPath === "/landing") return <LandingPage />;

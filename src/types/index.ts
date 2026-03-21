@@ -105,7 +105,6 @@ export type SyncPayload =
     targetAmountUSD: number;
     comment?: string;
     ssId?: string;
-    baseCurrency?: string;
   } & Partial<SyncSettingsFields>)
   | ({
     action: "updateTransaction";
@@ -124,18 +123,15 @@ export type SyncPayload =
     targetAmountUSD: number;
     comment?: string;
     ssId?: string;
-    baseCurrency?: string;
   } & Partial<SyncSettingsFields>)
   | ({
     action: "syncSettings";
     targetSheet: "Configs";
     ssId?: string;
-    baseCurrency?: string;
   } & SyncSettingsFields)
   | ({
     action: "deleteTransaction";
     targetSheet: "Transactions";
     id: string;
     ssId?: string;
-    baseCurrency?: string;
   } & Partial<SyncSettingsFields>);

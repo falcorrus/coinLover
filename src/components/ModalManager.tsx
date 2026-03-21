@@ -15,7 +15,6 @@ import { ConfirmModal } from "./ConfirmModal";
 import { TagModal } from "./TagModal";
 import { UsersModal } from "./UsersModal";
 import { ThemeModal } from "./ThemeModal";
-import { CurrencySetupModal } from "./CurrencySetupModal";
 
 interface ModalManagerProps {
   // Modal States
@@ -30,7 +29,6 @@ interface ModalManagerProps {
   isTagModalOpen: boolean;
   isUsersModalOpen: boolean;
   isThemeModalOpen: boolean;
-  isCurrencyModalOpen: boolean;
   theme: "light" | "dark" | "midnight" | "modern";
   conflictData: any; 
   editingTxId: string | null;
@@ -58,9 +56,7 @@ interface ModalManagerProps {
   setIsTagModalOpen: (v: boolean) => void;
   setIsUsersModalOpen: (v: boolean) => void;
   setIsThemeModalOpen: (v: boolean) => void;
-  setIsCurrencyModalOpen: (v: boolean) => void;
   setTheme: (v: "light" | "dark" | "midnight" | "modern") => void;
-  onCurrencySelect: (curr: "USD" | "EUR") => void;
   setEditingTxId: (v: string | null) => void;
   setConflictData: (v: any) => void;
   
@@ -87,7 +83,7 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
     accounts, categories, incomes, transactions, allExistingTags, users, activeTableId,
     setAccountModal, setIncomeModal, setCategoryModal, setHistoryModal, setAnalyticsModal,
     setCalendarAnalyticsModal, setConfirmDelete, setNumpad, setIsTagModalOpen, setIsUsersModalOpen, setEditingTxId, setConflictData,
-    setIsThemeModalOpen, setTheme, setIsCurrencyModalOpen, onCurrencySelect,
+    setIsThemeModalOpen, setTheme,
     addTransaction, updateTransaction, deleteTransaction, saveAccount, deleteAccount, 
     saveCategory, deleteCategory, saveIncome, deleteIncome, updateLocalFromRemote,
     onSwitchTable
@@ -236,11 +232,6 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
       />
       
       <ConfirmModal isOpen={confirmDelete.isOpen} title={confirmDelete.title} message={confirmDelete.message} onConfirm={confirmDelete.onConfirm} onCancel={() => setConfirmDelete(p => ({ ...p, isOpen: false }))} />
-
-      <CurrencySetupModal 
-        isOpen={isCurrencyModalOpen} 
-        onSelect={onCurrencySelect} 
-      />
 
       {conflictData && (
         <ConfirmModal 
