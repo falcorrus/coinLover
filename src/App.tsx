@@ -86,6 +86,52 @@ export default function App() {
   const [isThemeModalOpen, setIsThemeModalOpen] = React.useState(false);
   const [numpad, setNumpad] = React.useState<any>({ isOpen: false, type: "expense", source: null, destination: null, sourceAmount: "0", sourceCurrency: "USD", targetAmount: "0", targetCurrency: "USD", targetLinked: true, activeField: "source", tag: null, comment: "" });
 
+  const [modalStack, setModalStack] = React.useState<string[]>([]);
+
+  React.useEffect(() => {
+    const newStack: string[] = [];
+    if (accountModal.isOpen) newStack.push("account");
+    if (incomeModal.isOpen) newStack.push("income");
+    if (categoryModal.isOpen) newStack.push("category");
+    if (historyModal.isOpen) newStack.push("history");
+    if (analyticsModal.isOpen) newStack.push("analytics");
+    if (calendarAnalyticsModal.isOpen) newStack.push("calendar");
+    if (confirmDelete.isOpen) newStack.push("confirm");
+    if (isTagModalOpen) newStack.push("tag");
+    if (isUsersModalOpen) newStack.push("users");
+    if (isThemeModalOpen) newStack.push("theme");
+    if (numpad.isOpen) newStack.push("numpad");
+    if (isSettingsMenuOpen) newStack.push("settings");
+    if (conflictData) newStack.push("conflict");
+
+    setModalStack(prev => {
+      if (JSON.stringify(prev) === JSON.stringify(newStack)) return prev;
+      return newStack;
+    });
+  }, [
+    accountModal.isOpen, incomeModal.isOpen, categoryModal.isOpen, historyModal.isOpen,
+    analyticsModal.isOpen, calendarAnalyticsModal.isOpen, confirmDelete.isOpen,
+    isTagModalOpen, isUsersModalOpen, isThemeModalOpen, numpad.isOpen, isSettingsMenuOpen, conflictData
+  ]);
+
+  const closeSpecificModal = (modalId: string) => {
+    switch (modalId) {
+      case "account": setAccountModal((p: any) => ({ ...p, isOpen: false })); break;
+      case "income": setIncomeModal((p: any) => ({ ...p, isOpen: false })); break;
+      case "category": setCategoryModal((p: any) => ({ ...p, isOpen: false })); break;
+      case "history": setHistoryModal({ isOpen: false, entity: null, type: null }); break;
+      case "analytics": setAnalyticsModal((p: any) => ({ ...p, isOpen: false })); break;
+      case "calendar": setCalendarAnalyticsModal({ isOpen: false }); break;
+      case "confirm": setConfirmDelete((p: any) => ({ ...p, isOpen: false })); break;
+      case "tag": setIsTagModalOpen(false); break;
+      case "users": setIsUsersModalOpen(false); break;
+      case "theme": setIsThemeModalOpen(false); break;
+      case "numpad": setNumpad((p: any) => ({ ...p, isOpen: false })); break;
+      case "settings": setIsSettingsMenuOpen(false); break;
+      case "conflict": setConflictData(null); break;
+    }
+  };
+
   const currentMonthTransactions = React.useMemo(() => {
     const now = new Date();
     const currentMonth = now.getMonth();
@@ -133,22 +179,40 @@ export default function App() {
   const anyModalOpen = isFullModalOpen || isSettingsMenuOpen;
 
   React.useEffect(() => {
-    const closeAllModals = () => {
-      setAccountModal((p: any) => ({ ...p, isOpen: false })); setIncomeModal((p: any) => ({ ...p, isOpen: false })); setCategoryModal((p: any) => ({ ...p, isOpen: false }));
-      setHistoryModal({ isOpen: false, entity: null, type: null }); setAnalyticsModal((p: any) => ({ ...p, isOpen: false })); setCalendarAnalyticsModal({ isOpen: false });
-      setNumpad((p: any) => ({ ...p, isOpen: false })); setConfirmDelete((p: any) => ({ ...p, isOpen: false }));
-      setIsSettingsMenuOpen(false); setIsTagModalOpen(false); setConflictData(null); setEditingTxId(null);
+    const handleBack = () => {
+      if (modalStack.length > 0) {
+        const lastModal = modalStack[modalStack.length - 1];
+        closeSpecificModal(lastModal);
+        return true;
+      }
+      return false;
     };
-    if (anyModalOpen) window.history.pushState({ modal: true }, "");
-    const handlePopState = () => { if (anyModalOpen) closeAllModals(); };
-    const handleKeyDown = (e: KeyboardEvent) => { if (e.key === "Escape" && anyModalOpen) closeAllModals(); };
+
+    if (modalStack.length > 0) {
+      window.history.pushState({ modal: modalStack.length }, "");
+    }
+
+    const handlePopState = () => {
+      if (modalStack.length > 0) handleBack();
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (handleBack()) {
+          // Если мы закрыли модалку по Esc, нужно убрать и запись из history, 
+          // чтобы кнопка "Назад" не срабатывала потом впустую
+          window.history.back();
+        }
+      }
+    };
+
     window.addEventListener("popstate", handlePopState);
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("popstate", handlePopState);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [anyModalOpen]);
+  }, [modalStack.length]);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: APP_SETTINGS.DND_ACTIVATION_DISTANCE } }));
   if (currentPath === "/landing") return <LandingPage />;
