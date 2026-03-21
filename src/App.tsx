@@ -189,18 +189,25 @@ export default function App() {
     };
 
     if (modalStack.length > 0) {
-      window.history.pushState({ modal: modalStack.length }, "");
+      // Предотвращаем дублирование записей в истории, если мы уже добавили запись для текущего уровня стека
+      if (window.history.state?.modal !== modalStack.length) {
+        window.history.pushState({ modal: modalStack.length }, "");
+      }
     }
 
-    const handlePopState = () => {
-      if (modalStack.length > 0) handleBack();
+    const handlePopState = (e: PopStateEvent) => {
+      // Если мы вернулись назад, и в новом состоянии уровень стека меньше текущего,
+      // или если состояния нет (мы на главной) — закрываем модалку
+      if (modalStack.length > 0) {
+        handleBack();
+      }
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        if (handleBack()) {
-          // Если мы закрыли модалку по Esc, нужно убрать и запись из history, 
-          // чтобы кнопка "Назад" не срабатывала потом впустую
+        if (modalStack.length > 0) {
+          // Вместо прямого вызова handleBack, мы просто имитируем нажатие "Назад" в браузере
+          // Это приведет к срабатыванию popstate, который вызовет handleBack и закроет модалку
           window.history.back();
         }
       }
@@ -212,7 +219,7 @@ export default function App() {
       window.removeEventListener("popstate", handlePopState);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [modalStack.length]);
+  }, [modalStack]);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: APP_SETTINGS.DND_ACTIVATION_DISTANCE } }));
   if (currentPath === "/landing") return <LandingPage />;

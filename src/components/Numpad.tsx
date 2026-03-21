@@ -49,8 +49,6 @@ export const Numpad: React.FC<Props> = ({
         onDelete();
       } else if (e.key === "Enter") {
         if (data.sourceAmount !== "0") onSubmit();
-      } else if (e.key === "Escape") {
-        onClose();
       } else if (e.key === "c" || e.key === "C") {
         onPress("C");
       } else if (e.key === "Tab") {
