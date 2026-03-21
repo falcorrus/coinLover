@@ -100,18 +100,20 @@ export const useTransactions = ({
     const finalTargetAmount = targetAmount ?? sourceAmount;
     let sCurr: string, tCurr: string;
     
+    const baseCur = RatesService.getBaseCurrency();
+
     if (type === "expense") { 
       sCurr = (source as Account).currency; 
-      tCurr = customCurrency || oldTx.targetCurrency; 
+      // Приоритет: 1. Валюта из нумпада (customCurrency) 2. Валюта из старой транзакции 3. База
+      tCurr = customCurrency || oldTx.targetCurrency || baseCur; 
     } else if (type === "income") { 
       tCurr = (destination as Account).currency;
-      sCurr = customCurrency || oldTx.sourceCurrency;
+      sCurr = customCurrency || oldTx.sourceCurrency || tCurr;
     } else { 
       sCurr = (source as Account).currency; 
       tCurr = (destination as Account).currency; 
     }
 
-    const baseCur = RatesService.getBaseCurrency();
     const sAmountUSD = RatesService.convert(sourceAmount, sCurr, baseCur);
     const tAmountUSD = RatesService.convert(finalTargetAmount, tCurr, baseCur);
     
@@ -130,6 +132,9 @@ export const useTransactions = ({
       tag, 
       comment: comment || undefined 
     };
+
+    console.log(`Updating Tx ${txId}: ${sourceAmount} ${sCurr} (${sAmountUSD} USD) -> ${finalTargetAmount} ${tCurr} (${tAmountUSD} USD)`);
+
     setTransactions(prev => prev.map(t => t.id === txId ? updatedTx : t));
     trackEvent("Transaction", "Update", type);
     const updatedAccounts = accounts.map(a => {
