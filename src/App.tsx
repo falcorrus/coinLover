@@ -205,11 +205,26 @@ export default function App() {
   });
 
   const handleSwitchTable = (id: string) => {
+    // 1. Очищаем локальные состояния
     setAccounts([]); setCategories([]); setIncomes([]); setTransactions([]);
-    localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.ACCOUNTS); localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.CATEGORIES);
-    localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.INCOMES); localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.TRANSACTIONS);
-    switchTable(id); trackEvent("User", "SwitchTable", id); setIsUsersModalOpen(false);
-    setTimeout(() => { window.location.href = window.location.pathname; }, 100);
+    
+    // 2. Очищаем localStorage
+    localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.ACCOUNTS); 
+    localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.CATEGORIES);
+    localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.INCOMES); 
+    localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.TRANSACTIONS);
+    localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC);
+    
+    // 3. Переключаем ID и отключаем демо
+    switchTable(id); 
+    localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE, "false");
+    
+    trackEvent("User", "SwitchTable", id); 
+    setIsUsersModalOpen(false);
+    
+    // 4. Переходим на чистый URL (удаляем ssId, если он там был)
+    const cleanUrl = window.location.origin + window.location.pathname;
+    window.location.href = cleanUrl;
   };
 
   React.useEffect(() => {

@@ -47,14 +47,19 @@ export const useFinance = (ssId?: string) => {
     accounts, setAccounts, categories, setCategories, incomes, setIncomes, pushSettings
   });
 
-  // Effect to pull data when table ID changes or on initial load if no data
+  // Effect to pull data when table ID changes or on initial load
   useEffect(() => {
-    const hasData = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.ACCOUNTS);
-    if (!hasData || isInitialLoad.current) {
-      pullSettings();
-      isInitialLoad.current = false;
-    }
-  }, [ssId, pullSettings]);
+    // Если ssId изменился, принудительно сбрасываем локальные данные перед загрузкой новых
+    const currentStoredId = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.ACTIVE_TABLE_ID);
+    
+    setAccounts([]);
+    setCategories([]);
+    setIncomes([]);
+    setTransactions([]);
+    
+    pullSettings();
+    isInitialLoad.current = false;
+  }, [ssId]); // Реагируем на каждое изменение ssId
 
   // Persistent storage effects
   useEffect(() => { if (accounts.length > 0) localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.ACCOUNTS, JSON.stringify(accounts)); }, [accounts]);
