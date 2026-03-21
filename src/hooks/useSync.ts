@@ -1,8 +1,7 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { APP_SETTINGS } from "../constants/settings";
 import { Account, Transaction, Category, IncomeSource, SyncSettingsFields } from "../types";
 import { googleSheetsService } from "../services/googleSheets";
-import { DEFAULT_CATEGORIES, INITIAL_INCOMES, INITIAL_ACCOUNTS } from "../constants";
 import { getLocalTimeString, enrichAccountsWithUSD } from "./utils";
 
 export type SyncStatus = "idle" | "loading" | "error" | "success";
@@ -24,6 +23,7 @@ export const useSync = ({
 }: SyncStateProps) => {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>("idle");
   const [conflictData, setConflictData] = useState<SyncSettingsFields | null>(null);
+  const debounceTimer = useRef<NodeJS.Timeout | null>(null);
 
   const updateLocalFromRemote = useCallback((data: SyncSettingsFields & { transactions?: Transaction[], users?: { name: string; id: string }[] }) => {
     if (data.accounts) setAccounts(data.accounts);
@@ -46,50 +46,42 @@ export const useSync = ({
       setSyncStatus("success");
       return true;
     }
-    setSyncStatus("success"); // Return success even if empty, so Onboarding can trigger
+    setSyncStatus("success");
     return false;
-  }, [updateLocalFromRemote, accounts.length, setAccounts, setCategories, setIncomes, ssId]);
+  }, [updateLocalFromRemote, ssId]);
 
   const checkConflicts = useCallback(async () => {
-    if (syncStatus === "loading") return; // Do not check conflicts if we are currently syncing
-    
+    if (syncStatus === "loading") return;
     try {
       const remote = await googleSheetsService.fetchSettings(ssId);
       if (!remote || !remote.timestamp) return;
-      
       const localLastSync = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC);
       if (!localLastSync) {
-        // Only update if we aren't empty locally. If we have local data but no sync, we shouldn't wipe it with empty remote.
-        if (accounts.length === 0 && categories.length === 0) {
-          updateLocalFromRemote(remote);
-        }
+        if (accounts.length === 0 && categories.length === 0) updateLocalFromRemote(remote);
         return;
       }
-
       const remoteDate = new Date(remote.timestamp.replace(/-/g, '/').replace('T', ' '));
       const localDate = new Date(localLastSync.replace(/-/g, '/').replace('T', ' '));
-
-      if (remoteDate.getTime() > localDate.getTime()) {
-        setConflictData(remote);
-      }
-    } catch (e) {
-      console.error("Conflict check failed:", e);
-    }
+      if (remoteDate.getTime() > localDate.getTime()) setConflictData(remote);
+    } catch (e) { console.error("Conflict check failed:", e); }
   }, [updateLocalFromRemote, ssId, syncStatus, accounts.length, categories.length]);
 
-  const pushSettings = useCallback(async (a: Account[], c: Category[], i: IncomeSource[]) => {
+  const pushSettings = useCallback((a: Account[], c: Category[], i: IncomeSource[]) => {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    
     setSyncStatus("loading");
-    const ts = getLocalTimeString();
-    const baseCurrency = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY) || "USD";
-    const ok = await googleSheetsService.syncToSheets({ action: "syncSettings", targetSheet: "Configs", accounts: enrichAccountsWithUSD(a), categories: c, incomes: i, baseCurrency, timestamp: ts, ssId });
-    if (ok) { 
-      localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC, ts); 
-      setSyncStatus("success"); 
-      return true;
-    } else {
-      setSyncStatus("error");
-      return false;
-    }
+    debounceTimer.current = setTimeout(async () => {
+      const ts = getLocalTimeString();
+      const baseCurrency = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY) || "USD";
+      const ok = await googleSheetsService.syncToSheets({ action: "syncSettings", targetSheet: "Configs", accounts: enrichAccountsWithUSD(a), categories: c, incomes: i, baseCurrency, timestamp: ts, ssId });
+      if (ok) { 
+        localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC, ts); 
+        setSyncStatus("success"); 
+      } else {
+        setSyncStatus("error");
+      }
+    }, 2000); // 2 second debounce for settings sync
+    return true;
   }, [ssId]);
 
   return {
