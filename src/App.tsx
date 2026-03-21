@@ -141,8 +141,13 @@ export default function App() {
     };
     if (anyModalOpen) window.history.pushState({ modal: true }, "");
     const handlePopState = () => { if (anyModalOpen) closeAllModals(); };
+    const handleKeyDown = (e: KeyboardEvent) => { if (e.key === "Escape" && anyModalOpen) closeAllModals(); };
     window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, [anyModalOpen]);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: APP_SETTINGS.DND_ACTIVATION_DISTANCE } }));
