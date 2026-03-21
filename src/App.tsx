@@ -87,32 +87,7 @@ export default function App() {
   const [numpad, setNumpad] = React.useState<any>({ isOpen: false, type: "expense", source: null, destination: null, sourceAmount: "0", sourceCurrency: "USD", targetAmount: "0", targetCurrency: "USD", targetLinked: true, activeField: "source", tag: null, comment: "" });
 
   const [modalStack, setModalStack] = React.useState<string[]>([]);
-
-  React.useEffect(() => {
-    const newStack: string[] = [];
-    if (accountModal.isOpen) newStack.push("account");
-    if (incomeModal.isOpen) newStack.push("income");
-    if (categoryModal.isOpen) newStack.push("category");
-    if (historyModal.isOpen) newStack.push("history");
-    if (analyticsModal.isOpen) newStack.push("analytics");
-    if (calendarAnalyticsModal.isOpen) newStack.push("calendar");
-    if (confirmDelete.isOpen) newStack.push("confirm");
-    if (isTagModalOpen) newStack.push("tag");
-    if (isUsersModalOpen) newStack.push("users");
-    if (isThemeModalOpen) newStack.push("theme");
-    if (numpad.isOpen) newStack.push("numpad");
-    if (isSettingsMenuOpen) newStack.push("settings");
-    if (conflictData) newStack.push("conflict");
-
-    setModalStack(prev => {
-      if (JSON.stringify(prev) === JSON.stringify(newStack)) return prev;
-      return newStack;
-    });
-  }, [
-    accountModal.isOpen, incomeModal.isOpen, categoryModal.isOpen, historyModal.isOpen,
-    analyticsModal.isOpen, calendarAnalyticsModal.isOpen, confirmDelete.isOpen,
-    isTagModalOpen, isUsersModalOpen, isThemeModalOpen, numpad.isOpen, isSettingsMenuOpen, conflictData
-  ]);
+  const stackRef = React.useRef<string[]>([]);
 
   const closeSpecificModal = (modalId: string) => {
     switch (modalId) {
@@ -131,6 +106,83 @@ export default function App() {
       case "conflict": setConflictData(null); break;
     }
   };
+
+  // 1. ПЕРВИЧНЫЙ ЭФФЕКТ: Синхронизация modalStack с состоянием компонентов
+  React.useEffect(() => {
+    const openModals = [
+      { id: "account", open: accountModal.isOpen },
+      { id: "income", open: incomeModal.isOpen },
+      { id: "category", open: categoryModal.isOpen },
+      { id: "history", open: historyModal.isOpen },
+      { id: "analytics", open: analyticsModal.isOpen },
+      { id: "calendar", open: calendarAnalyticsModal.isOpen },
+      { id: "confirm", open: confirmDelete.isOpen },
+      { id: "tag", open: isTagModalOpen },
+      { id: "users", open: isUsersModalOpen },
+      { id: "theme", open: isThemeModalOpen },
+      { id: "numpad", open: numpad.isOpen },
+      { id: "settings", open: isSettingsMenuOpen },
+      { id: "conflict", open: !!conflictData }
+    ];
+
+    const currentlyOpenIds = openModals.filter(m => m.open).map(m => m.id);
+    
+    setModalStack(prev => {
+      const newlyOpened = currentlyOpenIds.filter(id => !prev.includes(id));
+      if (newlyOpened.length > 0) return [...prev, ...newlyOpened];
+      
+      const closed = prev.filter(id => !currentlyOpenIds.includes(id));
+      if (closed.length > 0) return prev.filter(id => currentlyOpenIds.includes(id));
+      
+      return prev;
+    });
+  }, [
+    accountModal.isOpen, incomeModal.isOpen, categoryModal.isOpen, historyModal.isOpen,
+    analyticsModal.isOpen, calendarAnalyticsModal.isOpen, confirmDelete.isOpen,
+    isTagModalOpen, isUsersModalOpen, isThemeModalOpen, numpad.isOpen, isSettingsMenuOpen, conflictData
+  ]);
+
+  // 2. ВТОРИЧНЫЙ ЭФФЕКТ: Синхронизация modalStack с Историей Браузера
+  React.useEffect(() => {
+    stackRef.current = modalStack;
+    const currentDepth = modalStack.length;
+    const historyDepth = window.history.state?.modalDepth || 0;
+
+    if (currentDepth > historyDepth) {
+      // Окно открылось через UI - пушим в историю
+      window.history.pushState({ modalDepth: currentDepth }, "");
+    } else if (currentDepth < historyDepth) {
+      // Окно закрылось через UI - откатываем историю
+      window.history.back();
+    }
+  }, [modalStack]);
+
+  // 3. ТРЕТИЧНЫЙ ЭФФЕКТ: Обработка системных событий (Назад, Esc)
+  React.useEffect(() => {
+    const handlePopState = (e: PopStateEvent) => {
+      const targetDepth = e.state?.modalDepth || 0;
+      const stack = stackRef.current;
+
+      if (stack.length > targetDepth) {
+        // Мы нажали кнопку "Назад", глубина в истории уменьшилась
+        const lastModalId = stack[stack.length - 1];
+        closeSpecificModal(lastModalId);
+      }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && stackRef.current.length > 0) {
+        window.history.back();
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
 
   const currentMonthTransactions = React.useMemo(() => {
     const now = new Date();
@@ -177,49 +229,6 @@ export default function App() {
   const toggleIncome = () => { const next = !isIncomeCollapsed; setIsIncomeCollapsed(next); setMode(next ? "expense" : "income"); };
   const isFullModalOpen = accountModal.isOpen || incomeModal.isOpen || categoryModal.isOpen || historyModal.isOpen || analyticsModal.isOpen || calendarAnalyticsModal.isOpen || numpad.isOpen || confirmDelete.isOpen || isTagModalOpen || !!conflictData;
   const anyModalOpen = isFullModalOpen || isSettingsMenuOpen;
-
-  React.useEffect(() => {
-    const handleBack = () => {
-      if (modalStack.length > 0) {
-        const lastModal = modalStack[modalStack.length - 1];
-        closeSpecificModal(lastModal);
-        return true;
-      }
-      return false;
-    };
-
-    if (modalStack.length > 0) {
-      // Предотвращаем дублирование записей в истории, если мы уже добавили запись для текущего уровня стека
-      if (window.history.state?.modal !== modalStack.length) {
-        window.history.pushState({ modal: modalStack.length }, "");
-      }
-    }
-
-    const handlePopState = (e: PopStateEvent) => {
-      // Если мы вернулись назад, и в новом состоянии уровень стека меньше текущего,
-      // или если состояния нет (мы на главной) — закрываем модалку
-      if (modalStack.length > 0) {
-        handleBack();
-      }
-    };
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        if (modalStack.length > 0) {
-          // Вместо прямого вызова handleBack, мы просто имитируем нажатие "Назад" в браузере
-          // Это приведет к срабатыванию popstate, который вызовет handleBack и закроет модалку
-          window.history.back();
-        }
-      }
-    };
-
-    window.addEventListener("popstate", handlePopState);
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("popstate", handlePopState);
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [modalStack]);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: APP_SETTINGS.DND_ACTIVATION_DISTANCE } }));
   if (currentPath === "/landing") return <LandingPage />;

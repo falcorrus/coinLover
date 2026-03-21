@@ -83,7 +83,7 @@ export const Numpad: React.FC<Props> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[150] flex flex-col bg-black/40 backdrop-blur-sm animate-in fade-in duration-300 font-sans">
+    <div className="fixed inset-0 z-[400] flex flex-col bg-black/40 backdrop-blur-sm animate-in fade-in duration-300 font-sans">
       <div className="flex-1 flex flex-col bg-[var(--bg-color)] max-w-md mx-auto w-full shadow-2xl animate-in slide-in-from-right duration-500 ease-in-out">
         {/* Header */}
         <div className="flex justify-between items-center px-4 py-4 bg-[var(--glass-bg)] border-b border-[var(--glass-border)] text-[var(--text-main)] shrink-0">
