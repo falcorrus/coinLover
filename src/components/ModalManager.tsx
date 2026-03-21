@@ -140,7 +140,21 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
           }); 
         }} 
       />
-      <CalendarAnalyticsModal isOpen={calendarAnalyticsModal.isOpen} onClose={() => setCalendarAnalyticsModal({ isOpen: false })} globalTransactions={transactions} accounts={accounts} categories={categories} incomes={incomes} onItemClick={(item, type, dayTx) => { setHistoryModal({ isOpen: true, entity: item, type, customTransactions: dayTx, returnTo: "calendar" }); }} />
+      <CalendarAnalyticsModal 
+        isOpen={calendarAnalyticsModal.isOpen} 
+        onClose={() => setCalendarAnalyticsModal({ isOpen: false })} 
+        globalTransactions={transactions} 
+        accounts={accounts} 
+        categories={categories} 
+        incomes={incomes} 
+        baseCurrency={props.baseCurrency || "USD"} 
+        baseSymbol={props.baseSymbol || "$"} 
+        categoryCurrencyMode={categoryCurrencyMode}
+        localCurrencyCode={localCurrencyCode}
+        onItemClick={(item, type, dayTx) => { 
+          setHistoryModal({ isOpen: true, entity: item, type, customTransactions: dayTx, returnTo: "calendar" }); 
+        }} 
+      />
 
       {/* 3. История (Уровень 2 или 3 - открывается из Главной или из Аналитики) */}
       <HistoryModal 

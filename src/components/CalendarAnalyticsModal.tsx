@@ -3,6 +3,7 @@ import { X, ChevronLeft, ChevronRight, RefreshCcw, Calendar, Wallet, AlertCircle
 import { Transaction, Account, Category, IncomeSource } from "../types";
 import { googleSheetsService } from "../services/googleSheets";
 import { IconMap } from "../constants";
+import { RatesService } from "../services/RatesService";
 
 interface CalendarAnalyticsModalProps {
     isOpen: boolean;
@@ -11,14 +12,27 @@ interface CalendarAnalyticsModalProps {
     accounts: Account[];
     categories: Category[];
     incomes: IncomeSource[];
+    baseCurrency: string;
+    baseSymbol: string;
+    categoryCurrencyMode: "base" | "local";
+    localCurrencyCode: string;
     onItemClick?: (entity: any, type: "feed", transactions: Transaction[]) => void;
 }
 
 const globalCalendarCache = new Map<string, Transaction[]>();
 
 export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({ 
-    isOpen, onClose, globalTransactions, accounts, categories, incomes, onItemClick 
+    isOpen, onClose, globalTransactions, accounts, categories, incomes,
+    baseCurrency, baseSymbol, categoryCurrencyMode, localCurrencyCode, onItemClick
 }) => {
+    const getSymbol = (code: string) => {
+        const symbols: Record<string, string> = { "USD": "$", "EUR": "€", "GBP": "£", "RUB": "₽", "RSD": "din", "BRL": "R$", "ARS": "ARS" };
+        return symbols[code.toUpperCase()] || code;
+    };
+
+    const localSymbol = getSymbol(localCurrencyCode);
+    const isBaseMode = categoryCurrencyMode === "base";
+
     const [currentDate, setCurrentDate] = useState(() => {
         const saved = localStorage.getItem("cl_calendar_date");
         return saved ? new Date(saved) : new Date();
@@ -32,7 +46,6 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
     const [viewMode, setViewMode] = useState<"timeline" | "month">("timeline");
     const timelineRef = useRef<HTMLDivElement>(null);
 
-    // Save state to localStorage when it changes
     useEffect(() => {
         localStorage.setItem("cl_calendar_date", currentDate.toISOString());
         if (selectedDay !== null) {
@@ -40,7 +53,6 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
         }
     }, [currentDate, selectedDay]);
 
-    // 1. Effects
     useEffect(() => {
         if (!isOpen) return;
         let isMounted = true;
@@ -83,7 +95,6 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
         loadData();
     }, [isOpen, currentDate, globalTransactions]);
 
-    // Auto-scroll to selected day in timeline mode
     useEffect(() => {
         if (viewMode === "timeline" && selectedDay && timelineRef.current) {
             const timer = setTimeout(() => {
@@ -96,7 +107,6 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
         }
     }, [viewMode, selectedDay, currentDate]);
 
-    // 2. Handlers
     const goToToday = () => {
         const today = new Date();
         setCurrentDate(new Date(today.getFullYear(), today.getMonth(), today.getDate()));
@@ -107,23 +117,18 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
     const prevMonth = () => setCurrentDate(d => new Date(d.getFullYear(), d.getMonth() - 1, 1));
     const monthName = currentDate.toLocaleString('ru-RU', { month: 'long', year: 'numeric' });
 
-    // 3. Calendar logic
-    const daysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
-    const firstDayOfMonth = (year: number, month: number) => new Date(year, month, 1).getDay();
-
     const filteredTx = useMemo(() => {
         return transactions.filter(t => {
             const txDate = new Date(t.date.replace(/-/g, '/').replace('T', ' '));
             return txDate.getFullYear() === currentDate.getFullYear() && txDate.getMonth() === currentDate.getMonth();
         });
-    }, [transactions, currentDate.getFullYear(), currentDate.getMonth()]); // Use specific parts of date for stability
+    }, [transactions, currentDate]);
 
     const calendarDays = useMemo(() => {
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth();
-        const totalDays = daysInMonth(year, month);
-        const firstDay = (firstDayOfMonth(year, month) + 6) % 7; // Adjust to Monday start
-        
+        const totalDays = new Date(year, month + 1, 0).getDate();
+        const firstDay = (new Date(year, month, 1).getDay() + 6) % 7; 
         const days = [];
         for (let i = 0; i < firstDay; i++) days.push(null);
         for (let d = 1; d <= totalDays; d++) days.push(d);
@@ -131,9 +136,7 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
     }, [currentDate]);
 
     const timelineDays = useMemo(() => {
-        const year = currentDate.getFullYear();
-        const month = currentDate.getMonth();
-        const totalDays = daysInMonth(year, month);
+        const totalDays = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
         const days = [];
         for (let d = 1; d <= totalDays; d++) days.push(d);
         return days;
@@ -144,19 +147,27 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
             const txDate = new Date(t.date.replace(/-/g, '/').replace('T', ' '));
             return txDate.getDate() === day;
         });
-        const hasExpense = dayTx.some(t => t.type === "expense");
-        const hasIncome = dayTx.some(t => t.type === "income");
-        const hasTransfer = dayTx.some(t => t.type === "transfer");
 
-        const expenseSum = dayTx.filter(t => t.type === "expense").reduce((s, t) => s + (t.sourceAmountUSD || 0), 0);
-        const incomeSum = dayTx.filter(t => t.type === "income").reduce((s, t) => s + (t.sourceAmountUSD || 0), 0);
-        
+        const calcSum = (type: string, useBase: boolean) => Math.round(dayTx.filter(t => t.type === type).reduce((s, t) => {
+            const valBase = (t.targetAmountUSD && t.targetAmountUSD !== 0 && baseCurrency === 'USD')
+                ? t.targetAmountUSD
+                : RatesService.convert(t.sourceAmount || 0, t.sourceCurrency || "USD", baseCurrency);
+            
+            if (useBase) return s + valBase;
+            
+            const tCurr = t.targetCurrency || "USD";
+            if (tCurr === localCurrencyCode) return s + (t.targetAmount || 0);
+            return s + RatesService.convert(valBase, baseCurrency, localCurrencyCode);
+        }, 0));
+
         return { 
-            expense: expenseSum, 
-            income: incomeSum, 
-            hasExpense, 
-            hasIncome, 
-            hasTransfer, 
+            expense: calcSum("expense", isBaseMode),
+            income: calcSum("income", isBaseMode),
+            expenseBase: calcSum("expense", true),
+            incomeBase: calcSum("income", true),
+            hasExpense: dayTx.some(t => t.type === "expense"),
+            hasIncome: dayTx.some(t => t.type === "income"),
+            hasTransfer: dayTx.some(t => t.type === "transfer"),
             transactions: dayTx 
         };
     };
@@ -178,30 +189,27 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
         return { item: counterpartItem, isOutflow };
     };
 
-    const getAmountStr = (tx: any, isOutflow: boolean) => {
-        const sAmt = tx.sourceAmount ?? tx.amount ?? 0;
-        const sAmtUsd = tx.sourceAmountUSD ?? tx.amountUSD;
-        const sCurr = tx.sourceCurrency ?? (accounts.find(a => a.id === tx.accountId)?.currency || "USD");
-        const tAmt = tx.targetAmount ?? tx.amountLocal ?? sAmt;
-        const tCurr = tx.targetCurrency ?? tx.currencyLocal ?? sCurr;
+    const getAmountStr = (tx: Transaction, isOutflow: boolean) => {
+        const sAmt = tx.sourceAmount || 0;
+        const sCurr = tx.sourceCurrency || "USD";
+        const tAmt = tx.targetAmount || sAmt;
+        const tCurr = tx.targetCurrency || sCurr;
 
-        let displayAmount = tAmt;
-        let displayCurrency = tCurr;
+        const valBase = (tx.targetAmountUSD && tx.targetAmountUSD !== 0 && baseCurrency === 'USD')
+            ? tx.targetAmountUSD
+            : RatesService.convert(sAmt, sCurr, baseCurrency);
 
-        const txType = tx.type?.toLowerCase();
-        const color = txType === "transfer" 
-            ? "text-indigo-400" 
-            : (isOutflow 
-                ? (txType === "expense" ? "text-[#D4AF37]" : "text-[var(--danger-color)]") 
-                : "text-[var(--success-color)]");
+        const sign = tx.type === "transfer" ? "" : (isOutflow ? "-" : "+");
+        const color = tx.type === "transfer" ? "text-indigo-400" : (isOutflow ? (tx.type === "expense" ? "text-[#D4AF37]" : "text-[var(--danger-color)]") : "text-[var(--success-color)]");
 
-        const sign = txType === "transfer" ? "" : (isOutflow ? "-" : "+");
+        const primaryAmountStr = `${sign}${Math.round(tAmt).toLocaleString()} ${getSymbol(tCurr)}`;
+        
+        let secondaryAmountStr = null;
+        if (tCurr !== baseCurrency) {
+            secondaryAmountStr = `≈ ${sign}${Math.round(valBase).toLocaleString()} ${baseSymbol}`;
+        }
 
-        return {
-            amount: `${sign}${displayAmount.toLocaleString()} ${displayCurrency}`,
-            usdAmount: (displayCurrency !== "USD" && sAmtUsd) ? `${sign}$${sAmtUsd.toLocaleString()}` : null,
-            color
-        };
+        return { amount: primaryAmountStr, secondaryAmount: secondaryAmountStr, color };
     };
 
     const dayNames = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
@@ -209,21 +217,13 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
     if (!isOpen) return null;
 
     return (
-        <div 
-            className="fixed inset-0 bg-black/60 backdrop-blur-md z-[200] animate-in fade-in duration-300 flex justify-center" 
-            onClick={onClose}
-        >
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[200] animate-in fade-in duration-300 flex justify-center" onClick={onClose}>
             <div className="w-full max-w-md h-full animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
-                <div 
-                    className="bg-[var(--bg-color)] w-full h-full flex flex-col overflow-hidden relative shadow-2xl"
-                    style={{ paddingTop: `env(safe-area-inset-top)` }}
-                >
+                <div className="bg-[var(--bg-color)] w-full h-full flex flex-col overflow-hidden relative shadow-2xl" style={{ paddingTop: `env(safe-area-inset-top)` }}>
                     {/* Header */}
                     <div className="flex justify-between items-center p-6 border-b border-[var(--glass-border)] shrink-0">
                         <div className="flex items-center gap-3">
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-[0_0_15px_var(--primary-color)] bg-[var(--primary-color)]/20 text-[var(--primary-color)]`}>
-                                <Calendar size={20} />
-                            </div>
+                            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-[0_0_15px_var(--primary-color)] bg-[var(--primary-color)]/20 text-[var(--primary-color)]"><Calendar size={20} /></div>
                             <div className="flex flex-col">
                                 <h2 className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Календарь операций</h2>
                                 <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest leading-none mt-1">активность по дням</span>
@@ -232,33 +232,15 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
                         <button onClick={onClose} className="w-10 h-10 rounded-xl bg-[var(--glass-item-bg)] flex items-center justify-center text-[var(--text-main)] hover:bg-[var(--glass-item-active)] transition-colors border border-[var(--glass-border)]"><X size={20} /></button>
                     </div>
 
-                    {/* Month Selection & View Toggle */}
+                    {/* Month Selection */}
                     <div className="flex justify-between items-center px-4 py-3 bg-[var(--glass-item-bg)]/50 shrink-0 border-b border-[var(--glass-border)]">
                         <div className="flex items-center gap-[5px]">
                             <div className="flex bg-black/20 p-1 rounded-xl border border-[var(--glass-border)] gap-0.5">
-                                <button 
-                                    onClick={() => setViewMode("timeline")}
-                                    className={`p-1.5 rounded-lg transition-all ${viewMode === 'timeline' ? 'bg-[var(--primary-color)] text-white shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
-                                    title="Список"
-                                >
-                                    <List size={16} />
-                                </button>
-                                <button 
-                                    onClick={() => setViewMode("month")}
-                                    className={`p-1.5 rounded-lg transition-all ${viewMode === 'month' ? 'bg-[var(--primary-color)] text-white shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
-                                    title="Сетка"
-                                >
-                                    <LayoutGrid size={16} />
-                                </button>
+                                <button onClick={() => setViewMode("timeline")} className={`p-1.5 rounded-lg transition-all ${viewMode === 'timeline' ? 'bg-[var(--primary-color)] text-white shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}><List size={16} /></button>
+                                <button onClick={() => setViewMode("month")} className={`p-1.5 rounded-lg transition-all ${viewMode === 'month' ? 'bg-[var(--primary-color)] text-white shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}><LayoutGrid size={16} /></button>
                             </div>
                             <div className="flex bg-black/20 p-1 rounded-xl border border-[var(--glass-border)]">
-                                <button 
-                                    onClick={goToToday}
-                                    className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] transition-all flex items-center justify-center"
-                                    title="Сегодня"
-                                >
-                                    <Calendar size={16} />
-                                </button>
+                                <button onClick={goToToday} className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] transition-all flex items-center justify-center"><Calendar size={16} /></button>
                             </div>
                         </div>
                         <div className="flex items-center gap-1">
@@ -279,22 +261,11 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
                                     {calendarDays.map((day, i) => {
                                         if (day === null) return <div key={`empty-${i}`} className="aspect-square" />;
                                         const { hasExpense, hasIncome, hasTransfer, transactions: dayTx } = getDailyData(day);
-                                        const hasData = dayTx.length > 0;
                                         const today = new Date();
                                         const isToday = today.getDate() === day && today.getMonth() === currentDate.getMonth() && today.getFullYear() === currentDate.getFullYear();
                                         const isSelected = selectedDay === day;
-                                        
                                         return (
-                                            <button 
-                                                key={day}
-                                                onClick={() => {
-                                                    setSelectedDay(day === selectedDay ? null : day);
-                                                }}
-                                                className={`aspect-square rounded-xl flex flex-col items-center justify-center gap-1 transition-all relative border 
-                                                    ${isSelected ? 'bg-[var(--primary-color)]/20 border-[var(--primary-color)] shadow-[0_0_15px_rgba(109,93,252,0.3)]' : isToday ? 'border-[var(--primary-color)]/50' : 'border-transparent'} 
-                                                    ${(hasData || isSelected) ? 'bg-[var(--glass-item-bg)] hover:bg-[var(--glass-item-active)] active:scale-90' : 'opacity-40 cursor-default'}
-                                                `}
-                                            >
+                                            <button key={day} onClick={() => setSelectedDay(day === selectedDay ? null : day)} className={`aspect-square rounded-xl flex flex-col items-center justify-center gap-1 transition-all relative border ${isSelected ? 'bg-[var(--primary-color)]/20 border-[var(--primary-color)] shadow-[0_0_15px_rgba(109,93,252,0.3)]' : isToday ? 'border-[var(--primary-color)]/50' : 'border-transparent'} ${(dayTx.length > 0 || isSelected) ? 'bg-[var(--glass-item-bg)] hover:bg-[var(--glass-item-active)] active:scale-90' : 'opacity-40 cursor-default'}`}>
                                                 <span className={`text-xs font-bold ${isSelected || isToday ? 'text-[var(--primary-color)]' : 'text-[var(--text-main)]'}`}>{day}</span>
                                                 <div className="flex gap-0.5">
                                                     {hasIncome && <div className="w-1 h-1 rounded-full bg-[var(--success-color)] shadow-[0_0_5px_var(--success-color)]" />}
@@ -307,34 +278,16 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
                                 </div>
                             </div>
                         ) : (
-                            <div 
-                                ref={timelineRef}
-                                className="flex overflow-x-auto hide-scrollbar gap-2 px-6 py-8 animate-in slide-in-from-right-4 duration-300"
-                            >
+                            <div ref={timelineRef} className="flex overflow-x-auto hide-scrollbar gap-2 px-6 py-8 animate-in slide-in-from-right-4 duration-300">
                                 {timelineDays.map((day) => {
                                     const { hasExpense, hasIncome, hasTransfer, transactions: dayTx } = getDailyData(day);
-                                    const hasData = dayTx.length > 0;                                    const dateObj = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+                                    const dateObj = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
                                     const dName = dayNames[dateObj.getDay()];
                                     const today = new Date();
                                     const isToday = today.getDate() === day && today.getMonth() === currentDate.getMonth() && today.getFullYear() === currentDate.getFullYear();
                                     const isSelected = selectedDay === day;
-
                                     return (
-                                        <button
-                                            key={day}
-                                            data-day={day}
-                                            onClick={() => {
-                                                setSelectedDay(day === selectedDay ? null : day);
-                                            }}
-                                            className={`w-14 shrink-0 flex flex-col items-center gap-2 p-3 rounded-2xl transition-all border
-                                                ${isSelected 
-                                                    ? 'bg-[var(--primary-color)] border-[var(--primary-color)] text-white shadow-lg shadow-[var(--primary-color)]/30' 
-                                                    : isToday 
-                                                        ? 'bg-[var(--glass-item-bg)] border-[var(--primary-color)]/50' 
-                                                        : 'bg-[var(--glass-item-bg)]/50 border-transparent'}
-                                                ${(hasData || isSelected) ? 'opacity-100' : 'opacity-30'}
-                                            `}
-                                        >
+                                        <button key={day} data-day={day} onClick={() => setSelectedDay(day === selectedDay ? null : day)} className={`w-14 shrink-0 flex flex-col items-center gap-2 p-3 rounded-2xl transition-all border ${isSelected ? 'bg-[var(--primary-color)] border-[var(--primary-color)] text-white shadow-lg shadow-[var(--primary-color)]/30' : isToday ? 'bg-[var(--glass-item-bg)] border-[var(--primary-color)]/50' : 'bg-[var(--glass-item-bg)]/50 border-transparent'} ${(dayTx.length > 0 || isSelected) ? 'opacity-100' : 'opacity-30'}`}>
                                             <span className={`text-[10px] font-black uppercase tracking-widest ${isSelected ? 'text-white/70' : 'text-[var(--text-muted)]'}`}>{dName}</span>
                                             <span className="text-base font-black tracking-tight">{day}</span>
                                             <div className="flex gap-0.5 mt-1">
@@ -361,12 +314,16 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
                                     <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">
                                         {String(selectedDay).padStart(2, '0')}.{String(currentDate.getMonth() + 1).padStart(2, '0')}.{currentDate.getFullYear()}
                                     </span>
-                                    <div className="flex gap-3">
-                                        {selectedDayData.income > 0 && (
-                                            <span className="text-[10px] font-black text-[var(--success-color)]">+${selectedDayData.income.toLocaleString()}</span>
-                                        )}
-                                        {selectedDayData.expense > 0 && (
-                                            <span className="text-[10px] font-black text-[var(--danger-color)]">-${selectedDayData.expense.toLocaleString()}</span>
+                                    <div className="flex flex-col items-end gap-0.5">
+                                        <div className="flex gap-3">
+                                            {selectedDayData.income > 0 && <span className="text-[10px] font-black text-[var(--success-color)]">+{selectedDayData.income.toLocaleString()} {isBaseMode ? baseSymbol : localSymbol}</span>}
+                                            {selectedDayData.expense > 0 && <span className="text-[10px] font-black text-[var(--danger-color)]">-{selectedDayData.expense.toLocaleString()} {isBaseMode ? baseSymbol : localSymbol}</span>}
+                                        </div>
+                                        {!isBaseMode && (
+                                            <div className="flex gap-2 opacity-40">
+                                                {selectedDayData.incomeBase > 0 && <span className="text-[8px] font-bold text-[var(--success-color)]">≈ {selectedDayData.incomeBase.toLocaleString()} {baseSymbol}</span>}
+                                                {selectedDayData.expenseBase > 0 && <span className="text-[8px] font-bold text-[var(--danger-color)]">≈ {selectedDayData.expenseBase.toLocaleString()} {baseSymbol}</span>}
+                                            </div>
                                         )}
                                     </div>
                                 </div>
@@ -376,35 +333,13 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
                                         const status = { isBroken: !accounts.find(a => a.id === tx.accountId) || (!categories.find(c => c.id === tx.targetId) && tx.type === 'expense') };
                                         const Icon = item ? (IconMap[(item as any).icon] || Wallet) : (status.isBroken ? AlertCircle : Wallet);
                                         const amountInfo = getAmountStr(tx, isOutflow);
-                                        
                                         const s = accounts.find(a => a.id === tx.accountId);
-                                        let displayName = "";
-                                        if (tx.type === "expense") {
-                                            const dName = categories.find(c => c.id === tx.targetId)?.name || "?";
-                                            displayName = `${s?.name || "?"} → ${dName}`;
-                                        } else if (tx.type === "income") {
-                                            const dName = incomes.find(i => i.id === tx.targetId)?.name || "?";
-                                            displayName = `${dName} → ${s?.name || "?"}`;
-                                        } else {
-                                            const dName = accounts.find(a => a.id === tx.targetId)?.name || "?";
-                                            displayName = `${s?.name || "?"} → ${dName}`;
-                                        }
+                                        let displayName = tx.type === "expense" ? `${s?.name || "?"} → ${categories.find(c => c.id === tx.targetId)?.name || "?"}` : tx.type === "income" ? `${incomes.find(i => i.id === tx.targetId)?.name || "?"} → ${s?.name || "?"}` : `${s?.name || "?"} → ${accounts.find(a => a.id === tx.targetId)?.name || "?"}`;
 
                                         return (
-                                            <div 
-                                                key={tx.id} 
-                                                className="flex justify-between items-center bg-[var(--glass-item-bg)]/30 p-3 rounded-2xl border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)] transition-colors cursor-pointer"
-                                                onClick={() => {
-                                                    if (onItemClick) {
-                                                        const dateStr = `${String(selectedDay).padStart(2, '0')}.${String(currentDate.getMonth() + 1).padStart(2, '0')}.${currentDate.getFullYear()}`;
-                                                        onItemClick({ name: dateStr, icon: "calendar" }, "feed", [tx]);
-                                                    }
-                                                }}
-                                            >
+                                            <div key={tx.id} className="flex justify-between items-center bg-[var(--glass-item-bg)]/30 p-3 rounded-2xl border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)] transition-colors cursor-pointer" onClick={() => onItemClick?.({ name: `${String(selectedDay).padStart(2, '0')}.${String(currentDate.getMonth() + 1).padStart(2, '0')}.${currentDate.getFullYear()}`, icon: "calendar" }, "feed", [tx])}>
                                                 <div className="flex items-center gap-3">
-                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center relative shadow-inner shrink-0 ${status.isBroken ? 'bg-rose-500/20 text-rose-500' : 'bg-[var(--glass-item-bg)] text-[var(--text-muted)]'}`} style={{ color: !status.isBroken ? (item as any)?.color : undefined }}>
-                                                        <Icon size={18} />
-                                                    </div>
+                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center relative shadow-inner shrink-0 ${status.isBroken ? 'bg-rose-500/20 text-rose-500' : 'bg-[var(--glass-item-bg)] text-[var(--text-muted)]'}`} style={{ color: !status.isBroken ? (item as any)?.color : undefined }}><Icon size={18} /></div>
                                                     <div className="flex flex-col overflow-hidden">
                                                         <span className="text-sm font-bold text-[var(--text-main)] truncate">{displayName}</span>
                                                         {tx.tag && <span className="text-[10px] text-[var(--text-muted)] uppercase font-black tracking-widest mt-0.5">{tx.tag}</span>}
@@ -412,7 +347,7 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
                                                 </div>
                                                 <div className="flex flex-col items-end shrink-0 pl-2">
                                                     <span className={`text-sm font-black ${amountInfo.color}`}>{amountInfo.amount}</span>
-                                                    {amountInfo.usdAmount && <span className="text-[10px] text-[var(--text-muted)] font-bold opacity-60">≈ {amountInfo.usdAmount}</span>}
+                                                    {amountInfo.secondaryAmount && <span className="text-[10px] text-[var(--text-muted)] font-bold opacity-60">{amountInfo.secondaryAmount}</span>}
                                                 </div>
                                             </div>
                                         );
