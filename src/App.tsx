@@ -69,7 +69,7 @@ export default function App() {
   const [pillMode, setPillMode] = React.useState<"expense" | "income" | "balance">(() => (localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.PILL_MODE) as any) || "expense");
   const [isIncomeCollapsed, setIsIncomeCollapsed] = React.useState(true);
   const [isSettingsMenuOpen, setIsSettingsMenuOpen] = React.useState(false);
-  const [theme, setTheme] = React.useState<any>(() => localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.THEME) || "dark");
+  const [theme, setTheme] = React.useState<any>(() => localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.THEME) || "modern");
   const [editingTxId, setEditingTxId] = React.useState<string | null>(null);
   const [categoryCurrencyMode, setCategoryCurrencyMode] = React.useState<"base" | "local">(() => (localStorage.getItem("cl_category_currency_mode") as any) || "base");
 
@@ -231,8 +231,8 @@ export default function App() {
     localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.PILL_MODE, pillMode);
     localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.THEME, theme);
     localStorage.setItem("cl_category_currency_mode", categoryCurrencyMode);
-    document.documentElement.classList.remove("light", "midnight", "modern");
-    if (theme !== "dark") document.documentElement.classList.add(theme);
+    document.documentElement.classList.remove("zen", "light", "midnight", "modern", "dark");
+    if (theme === "zen") document.documentElement.classList.add("zen");
   }, [pillMode, theme, categoryCurrencyMode]);
 
   React.useEffect(() => {
@@ -244,6 +244,14 @@ export default function App() {
   const toggleIncome = () => { const next = !isIncomeCollapsed; setIsIncomeCollapsed(next); setMode(next ? "expense" : "income"); };
   const isFullModalOpen = accountModal.isOpen || incomeModal.isOpen || categoryModal.isOpen || historyModal.isOpen || analyticsModal.isOpen || calendarAnalyticsModal.isOpen || numpad.isOpen || confirmDelete.isOpen || isTagModalOpen || !!conflictData;
   const anyModalOpen = isFullModalOpen || isSettingsMenuOpen;
+
+  const allExistingTags = React.useMemo(() => {
+    const tags = new Set<string>();
+    transactions.forEach(t => { if (t.tag) tags.add(t.tag.trim()); });
+    categories.forEach(c => c.tags?.forEach(t => tags.add(t.trim())));
+    incomes.forEach(i => i.tags?.forEach(t => tags.add(t.trim())));
+    return Array.from(tags).sort();
+  }, [transactions, categories, incomes]);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: APP_SETTINGS.DND_ACTIVATION_DISTANCE } }));
   if (currentPath === "/landing") return <LandingPage />;
@@ -266,12 +274,12 @@ export default function App() {
 
         <div className="absolute top-4 right-4 z-50"><div className={`w-2 h-2 rounded-full ${syncStatus === "loading" ? "bg-amber-400 animate-pulse" : syncStatus === "success" ? "bg-emerald-500/50" : syncStatus === "error" ? "bg-rose-500" : "bg-white/10"}`} /></div>
 
-        <div className={`flex-1 flex flex-col overflow-hidden animate-in zoom-in-95 duration-500 transition-all duration-500 ease-out ${isFullModalOpen ? "scale-[0.96] blur-[3px] opacity-60 pointer-events-none" : "scale-100 blur-0 opacity-100"}`}>
+        <div className={`flex-1 flex flex-col overflow-hidden animate-in zoom-in-95 duration-500 transition-all duration-500 ease-out ${isFullModalOpen ? "scale-[0.96] blur-[3px] opacity-60" : "scale-100 blur-0 opacity-100"}`}>
           <AppHeader 
             isIncomeCollapsed={isIncomeCollapsed} toggleIncome={toggleIncome} isDemo={localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE) !== "false"}
             settingsLongPress={settingsLongPress} handleMenuClick={handleMenuClick} isSettingsMenuOpen={isSettingsMenuOpen} setIsSettingsMenuOpen={setIsSettingsMenuOpen}
             pullSettings={pullSettings} setHistoryModal={setHistoryModal} setCalendarAnalyticsModal={setCalendarAnalyticsModal} setAnalyticsModal={setAnalyticsModal}
-            setIsThemeModalOpen={setIsThemeModalOpen} syncStatus={syncStatus} pillMode={pillMode} setPillMode={setPillMode}
+            theme={theme} setTheme={setTheme} syncStatus={syncStatus} pillMode={pillMode} setPillMode={setPillMode}
             currentSymbol={calculations.currentSymbol} displaySpent={calculations.displaySpent} displayEarned={calculations.displayEarned} displayBalance={calculations.displayBalance}
           />
 
@@ -302,7 +310,8 @@ export default function App() {
           analyticsModal={analyticsModal} calendarAnalyticsModal={calendarAnalyticsModal} confirmDelete={confirmDelete}
           numpad={numpad} isTagModalOpen={isTagModalOpen} isUsersModalOpen={isUsersModalOpen} conflictData={conflictData} editingTxId={editingTxId}
           isThemeModalOpen={isThemeModalOpen} theme={theme} categoryCurrencyMode={categoryCurrencyMode} localCurrencyCode={calculations.localCurrencyCode}
-          accounts={accounts} categories={categories} incomes={incomes} transactions={transactions} allExistingTags={[]}
+          accounts={accounts} categories={categories} incomes={incomes} transactions={transactions} allExistingTags={allExistingTags}
+          baseCurrency={calculations.baseCurrency} baseSymbol={calculations.baseSymbol}
           users={users} activeTableId={activeTableId} setAccountModal={setAccountModal} setIncomeModal={setIncomeModal} setCategoryModal={setCategoryModal}
           setHistoryModal={setHistoryModal} setAnalyticsModal={setAnalyticsModal} setCalendarAnalyticsModal={setCalendarAnalyticsModal}
           setConfirmDelete={setConfirmDelete} setNumpad={setNumpad} setIsTagModalOpen={setIsTagModalOpen} setIsUsersModalOpen={setIsUsersModalOpen}

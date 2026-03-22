@@ -25,7 +25,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[500] flex items-center justify-center p-6 animate-in fade-in duration-500">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[600] flex items-center justify-center p-6 animate-in fade-in duration-500">
             <div className="glass-panel w-full max-w-[320px] p-8 flex flex-col items-center gap-6 text-center border-[var(--glass-border)] shadow-2xl shadow-[var(--shadow-color)] animate-in zoom-in-95 duration-500 slide-in-from-bottom-8">
 
                 {/* Icon with pulsing background */}

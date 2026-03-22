@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Plus, Menu, RefreshCcw, List, Calendar, PieChart, Sparkles, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import { Sun, Moon, Plus, Menu, RefreshCcw, List, Calendar, PieChart, Sparkles, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 import { APP_SETTINGS } from "../../constants/settings";
 import { HistoryModalState } from "../../types";
 
@@ -15,7 +15,8 @@ interface AppHeaderProps {
   setHistoryModal: (val: HistoryModalState) => void;
   setCalendarAnalyticsModal: (val: { isOpen: boolean }) => void;
   setAnalyticsModal: (val: { isOpen: boolean; type: "expense" | "income" }) => void;
-  setIsThemeModalOpen: (val: boolean) => void;
+  theme: "modern" | "zen";
+  setTheme: (t: "modern" | "zen") => void;
   syncStatus: string;
   pillMode: "expense" | "income" | "balance";
   setPillMode: React.Dispatch<React.SetStateAction<"expense" | "income" | "balance">>;
@@ -25,10 +26,11 @@ interface AppHeaderProps {
   displayBalance: number;
 }
 
+// ... (props update)
 export function AppHeader({
   isIncomeCollapsed, toggleIncome, isDemo, settingsLongPress, handleMenuClick, isSettingsMenuOpen,
   setIsSettingsMenuOpen, pullSettings, setHistoryModal, setCalendarAnalyticsModal, setAnalyticsModal,
-  setIsThemeModalOpen, syncStatus, pillMode, setPillMode, currentSymbol, displaySpent, displayEarned, displayBalance
+  theme, setTheme, syncStatus, pillMode, setPillMode, currentSymbol, displaySpent, displayEarned, displayBalance
 }: AppHeaderProps) {
   return (
     <header className="px-6 py-8 flex flex-col gap-2 text-center shrink-0">
@@ -44,10 +46,20 @@ export function AppHeader({
             <>
               <div className="fixed inset-0 z-[200] bg-black/40 backdrop-blur-[2px]" onClick={() => setIsSettingsMenuOpen(false)} />
               <div className="absolute top-12 right-0 w-48 bg-[var(--bg-color)] border border-[var(--glass-border)] rounded-2xl shadow-2xl flex flex-col z-[201] p-2 animate-in fade-in zoom-in-95 origin-top-right">
-                <button onClick={() => { setIsSettingsMenuOpen(false); setIsThemeModalOpen(true); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left border-b border-[var(--glass-border)]/50 mb-1 rounded-b-none">
-                  <Sparkles size={16} className="text-amber-400" />
-                  <span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Оформление</span>
-                </button>
+                <div className="flex items-center justify-around p-3 border-b border-[var(--glass-border)]/50 mb-1">
+                  <button 
+                    onClick={() => { setTheme("zen"); setIsSettingsMenuOpen(false); }}
+                    className={`p-2 rounded-xl transition-all ${theme === 'zen' ? 'bg-amber-100 text-amber-600 scale-110' : 'text-slate-400 hover:bg-slate-100'}`}
+                  >
+                    <Sun size={20} />
+                  </button>
+                  <button 
+                    onClick={() => { setTheme("modern"); setIsSettingsMenuOpen(false); }}
+                    className={`p-2 rounded-xl transition-all ${theme === 'modern' ? 'bg-purple-500/20 text-purple-400 scale-110' : 'text-slate-400 hover:bg-white/5'}`}
+                  >
+                    <Moon size={20} />
+                  </button>
+                </div>
                 <button onClick={() => { setIsSettingsMenuOpen(false); pullSettings(); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><RefreshCcw size={16} className={`text-amber-500 ${syncStatus === 'loading' ? 'animate-spin' : ''}`} /><span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Обновить</span></button>
                 <button onClick={() => { setIsSettingsMenuOpen(false); setHistoryModal({ isOpen: true, entity: { name: "Лента", icon: "list" }, type: "feed" }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><List size={16} className="text-[var(--primary-color)]" /><span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Лента</span></button>
                 <button onClick={() => { setIsSettingsMenuOpen(false); setCalendarAnalyticsModal({ isOpen: true }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><Calendar size={16} className="text-emerald-500" /><span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Календарь</span></button>

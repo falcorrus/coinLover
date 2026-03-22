@@ -235,12 +235,12 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
                     {/* Month Selection */}
                     <div className="flex justify-between items-center px-4 py-3 bg-[var(--glass-item-bg)]/50 shrink-0 border-b border-[var(--glass-border)]">
                         <div className="flex items-center gap-[5px]">
-                            <div className="flex bg-black/20 p-1 rounded-xl border border-[var(--glass-border)] gap-0.5">
-                                <button onClick={() => setViewMode("timeline")} className={`p-1.5 rounded-lg transition-all ${viewMode === 'timeline' ? 'bg-[var(--primary-color)] text-white shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}><List size={16} /></button>
-                                <button onClick={() => setViewMode("month")} className={`p-1.5 rounded-lg transition-all ${viewMode === 'month' ? 'bg-[var(--primary-color)] text-white shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}><LayoutGrid size={16} /></button>
+                            <div className="flex bg-[var(--glass-item-bg)] p-1 rounded-xl border border-[var(--glass-border)] gap-0.5 shadow-sm">
+                                <button onClick={() => setViewMode("timeline")} className={`p-1.5 rounded-lg transition-all ${viewMode === 'timeline' ? 'bg-[var(--primary-color)] text-white shadow-sm' : 'text-[var(--text-muted)] hover:bg-[var(--glass-item-active)]'}`}><List size={16} /></button>
+                                <button onClick={() => setViewMode("month")} className={`p-1.5 rounded-lg transition-all ${viewMode === 'month' ? 'bg-[var(--primary-color)] text-white shadow-sm' : 'text-[var(--text-muted)] hover:bg-[var(--glass-item-active)]'}`}><LayoutGrid size={16} /></button>
                             </div>
-                            <div className="flex bg-black/20 p-1 rounded-xl border border-[var(--glass-border)]">
-                                <button onClick={goToToday} className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] transition-all flex items-center justify-center"><Calendar size={16} /></button>
+                            <div className="flex bg-[var(--glass-item-bg)] p-1 rounded-xl border border-[var(--glass-border)] shadow-sm">
+                                <button onClick={goToToday} className="p-1.5 rounded-lg text-[var(--text-muted)] hover:bg-[var(--glass-item-active)] transition-all flex items-center justify-center"><Calendar size={16} /></button>
                             </div>
                         </div>
                         <div className="flex items-center gap-1">
@@ -265,12 +265,22 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
                                         const isToday = today.getDate() === day && today.getMonth() === currentDate.getMonth() && today.getFullYear() === currentDate.getFullYear();
                                         const isSelected = selectedDay === day;
                                         return (
-                                            <button key={day} onClick={() => setSelectedDay(day === selectedDay ? null : day)} className={`aspect-square rounded-xl flex flex-col items-center justify-center gap-1 transition-all relative border ${isSelected ? 'bg-[var(--primary-color)]/20 border-[var(--primary-color)] shadow-[0_0_15px_rgba(109,93,252,0.3)]' : isToday ? 'border-[var(--primary-color)]/50' : 'border-transparent'} ${(dayTx.length > 0 || isSelected) ? 'bg-[var(--glass-item-bg)] hover:bg-[var(--glass-item-active)] active:scale-90' : 'opacity-40 cursor-default'}`}>
-                                                <span className={`text-xs font-bold ${isSelected || isToday ? 'text-[var(--primary-color)]' : 'text-[var(--text-main)]'}`}>{day}</span>
+                                            <button 
+                                                key={day} 
+                                                onClick={() => setSelectedDay(day === selectedDay ? null : day)} 
+                                                className={`aspect-square rounded-xl flex flex-col items-center justify-center gap-1 transition-all relative border 
+                                                ${isSelected 
+                                                    ? 'bg-[var(--primary-color)] border-[var(--primary-color)] text-white shadow-lg shadow-[var(--primary-color)]/30' 
+                                                    : isToday 
+                                                        ? 'border-[var(--primary-color)] bg-[var(--glass-item-bg)]' 
+                                                        : 'border-transparent'} 
+                                                ${(dayTx.length > 0 || isSelected) ? 'bg-[var(--glass-item-bg)] hover:bg-[var(--glass-item-active)] active:scale-90' : 'opacity-40 cursor-default'}`}
+                                            >
+                                                <span className={`text-xs font-bold ${isSelected ? 'text-white' : isToday ? 'text-[var(--primary-color)]' : 'text-[var(--text-main)]'}`}>{day}</span>
                                                 <div className="flex gap-0.5">
-                                                    {hasIncome && <div className="w-1 h-1 rounded-full bg-[var(--success-color)] shadow-[0_0_5px_var(--success-color)]" />}
-                                                    {hasExpense && <div className="w-1 h-1 rounded-full bg-[#D4AF37] shadow-[0_0_5px_#D4AF37]" />}
-                                                    {hasTransfer && <div className="w-1 h-1 rounded-full bg-indigo-500 shadow-[0_0_5px_indigo-500]" />}
+                                                    {hasIncome && <div className={`w-1 h-1 rounded-full ${isSelected ? 'bg-white' : 'bg-[var(--success-color)]'} shadow-[0_0_5px_var(--success-color)]`} />}
+                                                    {hasExpense && <div className={`w-1 h-1 rounded-full ${isSelected ? 'bg-white/70' : 'bg-[#D4AF37]'} shadow-[0_0_5px_#D4AF37]`} />}
+                                                    {hasTransfer && <div className={`w-1 h-1 rounded-full ${isSelected ? 'bg-white/50' : 'bg-indigo-500'} shadow-[0_0_5px_indigo-500]`} />}
                                                 </div>
                                             </button>
                                         );
@@ -287,7 +297,18 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
                                     const isToday = today.getDate() === day && today.getMonth() === currentDate.getMonth() && today.getFullYear() === currentDate.getFullYear();
                                     const isSelected = selectedDay === day;
                                     return (
-                                        <button key={day} data-day={day} onClick={() => setSelectedDay(day === selectedDay ? null : day)} className={`w-14 shrink-0 flex flex-col items-center gap-2 p-3 rounded-2xl transition-all border ${isSelected ? 'bg-[var(--primary-color)] border-[var(--primary-color)] text-white shadow-lg shadow-[var(--primary-color)]/30' : isToday ? 'bg-[var(--glass-item-bg)] border-[var(--primary-color)]/50' : 'bg-[var(--glass-item-bg)]/50 border-transparent'} ${(dayTx.length > 0 || isSelected) ? 'opacity-100' : 'opacity-30'}`}>
+                                        <button 
+                                            key={day} 
+                                            data-day={day} 
+                                            onClick={() => setSelectedDay(day === selectedDay ? null : day)} 
+                                            className={`w-14 shrink-0 flex flex-col items-center gap-2 p-3 rounded-2xl transition-all border 
+                                            ${isSelected 
+                                                ? 'bg-[var(--primary-color)] border-[var(--primary-color)] text-white shadow-lg shadow-[var(--primary-color)]/30' 
+                                                : isToday 
+                                                    ? 'bg-[var(--glass-item-bg)] border-[var(--primary-color)]/50' 
+                                                    : 'bg-[var(--glass-item-bg)]/50 border-transparent'} 
+                                            ${(dayTx.length > 0 || isSelected) ? 'opacity-100' : 'opacity-30'}`}
+                                        >
                                             <span className={`text-[10px] font-black uppercase tracking-widest ${isSelected ? 'text-white/70' : 'text-[var(--text-muted)]'}`}>{dName}</span>
                                             <span className="text-base font-black tracking-tight">{day}</span>
                                             <div className="flex gap-0.5 mt-1">

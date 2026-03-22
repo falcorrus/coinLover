@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 * {
@@ -7,70 +7,7 @@
 }
 
 :root {
-  /* Dark mode (default) - "Linear Style" */
-  --bg-color: #050505;
-  --primary-color: #6d5dfc;
-  --danger-color: #f43f5e;
-  --success-color: #10b981;
-  --text-main: #ffffff;
-  --text-muted: rgba(255, 255, 255, 0.6);
-  --glass-bg: rgba(255, 255, 255, 0.07);
-  --glass-card-bg: rgba(255, 255, 255, 0.04);
-  --glass-item-bg: rgba(255, 255, 255, 0.03);
-  --glass-item-active: rgba(255, 255, 255, 0.06);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-border-highlight: rgba(255, 255, 255, 0.15);
-  --numpad-bg: #0a0a0a;
-  --panel-bg: #121212;
-  --btn-equals: rgba(109, 93, 252, 0.3);
-  --shadow-color: rgba(0, 0, 0, 0.5);
-  --pull-indicator: #334155;
-}
-
-:root.light {
-  /* Light mode - "Snippet Style" */
-  --bg-color: #FFFFFF;
-  --primary-color: #3b82f6;
-  --danger-color: #f43f5e;
-  --success-color: #60b98f;
-  --text-main: #1a1a1a;
-  --text-muted: #94a3b8;
-  --glass-bg: #FFFFFF;
-  --glass-card-bg: #FFFFFF;
-  --glass-item-bg: #f1f3f5;
-  --glass-item-active: #e2e8f0;
-  --glass-border: #e2e8f0;
-  --glass-border-highlight: #cbd5e1;
-  --numpad-bg: #f8f9fa;
-  --panel-bg: #f1f3f5;
-  --btn-equals: #d1e7dd;
-  --shadow-color: rgba(0, 0, 0, 0.05);
-  --pull-indicator: #E2E8F0;
-}
-
-:root.midnight {
-  /* Midnight Gold - "AliGrids Style" */
-  --bg-color: #0B0E14;
-  --primary-color: #F59E0B; /* Liquid Amber */
-  --danger-color: #F43F5E;
-  --success-color: #10B981;
-  --text-main: #F8FAFC;
-  --text-muted: #64748B;
-  --glass-bg: rgba(255, 255, 255, 0.03);
-  --glass-card-bg: rgba(255, 255, 255, 0.04);
-  --glass-item-bg: rgba(255, 255, 255, 0.02);
-  --glass-item-active: rgba(255, 255, 255, 0.06);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-border-highlight: rgba(245, 158, 11, 0.2);
-  --numpad-bg: #0d1117;
-  --panel-bg: #161b22;
-  --btn-equals: rgba(245, 158, 11, 0.3);
-  --shadow-color: rgba(0, 0, 0, 0.8);
-  --pull-indicator: #334155;
-}
-
-:root.modern {
-  /* Modern Glow - "Borderless Style" */
+  /* Modern Glow (New Default) - "Borderless Style" */
   --bg-color: #0D1117;
   --primary-color: #a78bfa;
   --danger-color: #f43f5e;
@@ -90,6 +27,33 @@
   --pull-indicator: #1e293b;
 }
 
+:root.zen {
+  /* Zen Precision (Refined & Softer) */
+  --bg-color: #FFFFFF;
+  --primary-color: #64748B; /* Slate 500 */
+  --danger-color: #f43f5e;
+  --success-color: #10b981;
+  --text-main: #1E293B; /* Slate 800 */
+  --text-muted: #94A3B8; /* Slate 400 */
+  --glass-bg: #FFFFFF;
+  --glass-card-bg: #FFFFFF;
+  --glass-item-bg: #F8FAFC;
+  --glass-item-active: #F1F5F9;
+  --glass-border: #F1F5F9;
+  --glass-border-highlight: #E2E8F0;
+  --numpad-bg: #FFFFFF;
+  --panel-bg: #F8FAFC;
+  --btn-equals: #F1F5F9;
+  --shadow-color: rgba(15, 23, 42, 0.04);
+  --pull-indicator: #E2E8F0;
+}
+
+.zen .rdp-day_selected, 
+.zen .rdp-day_selected:focus, 
+.zen .rdp-day_selected:hover {
+  background-color: var(--primary-color) !important;
+  color: white !important;
+}
 
 body {
   background-color: var(--bg-color);
@@ -216,13 +180,19 @@ body {
   transition: opacity 0.3s ease, background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
+.zen .draggable-coin {
+  background: var(--glass-item-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 2px 8px var(--shadow-color);
+}
+
 /* Category style: More "squarish" but Apple-like */
 .coin-category {
   border-radius: 18px;
 }
 
-/* Modern Theme: No border, no background, just glow */
-.modern .coin-category {
+/* Borderless Style logic */
+:root:not(.zen) .coin-category {
   background: transparent !important;
   border-color: transparent !important;
   backdrop-filter: none !important;
@@ -230,7 +200,7 @@ body {
   box-shadow: none !important;
 }
 
-.modern .coin-category:active {
+:root:not(.zen) .coin-category:active {
   transform: scale(0.9);
   filter: brightness(1.2);
 }
@@ -267,7 +237,7 @@ body {
   border-radius: 2px;
 }
 
-/* Modal Animations (Tailwind v4 compat) */
+/* Modal Animations */
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes zoom-in { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
 @keyframes slide-in-right { from { transform: translateX(100%); } to { transform: translateX(0); } }

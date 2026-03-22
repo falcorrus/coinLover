@@ -29,7 +29,7 @@ interface ModalManagerProps {
   isTagModalOpen: boolean;
   isUsersModalOpen: boolean;
   isThemeModalOpen: boolean;
-  theme: "light" | "dark" | "midnight" | "modern";
+  theme: "modern" | "zen";
   conflictData: any; 
   editingTxId: string | null;
   categoryCurrencyMode: "base" | "local";
@@ -56,7 +56,7 @@ interface ModalManagerProps {
   setIsTagModalOpen: (v: boolean) => void;
   setIsUsersModalOpen: (v: boolean) => void;
   setIsThemeModalOpen: (v: boolean) => void;
-  setTheme: (v: "light" | "dark" | "midnight" | "modern") => void;
+  setTheme: (v: "modern" | "zen") => void;
   setEditingTxId: (v: string | null) => void;
   setConflictData: (v: any) => void;
   

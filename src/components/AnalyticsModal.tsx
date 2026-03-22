@@ -82,13 +82,13 @@ const DetailItem: React.FC<DetailItemProps> = ({ detail, analysisType, currencyM
         <div className="flex justify-between items-center cursor-pointer group" onClick={(e) => { e.stopPropagation(); onClick(); }}>
             <div className="flex items-center gap-2">
                 <detail.icon size={10} style={{ color: detail.color }} className="shrink-0" />
-                <span className="text-xs font-medium text-[var(--text-muted)] group-hover:text-[var(--text-main)] transition-colors">{detail.name}</span>
+                <span className="text-xs font-medium text-slate-600 dark:text-slate-400 group-hover:text-[var(--text-main)] transition-colors">{detail.name}</span>
             </div>
             <div className="flex items-center gap-2">
                 <span className={`text-xs font-bold ${analysisType === 'income' ? 'text-[var(--success-color)]' : 'text-[var(--text-main)]'}`}>
                     {symbol} {Math.round(displayAmount).toLocaleString()}
                 </span>
-                <span className="text-[9px] font-bold text-[var(--text-muted)] w-8 text-right">{detail.percent.toFixed(0)}%</span>
+                <span className="text-[9px] font-bold text-slate-500 dark:text-slate-500 w-8 text-right">{detail.percent.toFixed(0)}%</span>
             </div>
         </div>
     );
@@ -304,7 +304,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                     {/* Header */}
                     <div className="flex justify-between items-center p-6 border-b border-[var(--glass-border)] shrink-0">
                         <div className="flex items-center gap-3">
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-[0_0_15px_var(--primary-color)] ${analysisType === 'income' ? 'bg-[var(--success-color)]/20 text-[var(--success-color)]' : 'bg-[var(--primary-color)]/20 text-[var(--primary-color)]'}`}><PieChart size={20} /></div>
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-lg ${analysisType === 'income' ? 'bg-[var(--success-color)]/20 text-[var(--success-color)] shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'bg-amber-500/20 text-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.3)]'}`}><PieChart size={20} /></div>
                             <div className="flex flex-col">
                                 <h2 className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">{analysisType === "expense" ? "Аналитика расходов" : "Аналитика доходов"}</h2>
                                 <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest leading-none mt-1">за период</span>
@@ -313,17 +313,32 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                         <button onClick={onClose} className="w-10 h-10 rounded-xl bg-[var(--glass-item-bg)] flex items-center justify-center text-[var(--text-main)] hover:bg-[var(--glass-item-active)] transition-colors border border-[var(--glass-border)]"><X size={20} /></button>
                     </div>
 
-                    {/* Mode Toggle */}
-                    <div className="flex p-2 gap-1 bg-[var(--glass-item-bg)]/30 border-b border-[var(--glass-border)]">
-                        <button onClick={() => { setAnalysisType("expense"); setExpandedItemId(null); }} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-[10px] font-black transition-all ${analysisType === "expense" ? 'bg-[var(--primary-color)] text-white shadow-lg' : 'text-[var(--text-muted)]'}`}><TrendingDown size={12} /> РАСХОДЫ</button>
-                        <button onClick={() => { setAnalysisType("income"); setExpandedItemId(null); }} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-[10px] font-black transition-all ${analysisType === "income" ? 'bg-[var(--success-color)] text-white shadow-lg' : 'text-[var(--text-muted)]'}`}><TrendingUp size={12} /> ДОХОДЫ</button>
-                    </div>
-
-                    {/* Date Navigation */}
+                    {/* Date Navigation & Mode Toggle */}
                     <div className="flex justify-between items-center px-4 py-3 bg-[var(--glass-item-bg)]/50 shrink-0 border-b border-[var(--glass-border)]">
-                        <button onClick={() => setCurrentDate(d => new Date(d.getFullYear(), d.getMonth() - 1, 1))} className="p-2 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"><ChevronLeft size={20} /></button>
-                        <span className="text-xs font-bold text-[var(--text-main)] uppercase tracking-widest">{currentDate.toLocaleString('ru-RU', { month: 'long', year: 'numeric' })}</span>
-                        <button onClick={() => setCurrentDate(d => new Date(d.getFullYear(), d.getMonth() + 1, 1))} className="p-2 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"><ChevronRight size={20} /></button>
+                        <div className="flex items-center gap-2">
+                            <div className="flex bg-[var(--glass-item-bg)] p-1 rounded-xl border border-[var(--glass-border)] gap-0.5 shadow-sm">
+                                <button 
+                                    onClick={() => { setAnalysisType("expense"); setExpandedItemId(null); }} 
+                                    className={`p-1.5 rounded-lg transition-all ${analysisType === 'expense' ? 'bg-amber-500 text-white shadow-sm' : 'text-[var(--text-muted)] hover:bg-[var(--glass-item-active)]'}`}
+                                    title="Расходы"
+                                >
+                                    <TrendingDown size={18} />
+                                </button>
+                                <button 
+                                    onClick={() => { setAnalysisType("income"); setExpandedItemId(null); }} 
+                                    className={`p-1.5 rounded-lg transition-all ${analysisType === 'income' ? 'bg-[var(--success-color)] text-white shadow-sm' : 'text-[var(--text-muted)] hover:bg-[var(--glass-item-active)]'}`}
+                                    title="Доходы"
+                                >
+                                    <TrendingUp size={18} />
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-1">
+                            <button onClick={() => setCurrentDate(d => new Date(d.getFullYear(), d.getMonth() - 1, 1))} className="p-2 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"><ChevronLeft size={20} /></button>
+                            <span className="text-xs font-bold text-[var(--text-main)] uppercase tracking-widest min-w-[120px] text-center">{currentDate.toLocaleString('ru-RU', { month: 'long', year: 'numeric' })}</span>
+                            <button onClick={() => setCurrentDate(d => new Date(d.getFullYear(), d.getMonth() + 1, 1))} className="p-2 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"><ChevronRight size={20} /></button>
+                        </div>
                     </div>
 
                     {/* Tab Selection */}

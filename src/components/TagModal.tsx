@@ -37,7 +37,7 @@ export const TagModal: React.FC<Props> = ({ isOpen, onClose, onSelect, existingT
   };
 
   return (
-    <div className="fixed inset-0 z-[300] bg-black/60 backdrop-blur-md flex items-end justify-center animate-in fade-in duration-300" onClick={onClose}>
+    <div className="fixed inset-0 z-[500] bg-black/60 backdrop-blur-md flex items-end justify-center animate-in fade-in duration-300" onClick={onClose}>
       <div 
         className="w-full max-w-md bg-[var(--bg-color)] border border-[var(--glass-border)] rounded-t-3xl p-6 flex flex-col gap-6 animate-in slide-in-from-bottom duration-300 shadow-2xl"
         onClick={e => e.stopPropagation()}
