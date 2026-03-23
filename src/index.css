@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700&family=Lora:wght@400;500;600;700&family=Raleway:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 * {
@@ -46,6 +46,58 @@
   --btn-equals: #F1F5F9;
   --shadow-color: rgba(15, 23, 42, 0.04);
   --pull-indicator: #E2E8F0;
+}
+
+:root.mint {
+  /* Organic Mint (Nature & Growth) */
+  --bg-color: #E8F0ED;
+  --primary-color: #D27D56; /* Copper */
+  --danger-color: #EF5350; /* Coral */
+  --success-color: #66BB6A; /* Grass Green */
+  --text-main: #37474F; /* Blue-Grey 800 */
+  --text-muted: #78909C; /* Blue-Grey 400 */
+  --glass-bg: #E8F0ED;
+  --glass-card-bg: #FFFFFF;
+  --glass-item-bg: #FFFFFF;
+  --glass-item-active: #DDE8E4;
+  --glass-border: #D1D9D6;
+  --glass-border-highlight: #E9B298; /* Copper Light */
+  --numpad-bg: #E8F0ED;
+  --panel-bg: #E8F0ED;
+  --btn-equals: #FFFFFF;
+  --shadow-color: rgba(55, 71, 79, 0.08);
+  --pull-indicator: #D1D9D6;
+  --soft-shadow-light: -5px -5px 10px #FFFFFF;
+  --soft-shadow-dark: 5px 5px 10px #D1D9D6;
+}
+
+.mint body {
+  font-family: 'Raleway', sans-serif;
+}
+
+.mint h1, .mint h2, .mint h3 {
+  font-family: 'Lora', serif;
+}
+
+.mint .glass-card, .mint .glass-item, .mint .glass-icon-btn {
+  box-shadow: var(--soft-shadow-light), var(--soft-shadow-dark);
+  border-radius: 24px;
+}
+
+.mint .draggable-coin {
+  background: linear-gradient(135deg, #D27D56, #E9B298);
+  border-radius: 50%;
+  box-shadow: 0 8px 24px rgba(210, 125, 86, 0.3);
+}
+
+.mint .coin-category {
+  background: var(--glass-card-bg);
+  box-shadow: var(--soft-shadow-light), var(--soft-shadow-dark);
+}
+
+.mint .coin-target-glow {
+  transform: scale(1.1) translateY(4px) !important;
+  box-shadow: inset 2px 2px 5px #D1D9D6, inset -2px -2px 5px #FFFFFF !important;
 }
 
 .zen .rdp-day_selected, 

@@ -15,8 +15,8 @@ interface AppHeaderProps {
   setHistoryModal: (val: HistoryModalState) => void;
   setCalendarAnalyticsModal: (val: { isOpen: boolean }) => void;
   setAnalyticsModal: (val: { isOpen: boolean; type: "expense" | "income" }) => void;
-  theme: "modern" | "zen";
-  setTheme: (t: "modern" | "zen") => void;
+  theme: "modern" | "zen" | "mint";
+  setTheme: (t: "modern" | "zen" | "mint") => void;
   syncStatus: string;
   pillMode: "expense" | "income" | "balance";
   setPillMode: React.Dispatch<React.SetStateAction<"expense" | "income" | "balance">>;
@@ -59,6 +59,12 @@ export function AppHeader({
                     className={`p-2 rounded-xl transition-all ${theme === 'zen' ? 'bg-amber-100 text-amber-600 scale-110' : 'text-slate-400 hover:bg-slate-100'}`}
                   >
                     <Sun size={20} />
+                  </button>
+                  <button 
+                    onClick={() => { setTheme("mint"); setIsSettingsMenuOpen(false); }}
+                    className={`p-2 rounded-xl transition-all ${theme === 'mint' ? 'bg-emerald-500/20 text-emerald-600 scale-110' : 'text-slate-400 hover:bg-emerald-50'}`}
+                  >
+                    <Sparkles size={20} />
                   </button>
                   <button 
                     onClick={() => { setTheme("modern"); setIsSettingsMenuOpen(false); }}
