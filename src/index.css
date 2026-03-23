@@ -71,10 +71,13 @@
   --soft-ui-outset: -5px -5px 10px #FFFFFF, 5px 5px 10px #D1D9D6;
   --soft-ui-inset: inset 2px 2px 5px #D1D9D6, inset -2px -2px 5px #FFFFFF;
   --copper-gradient: linear-gradient(135deg, #D27D56 0%, #E9B298 100%);
+
+  /* Override Tailwind Fonts */
+  --font-sans: 'Raleway', sans-serif;
+  --font-serif: 'Lora', serif;
 }
 
 .mint body {
-  font-family: 'Raleway', sans-serif;
   background-color: var(--bg-color);
   position: relative;
 }
@@ -278,8 +281,26 @@ body {
 
 .zen .draggable-coin {
   background: var(--glass-item-bg);
-  border: 1px solid var(--glass-border);
-  box-shadow: 0 2px 8px var(--shadow-color);
+  border: 1px solid var(--glass-border-highlight);
+  box-shadow: 0 1px 4px var(--shadow-color);
+}
+
+.zen .coin-wallet-name {
+  font-size: 9px;
+  font-weight: 900;
+  color: var(--text-main);
+  opacity: 1;
+  letter-spacing: 0.12em;
+}
+
+.zen .coin-wallet-balance {
+  font-size: 10px;
+  font-weight: 700;
+  opacity: 0.6;
+}
+
+.zen .coin-wallet-currency {
+  font-size: 9px;
 }
 
 /* Category style: More "squarish" but Apple-like */
@@ -316,6 +337,11 @@ body {
   border-color: var(--text-muted) !important;
   transform: scale(1.2) !important;
   transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, background 0.25s ease !important;
+}
+
+.zen .coin-target-glow {
+  box-shadow: 0 0 10px var(--glass-border-highlight) !important;
+  transform: scale(1.1) !important;
 }
 
 /* Premium iOS-style Grab effect */

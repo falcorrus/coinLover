@@ -132,9 +132,9 @@ export const AccountItem: React.FC<Props> = ({
         <Icon size={26} color={isTarget ? "var(--text-main)" : account.color} />
       </div>
       <div className="flex flex-col items-center text-center leading-tight pointer-events-none select-none">
-        <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-0.5">{account.name}</span>
-        <span className="text-[13px] font-bold text-[var(--text-main)]">
-          {Math.round(account.balance).toLocaleString()} <span className="text-[10px] opacity-50">{account.currency}</span>
+        <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-0.5 coin-wallet-name">{account.name}</span>
+        <span className="text-[13px] font-bold text-[var(--text-main)] coin-wallet-balance">
+          {Math.round(account.balance).toLocaleString()} <span className="text-[10px] opacity-50 coin-wallet-currency">{account.currency}</span>
         </span>
       </div>
     </div>
