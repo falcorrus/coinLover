@@ -37,7 +37,14 @@ export function AppHeader({
       <div className="flex justify-between items-center mb-2">
         <button onClick={toggleIncome} className="glass-icon-btn w-10 h-10 relative">
           <Plus size={APP_SETTINGS.UI.ICON_SIZE_LARGE} className={`text-[#10b981] transition-transform duration-300 ${!isIncomeCollapsed ? "rotate-45" : ""}`} />
-          {isDemo && <span className="absolute left-12 top-1/2 -translate-y-1/2 bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded-full text-[9px] font-black uppercase">Demo</span>}
+          {isDemo && (
+            <span 
+              {...settingsLongPress} 
+              className="absolute left-12 top-1/2 -translate-y-1/2 bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded-full text-[9px] font-black uppercase active:scale-95 transition-transform"
+            >
+              Demo
+            </span>
+          )}
         </button>
         <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Total Balance</p>
         <div className="relative">

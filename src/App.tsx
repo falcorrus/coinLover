@@ -190,14 +190,20 @@ export default function App() {
     const currentYear = now.getFullYear();
     return transactions.filter(t => {
       if (!t.date) return false;
-      const d = new Date(String(t.date).trim());
+      // Используем безопасный парсинг даты для мобильных браузеров
+      const safeDateStr = String(t.date).replace(/-/g, '/').replace('T', ' ');
+      const d = new Date(safeDateStr);
       return !isNaN(d.getTime()) && d.getMonth() === currentMonth && d.getFullYear() === currentYear;
     });
   }, [transactions]);
 
   const calculations = useCurrencyCalculations(accounts, currentMonthTransactions, categories, incomes, categoryCurrencyMode);
 
-  const settingsLongPress = useLongPress(() => { setIsSettingsMenuOpen(false); setIsUsersModalOpen(true); if (navigator.vibrate) navigator.vibrate(APP_SETTINGS.HAPTIC_FEEDBACK_DURATION_MEDIUM); }, 3000);
+  const settingsLongPress = useLongPress(() => { 
+    setIsSettingsMenuOpen(false); 
+    setIsUsersModalOpen(true); 
+    if (navigator.vibrate) navigator.vibrate(APP_SETTINGS.HAPTIC_FEEDBACK_DURATION_MEDIUM); 
+  }, 5000);
   const handleMenuClick = () => setIsSettingsMenuOpen(!isSettingsMenuOpen);
 
   const { activeDragId, activeDragType, isSortingMode, setIsSortingMode, overId, handleDragStart, handleDragMove, handleDragOver, handleDragEnd } = useAppDnD({
