@@ -5,7 +5,7 @@ import {
   Database, MousePointer2, Layout, Lock, Coins, X, Send, 
   Wallet, Banknote, TrendingUp, Coffee, ShoppingBag, Car, Utensils, Film,
   FileSpreadsheet, Languages, Search, History, Smartphone, Tablet, Laptop, RefreshCw,
-  Fingerprint, Move
+  Fingerprint, Move, Copy
 } from "lucide-react";
 
 type Language = "ru" | "en";
@@ -44,10 +44,19 @@ const translations = {
     familyText: "Поддержка командных бюджетов и общих таблиц для всей семьи. Следите за общим капиталом вместе.",
     finalCta: "Верни себе контроль.",
     modalTitle: "Начнем настройку?",
-    modalSub: "Оставьте свой Email или Telegram. Мы свяжемся с вами и поможем подключить вашу Google Таблицу к CoinLover за 5 минут.",
+    modalSub: "На период тестирования подключение бесплатно. Затем $10 за подключение на год.",
+    modalPricing: "Подключение: Бесплатно (Тест) / $10 (год)",
+    nameLabel: "Ваше имя",
+    contactLabel: "Email или Telegram",
+    sheetLabel: "Адрес вашей Google Таблицы",
+    shareInstruction: "Создайте таблицу и добавьте (share) как Editor:",
+    serviceEmail: "analytics-mcp-account@baonlineru.iam.gserviceaccount.com",
     studioTitle: "Мы на связи для любых проектов",
     studioSub: "Оставьте свой Email или Telegram. Мы свяжемся с вами в течение дня.",
     modalPlaceholder: "@username или email...",
+    namePlaceholder: "Как к вам обращаться?",
+    sheetPlaceholder: "https://docs.google.com/spreadsheets/...",
+    modalConnect: "Подключить",
     modalSend: "Отправить",
     modalSuccess: "Принято!",
     modalSuccessSub: "Мы скоро свяжемся с вами.",
@@ -88,10 +97,19 @@ const translations = {
     familyText: "Support for team budgets and shared sheets for the whole family. Track common capital together.",
     finalCta: "Take back control.",
     modalTitle: "Let's get started",
-    modalSub: "Leave your Email or Telegram. We'll contact you to help connect your Google Sheet to CoinLover in 5 minutes.",
+    modalSub: "Connection is free during the testing period. Then $10 for the year.",
+    modalPricing: "Setup: Free (Test) / $10 (year)",
+    nameLabel: "Your name",
+    contactLabel: "Email or Telegram",
+    sheetLabel: "Your Google Sheet URL",
+    shareInstruction: "Create a sheet and add (share) as Editor:",
+    serviceEmail: "analytics-mcp-account@baonlineru.iam.gserviceaccount.com",
     studioTitle: "Available for any projects",
     studioSub: "Leave your Email or Telegram. We will contact you within 24 hours.",
     modalPlaceholder: "@username or email...",
+    namePlaceholder: "How should we call you?",
+    sheetPlaceholder: "https://docs.google.com/spreadsheets/...",
+    modalConnect: "Connect",
     modalSend: "Send",
     modalSuccess: "Received!",
     modalSuccessSub: "We will contact you soon.",
@@ -113,7 +131,9 @@ export const LandingPage: React.FC = () => {
 
   const [isConnectOpen, setIsConnectOpen] = React.useState(false);
   const [modalType, setModalType] = React.useState<"onboarding" | "studio">("onboarding");
+  const [name, setName] = React.useState("");
   const [contact, setContact] = React.useState("");
+  const [sheetUrl, setSheetUrl] = React.useState("");
   const [isSent, setIsSent] = React.useState(false);
   const [analyticsImageIndex, setAnalyticsImageIndex] = React.useState(0);
 
@@ -140,16 +160,28 @@ export const LandingPage: React.FC = () => {
   const handleDemo = () => { window.location.href = "/?demo=true"; };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!contact) return;
+    if (!contact || (modalType === "onboarding" && (!name || !sheetUrl))) return;
+    
     try {
-      const response = await fetch("/api/leads", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contact }),
-      });
-      if (response.ok) {
+      const payload = {
+        action: "registerLead",
+        name: name || "Studio Lead",
+        contact,
+        sheetUrl: sheetUrl || "",
+        type: modalType
+      };
+
+      const ok = await googleSheetsService.syncToSheets(payload as any);
+      
+      if (ok) {
         setIsSent(true);
-        setTimeout(() => { setIsConnectOpen(false); setIsSent(false); setContact(""); }, 2500);
+        setTimeout(() => { 
+          setIsConnectOpen(false); 
+          setIsSent(false); 
+          setContact(""); 
+          setName(""); 
+          setSheetUrl(""); 
+        }, 2500);
       }
     } catch (err) {
       setIsSent(true);
@@ -364,24 +396,72 @@ export const LandingPage: React.FC = () => {
         {isConnectOpen && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsConnectOpen(false)} className="absolute inset-0 bg-black/85 backdrop-blur-2xl" />
-            <motion.div initial={{ scale: 0.9, opacity: 0, y: 30 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 30 }} className="w-full max-w-md glass-panel p-10 relative z-10 border-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)]">
+            <motion.div initial={{ scale: 0.9, opacity: 0, y: 30 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 30 }} className="w-full max-w-md bg-[#121212]/90 backdrop-blur-2xl p-10 relative z-10 border border-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] rounded-[32px]">
               <button onClick={() => setIsConnectOpen(false)} className="absolute top-6 right-6 text-white/40 hover:text-white transition-colors outline-none"><X size={28} /></button>
               {!isSent ? (
-                <form onSubmit={handleSubmit}>
-                  <div className="w-16 h-16 bg-[#6d5dfc]/10 rounded-2xl flex items-center justify-center mb-8"><Database className="w-8 h-8 text-[#6d5dfc]" /></div>
-                  <h2 className="text-3xl font-bold mb-3">
+                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                  <div className="w-12 h-12 bg-[#6d5dfc]/10 rounded-xl flex items-center justify-center mb-2"><Database className="w-6 h-6 text-[#6d5dfc]" /></div>
+                  <h2 className="text-2xl font-bold text-white leading-tight">
                     {modalType === "onboarding" ? t.modalTitle : t.studioTitle}
                   </h2>
-                  <p className="text-white/50 mb-10 leading-relaxed text-sm">
-                    {modalType === "onboarding" ? t.modalSub : t.studioSub}
-                  </p>
-                  <input required type="text" placeholder={t.modalPlaceholder} value={contact} onChange={(e) => setContact(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-5 text-white focus:border-[#6d5dfc]/50 transition-all outline-none text-lg mb-8" />
-                  <button className="w-full py-5 bg-[#6d5dfc] hover:bg-[#5b4ce3] text-white font-bold rounded-2xl flex items-center justify-center gap-3 transition-all text-lg shadow-xl shadow-[#6d5dfc]/20 outline-none">{t.modalSend} <Send size={20} /></button>
+                  
+                  <div className="bg-[#6d5dfc]/10 border border-[#6d5dfc]/20 rounded-xl p-3">
+                    <p className="text-[#6d5dfc] text-[11px] font-bold leading-relaxed">
+                      {modalType === "onboarding" ? t.modalSub : t.studioSub}
+                    </p>
+                  </div>
+
+                  {modalType === "onboarding" && (
+                    <div className="flex flex-col gap-3 mt-2">
+                      <div>
+                        <label className="text-[9px] font-black uppercase tracking-widest text-white/40 ml-1 mb-1 block">{t.nameLabel}</label>
+                        <input required type="text" placeholder={t.namePlaceholder} value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:border-[#6d5dfc]/50 transition-all outline-none text-sm" />
+                      </div>
+                      <div>
+                        <label className="text-[9px] font-black uppercase tracking-widest text-white/40 ml-1 mb-1 block">{t.contactLabel}</label>
+                        <input required type="text" placeholder={t.modalPlaceholder} value={contact} onChange={(e) => setContact(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:border-[#6d5dfc]/50 transition-all outline-none text-sm" />
+                      </div>
+                      <div>
+                        <label className="text-[9px] font-black uppercase tracking-widest text-white/40 ml-1 mb-1 block">{t.sheetLabel}</label>
+                        <input required type="text" placeholder={t.sheetPlaceholder} value={sheetUrl} onChange={(e) => setSheetUrl(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:border-[#6d5dfc]/50 transition-all outline-none text-sm" />
+                      </div>
+                      <div className="mt-1 p-3 bg-black/20 border border-white/5 rounded-xl group/copy relative">
+                        <p className="text-[9px] text-white/40 leading-relaxed mb-2 uppercase font-black tracking-tighter">{t.shareInstruction}</p>
+                        <div className="flex items-center gap-2 bg-[#6d5dfc]/5 p-2 rounded border border-[#6d5dfc]/10">
+                          <code className="text-[10px] text-[#6d5dfc] break-all font-mono select-all flex-1">{t.serviceEmail}</code>
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(t.serviceEmail);
+                              if (navigator.vibrate) navigator.vibrate(40);
+                            }}
+                            className="p-1.5 hover:bg-[#6d5dfc]/10 rounded-md transition-colors text-[#6d5dfc]"
+                          >
+                            <Copy size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {modalType === "studio" && (
+                    <div className="mt-2">
+                      <label className="text-[9px] font-black uppercase tracking-widest text-white/40 ml-1 mb-1 block">{t.contactLabel}</label>
+                      <input required type="text" placeholder={t.modalPlaceholder} value={contact} onChange={(e) => setContact(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:border-[#6d5dfc]/50 transition-all outline-none text-sm" />
+                    </div>
+                  )}
+
+                  <button 
+                    disabled={!contact || (modalType === 'onboarding' && (!name || !sheetUrl))}
+                    className="w-full py-4 bg-[#6d5dfc] hover:bg-[#5b4ce3] disabled:opacity-50 disabled:grayscale text-white font-bold rounded-xl flex items-center justify-center gap-3 transition-all text-sm shadow-xl shadow-[#6d5dfc]/20 outline-none mt-2"
+                  >
+                    {t.modalConnect} <Send size={18} />
+                  </button>
                 </form>
               ) : (
                 <div className="text-center py-12">
                   <div className="w-24 h-24 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-8 shadow-[0_0_30px_rgba(34,197,94,0.2)]"><Sparkles className="w-12 h-12 text-green-500" /></div>
-                  <h2 className="text-3xl font-bold mb-3">{t.modalSuccess}</h2>
+                  <h2 className="text-3xl font-bold mb-3 text-white">{t.modalSuccess}</h2>
                   <p className="text-white/50 text-lg">{t.modalSuccessSub}</p>
                 </div>
               )}

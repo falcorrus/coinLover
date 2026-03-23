@@ -368,6 +368,34 @@ function doPost(e) {
       responses.push({ action: data.action, status: "success" });
     }
     if (data.action === "syncSettings") { const res = syncSettingsInternal(data); responses.push({ action: "syncSettings", ...res }); }
+    
+    if (data.action === "registerLead") {
+      const masterSs = SpreadsheetApp.openById(MASTER_SS_ID);
+      const configSheet = masterSs.getSheetByName("Configs") || masterSs.insertSheet("Configs");
+      const values = configSheet.getDataRange().getValues();
+      let usersRowIdx = -1;
+      
+      for (let i = 0; i < values.length; i++) {
+        if (String(values[i][0]).indexOf("=== USERS ===") !== -1) {
+          usersRowIdx = i + 1;
+          break;
+        }
+      }
+      
+      if (usersRowIdx === -1) {
+        configSheet.appendRow([""]);
+        configSheet.appendRow([" === USERS ==="]);
+        configSheet.appendRow(["Name", "ID / Contact / Sheet"]);
+        usersRowIdx = configSheet.getLastRow();
+      }
+      
+      // Append the new lead info
+      const leadInfo = [data.name || "", data.sheetUrl || data.contact || ""];
+      configSheet.appendRow(leadInfo);
+      
+      responses.push({ action: "registerLead", status: "success" });
+    }
+
     SpreadsheetApp.flush();
     return ContentService.createTextOutput(JSON.stringify({ status: "success", responses })).setMimeType(ContentService.MimeType.JSON);
   } catch (err) {

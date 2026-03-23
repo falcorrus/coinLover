@@ -238,9 +238,13 @@ export default function App() {
     localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.THEME, theme);
     localStorage.setItem("cl_category_currency_mode", categoryCurrencyMode);
     document.documentElement.classList.remove("zen", "light", "midnight", "modern", "dark", "mint");
-    if (theme === "zen") document.documentElement.classList.add("zen");
-    if (theme === "mint") document.documentElement.classList.add("mint");
-  }, [pillMode, theme, categoryCurrencyMode]);
+    
+    // Не применяем темы на лендинге, так как у него свой фиксированный темный дизайн
+    if (currentPath !== "/landing") {
+      if (theme === "zen") document.documentElement.classList.add("zen");
+      if (theme === "mint") document.documentElement.classList.add("mint");
+    }
+  }, [pillMode, theme, categoryCurrencyMode, currentPath]);
 
   React.useEffect(() => {
     if (activeTableId) setGAUser(activeTableId);
