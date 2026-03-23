@@ -363,7 +363,10 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
                                                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center relative shadow-inner shrink-0 ${status.isBroken ? 'bg-rose-500/20 text-rose-500' : 'bg-[var(--glass-item-bg)] text-[var(--text-muted)]'}`} style={{ color: !status.isBroken ? (item as any)?.color : undefined }}><Icon size={18} /></div>
                                                     <div className="flex flex-col overflow-hidden">
                                                         <span className="text-sm font-bold text-[var(--text-main)] truncate">{displayName}</span>
-                                                        {tx.tag && <span className="text-[10px] text-[var(--text-muted)] uppercase font-black tracking-widest mt-0.5">{tx.tag}</span>}
+                                                        <div className="flex items-center gap-2 mt-0.5">
+                                                            {tx.tag && <span className="text-[10px] text-[var(--text-muted)] uppercase font-black tracking-widest shrink-0">{tx.tag}</span>}
+                                                            {tx.comment && <span className="text-[10px] text-[var(--text-muted)] italic truncate opacity-70">({tx.comment})</span>}
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <div className="flex flex-col items-end shrink-0 pl-2">

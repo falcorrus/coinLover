@@ -214,7 +214,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                                                 <Icon size={18} />
                                                 {status.isBroken && <div className="absolute -top-1 -right-1 bg-rose-500 w-3 h-3 rounded-full border-2 border-[var(--bg-color)]" />}
                                             </div>
-                                            <div className="flex flex-col overflow-hidden max-w-[150px]">
+                                            <div className="flex flex-col overflow-hidden flex-1 max-w-[180px]">
                                                 <span className={`text-sm font-semibold truncate ${status.isBroken ? 'text-rose-400' : 'text-[var(--text-main)]'}`}>{displayName}</span>
                                                 <div className="flex items-center gap-2 mt-0.5">
                                                     <span className="text-[10px] text-[var(--text-muted)] uppercase font-medium">
@@ -225,6 +225,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                                                     </span>
                                                     {tx.tag && <span className="text-[8px] px-2 py-0.5 bg-white/5 border border-white/5 rounded-lg text-slate-400 font-bold uppercase shrink-0 tracking-widest">{tx.tag}</span>}
                                                 </div>
+                                                {tx.comment && <span className="text-[10px] text-[var(--text-muted)] italic truncate mt-0.5 opacity-80">{tx.comment}</span>}
                                             </div>
                                         </div>
                                         <div className="flex flex-col items-end shrink-0 pl-2">
