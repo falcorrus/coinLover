@@ -49,14 +49,6 @@ export const useFinance = (ssId?: string) => {
 
   // Effect to pull data when table ID changes or on initial load
   useEffect(() => {
-    // Если ssId изменился, принудительно сбрасываем локальные данные перед загрузкой новых
-    const currentStoredId = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.ACTIVE_TABLE_ID);
-    
-    setAccounts([]);
-    setCategories([]);
-    setIncomes([]);
-    setTransactions([]);
-    
     pullSettings();
     isInitialLoad.current = false;
   }, [ssId]); // Реагируем на каждое изменение ssId

@@ -47,7 +47,7 @@ export const useSync = ({
       setSyncStatus("success");
       return true;
     }
-    setSyncStatus("success");
+    setSyncStatus("error");
     return false;
   }, [updateLocalFromRemote, ssId]);
 

@@ -258,20 +258,20 @@ export default function App() {
 
   return (
     <DndContext sensors={sensors} collisionDetection={rectIntersection} onDragStart={handleDragStart} onDragMove={handleDragMove} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
+      {isSplashVisible && (
+        <div className="fixed inset-0 z-[2000] bg-[#050505] flex items-center justify-center animate-in fade-in duration-300">
+          <div className="flex flex-col items-center gap-6">
+            <div className="w-32 h-32 rounded-[48px] bg-gradient-to-br from-amber-300 via-amber-500 to-amber-600 flex items-center justify-center shadow-2xl animate-pulse">
+              <Heart size={APP_SETTINGS.UI.ICON_SIZE_SPLASH} fill="white" className="text-white drop-shadow-lg" />
+            </div>
+            <span className="text-amber-500 font-black tracking-[0.4em] uppercase text-sm animate-pulse">CoinLover</span>
+          </div>
+        </div>
+      )}
+
       <div className={`min-h-screen flex flex-col max-w-md mx-auto relative shadow-2xl overflow-hidden bg-[var(--bg-color)] text-[var(--text-main)] font-sans select-none transition-colors duration-300 ${theme}`}>
         <style>{`body { overflow: hidden; overscroll-behavior: none; background: var(--bg-color); } * { -webkit-tap-highlight-color: transparent; }`}</style>
         
-        {isSplashVisible && (
-          <div className="fixed inset-0 z-[1000] bg-[var(--bg-color)] flex items-center justify-center animate-in fade-in duration-500">
-            <div className="relative animate-pulse flex flex-col items-center gap-6">
-              <div className="relative w-32 h-32 rounded-[48px] bg-gradient-to-br from-amber-300 via-amber-500 to-amber-600 flex items-center justify-center border-4 border-amber-200/20 shadow-2xl">
-                <Heart size={APP_SETTINGS.UI.ICON_SIZE_SPLASH} fill="white" className="text-white drop-shadow-lg" />
-              </div>
-              <span className="text-amber-500 font-black tracking-[0.4em] uppercase text-sm">CoinLover</span>
-            </div>
-          </div>
-        )}
-
         <div className="absolute top-4 right-4 z-50"><div className={`w-2 h-2 rounded-full ${syncStatus === "loading" ? "bg-amber-400 animate-pulse" : syncStatus === "success" ? "bg-emerald-500/50" : syncStatus === "error" ? "bg-rose-500" : "bg-white/10"}`} /></div>
 
         <div className={`flex-1 flex flex-col overflow-hidden animate-in zoom-in-95 duration-500 transition-all duration-500 ease-out ${isFullModalOpen ? "scale-[0.96] blur-[3px] opacity-60" : "scale-100 blur-0 opacity-100"}`}>
