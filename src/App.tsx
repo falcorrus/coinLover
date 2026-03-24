@@ -1,7 +1,7 @@
 // CoinLover - Modern Personal Finance App
 import * as React from "react";
 import { DndContext, DragOverlay, rectIntersection, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
-import { Wallet, Heart, Menu } from "lucide-react";
+import { Wallet, Heart, Menu, Lock, X } from "lucide-react";
 
 // Modules
 import { APP_SETTINGS } from "./constants/settings";
@@ -209,11 +209,29 @@ export default function App() {
 
   const calculations = useCurrencyCalculations(accounts, currentMonthTransactions, categories, incomes, categoryCurrencyMode);
 
+  const [isAdminModalOpen, setIsAdminModalOpen] = React.useState(false);
+  const [adminEmail, setAdminEmail] = React.useState("");
+
   const settingsLongPress = useLongPress(() => { 
     setIsSettingsMenuOpen(false); 
-    setIsUsersModalOpen(true); 
+    const isDemo = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE) !== "false";
+    if (isDemo) {
+      setIsAdminModalOpen(true);
+    } else {
+      setIsUsersModalOpen(true); 
+    }
     if (navigator.vibrate) navigator.vibrate(APP_SETTINGS.HAPTIC_FEEDBACK_DURATION_MEDIUM); 
   }, 5000);
+
+  const handleAdminSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (adminEmail === "ekirshin@gmail.com") {
+      setIsAdminModalOpen(false);
+      handleSwitchTable("1IQCs35RQlMMQsGB-CRczJeuRqa8WIxW4Sy_kjZyHP2M"); // Master ID
+    } else {
+      alert("Доступ запрещен");
+    }
+  };
   const handleMenuClick = () => setIsSettingsMenuOpen(!isSettingsMenuOpen);
 
   const { activeDragId, activeDragType, isSortingMode, setIsSortingMode, overId, handleDragStart, handleDragMove, handleDragOver, handleDragEnd } = useAppDnD({
@@ -341,6 +359,47 @@ export default function App() {
           saveAccount={saveAccount} deleteAccount={deleteAccount} saveCategory={saveCategory} deleteCategory={deleteCategory}
           saveIncome={saveIncome} deleteIncome={deleteIncome} updateLocalFromRemote={updateLocalFromRemote} onSwitchTable={handleSwitchTable}
         />
+
+        {isAdminModalOpen && (
+          <div className="fixed inset-0 z-[3000] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="w-full max-w-sm glass-panel p-8 border border-white/10 shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-200">
+              <button 
+                onClick={() => setIsAdminModalOpen(false)}
+                className="absolute top-4 right-4 text-white/40 hover:text-white transition-colors"
+              >
+                <X size={24} />
+              </button>
+              
+              <div className="w-12 h-12 bg-amber-500/10 rounded-xl flex items-center justify-center mb-6">
+                <Lock className="w-6 h-6 text-amber-500" />
+              </div>
+              
+              <h2 className="text-xl font-bold text-white mb-2">Вход администратора</h2>
+              <p className="text-white/50 text-sm mb-8 leading-relaxed">
+                Введите ваш email для доступа к мастер-таблице
+              </p>
+              
+              <form onSubmit={handleAdminSubmit} className="flex flex-col gap-4">
+                <input 
+                  autoFocus
+                  required
+                  type="email" 
+                  placeholder="email@example.com" 
+                  value={adminEmail} 
+                  onChange={(e) => setAdminEmail(e.target.value)} 
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:border-amber-500/50 transition-all outline-none text-sm"
+                />
+                <button 
+                  type="submit"
+                  className="w-full py-4 bg-amber-500 hover:bg-amber-400 text-[#050505] font-black rounded-xl transition-all text-sm uppercase tracking-widest shadow-xl shadow-amber-500/20"
+                >
+                  Войти
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+
         <OnboardingModal isOpen={isOnboarding} onComplete={handleOnboardingComplete} />
       </div>
 
