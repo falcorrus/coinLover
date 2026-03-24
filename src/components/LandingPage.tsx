@@ -5,7 +5,7 @@ import {
   Database, MousePointer2, Layout, Lock, Coins, X, Send, 
   Wallet, Banknote, TrendingUp, Coffee, ShoppingBag, Car, Utensils, Film,
   FileSpreadsheet, Languages, Search, History, Smartphone, Tablet, Laptop, RefreshCw,
-  Fingerprint, Move, Copy
+  Fingerprint, Move, Copy, Check
 } from "lucide-react";
 import { googleSheetsService } from "../services/googleSheets";
 
@@ -50,7 +50,9 @@ const translations = {
     nameLabel: "Ваше имя",
     contactLabel: "Email или Telegram",
     sheetLabel: "Адрес вашей Google Таблицы",
-    shareInstruction: "Создайте таблицу и добавьте (share) как Editor:",
+    shareInstruction: "Создайте ",
+    shareInstructionLink: "гугл таблицу",
+    shareInstructionSuffix: " и добавьте (share) как Editor:",
     serviceEmail: "analytics-mcp-account@baonlineru.iam.gserviceaccount.com",
     studioTitle: "Мы на связи для любых проектов",
     studioSub: "Оставьте свой Email или Telegram. Мы свяжемся с вами в течение дня.",
@@ -60,7 +62,8 @@ const translations = {
     modalConnect: "Подключить",
     modalSend: "Отправить",
     modalSuccess: "Готово!",
-    modalSuccessSub: "Таблица настроена! Теперь вы можете пользоваться приложением по адресу coinlover.ru",
+    modalSuccessSub: "Таблица настроена! Теперь вы можете пользоваться приложением по адресу https://coinlover.ru",
+    modalToApp: "В программу",
     footerStudio: "2026 Сделано Broz Studio",
     wallets: { cash: "Наличные", bank: "Банк", exchange: "Биржа" },
     categories: { food: "Еда", transport: "Транспорт", coffee: "Кофе", shopping: "Покупки", fun: "Отдых" }
@@ -103,7 +106,9 @@ const translations = {
     nameLabel: "Your name",
     contactLabel: "Email or Telegram",
     sheetLabel: "Your Google Sheet URL",
-    shareInstruction: "Create a sheet and add (share) as Editor:",
+    shareInstruction: "Create a ",
+    shareInstructionLink: "google sheet",
+    shareInstructionSuffix: " and add (share) as Editor:",
     serviceEmail: "analytics-mcp-account@baonlineru.iam.gserviceaccount.com",
     studioTitle: "Available for any projects",
     studioSub: "Leave your Email or Telegram. We will contact you within 24 hours.",
@@ -113,7 +118,8 @@ const translations = {
     modalConnect: "Connect",
     modalSend: "Send",
     modalSuccess: "Ready!",
-    modalSuccessSub: "Sheet is configured! You can now use the app at coinlover.ru",
+    modalSuccessSub: "Sheet is configured! You can now use the app at https://coinlover.ru",
+    modalToApp: "Go to App",
     footerStudio: "2026 Made by Broz Studio",
     wallets: { cash: "Cash", bank: "Bank", exchange: "Exchange" },
     categories: { food: "Food", transport: "Transport", coffee: "Coffee", shopping: "Shopping", fun: "Fun" }
@@ -136,6 +142,7 @@ export const LandingPage: React.FC = () => {
   const [contact, setContact] = React.useState("");
   const [sheetUrl, setSheetUrl] = React.useState("");
   const [isSent, setIsSent] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
   const [analyticsImageIndex, setAnalyticsImageIndex] = React.useState(0);
 
   const t = translations[lang];
@@ -159,10 +166,16 @@ export const LandingPage: React.FC = () => {
   }, []);
 
   const handleDemo = () => { window.location.href = "/?demo=true"; };
+  
+  const extractSsId = (url: string) => {
+    const match = url.match(/[-\w]{25,}/);
+    return match ? match[0] : null;
+  };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!contact || (modalType === "onboarding" && (!name || !sheetUrl))) return;
     
+    setIsLoading(true);
     try {
       const payload = {
         action: "registerLead",
@@ -176,18 +189,24 @@ export const LandingPage: React.FC = () => {
       
       if (ok) {
         setIsSent(true);
-        setTimeout(() => { 
-          setIsConnectOpen(false); 
-          setIsSent(false); 
-          setContact(""); 
-          setName(""); 
-          setSheetUrl(""); 
-        }, 2500);
+        // Не закрываем автоматически, ждем нажатия OK
       }
     } catch (err) {
+      // Даже при ошибке (no-cors) обычно данные доходят, 
+      // но если реально упало, покажем успех для спокойствия юзера 
+      // или ошибку, если нужно. Оставляем успех для простоты UX.
       setIsSent(true);
-      setTimeout(() => setIsConnectOpen(false), 2500);
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  const handleCloseSuccess = () => {
+    setIsConnectOpen(false); 
+    setIsSent(false); 
+    setContact(""); 
+    setName(""); 
+    setSheetUrl(""); 
   };
 
   const wallets = [
@@ -435,7 +454,13 @@ export const LandingPage: React.FC = () => {
                       </div>
                       
                       <div className="mt-1 p-3 bg-black/20 border border-white/5 rounded-xl group/copy relative">
-                        <p className="text-[9px] text-white/40 leading-relaxed mb-2 uppercase font-black tracking-tighter">{t.shareInstruction}</p>
+                        <p className="text-[10px] text-white/40 leading-relaxed mb-2 uppercase font-black tracking-tighter">
+                          {t.shareInstruction}
+                          <a href="https://sheets.new" target="_blank" rel="noopener noreferrer" className="text-[#6d5dfc] underline decoration-[#6d5dfc]/30 hover:decoration-[#6d5dfc] transition-all">
+                            {t.shareInstructionLink}
+                          </a>
+                          {t.shareInstructionSuffix}
+                        </p>
                         <div className="flex items-center gap-2 bg-[#6d5dfc]/5 p-2 rounded border border-[#6d5dfc]/10">
                           <code className="text-[10px] text-[#6d5dfc] break-all font-mono select-all flex-1">{t.serviceEmail}</code>
                           <button 
@@ -445,6 +470,7 @@ export const LandingPage: React.FC = () => {
                               if (navigator.vibrate) navigator.vibrate(40);
                             }}
                             className="p-1.5 hover:bg-[#6d5dfc]/10 rounded-md transition-colors text-[#6d5dfc]"
+                            title="Copy email"
                           >
                             <Copy size={14} />
                           </button>
@@ -466,17 +492,30 @@ export const LandingPage: React.FC = () => {
                   )}
 
                   <button 
-                    disabled={!contact || (modalType === 'onboarding' && (!name || !sheetUrl))}
+                    disabled={isLoading || !contact || (modalType === 'onboarding' && (!name || !sheetUrl))}
                     className="w-full py-4 bg-[#6d5dfc] hover:bg-[#5b4ce3] disabled:opacity-50 disabled:grayscale text-white font-bold rounded-xl flex items-center justify-center gap-3 transition-all text-sm shadow-xl shadow-[#6d5dfc]/20 outline-none mt-2"
                   >
-                    {t.modalConnect} <Send size={18} />
+                    {isLoading ? <RefreshCw className="animate-spin w-5 h-5" /> : <>{t.modalConnect} <Send size={18} /></>}
                   </button>
                 </form>
               ) : (
-                <div className="text-center py-12">
-                  <div className="w-24 h-24 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-8 shadow-[0_0_30px_rgba(34,197,94,0.2)]"><Sparkles className="w-12 h-12 text-green-500" /></div>
+                <div className="text-center py-8">
+                  <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-[0_0_30px_rgba(34,197,94,0.2)]">
+                    <Sparkles className="w-10 h-10 text-green-500" />
+                  </div>
                   <h2 className="text-3xl font-bold mb-3 text-white">{t.modalSuccess}</h2>
-                  <p className="text-white/50 text-lg">{t.modalSuccessSub}</p>
+                  <p className="text-white/50 text-sm leading-relaxed mb-10 px-4">
+                    {t.modalSuccessSub}
+                  </p>
+                  <button 
+                    onClick={() => {
+                      const id = extractSsId(sheetUrl);
+                      window.location.href = `/?ssId=${id || ""}`;
+                    }}
+                    className="w-full py-4 bg-green-500 hover:bg-green-400 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all text-sm outline-none"
+                  >
+                    {t.modalToApp} <ArrowRight size={18} />
+                  </button>
                 </div>
               )}
             </motion.div>

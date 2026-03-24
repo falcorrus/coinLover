@@ -11,6 +11,9 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://coin.reloto.ru",
+        "https://coinlover.ru",
+        "https://www.coinlover.ru",
+        "http://coinlover.ru",
         "https://coinlover-dev.reloto.ru",
         "http://localhost:3000",
         "http://localhost:5173",

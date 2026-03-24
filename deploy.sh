@@ -41,7 +41,7 @@ deploy_env() {
   # Determine backend URL for frontend (on reloto.ru we'll assume standard naming)
   local backend_url=""
   if [ "$name" == "main" ]; then
-    backend_url="https://coin.reloto.ru/api/rates/rub"
+    backend_url="https://coinlover.ru/api/rates/rub"
   else
     backend_url="https://coinlover-dev.reloto.ru/api/rates/rub"
   fi
@@ -106,7 +106,7 @@ TARGET=$1
 if [ -z "$TARGET" ]; then
   echo "Where to deploy?"
   echo "1) Dev (https://coinlover-dev.reloto.ru)"
-  echo "2) Main (https://coin.reloto.ru)"
+  echo "2) Main (https://coinlover.ru)"
   echo "3) Both"
   read -p "Choose option (1-3): " choice
   case $choice in

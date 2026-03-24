@@ -51,18 +51,28 @@ export default function App() {
   const handleOnboardingComplete = async (currency: string, localCurrency: string, useTemplate: boolean) => {
     localStorage.setItem("cl_onboarding_completed", "true");
     setIsOnboarding(false);
+    
     let newAccounts = [];
+    let newCategories = [];
+    let newIncomes = [];
+
     if (useTemplate) {
       const tmpl = await googleSheetsService.fetchTemplate();
+      console.log("Template fetched:", tmpl);
       newAccounts = tmpl?.accounts || [];
+      newCategories = tmpl?.categories || [];
+      newIncomes = tmpl?.incomes || [];
+      
       setAccounts(newAccounts);
-      setCategories(tmpl?.categories || []);
-      setIncomes(tmpl?.incomes || []);
+      setCategories(newCategories);
+      setIncomes(newIncomes);
     } else {
       newAccounts = [{ id: `acc-${Date.now()}`, name: "Наличные", balance: 0, currency: localCurrency, color: "#10b981", icon: "wallet" }];
       setAccounts(newAccounts);
     }
-    await pushSettings(newAccounts);
+    
+    // Передаем все данные явно, так как стейт обновится только в следующем рендере
+    await pushSettings(newAccounts, newCategories, newIncomes);
   };
 
   const [mode, setMode] = React.useState<"expense" | "income">("expense");

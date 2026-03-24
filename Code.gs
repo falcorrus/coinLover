@@ -1,5 +1,5 @@
 /**
- * CoinLover Backend (GAS) - Version 4 (User Registration & Structure Fix)
+ * CoinLover Backend (GAS) - Version 6 (Fixed User Columns Order)
  */
 
 const MASTER_SS_ID = "1IQCs35RQlMMQsGB-CRczJeuRqa8WIxW4Sy_kjZyHP2M";
@@ -78,23 +78,33 @@ function doGet(e) {
           const col = {}; 
           const idRow = rows[tRowIdx];
           if (!idRow) continue;
-          idRow.forEach((v, idx) => { if(v) col[String(v).trim().toLowerCase()] = idx; });
+          idRow.forEach((v, idx) => { 
+            if(v) {
+              const head = String(v).trim().toLowerCase();
+              col[head] = idx;
+              // Aliases for robustness
+              if (head === "название") col["name"] = idx;
+              if (head === "цвет") col["color"] = idx;
+              if (head === "иконка") col["icon"] = idx;
+              if (head === "теги") col["tags"] = idx;
+              if (head === "валюта") col["currency"] = idx;
+            }
+          });
 
           try {
-            const uId = col["id"] !== undefined ? col["id"] : col["id"];
-            const uName = col["name"] !== undefined ? col["name"] : col["название"];
-            const uColor = col["color"] !== undefined ? col["color"] : col["цвет"];
-            const uIcon = col["icon"] !== undefined ? col["icon"] : col["иконка"];
-            const uTags = col["tags"] !== undefined ? col["tags"] : col["теги"];
-            const uBal = col["balance"] !== undefined ? col["balance"] : col["баланс"];
-            const uCurr = col["currency"] !== undefined ? col["currency"] : col["валюта"];
+            const uId = col["id"] !== undefined ? col["id"] : 0;
+            const uName = col["name"] !== undefined ? col["name"] : (col["имя"] !== undefined ? col["имя"] : 1);
+            const uColor = col["color"] !== undefined ? col["color"] : 2;
+            const uIcon = col["icon"] !== undefined ? col["icon"] : 3;
+            const uTags = col["tags"] !== undefined ? col["tags"] : 4;
+            const uCurr = col["currency"] !== undefined ? col["currency"] : 6;
 
-            if (tSec === "acc" && (uId !== undefined || row[0])) {
-              tmplData.accounts.push({ id: String(uId !== undefined ? row[uId] : row[0]), name: String(uName !== undefined ? row[uName] : row[1]), balance: 0, balanceUSD: 0, color: uColor !== undefined ? row[uColor] : row[4], icon: uIcon !== undefined ? row[uIcon] : (row[5] || "wallet"), currency: uCurr !== undefined ? row[uCurr] : (row[6] || "USD") });
-            } else if (tSec === "cat" && (uId !== undefined || row[0])) {
-              tmplData.categories.push({ id: String(uId !== undefined ? row[uId] : row[0]), name: String(uName !== undefined ? row[uName] : row[1]), color: uColor !== undefined ? row[uColor] : row[2], icon: uIcon !== undefined ? row[uIcon] : (row[3] || "more"), tags: (uTags !== undefined ? row[uTags] : row[4]) ? String(uTags !== undefined ? row[uTags] : row[4]).split(",").map(t => t.trim()) : [] });
-            } else if (tSec === "inc" && (uId !== undefined || row[0])) {
-              tmplData.incomes.push({ id: String(uId !== undefined ? row[uId] : row[0]), name: String(uName !== undefined ? row[uName] : row[1]), color: uColor !== undefined ? row[uColor] : row[2], icon: uIcon !== undefined ? row[uIcon] : (row[3] || "business"), tags: (uTags !== undefined ? row[uTags] : row[4]) ? String(uTags !== undefined ? row[uTags] : row[4]).split(",").map(t => t.trim()) : [] });
+            if (tSec === "acc" && (row[uId] || row[0])) {
+              tmplData.accounts.push({ id: String(row[uId] || row[0]), name: String(row[uName] || row[1]), balance: 0, balanceUSD: 0, color: row[uColor] || "#6d5dfc", icon: row[uIcon] || "wallet", currency: row[uCurr] || "USD" });
+            } else if (tSec === "cat" && (row[uId] || row[0])) {
+              tmplData.categories.push({ id: String(row[uId] || row[0]), name: String(row[uName] || row[1]), color: row[uColor] || "#6d5dfc", icon: row[uIcon] || "more", tags: row[uTags] ? String(row[uTags]).split(",").map(t => t.trim()) : [] });
+            } else if (tSec === "inc" && (row[uId] || row[0])) {
+              tmplData.incomes.push({ id: String(row[uId] || row[0]), name: String(row[uName] || row[1]), color: row[uColor] || "#6d5dfc", icon: row[uIcon] || "business", tags: row[uTags] ? String(row[uTags]).split(",").map(t => t.trim()) : [] });
             }
           } catch (e) {}
         }
@@ -153,6 +163,7 @@ function doGet(e) {
         const uBalBase = col["balance_base"] !== undefined ? col["balance_base"] : col["баланс (база)"];
         const uCurr = col["currency"] !== undefined ? col["currency"] : col["валюта"];
         const uLink = col["link"] !== undefined ? col["link"] : col["ссылка"];
+        const uContact = col["contact"] !== undefined ? col["contact"] : col["контакт"];
 
         if (section === "acc" && (uId !== undefined || row[0])) {
           data.accounts.push({ id: String(uId !== undefined ? row[uId] : row[0]), name: String(uName !== undefined ? row[uName] : row[1]), balance: parseNum(uBal !== undefined ? row[uBal] : row[2]), balanceUSD: parseNum(uBalBase !== undefined ? row[uBalBase] : row[3]), color: uColor !== undefined ? row[uColor] : row[4], icon: uIcon !== undefined ? row[uIcon] : (row[5] || "wallet"), currency: uCurr !== undefined ? row[uCurr] : (row[6] || "USD") });
@@ -161,9 +172,11 @@ function doGet(e) {
         } else if (section === "inc" && (uId !== undefined || row[0])) {
           data.incomes.push({ id: String(uId !== undefined ? row[uId] : row[0]), name: String(uName !== undefined ? row[uName] : row[1]), color: uColor !== undefined ? row[uColor] : row[2], icon: uIcon !== undefined ? row[uIcon] : (row[3] || "business"), tags: (uTags !== undefined ? row[uTags] : row[4]) ? String(uTags !== undefined ? row[uTags] : row[4]).split(",").map(t => t.trim()) : [] });
         } else if (section === "usr") {
-          let usId = col["id"] !== undefined ? row[col["id"]] : row[1];
+          let usId = col["id"] !== undefined ? row[col["id"]] : row[2];
           let usName = col["name"] !== undefined ? row[col["name"]] : (col["имя"] !== undefined ? row[col["имя"]] : row[0]);
-          data.users.push({ name: String(usName || "").trim(), id: String(usId || "").trim() });
+          let usLink = col["link"] !== undefined ? row[col["link"]] : row[3];
+          let usContact = col["contact"] !== undefined ? row[col["contact"]] : row[1];
+          data.users.push({ name: String(usName || "").trim(), contact: String(usContact || "").trim(), id: String(usId || "").trim(), link: String(usLink || "").trim() });
         }
       } catch (e) {}
     }
@@ -301,7 +314,7 @@ function doPost(e) {
             const val0 = String(sheetData[i][0]).trim().toLowerCase();
             if (val0.indexOf("users") !== -1) { inUsers = true; continue; }
             if (inUsers && sheetData[i][0] && val0 !== "name" && val0 !== "имя") {
-              existingUsers.push({ name: String(sheetData[i][0]), id: String(sheetData[i][1] || ""), link: String(sheetData[i][2] || "") });
+              existingUsers.push({ name: String(sheetData[i][0]), contact: String(sheetData[i][1] || ""), id: String(sheetData[i][2] || ""), link: String(sheetData[i][3] || "") });
             }
           }
         } catch (e) {}
@@ -334,8 +347,8 @@ function doPost(e) {
       
       if (existingUsers.length > 0) {
         pushRow([""]); pushRow([" === USERS ==="]);
-        pushRow(["Name", "ID", "Link"]);
-        existingUsers.forEach(u => pushRow([u.name, u.id, u.link]));
+        pushRow(["Name", "Contact", "ID", "Link"]);
+        existingUsers.forEach(u => pushRow([u.name, u.contact, u.id, u.link]));
       }
       
       if (rows.length > 0) sheet.getRange(1, 1, rows.length, 13).setValues(rows);
@@ -383,14 +396,14 @@ function doPost(e) {
       if (usersRowIdx === -1) {
         configSheet.appendRow([""]);
         configSheet.appendRow([" === USERS ==="]);
-        configSheet.appendRow(["Name", "ID", "Link"]);
+        configSheet.appendRow(["Name", "Contact", "ID", "Link"]);
         usersRowIdx = configSheet.getLastRow();
       }
       
       const userSsId = data.sheetUrl ? getIdFromUrl(data.sheetUrl) : "";
       
-      // Append the new lead info in 3 columns: Name, ID, Link
-      const leadInfo = [data.name || "", userSsId, data.sheetUrl || data.contact || ""];
+      // Append the new lead info in order: Name, Contact, ID, Link
+      const leadInfo = [data.name || "", data.contact || "", userSsId, data.sheetUrl || ""];
       configSheet.appendRow(leadInfo);
       
       // NEW: Initialize the user's sheet if ID is successfully extracted
