@@ -45,8 +45,8 @@ const translations = {
     familyText: "Поддержка командных бюджетов и общих таблиц для всей семьи. Следите за общим капиталом вместе.",
     finalCta: "Верни себе контроль.",
     modalTitle: "Начнем настройку?",
-    modalSub: "На период тестирования подключение бесплатно. Затем $10 за подключение на год.",
-    modalPricing: "Подключение: Бесплатно (Тест) / $10 (год)",
+    modalPricingOld: "Подписка 10$ в год",
+    modalPricingNew: "На период тестирования бесплатно + среди тестеров будет разыграно 10 пожизненных подписок",
     nameLabel: "Ваше имя",
     contactLabel: "Email или Telegram",
     sheetLabel: "Адрес вашей Google Таблицы",
@@ -59,8 +59,8 @@ const translations = {
     sheetPlaceholder: "https://docs.google.com/spreadsheets/...",
     modalConnect: "Подключить",
     modalSend: "Отправить",
-    modalSuccess: "Принято!",
-    modalSuccessSub: "Мы скоро свяжемся с вами.",
+    modalSuccess: "Готово!",
+    modalSuccessSub: "Таблица настроена! Теперь вы можете пользоваться приложением по адресу coinlover.ru",
     footerStudio: "2026 Сделано Broz Studio",
     wallets: { cash: "Наличные", bank: "Банк", exchange: "Биржа" },
     categories: { food: "Еда", transport: "Транспорт", coffee: "Кофе", shopping: "Покупки", fun: "Отдых" }
@@ -98,8 +98,8 @@ const translations = {
     familyText: "Support for team budgets and shared sheets for the whole family. Track common capital together.",
     finalCta: "Take back control.",
     modalTitle: "Let's get started",
-    modalSub: "Connection is free during the testing period. Then $10 for the year.",
-    modalPricing: "Setup: Free (Test) / $10 (year)",
+    modalPricingOld: "Subscription $10 per year",
+    modalPricingNew: "Free during testing period + 10 lifetime subscriptions will be raffled among testers",
     nameLabel: "Your name",
     contactLabel: "Email or Telegram",
     sheetLabel: "Your Google Sheet URL",
@@ -112,8 +112,8 @@ const translations = {
     sheetPlaceholder: "https://docs.google.com/spreadsheets/...",
     modalConnect: "Connect",
     modalSend: "Send",
-    modalSuccess: "Received!",
-    modalSuccessSub: "We will contact you soon.",
+    modalSuccess: "Ready!",
+    modalSuccessSub: "Sheet is configured! You can now use the app at coinlover.ru",
     footerStudio: "2026 Made by Broz Studio",
     wallets: { cash: "Cash", bank: "Bank", exchange: "Exchange" },
     categories: { food: "Food", transport: "Transport", coffee: "Coffee", shopping: "Shopping", fun: "Fun" }
@@ -407,9 +407,20 @@ export const LandingPage: React.FC = () => {
                   </h2>
                   
                   <div className="bg-[#6d5dfc]/10 border border-[#6d5dfc]/20 rounded-xl p-3">
-                    <p className="text-[#6d5dfc] text-[11px] font-bold leading-relaxed">
-                      {modalType === "onboarding" ? t.modalSub : t.studioSub}
-                    </p>
+                    {modalType === "onboarding" ? (
+                      <div className="flex flex-col gap-1">
+                        <p className="text-white/30 text-[10px] line-through font-medium">
+                          {t.modalPricingOld}
+                        </p>
+                        <p className="text-[#6d5dfc] text-[11px] font-bold leading-relaxed">
+                          {t.modalPricingNew}
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-[#6d5dfc] text-[11px] font-bold leading-relaxed">
+                        {t.studioSub}
+                      </p>
+                    )}
                   </div>
 
                   {modalType === "onboarding" && (
@@ -422,10 +433,7 @@ export const LandingPage: React.FC = () => {
                         <label className="text-[9px] font-black uppercase tracking-widest text-white/40 ml-1 mb-1 block">{t.contactLabel}</label>
                         <input required type="text" placeholder={t.modalPlaceholder} value={contact} onChange={(e) => setContact(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:border-[#6d5dfc]/50 transition-all outline-none text-sm" />
                       </div>
-                      <div>
-                        <label className="text-[9px] font-black uppercase tracking-widest text-white/40 ml-1 mb-1 block">{t.sheetLabel}</label>
-                        <input required type="text" placeholder={t.sheetPlaceholder} value={sheetUrl} onChange={(e) => setSheetUrl(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:border-[#6d5dfc]/50 transition-all outline-none text-sm" />
-                      </div>
+                      
                       <div className="mt-1 p-3 bg-black/20 border border-white/5 rounded-xl group/copy relative">
                         <p className="text-[9px] text-white/40 leading-relaxed mb-2 uppercase font-black tracking-tighter">{t.shareInstruction}</p>
                         <div className="flex items-center gap-2 bg-[#6d5dfc]/5 p-2 rounded border border-[#6d5dfc]/10">
@@ -441,6 +449,11 @@ export const LandingPage: React.FC = () => {
                             <Copy size={14} />
                           </button>
                         </div>
+                      </div>
+
+                      <div>
+                        <label className="text-[9px] font-black uppercase tracking-widest text-white/40 ml-1 mb-1 block">{t.sheetLabel}</label>
+                        <input required type="text" placeholder={t.sheetPlaceholder} value={sheetUrl} onChange={(e) => setSheetUrl(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:border-[#6d5dfc]/50 transition-all outline-none text-sm" />
                       </div>
                     </div>
                   )}

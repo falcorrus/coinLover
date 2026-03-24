@@ -1,5 +1,5 @@
 /**
- * CoinLover Backend (GAS) - Version 3 (Rectangular Array Fix)
+ * CoinLover Backend (GAS) - Version 4 (User Registration & Structure Fix)
  */
 
 const MASTER_SS_ID = "1IQCs35RQlMMQsGB-CRczJeuRqa8WIxW4Sy_kjZyHP2M";
@@ -152,6 +152,7 @@ function doGet(e) {
         const uBal = col["balance"] !== undefined ? col["balance"] : col["баланс"];
         const uBalBase = col["balance_base"] !== undefined ? col["balance_base"] : col["баланс (база)"];
         const uCurr = col["currency"] !== undefined ? col["currency"] : col["валюта"];
+        const uLink = col["link"] !== undefined ? col["link"] : col["ссылка"];
 
         if (section === "acc" && (uId !== undefined || row[0])) {
           data.accounts.push({ id: String(uId !== undefined ? row[uId] : row[0]), name: String(uName !== undefined ? row[uName] : row[1]), balance: parseNum(uBal !== undefined ? row[uBal] : row[2]), balanceUSD: parseNum(uBalBase !== undefined ? row[uBalBase] : row[3]), color: uColor !== undefined ? row[uColor] : row[4], icon: uIcon !== undefined ? row[uIcon] : (row[5] || "wallet"), currency: uCurr !== undefined ? row[uCurr] : (row[6] || "USD") });
@@ -180,7 +181,6 @@ function doGet(e) {
         const headers = headerRow.map(v => String(v).trim().toLowerCase());
         const col = {}; headers.forEach((v, i) => col[v] = i);
         
-        // Helper to find column by multiple possible names
         const findCol = (names) => {
           for (let n of names) {
             if (col[n.toLowerCase()] !== undefined) return col[n.toLowerCase()];
@@ -231,7 +231,6 @@ function doGet(e) {
               dt = dateRaw;
             } else {
               let s = String(dateRaw).trim().replace(/-/g, '/');
-              // Handle DD.MM.YY or DD.MM.YYYY
               if (s.includes('.')) {
                 const p = s.split('.');
                 if (p.length === 3) {
@@ -284,7 +283,6 @@ function doPost(e) {
     const configSheetName = data.demo === true ? "Configs-demo" : "Configs";
     const txSheetName = data.demo === true ? "Transactions-demo" : "Transactions";
     
-    // Always ensure sheets and basic headers exist before any action
     ensureInitialized(ss, configSheetName, txSheetName);
     
     let responses = [];
@@ -303,7 +301,7 @@ function doPost(e) {
             const val0 = String(sheetData[i][0]).trim().toLowerCase();
             if (val0.indexOf("users") !== -1) { inUsers = true; continue; }
             if (inUsers && sheetData[i][0] && val0 !== "name" && val0 !== "имя") {
-              existingUsers.push({ name: String(sheetData[i][0]), id: String(sheetData[i][1] || "") });
+              existingUsers.push({ name: String(sheetData[i][0]), id: String(sheetData[i][1] || ""), link: String(sheetData[i][2] || "") });
             }
           }
         } catch (e) {}
@@ -312,7 +310,7 @@ function doPost(e) {
       sheet.clear();
       const rows = [];
       const pushRow = (arr) => { 
-        const fixedRow = new Array(13).fill(""); // Ensure rectangular array (max columns)
+        const fixedRow = new Array(13).fill("");
         arr.forEach((v, idx) => fixedRow[idx] = v);
         rows.push(fixedRow); 
       };
@@ -336,8 +334,8 @@ function doPost(e) {
       
       if (existingUsers.length > 0) {
         pushRow([""]); pushRow([" === USERS ==="]);
-        pushRow(["Name", "ID"]);
-        existingUsers.forEach(u => pushRow([u.name, u.id]));
+        pushRow(["Name", "ID", "Link"]);
+        existingUsers.forEach(u => pushRow([u.name, u.id, u.link]));
       }
       
       if (rows.length > 0) sheet.getRange(1, 1, rows.length, 13).setValues(rows);
@@ -385,13 +383,25 @@ function doPost(e) {
       if (usersRowIdx === -1) {
         configSheet.appendRow([""]);
         configSheet.appendRow([" === USERS ==="]);
-        configSheet.appendRow(["Name", "ID / Contact / Sheet"]);
+        configSheet.appendRow(["Name", "ID", "Link"]);
         usersRowIdx = configSheet.getLastRow();
       }
       
-      // Append the new lead info
-      const leadInfo = [data.name || "", data.sheetUrl || data.contact || ""];
+      const userSsId = data.sheetUrl ? getIdFromUrl(data.sheetUrl) : "";
+      
+      // Append the new lead info in 3 columns: Name, ID, Link
+      const leadInfo = [data.name || "", userSsId, data.sheetUrl || data.contact || ""];
       configSheet.appendRow(leadInfo);
+      
+      // NEW: Initialize the user's sheet if ID is successfully extracted
+      if (userSsId) {
+        try {
+          const userSs = SpreadsheetApp.openById(userSsId);
+          ensureInitialized(userSs);
+        } catch (err) {
+          console.error("Failed to initialize user sheet: " + err.toString());
+        }
+      }
       
       responses.push({ action: "registerLead", status: "success" });
     }
@@ -401,6 +411,11 @@ function doPost(e) {
   } catch (err) {
     return ContentService.createTextOutput(JSON.stringify({ status: "error", message: err.toString() })).setMimeType(ContentService.MimeType.JSON);
   } finally { lock.releaseLock(); }
+}
+
+function getIdFromUrl(url) {
+  const match = url.match(/[-\w]{25,}/);
+  return match ? match[0] : null;
 }
 
 function parseDateSafe(s) { if(!s) return new Date(); const d = new Date(String(s).replace('T',' ').replace(/-/g,'/')); return isNaN(d.getTime()) ? new Date() : d; }
