@@ -7,6 +7,7 @@ import {
   FileSpreadsheet, Languages, Search, History, Smartphone, Tablet, Laptop, RefreshCw,
   Fingerprint, Move, Copy
 } from "lucide-react";
+import { googleSheetsService } from "../services/googleSheets";
 
 type Language = "ru" | "en";
 
