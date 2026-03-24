@@ -64,6 +64,7 @@ const translations = {
     modalSuccess: "Готово!",
     modalSuccessSub: "Таблица настроена! Теперь вы можете пользоваться приложением по адресу https://coinlover.ru",
     modalToApp: "В программу",
+    knowledgeBase: "База знаний",
     footerStudio: "2026 Сделано Broz Studio",
     wallets: { cash: "Наличные", bank: "Банк", exchange: "Биржа" },
     categories: { food: "Еда", transport: "Транспорт", coffee: "Кофе", shopping: "Покупки", fun: "Отдых" }
@@ -120,6 +121,7 @@ const translations = {
     modalSuccess: "Ready!",
     modalSuccessSub: "Sheet is configured! You can now use the app at https://coinlover.ru",
     modalToApp: "Go to App",
+    knowledgeBase: "Knowledge Base",
     footerStudio: "2026 Made by Broz Studio",
     wallets: { cash: "Cash", bank: "Bank", exchange: "Exchange" },
     categories: { food: "Food", transport: "Transport", coffee: "Coffee", shopping: "Shopping", fun: "Fun" }
@@ -526,6 +528,17 @@ export const LandingPage: React.FC = () => {
       <footer className="py-16 px-6 border-t border-white/5 text-white/20 text-xs">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="flex items-center gap-3"><div className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center"><Coins className="w-4 h-4 text-white/40" /></div><span className="font-bold text-white/30 tracking-widest uppercase text-xs">CoinLover</span></div>
+          
+          <a 
+            href="https://coin.rag.reloto.ru/" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="px-6 py-2 rounded-full bg-[#6d5dfc]/10 border border-[#6d5dfc]/30 text-[#6d5dfc] font-bold hover:bg-[#6d5dfc]/20 hover:border-[#6d5dfc] transition-all flex items-center gap-2 text-[10px] md:text-xs uppercase tracking-wider"
+          >
+            <Shield size={14} />
+            {t.knowledgeBase}
+          </a>
+
           <button 
             onClick={() => handleOpenModal("studio")}
             className="tracking-widest uppercase text-white/30 hover:text-white transition-colors outline-none text-[10px] md:text-xs"
