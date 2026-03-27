@@ -305,6 +305,14 @@ function doPost(e) {
     const syncSettingsInternal = (settingsData) => {
       let sheet = ss.getSheetByName(configSheetName) || ss.insertSheet(configSheetName);
       
+      let baseCurrency = settingsData.baseCurrency;
+      if (!baseCurrency && sheet.getLastRow() >= 2) {
+        try {
+          baseCurrency = sheet.getRange(2, 2).getValue();
+        } catch (e) {}
+      }
+      if (!baseCurrency) baseCurrency = "USD";
+
       let existingUsers = [];
       if (ss.getId() === MASTER_SS_ID) {
         try {
@@ -329,7 +337,7 @@ function doPost(e) {
       };
       
       pushRow(["Updated", settingsData.timestamp]);
-      pushRow(["Base_Currency", settingsData.baseCurrency || "USD"]);
+      pushRow(["Base_Currency", baseCurrency]);
       pushRow([""]); pushRow([" === WALLETS ==="]);
       pushRow(["id", "name", "balance", "balance_base", "color", "icon", "currency"]);
       pushRow(["ID", "Название", "Баланс", "Баланс (база)", "Цвет", "Иконка", "Валюта"]);
@@ -376,8 +384,11 @@ function doPost(e) {
       } else if (data.action === "deleteTransaction") {
         for(let i=all.length-1; i>=1; i--) if(String(all[i][col["id"]]) === String(data.id)) txSheet.deleteRow(i+1);
       }
+
+      if (data.accounts) syncSettingsInternal(data);
       responses.push({ action: data.action, status: "success" });
     }
+
     if (data.action === "syncSettings") { const res = syncSettingsInternal(data); responses.push({ action: "syncSettings", ...res }); }
     
     if (data.action === "registerLead") {
