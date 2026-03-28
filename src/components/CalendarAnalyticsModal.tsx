@@ -54,6 +54,26 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
     }, [currentDate, selectedDay]);
 
     useEffect(() => {
+        if (isOpen) {
+            const savedDate = localStorage.getItem("cl_calendar_date");
+            const savedDay = localStorage.getItem("cl_calendar_selected_day");
+            const today = new Date();
+            
+            if (savedDate) {
+                setCurrentDate(new Date(savedDate));
+            } else {
+                setCurrentDate(new Date(today.getFullYear(), today.getMonth(), today.getDate()));
+            }
+
+            if (savedDay) {
+                setSelectedDay(parseInt(savedDay));
+            } else {
+                setSelectedDay(today.getDate());
+            }
+        }
+    }, [isOpen]);
+
+    useEffect(() => {
         if (!isOpen) return;
         let isMounted = true;
         
