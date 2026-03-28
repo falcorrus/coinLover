@@ -62,6 +62,7 @@ deploy_env() {
     # Update code
     git fetch origin
     git checkout $branch || git checkout -b $branch origin/$branch
+    git reset --hard origin/$branch
     git pull origin $branch
     
     # Generate docker-compose on the fly
