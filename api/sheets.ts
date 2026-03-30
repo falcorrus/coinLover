@@ -65,55 +65,67 @@ async function getSheetsClient() {
 
 async function updateConfigs(sheets, spreadsheetId, sheetName, payload) {
   try {
-    const res = await sheets.spreadsheets.values.get({ spreadsheetId, range: `${sheetName}!A:Z` });
-    const rows = res.data.values || [];
-    let updated = false;
+    // We recreate the entire config sheet structure to ensure new items are added properly
+    const ts = payload.timestamp || new Date().toISOString();
+    const baseCurrency = payload.baseCurrency || "USD";
+    
+    const rows: any[][] = [];
+    const pushRow = (arr: any[]) => {
+      const fixedRow = new Array(13).fill("");
+      arr.forEach((v, idx) => fixedRow[idx] = v);
+      rows.push(fixedRow);
+    };
 
-    // Update Timestamp
-    for (let i = 0; i < rows.length; i++) {
-      if (rows[i][0] && String(rows[i][0]).toLowerCase().includes('updated')) {
-        rows[i][1] = new Date().toISOString();
-        updated = true;
-        break;
-      }
-    }
-
-    // Update Accounts (Wallets)
+    pushRow(["Updated", ts]);
+    pushRow(["BASE_CURRENCY", baseCurrency]);
+    pushRow(["", ""]);
+    pushRow([" === WALLETS / ACCOUNTS ===", ""]);
+    pushRow(["ID", "Name", "Balance", "Balance_Base", "Color", "Icon", "Currency"]);
+    
     if (payload.accounts) {
-      let inWallets = false;
-      let headerRowIdx = -1;
-      for (let i = 0; i < rows.length; i++) {
-        const val0 = String(rows[i][0] || "").toLowerCase();
-        if (val0.includes('wallets')) { inWallets = true; headerRowIdx = i + 1; continue; }
-        if (inWallets && headerRowIdx !== -1 && i > headerRowIdx) {
-          if (val0.startsWith('===') || val0 === "") { inWallets = false; continue; }
-          
-          const headers = rows[headerRowIdx].map(h => String(h).trim().toLowerCase());
-          const idIdx = headers.indexOf('id');
-          const balIdx = headers.indexOf('balance');
-          const balBaseIdx = headers.indexOf('balance_base');
-
-          if (idIdx !== -1) {
-            const accId = String(rows[i][idIdx]);
-            const foundAcc = payload.accounts.find(a => a.id === accId);
-            if (foundAcc) {
-              if (balIdx !== -1) rows[i][balIdx] = foundAcc.balance;
-              if (balBaseIdx !== -1) rows[i][balBaseIdx] = foundAcc.balanceUSD || foundAcc.balance;
-              updated = true;
-            }
-          }
-        }
-      }
-    }
-
-    if (updated) {
-      await sheets.spreadsheets.values.update({
-        spreadsheetId,
-        range: `${sheetName}!A1`,
-        valueInputOption: 'USER_ENTERED',
-        requestBody: { values: rows }
+      payload.accounts.forEach(a => {
+        pushRow([a.id, a.name, a.balance, a.balanceUSD || a.balance, a.color, a.icon, a.currency || "USD"]);
       });
     }
+
+    pushRow(["", ""]);
+    pushRow([" === CATEGORIES ===", ""]);
+    pushRow(["ID", "Name", "Color", "Icon", "Tags"]);
+    
+    if (payload.categories) {
+      payload.categories.forEach(c => {
+        pushRow([c.id, c.name, c.color, c.icon, Array.isArray(c.tags) ? c.tags.join(", ") : (c.tags || "")]);
+      });
+    }
+
+    pushRow(["", ""]);
+    pushRow([" === INCOMES ===", ""]);
+    pushRow(["ID", "Name", "Color", "Icon", "Tags"]);
+    
+    if (payload.incomes) {
+      payload.incomes.forEach(i => {
+        pushRow([i.id, i.name, i.color, i.icon, Array.isArray(i.tags) ? i.tags.join(", ") : (i.tags || "")]);
+      });
+    }
+
+    pushRow(["", ""]);
+    pushRow([" === SYSTEM ===", ""]);
+
+    // First clear the range to avoid leaving old data
+    await sheets.spreadsheets.values.clear({
+      spreadsheetId,
+      range: `${sheetName}!A1:Z500`
+    });
+
+    // Then update with new data
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: `${sheetName}!A1`,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: { values: rows }
+    });
+    
+    console.log(`[API] Successfully synced ${rows.length} rows to ${sheetName}`);
   } catch (e) {
     console.error("[API] Failed to update configs:", e.message);
   }
