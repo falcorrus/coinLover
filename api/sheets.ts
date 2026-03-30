@@ -65,13 +65,28 @@ async function getSheetsClient() {
 
 async function updateConfigs(sheets, spreadsheetId, sheetName, payload) {
   try {
-    // We recreate the entire config sheet structure to ensure new items are added properly
+    // 1. Fetch existing content to preserve non-managed sections (like USERS)
+    const existingRes = await sheets.spreadsheets.values.get({ 
+      spreadsheetId, 
+      range: `${sheetName}!A:Z` 
+    });
+    const existingRows = existingRes.data.values || [];
+    
+    let preservedUsersSection: any[][] = [];
+    let inUsersSection = false;
+    for (const row of existingRows) {
+      const val0 = String(row[0] || "").toLowerCase();
+      if (val0.includes("users")) inUsersSection = true;
+      if (inUsersSection) preservedUsersSection.push(row);
+    }
+
+    // 2. Recreate the managed parts
     const ts = payload.timestamp || new Date().toISOString();
     const baseCurrency = payload.baseCurrency || "USD";
     
     const rows: any[][] = [];
     const pushRow = (arr: any[]) => {
-      const fixedRow = new Array(13).fill("");
+      const fixedRow = new Array(Math.max(arr.length, 13)).fill("");
       arr.forEach((v, idx) => fixedRow[idx] = v);
       rows.push(fixedRow);
     };
@@ -111,13 +126,18 @@ async function updateConfigs(sheets, spreadsheetId, sheetName, payload) {
     pushRow(["", ""]);
     pushRow([" === SYSTEM ===", ""]);
 
-    // First clear the range to avoid leaving old data
+    // 3. Append the preserved USERS section if it existed
+    if (preservedUsersSection.length > 0) {
+      pushRow(["", ""]);
+      preservedUsersSection.forEach(r => rows.push(r));
+    }
+
+    // 4. Clear and update
     await sheets.spreadsheets.values.clear({
       spreadsheetId,
-      range: `${sheetName}!A1:Z500`
+      range: `${sheetName}!A1:Z1000`
     });
 
-    // Then update with new data
     await sheets.spreadsheets.values.update({
       spreadsheetId,
       range: `${sheetName}!A1`,
@@ -125,7 +145,7 @@ async function updateConfigs(sheets, spreadsheetId, sheetName, payload) {
       requestBody: { values: rows }
     });
     
-    console.log(`[API] Successfully synced ${rows.length} rows to ${sheetName}`);
+    console.log(`[API] Successfully synced ${rows.length} rows to ${sheetName} (Preserved ${preservedUsersSection.length} user rows)`);
   } catch (e) {
     console.error("[API] Failed to update configs:", e.message);
   }
