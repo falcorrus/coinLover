@@ -26,16 +26,6 @@ export const useSync = ({
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
 
   const updateLocalFromRemote = useCallback((data: SyncSettingsFields & { transactions?: Transaction[], users?: { name: string; id: string }[] }) => {
-    // Если в облаке пусто, а у нас локально уже что-то есть — не затираем наше, 
-    // скорее всего мы сейчас в процессе настройки первого кошелька
-    const isRemoteEmpty = (!data.accounts || data.accounts.length === 0) && (!data.categories || data.categories.length === 0);
-    const isLocalEmpty = accounts.length === 0 && categories.length === 0;
-    
-    if (isRemoteEmpty && !isLocalEmpty) {
-      console.log("[Sync] Remote is empty but local has data. Skipping overwrite.");
-      return;
-    }
-
     if (data.accounts) setAccounts(data.accounts);
     if (data.categories) setCategories(data.categories);
     if (data.incomes) setIncomes(data.incomes);
@@ -50,32 +40,66 @@ export const useSync = ({
 
   const pullSettings = useCallback(async () => {
     setSyncStatus("loading");
-    const data = await googleSheetsService.fetchSettings(ssId);
-    if (data) {
-      updateLocalFromRemote(data);
+    const remote = await googleSheetsService.fetchSettings(ssId);
+    
+    if (remote) {
+      const localLastSync = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC);
+      
+      // Если в облаке ПУСТО, а у нас ЕСТЬ данные — не затираем (защита новой таблицы)
+      const isRemoteEmpty = (!remote.accounts || remote.accounts.length === 0) && (!remote.categories || remote.categories.length === 0);
+      const isLocalEmpty = accounts.length === 0 && categories.length === 0;
+      
+      if (isRemoteEmpty && !isLocalEmpty) {
+        console.log("[Sync] Remote is empty but local has data. Skipping pull to protect local setup.");
+        setSyncStatus("success");
+        return true;
+      }
+
+      // ПРОВЕРКА КОНФЛИКТА ПРИ ЗАГРУЗКЕ
+      if (localLastSync && remote.timestamp) {
+        const remoteDate = new Date(remote.timestamp.replace(/-/g, '/').replace('T', ' '));
+        const localDate = new Date(localLastSync.replace(/-/g, '/').replace('T', ' '));
+        
+        // Если в облаке данные НОВЕЕ, чем наша последняя синхронизация — показываем модалку
+        if (remoteDate.getTime() > localDate.getTime() + 1000) { // +1s buffer
+          console.log("[Sync] Conflict detected during pull! Remote is newer.");
+          setConflictData(remote);
+          setSyncStatus("success");
+          return true;
+        }
+      }
+
+      updateLocalFromRemote(remote);
       if (ssId) localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE, "false");
       setSyncStatus("success");
       return true;
     }
     setSyncStatus("error");
     return false;
-  }, [updateLocalFromRemote, ssId]);
+  }, [updateLocalFromRemote, ssId, accounts.length, categories.length]);
 
   const checkConflicts = useCallback(async () => {
-    if (syncStatus === "loading") return;
+    if (syncStatus === "loading" || !!conflictData) return;
     try {
       const remote = await googleSheetsService.fetchSettings(ssId);
       if (!remote || !remote.timestamp) return;
       const localLastSync = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC);
+      
       if (!localLastSync) {
+        // Если синхронизаций еще не было — просто берем данные из облака
         if (accounts.length === 0 && categories.length === 0) updateLocalFromRemote(remote);
         return;
       }
+
       const remoteDate = new Date(remote.timestamp.replace(/-/g, '/').replace('T', ' '));
       const localDate = new Date(localLastSync.replace(/-/g, '/').replace('T', ' '));
-      if (remoteDate.getTime() > localDate.getTime()) setConflictData(remote);
+      
+      if (remoteDate.getTime() > localDate.getTime() + 2000) { // 2s buffer for periodic check
+        console.log("[Sync] Periodic check found newer data in cloud!");
+        setConflictData(remote);
+      }
     } catch (e) { console.error("Conflict check failed:", e); }
-  }, [updateLocalFromRemote, ssId, syncStatus, accounts.length, categories.length]);
+  }, [updateLocalFromRemote, ssId, syncStatus, conflictData, accounts.length, categories.length]);
 
   const pushSettings = useCallback((a: Account[], c: Category[], i: IncomeSource[], immediate = false) => {
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
