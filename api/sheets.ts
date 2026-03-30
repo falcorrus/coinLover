@@ -288,7 +288,7 @@ export default async function handler(req, res) {
   try {
     // Check access in MASTER SS / Users sheet
     if (ssId && ssId !== MASTER_SS_ID) {
-      console.log(`[API] Checking access for ssId: ${ssId}`);
+      const cleanSsId = String(ssId).trim();
       try {
         const masterRes = await sheets.spreadsheets.values.get({
           spreadsheetId: MASTER_SS_ID,
@@ -305,14 +305,25 @@ export default async function handler(req, res) {
           let found = false;
 
           for (let i = 1; i < mRows.length; i++) {
-            if (mRows[i][idIdx] === ssId) {
+            const rowId = String(mRows[i][idIdx] || "").trim();
+            if (rowId === cleanSsId) {
               found = true;
               if (accessIdx !== -1 && mRows[i][accessIdx]) {
-                accessEndsDate = mRows[i][accessIdx];
-                const parts = accessEndsDate.split(/[./-]/);
-                if (parts.length >= 3) {
-                  const d = new Date(`${parts[2]}-${parts[1]}-${parts[0]}T23:59:59`);
-                  if (!isNaN(d.getTime()) && d < new Date()) accessValid = false;
+                accessEndsDate = String(mRows[i][accessIdx]).trim();
+                let d = new Date(accessEndsDate); // Try native ISO first
+                
+                if (isNaN(d.getTime())) {
+                  // Try DD.MM.YYYY
+                  const parts = accessEndsDate.split(/[./-]/);
+                  if (parts.length >= 3) {
+                    d = new Date(`${parts[2]}-${parts[1]}-${parts[0]}T23:59:59`);
+                  }
+                }
+
+                if (!isNaN(d.getTime())) {
+                  const now = new Date();
+                  if (d < now) accessValid = false;
+                  console.log(`[API] Access check for ${cleanSsId}: Found. Expiry: ${d.toISOString()}, Valid: ${accessValid}`);
                 }
               }
               break;
@@ -320,11 +331,15 @@ export default async function handler(req, res) {
           }
 
           if (found && !accessValid) {
+            console.warn(`[API] Access DENIED for ${cleanSsId}. Subscription expired on ${accessEndsDate}`);
             return res.status(403).json({ 
               status: "error", 
               error: "access_expired", 
               message: `Подписка истекла (${accessEndsDate}). Пожалуйста, продлите доступ.` 
             });
+          }
+          if (!found) {
+            console.log(`[API] ssId ${cleanSsId} not found in Users list. Allowing by default.`);
           }
         }
       } catch (e) {
