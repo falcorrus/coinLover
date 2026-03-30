@@ -61,6 +61,7 @@ export default function App() {
 
   const handleOnboardingComplete = async (currency: string, localCurrency: string, useTemplate: boolean) => {
     localStorage.setItem("cl_onboarding_completed", "true");
+    localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY, currency);
     setIsOnboarding(false);
     
     // Сначала инициализируем таблицу (создаем листы Configs/Transactions)

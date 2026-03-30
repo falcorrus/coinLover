@@ -81,20 +81,22 @@ export const useSync = ({
       }
 
       // Проверка конфликта при загрузке: если облако изменилось с нашего последнего визита
-      if (remote.timestamp && localLastSync) {
-        const remoteDate = new Date(remote.timestamp.replace(/-/g, '/').replace('T', ' '));
-        const localDate = new Date(localLastSync.replace(/-/g, '/').replace('T', ' '));
-        const isNewer = remoteDate.getTime() > localDate.getTime() + 1000;
-        const remoteSnap = getSettingsSnapshot(remote);
-        const isDifferentFromSnapshot = lastRemoteSnapshot.current && remoteSnap !== lastRemoteSnapshot.current;
+        if (remote.timestamp && localLastSync) {
+          const remoteDate = new Date(remote.timestamp.replace(/-/g, '/').replace('T', ' '));
+          const localDate = new Date(localLastSync.replace(/-/g, '/').replace('T', ' '));
+          
+          // Увеличиваем буфер до 5 секунд для стабильности
+          const isNewer = remoteDate.getTime() > localDate.getTime() + 5000;
+          const remoteSnap = getSettingsSnapshot(remote);
+          const isDifferentFromSnapshot = lastRemoteSnapshot.current && remoteSnap !== lastRemoteSnapshot.current;
 
-        if (isNewer || isDifferentFromSnapshot) {
-          console.log("[Sync] Conflict detected during pull!", { isNewer, isDifferentFromSnapshot });
-          setConflictData(remote);
-          setSyncStatus("success");
-          return true;
+          if (isNewer || isDifferentFromSnapshot) {
+            console.log("[Sync] Conflict detected during pull!", { isNewer, isDifferentFromSnapshot });
+            setConflictData(remote);
+            setSyncStatus("success");
+            return true;
+          }
         }
-      }
 
       updateLocalFromRemote(remote);
       if (ssId) localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE, "false");
