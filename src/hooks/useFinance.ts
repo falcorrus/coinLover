@@ -28,7 +28,7 @@ export const useFinance = (ssId?: string) => {
 
   // 1. Hook: Sync logic
   const {
-    syncStatus, setSyncStatus, conflictData, setConflictData,
+    syncStatus, setSyncStatus, conflictData, setConflictData, accessError, setAccessError,
     pullSettings, pushSettings, checkConflicts, updateLocalFromRemote
   } = useSync({
     accounts, setAccounts, categories, setCategories, incomes, setIncomes, setTransactions, setUsers, ssId
@@ -51,7 +51,7 @@ export const useFinance = (ssId?: string) => {
   useEffect(() => {
     pullSettings();
     isInitialLoad.current = false;
-  }, [ssId]); // Реагируем на каждое изменение ssId
+  }, [ssId]);
 
   // Persistent storage effects
   useEffect(() => { if (accounts.length > 0) localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.ACCOUNTS, JSON.stringify(accounts)); }, [accounts]);
@@ -62,8 +62,7 @@ export const useFinance = (ssId?: string) => {
   return {
     accounts, setAccounts, categories, setCategories, incomes, setIncomes, transactions, setTransactions, syncStatus,
     users, addTransaction, updateTransaction, deleteTransaction, saveAccount, deleteAccount, saveCategory, deleteCategory, saveIncome, deleteIncome,
-    syncCategories, syncIncomes, syncAccountsOrder, pullSettings, checkConflicts, conflictData, setConflictData, updateLocalFromRemote,
+    syncCategories, syncIncomes, syncAccountsOrder, pullSettings, checkConflicts, conflictData, setConflictData, updateLocalFromRemote, accessError, setAccessError,
     pushSettings: (a?: Account[], c?: Category[], i?: IncomeSource[]) => pushSettings(a || accounts, c || categories, i || incomes)
   };
 };
-

@@ -4,12 +4,10 @@ import { SyncPayload } from "../types";
 
 /**
  * Service for communicating with Google Sheets via Google Apps Script Web App.
- * Handles data persistence and retrieval with an offline-first approach.
  */
 export const googleSheetsService = {
   async fetchSettings(ssId?: string, retries = 2): Promise<any> {
     try {
-      // If ssId is provided, it's definitely NOT a demo
       const isDemo = ssId ? false : (window.localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE) !== "false");
       let url = isDemo ? `${GOOGLE_SCRIPT_URL}?demo=true` : GOOGLE_SCRIPT_URL;
       
@@ -18,12 +16,17 @@ export const googleSheetsService = {
       }
       
       const response = await fetch(url);
+      if (response.status === 403) {
+        const errorData = await response.json();
+        throw { status: 403, ...errorData };
+      }
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       
       const result = await response.json();
       if (result.status === "success") return result.data;
       throw new Error(result.message || "Failed to fetch settings from GAS");
-    } catch (error) {
+    } catch (error: any) {
+      if (error.status === 403) throw error; 
       if (retries > 0) {
         console.warn(`Fetch settings failed, retrying... (${retries} left)`, error);
         await new Promise(res => setTimeout(res, 1000));
@@ -44,12 +47,17 @@ export const googleSheetsService = {
       }
       
       const response = await fetch(url);
+      if (response.status === 403) {
+        const errorData = await response.json();
+        throw { status: 403, ...errorData };
+      }
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       
       const result = await response.json();
       if (result.status === "success") return result.data;
       throw new Error(result.message || "Failed to fetch month data from GAS");
-    } catch (error) {
+    } catch (error: any) {
+      if (error.status === 403) throw error;
       console.error("Fetch month data failed:", error);
       return null;
     }
@@ -57,7 +65,6 @@ export const googleSheetsService = {
 
   async syncToSheets(data: SyncPayload): Promise<boolean> {
     try {
-      // Force demo false if payload has specific ssId
       const isDemo = data.ssId ? false : (window.localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE) !== "false");
       const payload = { ...data, demo: isDemo };
       

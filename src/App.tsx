@@ -32,7 +32,7 @@ export default function App() {
     accounts, setAccounts, categories, setCategories, incomes, setIncomes,
     transactions, setTransactions, syncStatus, users, addTransaction, updateTransaction, deleteTransaction, saveAccount, deleteAccount,
     saveCategory, deleteCategory, saveIncome, deleteIncome, syncCategories, syncIncomes, syncAccountsOrder,
-    pullSettings, checkConflicts, conflictData, setConflictData, updateLocalFromRemote, pushSettings
+    pullSettings, checkConflicts, conflictData, setConflictData, updateLocalFromRemote, pushSettings, accessError, setAccessError
   } = useFinance(activeTableId);
 
   const [isSplashVisible, setIsSplashVisible] = React.useState(true);
@@ -368,7 +368,9 @@ export default function App() {
         <ModalManager
           accountModal={accountModal} incomeModal={incomeModal} categoryModal={categoryModal} historyModal={historyModal}
           analyticsModal={analyticsModal} calendarAnalyticsModal={calendarAnalyticsModal} confirmDelete={confirmDelete}
-          numpad={numpad} isTagModalOpen={isTagModalOpen} isUsersModalOpen={isUsersModalOpen} conflictData={conflictData} editingTxId={editingTxId}
+          numpad={numpad} isTagModalOpen={isTagModalOpen} isUsersModalOpen={isUsersModalOpen} conflictData={conflictData} 
+          accessError={accessError} setAccessError={setAccessError}
+          editingTxId={editingTxId}
           isThemeModalOpen={isThemeModalOpen} theme={theme} categoryCurrencyMode={categoryCurrencyMode} localCurrencyCode={calculations.localCurrencyCode}
           accounts={accounts} categories={categories} incomes={incomes} transactions={transactions} allExistingTags={allExistingTags}
           baseCurrency={calculations.baseCurrency} baseSymbol={calculations.baseSymbol}

@@ -31,6 +31,8 @@ interface ModalManagerProps {
   isThemeModalOpen: boolean;
   theme: "modern" | "zen";
   conflictData: any; 
+  accessError: string | null;
+  setAccessError: (v: string | null) => void;
   editingTxId: string | null;
   categoryCurrencyMode: "base" | "local";
   localCurrencyCode: string;
@@ -43,6 +45,8 @@ interface ModalManagerProps {
   allExistingTags: string[];
   users: { name: string; id: string }[];
   activeTableId: string;
+  baseCurrency?: string;
+  baseSymbol?: string;
   
   // Handlers
   setAccountModal: React.Dispatch<React.SetStateAction<{ isOpen: boolean; account: Account | null }>>;
@@ -77,7 +81,7 @@ interface ModalManagerProps {
 export const ModalManager: React.FC<ModalManagerProps> = (props) => {
   const {
     accountModal, incomeModal, categoryModal, historyModal, analyticsModal,
-    calendarAnalyticsModal, confirmDelete, numpad, isTagModalOpen, isUsersModalOpen, conflictData, editingTxId,
+    calendarAnalyticsModal, confirmDelete, numpad, isTagModalOpen, isUsersModalOpen, conflictData, accessError, setAccessError, editingTxId,
     isThemeModalOpen, theme,
     categoryCurrencyMode, localCurrencyCode,
     accounts, categories, incomes, transactions, allExistingTags, users, activeTableId,
@@ -89,7 +93,6 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
     onSwitchTable
   } = props;
 
-  // Helper for safeEval
   const safeEval = (str: string): string => {
     try {
       let expr = str.replace(/,/g, '.').replace(/\s/g, '');
@@ -101,14 +104,22 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
     } catch { return str; }
   };
 
-  const closeHistoryModal = () => {
-    // В новой системе стека мы просто позволяем App.tsx обработать закрытие или вызываем history.back()
-    window.history.back();
-  };
-
   return (
     <>
-      {/* 1. Базовые модалки (Уровень 1) */}
+      {/* 0. Блокирующая модалка при окончании подписки */}
+      {accessError && (
+        <ConfirmModal
+          isOpen={true}
+          title="Доступ ограничен"
+          message={accessError}
+          confirmText="Написать владельцу"
+          cancelText=""
+          onConfirm={() => window.open('https://t.me/falcorrus', '_blank')}
+          onCancel={() => {}} 
+          danger={false}
+        />
+      )}
+
       <AccountModal isOpen={accountModal.isOpen} account={accountModal.account} onClose={() => setAccountModal({ isOpen: false, account: null })} onSave={(name, balance, currency, icon, color) => { saveAccount({ ...accountModal.account, name, balance, currency, icon, color }); setAccountModal({ isOpen: false, account: null }); }} onDelete={() => { if (!accountModal.account) return; setConfirmDelete({ isOpen: true, title: "Удалить кошелек?", message: `Удалить "${accountModal.account.name}"?`, onConfirm: () => { deleteAccount(accountModal.account!.id); setAccountModal({ isOpen: false, account: null }); setConfirmDelete(p => ({ ...p, isOpen: false })); } }); }} />
       <IncomeModal isOpen={incomeModal.isOpen} income={incomeModal.income} onClose={() => setIncomeModal({ isOpen: false, income: null })} onSave={(name, icon, color, tags) => { saveIncome({ ...incomeModal.income, name, icon, color, tags }); setIncomeModal({ isOpen: false, income: null }); }} onDelete={() => { if (!incomeModal.income) return; setConfirmDelete({ isOpen: true, title: "Удалить доход?", message: `Удалить "${incomeModal.income.name}"?`, onConfirm: () => { deleteIncome(incomeModal.income!.id); setIncomeModal({ isOpen: false, income: null }); setConfirmDelete(p => ({ ...p, isOpen: false })); } }); }} />
       <CategoryModal isOpen={categoryModal.isOpen} category={categoryModal.category} onClose={() => setCategoryModal({ isOpen: false, category: null })} onSave={(cat) => { saveCategory(cat); setCategoryModal({ isOpen: false, category: null }); }} onDelete={() => { if (!categoryModal.category) return; setConfirmDelete({ isOpen: true, title: "Удалить категорию?", message: `Удалить "${categoryModal.category.name}"?`, onConfirm: () => { deleteCategory(categoryModal.category!.id); setCategoryModal({ isOpen: false, category: null }); setConfirmDelete(p => ({ ...p, isOpen: false })); } }); }} />
@@ -116,7 +127,6 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
       <UsersModal isOpen={isUsersModalOpen} onClose={() => setIsUsersModalOpen(false)} users={users} activeTableId={activeTableId} onSwitchTable={onSwitchTable} />
       <ThemeModal isOpen={isThemeModalOpen} onClose={() => setIsThemeModalOpen(false)} currentTheme={theme} onSelect={(t) => { setTheme(t); setIsThemeModalOpen(false); }} />
 
-      {/* 2. Аналитика и Календарь (Уровень 1 или 2) */}
       <AnalyticsModal 
         isOpen={analyticsModal.isOpen} 
         onClose={() => setAnalyticsModal(p => ({ ...p, isOpen: false }))} 
@@ -156,33 +166,26 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
         }} 
       />
 
-      {/* 3. История (Уровень 2 или 3 - открывается из Главной или из Аналитики) */}
       <HistoryModal 
         isOpen={historyModal.isOpen} 
-        onClose={closeHistoryModal} 
+        onClose={() => window.history.back()} 
         entity={historyModal.entity as any} entityType={historyModal.type} transactions={historyModal.customTransactions || transactions} accounts={accounts} categories={categories} incomes={incomes} 
         onEditTransaction={(tx) => { 
           const source = tx.type === "income" ? incomes.find(i => i.id === tx.targetId) ?? null : accounts.find(a => a.id === tx.accountId) ?? null; 
           const destination = tx.type === "expense" ? categories.find(c => c.id === tx.targetId) ?? null : tx.type === "income" ? accounts.find(a => a.id === tx.accountId) ?? null : accounts.find(a => a.id === tx.targetId) ?? null; 
           if (!source || !destination) return; 
-          const returnState = { ...historyModal };
           setEditingTxId(tx.id);
           const actualSourceCurrency = tx.type === "income" ? tx.sourceCurrency : (source as Account).currency;
-          setNumpad({ isOpen: true, type: tx.type, source, destination, sourceAmount: String(tx.sourceAmount), sourceCurrency: actualSourceCurrency, targetAmount: String(tx.targetAmount ?? tx.sourceAmount), targetCurrency: tx.targetCurrency, targetLinked: true, activeField: "source", tag: tx.tag ?? null, comment: tx.comment ?? "", returnState }); 
+          setNumpad({ isOpen: true, type: tx.type, source, destination, sourceAmount: String(tx.sourceAmount), sourceCurrency: actualSourceCurrency, targetAmount: String(tx.targetAmount ?? tx.sourceAmount), targetCurrency: tx.targetCurrency, targetLinked: true, activeField: "source", tag: tx.tag ?? null, comment: tx.comment ?? "", returnState: { ...historyModal } }); 
         }} 
       />
 
-      {/* 4. Нумпад (Самый высокий уровень - z-400) */}
       <Numpad
         data={numpad} 
         availableCurrencies={Array.from(new Set([...accounts.map(a => a.currency), numpad.sourceCurrency, numpad.targetCurrency]))} 
         transactions={transactions}
         isEditing={!!editingTxId}
-        onClose={() => { 
-          // setNumpad вызывает срабатывание useEffect в App.tsx, который сделает history.back()
-          setNumpad({ ...numpad, isOpen: false, targetLinked: true, returnState: undefined }); 
-          setEditingTxId(null); 
-        }}
+        onClose={() => { setNumpad({ ...numpad, isOpen: false, targetLinked: true, returnState: undefined }); setEditingTxId(null); }}
         onFieldChange={(f) => setNumpad(p => ({ ...p, activeField: f }))}
         onManageTags={() => setIsTagModalOpen(true)}
         onLinkToggle={() => { setNumpad(p => ({ ...p, targetLinked: !p.targetLinked })); if (navigator.vibrate) navigator.vibrate(10); }}
@@ -229,7 +232,6 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
         }}
       />
 
-      {/* 5. Утилитарные окна (z-300, z-500) */}
       <TagModal 
         isOpen={isTagModalOpen} onClose={() => setIsTagModalOpen(false)} existingTags={allExistingTags} activeTags={numpad.type === 'expense' ? (numpad.destination as Category)?.tags || [] : (numpad.source as IncomeSource)?.tags || []}
         onSelect={(tag) => {
