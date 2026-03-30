@@ -106,6 +106,27 @@ export const useSync = ({
     
     const performPush = async () => {
       setSyncStatus("loading");
+      
+      // ПРЕДПОЛЕТНАЯ ПРОВЕРКА КОНФЛИКТА
+      try {
+        const remote = await googleSheetsService.fetchSettings(ssId);
+        const localLastSync = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC);
+        
+        if (remote && remote.timestamp && localLastSync) {
+          const remoteDate = new Date(remote.timestamp.replace(/-/g, '/').replace('T', ' '));
+          const localDate = new Date(localLastSync.replace(/-/g, '/').replace('T', ' '));
+          
+          if (remoteDate.getTime() > localDate.getTime() + 2000) {
+            console.log("[Sync] Conflict detected BEFORE push! Aborting overwrite.");
+            setConflictData(remote);
+            setSyncStatus("success");
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn("[Sync] Pre-push check failed, proceeding anyway...", e);
+      }
+
       const ts = getLocalTimeString();
       const baseCurrency = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY) || "USD";
       console.log("[Sync] Pushing settings to cloud...", { accounts: a.length, categories: c.length, ssId });
