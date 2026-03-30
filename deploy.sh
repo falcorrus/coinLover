@@ -68,32 +68,19 @@ deploy_env() {
     # Generate docker-compose on the fly
     cat > docker-compose.yml << EOT
 services:
-  frontend:
+  app:
     build: 
       context: .
       dockerfile: Dockerfile
-    container_name: ${container_prefix}-frontend
+    container_name: ${container_prefix}
     ports:
       - "$port_front:80"
-    restart: always
-    environment:
-      - VITE_PY_BACKEND_URL=${backend_url}
-    depends_on:
-      - backend
-
-  backend:
-    build: 
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: ${container_prefix}-backend
-    ports:
-      - "$port_back:8000"
     restart: always
 EOT
 
     # Stop and clear port to avoid "port already allocated" errors
     docker compose down
-    fuser -k $port_back/tcp || true
+    # fuser -k $port_back/tcp || true
     
     # Restart containers
     docker compose up -d --build --remove-orphans
