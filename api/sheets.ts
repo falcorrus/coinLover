@@ -145,19 +145,19 @@ async function initSheets(sheets, spreadsheetId) {
     }
 
     const configRows = [
+      ["Updated", new Date().toISOString()],
       ["BASE_CURRENCY", "USD"],
       ["", ""],
-      ["'=== WALLETS / ACCOUNTS ===", ""],
+      [" === WALLETS / ACCOUNTS ===", ""],
       ["ID", "Name", "Balance", "Balance_Base", "Color", "Icon", "Currency"],
       ["", ""],
-      ["'=== CATEGORIES ===", ""],
+      [" === CATEGORIES ===", ""],
       ["ID", "Name", "Color", "Icon", "Tags"],
       ["", ""],
-      ["'=== INCOMES ===", ""],
+      [" === INCOMES ===", ""],
       ["ID", "Name", "Color", "Icon", "Tags"],
       ["", ""],
-      ["'=== SYSTEM ===", ""],
-      ["Updated", new Date().toISOString()]
+      [" === SYSTEM ===", ""]
     ];
 
     const txRows = [
