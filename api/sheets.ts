@@ -556,9 +556,25 @@ export default async function handler(req, res) {
       }
 
       if (payload.action === 'initTable') {
-        await initSheets(sheets, targetSsId);
-        // Also try to register if not already there
-        await registerLeadInMaster(sheets, { ...payload, ssId: targetSsId, name: "New App User", type: "app_init" });
+        let initOk = false;
+        let initError = "";
+        try {
+          await initSheets(sheets, targetSsId);
+          initOk = true;
+        } catch (e) {
+          console.error("[API] initSheets failed during initTable:", e.message);
+          initError = e.message;
+        }
+
+        // В ЛЮБОМ СЛУЧАЕ регистрируем лид в мастере, чтобы владелец видел проблему
+        await registerLeadInMaster(sheets, { ...payload, ssId: targetSsId, name: payload.name || "New App User", type: "app_init" });
+        
+        if (!initOk) {
+          return res.status(403).json({ 
+            status: "error", 
+            message: `Не удалось подготовить вашу таблицу: ${initError}. Убедитесь, что вы добавили сервисный email (coinlover-service-acc@baonlineru.iam.gserviceaccount.com) как Редактора.` 
+          });
+        }
         return res.status(200).json({ status: "success", message: "Table initialized" });
       }
 
