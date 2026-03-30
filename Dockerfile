@@ -13,7 +13,7 @@ COPY --from=build /app/dist ./dist
 COPY --from=build /app/api ./api
 COPY --from=build /app/server.ts ./
 COPY --from=build /app/package*.json ./
-COPY --from=build /app/google-credentials.json ./
+# COPY --from=build /app/google-credentials.json ./ 
 
 # Install only production dependencies
 RUN npm install --omit=dev
