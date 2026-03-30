@@ -173,7 +173,8 @@ async function initSheets(sheets, spreadsheetId) {
     ];
 
     const txRows = [
-      ["DATE", "TYPE", "SRC", "DST", "TAG", "S_AMT", "S_CURR", "S_BASE", "T_AMT", "T_CURR", "T_BASE", "COMMENT", "ID"]
+      ["date", "type", "src", "dst", "tag", "s_amt", "s_curr", "t_amt", "t_curr", "base_amt", "comment", "id"],
+      ["Date", "Type", "Source", "Destination", "Tag", "Source Amount", "Source Currency", "Target Amount", "Target Currency", "USD", "Comment", "ID"]
     ];
 
     await sheets.spreadsheets.values.update({
@@ -546,7 +547,7 @@ export default async function handler(req, res) {
       }
 
       if (payload.action === 'addTransaction') {
-        // Map back to headers
+        // Map back to headers:
         // date, type, src, dst, tag, s_amt, s_curr, t_amt, t_curr, base_amt, comment, id
         const row = [
           payload.date,
@@ -556,9 +557,9 @@ export default async function handler(req, res) {
           payload.tagName || "",
           payload.sourceAmount,
           payload.sourceCurrency,
-          payload.targetAmount,
-          payload.targetCurrency,
-          payload.targetAmountUSD || 0,
+          payload.targetAmount || payload.sourceAmount,
+          payload.targetCurrency || payload.sourceCurrency,
+          payload.targetAmountUSD || payload.sourceAmountUSD || 0,
           payload.comment || "",
           payload.id
         ];
