@@ -26,6 +26,16 @@ export const useSync = ({
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
 
   const updateLocalFromRemote = useCallback((data: SyncSettingsFields & { transactions?: Transaction[], users?: { name: string; id: string }[] }) => {
+    // Если в облаке пусто, а у нас локально уже что-то есть — не затираем наше, 
+    // скорее всего мы сейчас в процессе настройки первого кошелька
+    const isRemoteEmpty = (!data.accounts || data.accounts.length === 0) && (!data.categories || data.categories.length === 0);
+    const isLocalEmpty = accounts.length === 0 && categories.length === 0;
+    
+    if (isRemoteEmpty && !isLocalEmpty) {
+      console.log("[Sync] Remote is empty but local has data. Skipping overwrite.");
+      return;
+    }
+
     if (data.accounts) setAccounts(data.accounts);
     if (data.categories) setCategories(data.categories);
     if (data.incomes) setIncomes(data.incomes);

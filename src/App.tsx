@@ -37,18 +37,27 @@ export default function App() {
 
   const [isSplashVisible, setIsSplashVisible] = React.useState(true);
   const [isOnboarding, setIsOnboarding] = React.useState(false);
+  const onboardingTriggered = React.useRef(false);
 
   React.useEffect(() => {
-    // Если синхронизация прошла успешно и аккаунтов 0 — значит таблица пустая
-    // В этом случае мы ОБЯЗАТЕЛЬНО показываем онбординг (выбор шаблона)
-    if (syncStatus === "success" && accounts.length === 0) {
-      localStorage.removeItem("cl_onboarding_completed");
+    // Триггерим онбординг только один раз при успешной первой синхронизации, 
+    // если данных действительно 0 и мы еще не показывали его в этой сессии
+    if (syncStatus === "success" && accounts.length === 0 && !onboardingTriggered.current) {
+      const isCompleted = localStorage.getItem("cl_onboarding_completed") === "true";
+      // Если в таблице пусто, но флаг "завершено" стоит — значит мы переключились на новую таблицу
+      // В этом случае всё равно показываем онбординг, но только один раз
       setIsOnboarding(true);
-    } else if (syncStatus === "success" && accounts.length > 0) {
+      onboardingTriggered.current = true;
+    } else if (accounts.length > 0) {
       localStorage.setItem("cl_onboarding_completed", "true");
       setIsOnboarding(false);
     }
   }, [syncStatus, accounts.length]);
+
+  // Сбрасываем триггер при смене таблицы
+  React.useEffect(() => {
+    onboardingTriggered.current = false;
+  }, [activeTableId]);
 
   const handleOnboardingComplete = async (currency: string, localCurrency: string, useTemplate: boolean) => {
     localStorage.setItem("cl_onboarding_completed", "true");
