@@ -174,7 +174,7 @@ async function initSheets(sheets, spreadsheetId) {
 
     const txRows = [
       ["date", "type", "src", "dst", "tag", "s_amt", "s_curr", "t_amt", "t_curr", "base_amt", "comment", "id"],
-      ["Date", "Type", "Source", "Destination", "Tag", "Source Amount", "Source Currency", "Target Amount", "Target Currency", "USD", "Comment", "ID"]
+      ["Дата", "Тип", "Источник", "Назначение", "Тег", "Сумма (исх)", "Вал (исх)", "Сумма (цель)", "Вал (цель)", "USD", "Комментарий", "ID"]
     ];
 
     await sheets.spreadsheets.values.update({
@@ -547,26 +547,50 @@ export default async function handler(req, res) {
       }
 
       if (payload.action === 'addTransaction') {
-        // Map back to headers:
-        // date, type, src, dst, tag, s_amt, s_curr, t_amt, t_curr, base_amt, comment, id
-        const row = [
-          payload.date,
-          payload.type,
-          payload.sourceName,
-          payload.destinationName,
-          payload.tagName || "",
-          payload.sourceAmount,
-          payload.sourceCurrency,
-          payload.targetAmount || payload.sourceAmount,
-          payload.targetCurrency || payload.sourceCurrency,
-          payload.targetAmountUSD || payload.sourceAmountUSD || 0,
-          payload.comment || "",
-          payload.id
-        ];
+        // Fetch headers first to know where to put data
+        const headerRes = await sheets.spreadsheets.values.get({
+          spreadsheetId: targetSsId,
+          range: `${txSheetName}!A1:Z1`
+        });
+        const headers = (headerRes.data.values?.[0] || []).map(h => String(h).trim().toLowerCase());
+        
+        // Define data mapping
+        const dataMap = {
+          "date": payload.date,
+          "type": payload.type,
+          "src": payload.sourceName,
+          "dst": payload.destinationName,
+          "tag": payload.tagName || "",
+          "s_amt": payload.sourceAmount,
+          "s_curr": payload.sourceCurrency,
+          "t_amt": payload.targetAmount || payload.sourceAmount,
+          "t_curr": payload.targetCurrency || payload.sourceCurrency,
+          "base_amt": payload.targetAmountUSD || payload.sourceAmountUSD || 0,
+          "comment": payload.comment || "",
+          "id": payload.id
+        };
+
+        // Construct row based on headers
+        const row = new Array(Math.max(headers.length, 12)).fill("");
+        headers.forEach((h, idx) => {
+          if (dataMap[h] !== undefined) row[idx] = dataMap[h];
+        });
+
+        // If headers are missing (unlikely but possible), fallback to default order
+        if (headers.length === 0) {
+          console.warn("[API] No headers found, falling back to default order");
+          row[0] = payload.date; row[1] = payload.type; row[2] = payload.sourceName;
+          row[3] = payload.destinationName; row[4] = payload.tagName || "";
+          row[5] = payload.sourceAmount; row[6] = payload.sourceCurrency;
+          row[7] = payload.targetAmount || payload.sourceAmount;
+          row[8] = payload.targetCurrency || payload.sourceCurrency;
+          row[9] = payload.targetAmountUSD || payload.sourceAmountUSD || 0;
+          row[10] = payload.comment || ""; row[11] = payload.id;
+        }
         
         await sheets.spreadsheets.values.append({
           spreadsheetId: targetSsId,
-          range: `${txSheetName}!A:L`,
+          range: `${txSheetName}!A:Z`,
           valueInputOption: 'USER_ENTERED',
           requestBody: { values: [row] }
         });
