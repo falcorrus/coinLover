@@ -24,47 +24,29 @@ export const useSync = ({
   const [syncStatus, setSyncStatus] = useState<SyncStatus>("idle");
   const [conflictData, setConflictData] = useState<SyncSettingsFields | null>(null);
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
+  const lastRemoteSnapshot = useRef<string>("");
 
-  const areSettingsDifferent = useCallback((remote: SyncSettingsFields, local: { accounts: Account[], categories: Category[], incomes: IncomeSource[] }) => {
+  const getSettingsSnapshot = (data: any) => {
     try {
-      const normalizeAcc = (accs: any[]) => (accs || []).map(a => ({
-        id: String(a.id).trim(),
-        name: String(a.name).trim(),
-        balance: Math.round(Number(a.balance) * 100) / 100
-      })).sort((a, b) => a.id.localeCompare(b.id));
-
-      const normalizeEntity = (items: any[]) => (items || []).map(i => ({
-        id: String(i.id).trim(),
-        name: String(i.name).trim()
-      })).sort((a, b) => a.id.localeCompare(b.id));
-
-      const rAcc = normalizeAcc(remote.accounts || []);
-      const lAcc = normalizeAcc(local.accounts);
-      if (JSON.stringify(rAcc) !== JSON.stringify(lAcc)) {
-        console.log("[Sync] Difference in accounts detected", { remote: rAcc, local: lAcc });
-        return true;
-      }
-
-      const rCat = normalizeEntity(remote.categories || []);
-      const lCat = normalizeEntity(local.categories);
-      if (JSON.stringify(rCat) !== JSON.stringify(lCat)) {
-        console.log("[Sync] Difference in categories detected");
-        return true;
-      }
-
-      const rInc = normalizeEntity(remote.incomes || []);
-      const lInc = normalizeEntity(local.incomes);
-      if (JSON.stringify(rInc) !== JSON.stringify(lInc)) {
-        console.log("[Sync] Difference in incomes detected");
-        return true;
-      }
-
-      return false;
-    } catch (e) { 
-      console.error("[Sync] Comparison failed", e);
-      return true; 
-    }
-  }, []);
+      const acc = (data.accounts || []).map((a: any) => ({ 
+        id: String(a.id).trim(), 
+        name: String(a.name).trim(), 
+        balance: Math.round(Number(a.balance) * 100) / 100 
+      })).sort((a: any, b: any) => a.id.localeCompare(b.id));
+      
+      const cat = (data.categories || []).map((c: any) => ({ 
+        id: String(c.id).trim(), 
+        name: String(c.name).trim() 
+      })).sort((a: any, b: any) => a.id.localeCompare(b.id));
+      
+      const inc = (data.incomes || []).map((i: any) => ({ 
+        id: String(i.id).trim(), 
+        name: String(i.name).trim() 
+      })).sort((a: any, b: any) => a.id.localeCompare(b.id));
+      
+      return JSON.stringify({ acc, cat, inc });
+    } catch (e) { return ""; }
+  };
 
   const updateLocalFromRemote = useCallback((data: SyncSettingsFields & { transactions?: Transaction[], users?: { name: string; id: string }[] }) => {
     if (data.accounts) setAccounts(data.accounts);
@@ -72,7 +54,10 @@ export const useSync = ({
     if (data.incomes) setIncomes(data.incomes);
     if (data.users) setUsers(data.users);
     if (data.baseCurrency) localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY, data.baseCurrency);
-    if (data.timestamp) localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC, data.timestamp);
+    if (data.timestamp) {
+      localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC, data.timestamp);
+      lastRemoteSnapshot.current = getSettingsSnapshot(data);
+    }
     if (data.transactions && Array.isArray(data.transactions)) {
       setTransactions([...data.transactions].sort((a, b) => new Date(b.date.replace(/-/g, '/').replace('T', ' ')).getTime() - new Date(a.date.replace(/-/g, '/').replace('T', ' ')).getTime()));
     }
@@ -86,26 +71,25 @@ export const useSync = ({
     if (remote) {
       const localLastSync = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC);
       
-      // Если в облаке ПУСТО, а у нас ЕСТЬ данные — не затираем (защита новой таблицы)
+      // Защита новой таблицы
       const isRemoteEmpty = (!remote.accounts || remote.accounts.length === 0) && (!remote.categories || remote.categories.length === 0);
       const isLocalEmpty = accounts.length === 0 && categories.length === 0;
       
       if (isRemoteEmpty && !isLocalEmpty) {
-        console.log("[Sync] Remote is empty but local has data. Skipping pull to protect local setup.");
         setSyncStatus("success");
         return true;
       }
 
-      // ПРОВЕРКА КОНФЛИКТА ПРИ ЗАГРУЗКЕ
-      if (remote.timestamp) {
+      // Проверка конфликта при загрузке: если облако изменилось с нашего последнего визита
+      if (remote.timestamp && localLastSync) {
         const remoteDate = new Date(remote.timestamp.replace(/-/g, '/').replace('T', ' '));
-        const localDate = localLastSync ? new Date(localLastSync.replace(/-/g, '/').replace('T', ' ')) : new Date(0);
-        
+        const localDate = new Date(localLastSync.replace(/-/g, '/').replace('T', ' '));
         const isNewer = remoteDate.getTime() > localDate.getTime() + 1000;
-        const isSameTimeButDifferentData = Math.abs(remoteDate.getTime() - localDate.getTime()) < 2000 && areSettingsDifferent(remote, { accounts, categories, incomes });
+        const remoteSnap = getSettingsSnapshot(remote);
+        const isDifferentFromSnapshot = lastRemoteSnapshot.current && remoteSnap !== lastRemoteSnapshot.current;
 
-        if (isNewer || isSameTimeButDifferentData) {
-          console.log("[Sync] Conflict detected during pull!", { isNewer, isSameTimeButDifferentData });
+        if (isNewer || isDifferentFromSnapshot) {
+          console.log("[Sync] Conflict detected during pull!", { isNewer, isDifferentFromSnapshot });
           setConflictData(remote);
           setSyncStatus("success");
           return true;
@@ -119,13 +103,15 @@ export const useSync = ({
     }
     setSyncStatus("error");
     return false;
-  }, [updateLocalFromRemote, ssId, accounts, categories, incomes, areSettingsDifferent]);
+  }, [updateLocalFromRemote, ssId, accounts.length, categories.length]);
 
   const checkConflicts = useCallback(async () => {
     if (syncStatus === "loading" || !!conflictData) return;
     try {
       const remote = await googleSheetsService.fetchSettings(ssId);
       if (!remote || !remote.timestamp) return;
+      
+      const remoteSnap = getSettingsSnapshot(remote);
       const localLastSync = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC);
       
       if (!localLastSync) {
@@ -135,16 +121,15 @@ export const useSync = ({
 
       const remoteDate = new Date(remote.timestamp.replace(/-/g, '/').replace('T', ' '));
       const localDate = new Date(localLastSync.replace(/-/g, '/').replace('T', ' '));
-      
       const isNewer = remoteDate.getTime() > localDate.getTime() + 2000;
-      const isSameTimeButDifferentData = areSettingsDifferent(remote, { accounts, categories, incomes });
+      const isDifferentFromSnapshot = lastRemoteSnapshot.current && remoteSnap !== lastRemoteSnapshot.current;
 
-      if (isNewer || isSameTimeButDifferentData) {
-        console.log("[Sync] Conflict detected during periodic check!", { isNewer, isSameTimeButDifferentData });
+      if (isNewer || isDifferentFromSnapshot) {
+        console.log("[Sync] Conflict in background check!", { isNewer, isDifferentFromSnapshot });
         setConflictData(remote);
       }
     } catch (e) { console.error("Conflict check failed:", e); }
-  }, [updateLocalFromRemote, ssId, syncStatus, conflictData, accounts, categories, incomes, areSettingsDifferent]);
+  }, [updateLocalFromRemote, ssId, syncStatus, conflictData, accounts.length, categories.length]);
 
   const pushSettings = useCallback((a: Account[], c: Category[], i: IncomeSource[], immediate = false) => {
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
@@ -152,28 +137,27 @@ export const useSync = ({
     const performPush = async () => {
       setSyncStatus("loading");
       
-      // ПРЕДПОЛЕТНАЯ ПРОВЕРКА КОНФЛИКТА
+      // ПРЕДПОЛЕТНАЯ ПРОВЕРКА: Сравниваем ОБЛАКО с нашим ПОСЛЕДНИМ ИЗВЕСТНЫМ снимком облака
       try {
         const remote = await googleSheetsService.fetchSettings(ssId);
-        const localLastSync = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC);
-        
         if (remote && remote.timestamp) {
-          const remoteDate = new Date(remote.timestamp.replace(/-/g, '/').replace('T', ' '));
+          const remoteSnap = getSettingsSnapshot(remote);
+          const localLastSync = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC);
           const localDate = localLastSync ? new Date(localLastSync.replace(/-/g, '/').replace('T', ' ')) : new Date(0);
-          
-          const isNewer = remoteDate.getTime() > localDate.getTime() + 2000;
-          const isSameTimeButDifferentData = areSettingsDifferent(remote, { accounts: a, categories: c, incomes: i });
+          const remoteDate = new Date(remote.timestamp.replace(/-/g, '/').replace('T', ' '));
 
-          if (isNewer || isSameTimeButDifferentData) {
-            console.log("[Sync] Conflict detected BEFORE push! Aborting overwrite.", { isNewer, isSameTimeButDifferentData });
+          const isCloudNewer = remoteDate.getTime() > localDate.getTime() + 2000;
+          // Если данные в облаке отличаются от тех, что мы скачали в прошлый раз — значит был внешний эдит
+          const isCloudChangedSinceLastSync = lastRemoteSnapshot.current && remoteSnap !== lastRemoteSnapshot.current;
+
+          if (isCloudNewer || isCloudChangedSinceLastSync) {
+            console.log("[Sync] Conflict detected BEFORE push!", { isCloudNewer, isCloudChangedSinceLastSync });
             setConflictData(remote);
             setSyncStatus("success");
             return;
           }
         }
-      } catch (e) {
-        console.warn("[Sync] Pre-push check failed, proceeding anyway...", e);
-      }
+      } catch (e) { console.warn("[Sync] Pre-push check failed", e); }
 
       const ts = getLocalTimeString();
       const baseCurrency = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY) || "USD";
@@ -192,7 +176,9 @@ export const useSync = ({
       
       if (ok) { 
         console.log("[Sync] Push success!");
-        localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC, ts); 
+        localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC, ts);
+        // Обновляем наш снимок — теперь облако точно такое же, как мы отправили
+        lastRemoteSnapshot.current = getSettingsSnapshot({ accounts: a, categories: c, incomes: i });
         setSyncStatus("success"); 
       } else {
         console.error("[Sync] Push failed!");
@@ -207,7 +193,7 @@ export const useSync = ({
       debounceTimer.current = setTimeout(performPush, 2000);
     }
     return true;
-  }, [ssId]);
+  }, [ssId, accounts, categories, incomes]);
 
   return {
     syncStatus, setSyncStatus, conflictData, setConflictData, 
