@@ -149,23 +149,19 @@ async function initSheets(sheets, spreadsheetId) {
       ["", ""],
       ["'=== WALLETS / ACCOUNTS ===", ""],
       ["ID", "Name", "Balance", "Balance_Base", "Color", "Icon", "Currency"],
-      ["acc-cash", "Наличные", 0, 0, "#10b981", "wallet", "USD"],
       ["", ""],
       ["'=== CATEGORIES ===", ""],
       ["ID", "Name", "Color", "Icon", "Tags"],
-      ["cat-food", "Еда", "#f59e0b", "utensils", "food"],
       ["", ""],
       ["'=== INCOMES ===", ""],
       ["ID", "Name", "Color", "Icon", "Tags"],
-      ["inc-salary", "Зарплата", "#10b981", "briefcase", "work"],
       ["", ""],
       ["'=== SYSTEM ===", ""],
       ["Updated", new Date().toISOString()]
     ];
 
     const txRows = [
-      ["DATE", "TYPE", "SRC", "DST", "TAG", "S_AMT", "S_CURR", "S_BASE", "T_AMT", "T_CURR", "T_BASE", "COMMENT", "ID"],
-      ["", "expense", "Наличные", "Еда", "", 0, "USD", 0, 0, "USD", 0, "Initial row", "init-1"]
+      ["DATE", "TYPE", "SRC", "DST", "TAG", "S_AMT", "S_CURR", "S_BASE", "T_AMT", "T_CURR", "T_BASE", "COMMENT", "ID"]
     ];
 
     await sheets.spreadsheets.values.update({
