@@ -355,7 +355,7 @@ export default async function handler(req, res) {
       try {
         const confRes = await sheets.spreadsheets.values.get({
           spreadsheetId: targetSsId,
-          range: `${configSheetName}!A:Z`
+          range: `${configSheetName}!A:M`
         });
         rows = confRes.data.values || [];
       } catch (e) {
@@ -366,67 +366,75 @@ export default async function handler(req, res) {
         });
       }
       
-      const data = { accounts: [], categories: [], incomes: [], transactions: [], baseCurrency: "USD" };
+      const data: any = { accounts: [], categories: [], incomes: [], transactions: [], baseCurrency: "USD" };
 
       let section = "";
-      let headerRowIdx = -1;
+      let sectionHeaderIdx = -1;
 
       for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
         if (!row || !row[0]) continue;
         const key = String(row[0]).trim().toLowerCase();
         
+        if (key.includes("updated")) { data.timestamp = row[1]; continue; }
         if (key.includes("base_currency")) { data.baseCurrency = String(row[1]).trim() || "USD"; continue; }
-        if (key.includes("wallets")) { section = "acc"; headerRowIdx = i + 1; continue; }
-        if (key.includes("categories")) { section = "cat"; headerRowIdx = i + 1; continue; }
-        if (key.includes("incomes")) { section = "inc"; headerRowIdx = i + 1; continue; }
+        if (key.includes("wallets") || key.includes("accounts")) { section = "acc"; sectionHeaderIdx = i + 1; continue; }
+        if (key.includes("categories")) { section = "cat"; sectionHeaderIdx = i + 1; continue; }
+        if (key.includes("incomes")) { section = "inc"; sectionHeaderIdx = i + 1; continue; }
+        if (key.startsWith("===")) { section = ""; sectionHeaderIdx = -1; continue; }
         
-        if (headerRowIdx === -1 || i < headerRowIdx || i === headerRowIdx) continue;
-        
-        if (i === headerRowIdx + 1) {
-          const v0 = String(row[0]).trim().toLowerCase();
-          if (["id", "name", "имя", "название"].includes(v0)) continue;
-        }
+        if (sectionHeaderIdx === -1 || i <= sectionHeaderIdx) continue;
 
-        const hRow = rows[headerRowIdx] || [];
-        const col = {};
+        // Dynamic header mapping for this section
+        const hRow = rows[sectionHeaderIdx] || [];
+        const col: any = {};
         hRow.forEach((v, idx) => { if(v) col[String(v).trim().toLowerCase()] = idx; });
 
-        const uId = col["id"] ?? col["id"];
-        const uName = col["name"] ?? col["название"];
-        const uColor = col["color"] ?? col["цвет"];
-        const uIcon = col["icon"] ?? col["иконка"];
-        const uTags = col["tags"] ?? col["теги"];
-        const uBal = col["balance"] ?? col["баланс"];
-        const uBalBase = col["balance_base"] ?? col["баланс (база)"];
-        const uCurr = col["currency"] ?? col["валюта"];
+        // Utility to find column by multiple possible names
+        const getIdx = (keys: string[]) => {
+          for (const k of keys) if (col[k] !== undefined) return col[k];
+          return -1;
+        };
 
-        if (section === "acc" && (row[uId] || row[0])) {
+        const uId = getIdx(["id"]);
+        const uName = getIdx(["name", "имя", "название"]);
+        const uColor = getIdx(["color", "цвет"]);
+        const uIcon = getIdx(["icon", "иконка"]);
+        const uTags = getIdx(["tags", "теги"]);
+        const uBal = getIdx(["balance", "баланс", "остаток", "сумма"]);
+        const uBalBase = getIdx(["balance_base", "баланс (база)", "usd", "баланс usd"]);
+        const uCurr = getIdx(["currency", "валюта"]);
+
+        const val = (idx: number, def = "") => (idx !== -1 && row[idx] !== undefined) ? String(row[idx]).trim() : def;
+        const num = (idx: number) => {
+          if (idx === -1 || row[idx] === undefined) return 0;
+          const clean = String(row[idx]).replace(/[^\d.-]/g, "");
+          return parseFloat(clean) || 0;
+        };
+
+        const id = val(uId);
+        if (!id || id.toLowerCase() === "id") continue;
+
+        if (section === "acc") {
           data.accounts.push({
-            id: String(uId !== undefined ? row[uId] : row[0]),
-            name: String(uName !== undefined ? row[uName] : row[1]),
-            balance: parseNum(uBal !== undefined ? row[uBal] : row[2]),
-            balanceUSD: parseNum(uBalBase !== undefined ? row[uBalBase] : row[3]),
-            color: uColor !== undefined ? row[uColor] : row[4],
-            icon: uIcon !== undefined ? row[uIcon] : (row[5] || "wallet"),
-            currency: uCurr !== undefined ? row[uCurr] : (row[6] || "USD")
+            id,
+            name: val(uName, "Кошелек"),
+            balance: num(uBal),
+            balanceUSD: num(uBalBase) || num(uBal),
+            color: val(uColor, "#ccc"),
+            icon: val(uIcon, "wallet"),
+            currency: val(uCurr, "USD")
           });
-        } else if (section === "cat" && (row[uId] || row[0])) {
-          data.categories.push({
-            id: String(uId !== undefined ? row[uId] : row[0]),
-            name: String(uName !== undefined ? row[uName] : row[1]),
-            color: uColor !== undefined ? row[uColor] : row[2],
-            icon: uIcon !== undefined ? row[uIcon] : (row[3] || "more"),
-            tags: (uTags !== undefined ? row[uTags] : row[4]) ? String(uTags !== undefined ? row[uTags] : row[4]).split(",").map(t => t.trim()) : []
-          });
-        } else if (section === "inc" && (row[uId] || row[0])) {
-          data.incomes.push({
-            id: String(uId !== undefined ? row[uId] : row[0]),
-            name: String(uName !== undefined ? row[uName] : row[1]),
-            color: uColor !== undefined ? row[uColor] : row[2],
-            icon: uIcon !== undefined ? row[uIcon] : (row[3] || "business"),
-            tags: (uTags !== undefined ? row[uTags] : row[4]) ? String(uTags !== undefined ? row[uTags] : row[4]).split(",").map(t => t.trim()) : []
-          });
+        } else if (section === "cat" || section === "inc") {
+          const entity = {
+            id,
+            name: val(uName, "Без имени"),
+            color: val(uColor, "#ccc"),
+            icon: val(uIcon, section === "cat" ? "tag" : "business"),
+            tags: val(uTags) ? val(uTags).split(",").map(t => t.trim()).filter(Boolean) : []
+          };
+          if (section === "cat") data.categories.push(entity);
+          else data.incomes.push(entity);
         }
       }
 
