@@ -100,7 +100,7 @@ export const useSync = ({
         return true;
       }
     } catch (e: any) {
-      if (e.status === 403) {
+      if (e.statusCode === 403) {
         setAccessError(e.message || "Доступ ограничен");
         setSyncStatus("error");
         return false;
@@ -132,7 +132,7 @@ export const useSync = ({
         setConflictData(remote);
       }
     } catch (e: any) { 
-      if (e.status === 403) setAccessError(e.message);
+      if (e.statusCode === 403) setAccessError(e.message);
     }
   }, [updateLocalFromRemote, ssId, syncStatus, conflictData, accessError, accounts.length, categories.length]);
 
@@ -159,7 +159,7 @@ export const useSync = ({
           }
         }
       } catch (e: any) { 
-        if (e.status === 403) {
+        if (e.statusCode === 403) {
           setAccessError(e.message);
           setSyncStatus("error");
           return;
