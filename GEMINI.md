@@ -6,6 +6,12 @@
 - **Link:** Folder `/Users/eugene/MyProjects/CoinLover/Obsidian_Docs` points to the project notes in Obsidian.
 - **File Storage:** Все новые `.md` файлы (дизайны, планы, логи) сохраняй только в `/Users/eugene/MyProjects/CoinLover/Obsidian_Docs`.
 
+## Sync & Database Policy
+- **Primary Sync:** Всегда использовать VPS Proxy (`/api/sheets/`) вместо прямых запросов к Google Apps Script. Это решает проблемы CORS и прав доступа.
+- **Service Account:** Для доступа к таблицам используется `analytics-mcp-account@baonlineru.iam.gserviceaccount.com`. Клиент должен добавить этот email как Editor.
+- **Master Sheet:** Регистрация новых пользователей и лидов происходит автоматически через бэкенд в таблицу `1IQCs35RQlMMQsGB-CRczJeuRqa8WIxW4Sy_kjZyHP2M` (лист `Configs`, раздел `=== USERS ===`).
+- **Flexible Parsing:** Бэкенд на Python поддерживает двойные заголовки и синонимы секций (`WALLETS`/`ACCOUNTS`).
+
 ## Deployment Policy
 - **Standard Action:** On "deploy" command, always run `./deploy.sh` without arguments and follow interactive prompts (1-Dev, 2-Main, 3-Both).
 - **Production Flow:** To deploy to **MAIN**, strictly follow this sequence:
