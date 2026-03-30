@@ -39,8 +39,10 @@ export default function App() {
   const [isOnboarding, setIsOnboarding] = React.useState(false);
 
   React.useEffect(() => {
-    const isCompleted = localStorage.getItem("cl_onboarding_completed") === "true";
-    if (syncStatus === "success" && accounts.length === 0 && !isCompleted) {
+    // Если синхронизация прошла успешно и аккаунтов 0 — значит таблица пустая
+    // В этом случае мы ОБЯЗАТЕЛЬНО показываем онбординг (выбор шаблона)
+    if (syncStatus === "success" && accounts.length === 0) {
+      localStorage.removeItem("cl_onboarding_completed");
       setIsOnboarding(true);
     } else if (syncStatus === "success" && accounts.length > 0) {
       localStorage.setItem("cl_onboarding_completed", "true");
