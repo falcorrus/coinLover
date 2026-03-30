@@ -77,21 +77,42 @@ export const useSync = ({
     } catch (e) { console.error("Conflict check failed:", e); }
   }, [updateLocalFromRemote, ssId, syncStatus, accounts.length, categories.length]);
 
-  const pushSettings = useCallback((a: Account[], c: Category[], i: IncomeSource[]) => {
+  const pushSettings = useCallback((a: Account[], c: Category[], i: IncomeSource[], immediate = false) => {
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
     
-    setSyncStatus("loading");
-    debounceTimer.current = setTimeout(async () => {
+    const performPush = async () => {
+      setSyncStatus("loading");
       const ts = getLocalTimeString();
       const baseCurrency = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY) || "USD";
-      const ok = await googleSheetsService.syncToSheets({ action: "syncSettings", targetSheet: "Configs", accounts: enrichAccountsWithUSD(a), categories: c, incomes: i, baseCurrency, timestamp: ts, ssId });
+      console.log("[Sync] Pushing settings to cloud...", { accounts: a.length, categories: c.length, ssId });
+      
+      const ok = await googleSheetsService.syncToSheets({ 
+        action: "syncSettings", 
+        targetSheet: "Configs", 
+        accounts: enrichAccountsWithUSD(a), 
+        categories: c, 
+        incomes: i, 
+        baseCurrency, 
+        timestamp: ts, 
+        ssId 
+      });
+      
       if (ok) { 
+        console.log("[Sync] Push success!");
         localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC, ts); 
         setSyncStatus("success"); 
       } else {
+        console.error("[Sync] Push failed!");
         setSyncStatus("error");
       }
-    }, 2000); // 2 second debounce for settings sync
+    };
+
+    if (immediate) {
+      performPush();
+    } else {
+      setSyncStatus("loading");
+      debounceTimer.current = setTimeout(performPush, 2000);
+    }
     return true;
   }, [ssId]);
 
