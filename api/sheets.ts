@@ -291,53 +291,41 @@ export default async function handler(req, res) {
       try {
         const masterRes = await sheets.spreadsheets.values.get({
           spreadsheetId: MASTER_SS_ID,
-          range: 'Configs!A:K'
+          range: 'Users!A:F'
         });
         const mRows = masterRes.data.values || [];
-        let userSection = false;
-        let accessValid = true;
-        let accessEndsDate = null;
-        let idColIndex = -1;
-        let accessColIndex = -1;
-
-        for (let i = 0; i < mRows.length; i++) {
-          const row = mRows[i];
-          if (!row || !row[0]) continue;
-          const val0 = String(row[0]).trim().toLowerCase();
+        if (mRows.length > 0) {
+          const headers = mRows[0].map(h => String(h).trim().toLowerCase());
+          const idIdx = headers.indexOf("id");
+          const accessIdx = headers.indexOf("access ends");
           
-          if (val0.includes("users")) {
-            userSection = true;
-            const headers = mRows[i+1] || [];
-            idColIndex = headers.findIndex(h => String(h).trim().toLowerCase() === "id");
-            accessColIndex = headers.findIndex(h => String(h).trim().toLowerCase() === "access ends");
-            i++; 
-            continue;
-          }
+          let accessValid = true;
+          let accessEndsDate = null;
+          let found = false;
 
-          if (userSection && idColIndex !== -1) {
-            const rowId = row[idColIndex];
-            if (rowId === ssId) {
-               if (accessColIndex !== -1 && row[accessColIndex]) {
-                 accessEndsDate = row[accessColIndex];
-                 const parts = accessEndsDate.split(/[./-]/);
-                 if (parts.length >= 3) {
-                   const d = new Date(`${parts[2]}-${parts[1]}-${parts[0]}T23:59:59`);
-                   if (!isNaN(d.getTime()) && d < new Date()) {
-                     accessValid = false; 
-                   }
-                 }
-               }
-               break;
+          for (let i = 1; i < mRows.length; i++) {
+            if (mRows[i][idIdx] === ssId) {
+              found = true;
+              if (accessIdx !== -1 && mRows[i][accessIdx]) {
+                accessEndsDate = mRows[i][accessIdx];
+                const parts = accessEndsDate.split(/[./-]/);
+                if (parts.length >= 3) {
+                  const d = new Date(`${parts[2]}-${parts[1]}-${parts[0]}T23:59:59`);
+                  if (!isNaN(d.getTime()) && d < new Date()) accessValid = false;
+                }
+              }
+              break;
             }
           }
-        }
 
-        if (!accessValid) {
-          return res.status(403).json({ 
-            status: "error", 
-            error: "access_expired", 
-            message: `Подписка истекла (${accessEndsDate}). Пожалуйста, продлите доступ.` 
-          });
+          if (found && !accessValid) {
+            return res.status(403).json({ 
+              status: "error", 
+              error: "access_expired", 
+              message: `Подписка истекла (${accessEndsDate}). Пожалуйста, продлите доступ.` 
+            });
+          }
+          // If not found in Users, we allow access for now (or could be more strict)
         }
       } catch (e) {
         console.error("[API] Master sheet check failed:", e.message);
