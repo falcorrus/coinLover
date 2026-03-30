@@ -76,6 +76,7 @@ services:
     ports:
       - "$port_front:80"
     restart: always
+    env_file: .env
 EOT
 
     # Stop and clear port to avoid "port already allocated" errors
