@@ -8,7 +8,7 @@
 
 ## Sync & Database Policy
 - **Primary Sync:** Всегда использовать VPS Proxy (`/api/sheets/`) вместо прямых запросов к Google Apps Script. Это решает проблемы CORS и прав доступа.
-- **Service Account:** Для доступа к таблицам используется `analytics-mcp-account@baonlineru.iam.gserviceaccount.com`. Клиент должен добавить этот email как Editor.
+- **Service Account:** Для доступа к таблицам используется `coinlover-service-acc@baonlineru.iam.gserviceaccount.com`. Клиент должен добавить этот email как Editor.
 - **Master Sheet:** Регистрация новых пользователей и лидов происходит автоматически через бэкенд в таблицу `1IQCs35RQlMMQsGB-CRczJeuRqa8WIxW4Sy_kjZyHP2M` (лист `Configs`, раздел `=== USERS ===`).
 - **Flexible Parsing:** Бэкенд на Python поддерживает двойные заголовки и синонимы секций (`WALLETS`/`ACCOUNTS`).
 

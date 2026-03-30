@@ -39,10 +39,10 @@ export default function App() {
   const [isOnboarding, setIsOnboarding] = React.useState(false);
 
   React.useEffect(() => {
-    if (syncStatus === "success" && accounts.length === 0) {
-      localStorage.removeItem("cl_onboarding_completed");
+    const isCompleted = localStorage.getItem("cl_onboarding_completed") === "true";
+    if (syncStatus === "success" && accounts.length === 0 && !isCompleted) {
       setIsOnboarding(true);
-    } else if (syncStatus === "success") {
+    } else if (syncStatus === "success" && accounts.length > 0) {
       localStorage.setItem("cl_onboarding_completed", "true");
       setIsOnboarding(false);
     }
@@ -51,6 +51,11 @@ export default function App() {
   const handleOnboardingComplete = async (currency: string, localCurrency: string, useTemplate: boolean) => {
     localStorage.setItem("cl_onboarding_completed", "true");
     setIsOnboarding(false);
+    
+    // Сначала инициализируем таблицу (создаем листы Configs/Transactions)
+    if (activeTableId) {
+      await googleSheetsService.initTable(activeTableId);
+    }
     
     let newAccounts = [];
     let newCategories = [];

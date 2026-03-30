@@ -10,3 +10,5 @@ coverage/
 # Local Obsidian Docs symlink
 Obsidian_Docs/
 backend/ga-projects-key.json
+google-credentials.json
+.vercel

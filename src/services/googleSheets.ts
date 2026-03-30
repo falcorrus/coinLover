@@ -55,22 +55,19 @@ export const googleSheetsService = {
     }
   },
 
-  /**
-   * Pushes data to Google Sheets. 
-   */
   async syncToSheets(data: SyncPayload): Promise<boolean> {
     try {
       // Force demo false if payload has specific ssId
       const isDemo = data.ssId ? false : (window.localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE) !== "false");
       const payload = { ...data, demo: isDemo };
       
-      await fetch(GOOGLE_SCRIPT_URL, {
+      const response = await fetch(GOOGLE_SCRIPT_URL, {
         method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "text/plain" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       return true;
     } catch (error) {
       console.error("Sync to Sheets failed:", error);
