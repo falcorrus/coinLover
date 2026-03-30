@@ -13,11 +13,12 @@ interface TransactionStateProps {
   transactions: Transaction[];
   setTransactions: (t: Transaction[] | ((prev: Transaction[]) => Transaction[])) => void;
   setSyncStatus: (s: "idle" | "loading" | "error" | "success") => void;
+  pushSettings: (a: Account[], c: Category[], i: IncomeSource[], immediate?: boolean) => Promise<boolean>;
   ssId?: string;
 }
 
 export const useTransactions = ({
-  accounts, setAccounts, categories, incomes, transactions, setTransactions, setSyncStatus, ssId
+  accounts, setAccounts, categories, incomes, transactions, setTransactions, setSyncStatus, pushSettings, ssId
 }: TransactionStateProps) => {
 
   const addTransaction = useCallback(async (type: TransactionType, source: Account | IncomeSource, destination: Account | Category, sourceAmount: number, targetAmount?: number, tag?: string, customDate?: string, comment?: string, customCurrency?: string) => {
@@ -72,7 +73,9 @@ export const useTransactions = ({
     });
     setAccounts(updatedAccounts);
     setSyncStatus("loading");
-    const ok = await googleSheetsService.syncToSheets({ 
+
+    // Сначала отправляем транзакцию
+    const txOk = await googleSheetsService.syncToSheets({ 
         action: "addTransaction", 
         targetSheet: "Transactions", 
         id: newTx.id, 
@@ -87,15 +90,17 @@ export const useTransactions = ({
         targetAmount: finalTargetAmount, 
         targetCurrency: tCurr, 
         targetAmountUSD: newTx.targetAmountUSD, 
-        comment: comment || undefined, 
-        accounts: enrichAccountsWithUSD(updatedAccounts), 
-        categories, 
-        incomes, 
-        timestamp: date,
+        comment: comment || undefined,
         ssId
     });
-    setSyncStatus(ok ? "success" : "error");
-  }, [accounts, categories, incomes, setAccounts, setTransactions, setSyncStatus, ssId]);
+
+    // Затем обновляем балансы через pushSettings (с проверкой конфликта)
+    if (txOk) {
+      await pushSettings(updatedAccounts, categories, incomes, true);
+    } else {
+      setSyncStatus("error");
+    }
+  }, [accounts, categories, incomes, setAccounts, setTransactions, setSyncStatus, pushSettings, ssId]);
 
   const updateTransaction = useCallback(async (txId: string, type: TransactionType, source: Account | IncomeSource, destination: Account | Category, sourceAmount: number, targetAmount?: number, tag?: string, customDate?: string, comment?: string, customCurrency?: string) => {
     // Гарантируем наличие курсов перед расчетом
@@ -152,7 +157,8 @@ export const useTransactions = ({
     });
     setAccounts(updatedAccounts);
     setSyncStatus("loading");
-    const ok = await googleSheetsService.syncToSheets({ 
+
+    const txOk = await googleSheetsService.syncToSheets({ 
         action: "updateTransaction", 
         targetSheet: "Transactions", 
         id: txId, 
@@ -167,15 +173,16 @@ export const useTransactions = ({
         targetAmount: finalTargetAmount, 
         targetCurrency: tCurr, 
         targetAmountUSD: updatedTx.targetAmountUSD, 
-        comment: comment || undefined, 
-        accounts: enrichAccountsWithUSD(updatedAccounts), 
-        categories, 
-        incomes, 
-        timestamp: date,
+        comment: comment || undefined,
         ssId
     });
-    setSyncStatus(ok ? "success" : "error");
-  }, [accounts, categories, incomes, transactions, setAccounts, setTransactions, setSyncStatus, ssId]);
+
+    if (txOk) {
+      await pushSettings(updatedAccounts, categories, incomes, true);
+    } else {
+      setSyncStatus("error");
+    }
+  }, [accounts, categories, incomes, transactions, setAccounts, setTransactions, setSyncStatus, pushSettings, ssId]);
 
   const deleteTransaction = useCallback(async (txId: string) => {
     const tx = transactions.find((t) => t.id === txId); if (!tx) return;
@@ -190,19 +197,20 @@ export const useTransactions = ({
     });
     setAccounts(updatedAccounts);
     setSyncStatus("loading");
-    const timestamp = getLocalTimeString();
-    const ok = await googleSheetsService.syncToSheets({ 
+
+    const txOk = await googleSheetsService.syncToSheets({ 
         action: "deleteTransaction", 
         targetSheet: "Transactions", 
         id: txId, 
-        timestamp, 
-        accounts: enrichAccountsWithUSD(updatedAccounts), 
-        categories, 
-        incomes,
         ssId
     });
-    setSyncStatus(ok ? "success" : "error");
-  }, [accounts, categories, incomes, transactions, setAccounts, setTransactions, setSyncStatus, ssId]);
+
+    if (txOk) {
+      await pushSettings(updatedAccounts, categories, incomes, true);
+    } else {
+      setSyncStatus("error");
+    }
+  }, [accounts, categories, incomes, transactions, setAccounts, setTransactions, setSyncStatus, pushSettings, ssId]);
 
   return { addTransaction, updateTransaction, deleteTransaction };
 };

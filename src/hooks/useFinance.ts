@@ -36,7 +36,7 @@ export const useFinance = (ssId?: string) => {
 
   // 2. Hook: Transaction CRUD
   const { addTransaction, updateTransaction, deleteTransaction } = useTransactions({
-    accounts, setAccounts, categories, incomes, transactions, setTransactions, setSyncStatus, ssId
+    accounts, setAccounts, categories, incomes, transactions, setTransactions, setSyncStatus, pushSettings, ssId
   });
 
   // 3. Hook: Entity CRUD

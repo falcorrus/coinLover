@@ -27,20 +27,43 @@ export const useSync = ({
 
   const areSettingsDifferent = useCallback((remote: SyncSettingsFields, local: { accounts: Account[], categories: Category[], incomes: IncomeSource[] }) => {
     try {
-      const rAcc = JSON.stringify(remote.accounts?.map(a => ({ id: a.id, name: a.name, balance: Number(a.balance) })) || []);
-      const lAcc = JSON.stringify(local.accounts.map(a => ({ id: a.id, name: a.name, balance: Number(a.balance) })));
-      if (rAcc !== lAcc) return true;
+      const normalizeAcc = (accs: any[]) => (accs || []).map(a => ({
+        id: String(a.id).trim(),
+        name: String(a.name).trim(),
+        balance: Math.round(Number(a.balance) * 100) / 100
+      })).sort((a, b) => a.id.localeCompare(b.id));
 
-      const rCat = JSON.stringify(remote.categories?.map(c => ({ id: c.id, name: c.name })) || []);
-      const lCat = JSON.stringify(local.categories.map(c => ({ id: c.id, name: c.name })));
-      if (rCat !== lCat) return true;
+      const normalizeEntity = (items: any[]) => (items || []).map(i => ({
+        id: String(i.id).trim(),
+        name: String(i.name).trim()
+      })).sort((a, b) => a.id.localeCompare(b.id));
 
-      const rInc = JSON.stringify(remote.incomes?.map(i => ({ id: i.id, name: i.name })) || []);
-      const lInc = JSON.stringify(local.incomes.map(i => ({ id: i.id, name: i.name })));
-      if (rInc !== lInc) return true;
+      const rAcc = normalizeAcc(remote.accounts || []);
+      const lAcc = normalizeAcc(local.accounts);
+      if (JSON.stringify(rAcc) !== JSON.stringify(lAcc)) {
+        console.log("[Sync] Difference in accounts detected", { remote: rAcc, local: lAcc });
+        return true;
+      }
+
+      const rCat = normalizeEntity(remote.categories || []);
+      const lCat = normalizeEntity(local.categories);
+      if (JSON.stringify(rCat) !== JSON.stringify(lCat)) {
+        console.log("[Sync] Difference in categories detected");
+        return true;
+      }
+
+      const rInc = normalizeEntity(remote.incomes || []);
+      const lInc = normalizeEntity(local.incomes);
+      if (JSON.stringify(rInc) !== JSON.stringify(lInc)) {
+        console.log("[Sync] Difference in incomes detected");
+        return true;
+      }
 
       return false;
-    } catch (e) { return true; }
+    } catch (e) { 
+      console.error("[Sync] Comparison failed", e);
+      return true; 
+    }
   }, []);
 
   const updateLocalFromRemote = useCallback((data: SyncSettingsFields & { transactions?: Transaction[], users?: { name: string; id: string }[] }) => {
