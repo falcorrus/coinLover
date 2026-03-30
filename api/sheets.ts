@@ -297,6 +297,7 @@ export default async function handler(req, res) {
         const mRows = masterRes.data.values || [];
         if (mRows.length > 0) {
           const headers = mRows[0].map(h => String(h).trim().toLowerCase());
+          console.log(`[API] Users Sheet Headers: ${JSON.stringify(headers)}`);
           const idIdx = headers.indexOf("id");
           const accessIdx = headers.indexOf("access ends");
           
@@ -306,6 +307,7 @@ export default async function handler(req, res) {
 
           for (let i = 1; i < mRows.length; i++) {
             const rowId = String(mRows[i][idIdx] || "").trim();
+            if (rowId) console.log(`[API] Comparing: '${cleanSsId}' with '${rowId}'`);
             if (rowId === cleanSsId) {
               found = true;
               if (accessIdx !== -1 && mRows[i][accessIdx]) {
