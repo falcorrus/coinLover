@@ -148,7 +148,8 @@ export const useSync = ({
           const localDate = localLastSync ? new Date(localLastSync.replace(/-/g, '/').replace('T', ' ')) : new Date(0);
           const remoteDate = new Date(remote.timestamp.replace(/-/g, '/').replace('T', ' '));
 
-          const isCloudNewer = remoteDate.getTime() > localDate.getTime() + 2000;
+          // Конфликт по времени только если у нас УЖЕ была прошлая синхронизация
+          const isCloudNewer = localLastSync && (remoteDate.getTime() > localDate.getTime() + 5000);
           // Если данные в облаке отличаются от тех, что мы скачали в прошлый раз — значит был внешний эдит
           const isCloudChangedSinceLastSync = lastRemoteSnapshot.current && remoteSnap !== lastRemoteSnapshot.current;
 

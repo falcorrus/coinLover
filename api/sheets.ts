@@ -151,7 +151,7 @@ async function updateConfigs(sheets, spreadsheetId, sheetName, payload) {
   }
 }
 
-async function initSheets(sheets, spreadsheetId) {
+async function initSheets(sheets, spreadsheetId, baseCurrency = "USD") {
   try {
     const configSheet = "Configs";
     const txSheet = "Transactions";
@@ -178,7 +178,7 @@ async function initSheets(sheets, spreadsheetId) {
 
     const configRows = [
       ["Updated", new Date().toISOString()],
-      ["BASE_CURRENCY", "USD"],
+      ["BASE_CURRENCY", baseCurrency],
       ["", ""],
       [" === WALLETS / ACCOUNTS ===", ""],
       ["ID", "Name", "Balance", "Balance_Base", "Color", "Icon", "Currency"],
@@ -559,7 +559,7 @@ export default async function handler(req, res) {
         let initOk = false;
         let initError = "";
         try {
-          await initSheets(sheets, targetSsId);
+          await initSheets(sheets, targetSsId, payload.baseCurrency || "USD");
           initOk = true;
         } catch (e) {
           console.error("[API] initSheets failed during initTable:", e.message);

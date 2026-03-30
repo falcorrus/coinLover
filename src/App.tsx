@@ -66,7 +66,11 @@ export default function App() {
     
     // Сначала инициализируем таблицу (создаем листы Configs/Transactions)
     if (activeTableId) {
-      await googleSheetsService.initTable(activeTableId);
+      await googleSheetsService.syncToSheets({ 
+        action: "initTable", 
+        ssId: activeTableId, 
+        baseCurrency: currency 
+      });
     }
     
     let newAccounts = [];
