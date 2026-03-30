@@ -313,10 +313,12 @@ export default async function handler(req, res) {
                 let d = new Date(accessEndsDate); // Try native ISO first
                 
                 if (isNaN(d.getTime())) {
-                  // Try DD.MM.YYYY
-                  const parts = accessEndsDate.split(/[./-]/);
+                  // Try DD.MM.YYYY or DD.MM.YY
+                  const parts = accessEndsDate.split(/[./-]/).map(p => p.trim());
                   if (parts.length >= 3) {
-                    d = new Date(`${parts[2]}-${parts[1]}-${parts[0]}T23:59:59`);
+                    let year = parts[2];
+                    if (year.length === 2) year = "20" + year; // Convert YY to 20YY
+                    d = new Date(`${year}-${parts[1]}-${parts[0]}T23:59:59`);
                   }
                 }
 
