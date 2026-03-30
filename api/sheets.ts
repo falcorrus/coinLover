@@ -211,6 +211,47 @@ async function initSheets(sheets, spreadsheetId, baseCurrency = "USD") {
       requestBody: { values: txRows }
     });
 
+    // 4. Formatting: Hide technical row 1 and freeze headers (row 1-2)
+    try {
+      const sheetsMeta = ss.data.sheets || [];
+      const txSheetId = sheetsMeta.find(s => s.properties.title === txSheet)?.properties.sheetId;
+      
+      if (txSheetId !== undefined) {
+        await sheets.spreadsheets.batchUpdate({
+          spreadsheetId,
+          requestBody: {
+            requests: [
+              // Hide Row 1
+              {
+                updateDimensionProperties: {
+                  range: {
+                    sheetId: txSheetId,
+                    dimension: "ROWS",
+                    startIndex: 0,
+                    endIndex: 1
+                  },
+                  properties: { hiddenByUser: true },
+                  fields: "hiddenByUser"
+                }
+              },
+              // Freeze Rows 1-2
+              {
+                updateSheetProperties: {
+                  properties: {
+                    sheetId: txSheetId,
+                    gridProperties: { frozenRowCount: 2 }
+                  },
+                  fields: "gridProperties.frozenRowCount"
+                }
+              }
+            ]
+          }
+        });
+      }
+    } catch (fmtError) {
+      console.warn("[API] Failed to apply formatting to Transactions sheet:", fmtError.message);
+    }
+
     return true;
   } catch (e) {
     console.error("[API] Failed to init table:", e.message);
