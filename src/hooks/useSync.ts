@@ -25,6 +25,24 @@ export const useSync = ({
   const [conflictData, setConflictData] = useState<SyncSettingsFields | null>(null);
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
 
+  const areSettingsDifferent = useCallback((remote: SyncSettingsFields, local: { accounts: Account[], categories: Category[], incomes: IncomeSource[] }) => {
+    try {
+      const rAcc = JSON.stringify(remote.accounts?.map(a => ({ id: a.id, name: a.name, balance: Number(a.balance) })) || []);
+      const lAcc = JSON.stringify(local.accounts.map(a => ({ id: a.id, name: a.name, balance: Number(a.balance) })));
+      if (rAcc !== lAcc) return true;
+
+      const rCat = JSON.stringify(remote.categories?.map(c => ({ id: c.id, name: c.name })) || []);
+      const lCat = JSON.stringify(local.categories.map(c => ({ id: c.id, name: c.name })));
+      if (rCat !== lCat) return true;
+
+      const rInc = JSON.stringify(remote.incomes?.map(i => ({ id: i.id, name: i.name })) || []);
+      const lInc = JSON.stringify(local.incomes.map(i => ({ id: i.id, name: i.name })));
+      if (rInc !== lInc) return true;
+
+      return false;
+    } catch (e) { return true; }
+  }, []);
+
   const updateLocalFromRemote = useCallback((data: SyncSettingsFields & { transactions?: Transaction[], users?: { name: string; id: string }[] }) => {
     if (data.accounts) setAccounts(data.accounts);
     if (data.categories) setCategories(data.categories);
@@ -56,13 +74,15 @@ export const useSync = ({
       }
 
       // ПРОВЕРКА КОНФЛИКТА ПРИ ЗАГРУЗКЕ
-      if (localLastSync && remote.timestamp) {
+      if (remote.timestamp) {
         const remoteDate = new Date(remote.timestamp.replace(/-/g, '/').replace('T', ' '));
-        const localDate = new Date(localLastSync.replace(/-/g, '/').replace('T', ' '));
+        const localDate = localLastSync ? new Date(localLastSync.replace(/-/g, '/').replace('T', ' ')) : new Date(0);
         
-        // Если в облаке данные НОВЕЕ, чем наша последняя синхронизация — показываем модалку
-        if (remoteDate.getTime() > localDate.getTime() + 1000) { // +1s buffer
-          console.log("[Sync] Conflict detected during pull! Remote is newer.");
+        const isNewer = remoteDate.getTime() > localDate.getTime() + 1000;
+        const isSameTimeButDifferentData = Math.abs(remoteDate.getTime() - localDate.getTime()) < 2000 && areSettingsDifferent(remote, { accounts, categories, incomes });
+
+        if (isNewer || isSameTimeButDifferentData) {
+          console.log("[Sync] Conflict detected during pull!", { isNewer, isSameTimeButDifferentData });
           setConflictData(remote);
           setSyncStatus("success");
           return true;
@@ -76,7 +96,7 @@ export const useSync = ({
     }
     setSyncStatus("error");
     return false;
-  }, [updateLocalFromRemote, ssId, accounts.length, categories.length]);
+  }, [updateLocalFromRemote, ssId, accounts, categories, incomes, areSettingsDifferent]);
 
   const checkConflicts = useCallback(async () => {
     if (syncStatus === "loading" || !!conflictData) return;
@@ -86,7 +106,6 @@ export const useSync = ({
       const localLastSync = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC);
       
       if (!localLastSync) {
-        // Если синхронизаций еще не было — просто берем данные из облака
         if (accounts.length === 0 && categories.length === 0) updateLocalFromRemote(remote);
         return;
       }
@@ -94,12 +113,15 @@ export const useSync = ({
       const remoteDate = new Date(remote.timestamp.replace(/-/g, '/').replace('T', ' '));
       const localDate = new Date(localLastSync.replace(/-/g, '/').replace('T', ' '));
       
-      if (remoteDate.getTime() > localDate.getTime() + 2000) { // 2s buffer for periodic check
-        console.log("[Sync] Periodic check found newer data in cloud!");
+      const isNewer = remoteDate.getTime() > localDate.getTime() + 2000;
+      const isSameTimeButDifferentData = areSettingsDifferent(remote, { accounts, categories, incomes });
+
+      if (isNewer || isSameTimeButDifferentData) {
+        console.log("[Sync] Conflict detected during periodic check!", { isNewer, isSameTimeButDifferentData });
         setConflictData(remote);
       }
     } catch (e) { console.error("Conflict check failed:", e); }
-  }, [updateLocalFromRemote, ssId, syncStatus, conflictData, accounts.length, categories.length]);
+  }, [updateLocalFromRemote, ssId, syncStatus, conflictData, accounts, categories, incomes, areSettingsDifferent]);
 
   const pushSettings = useCallback((a: Account[], c: Category[], i: IncomeSource[], immediate = false) => {
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
@@ -112,12 +134,15 @@ export const useSync = ({
         const remote = await googleSheetsService.fetchSettings(ssId);
         const localLastSync = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC);
         
-        if (remote && remote.timestamp && localLastSync) {
+        if (remote && remote.timestamp) {
           const remoteDate = new Date(remote.timestamp.replace(/-/g, '/').replace('T', ' '));
-          const localDate = new Date(localLastSync.replace(/-/g, '/').replace('T', ' '));
+          const localDate = localLastSync ? new Date(localLastSync.replace(/-/g, '/').replace('T', ' ')) : new Date(0);
           
-          if (remoteDate.getTime() > localDate.getTime() + 2000) {
-            console.log("[Sync] Conflict detected BEFORE push! Aborting overwrite.");
+          const isNewer = remoteDate.getTime() > localDate.getTime() + 2000;
+          const isSameTimeButDifferentData = areSettingsDifferent(remote, { accounts: a, categories: c, incomes: i });
+
+          if (isNewer || isSameTimeButDifferentData) {
+            console.log("[Sync] Conflict detected BEFORE push! Aborting overwrite.", { isNewer, isSameTimeButDifferentData });
             setConflictData(remote);
             setSyncStatus("success");
             return;
