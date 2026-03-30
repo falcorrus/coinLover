@@ -214,7 +214,7 @@ async function registerLeadInMaster(sheets, payload) {
     const ssId = payload.ssId || (sheetUrl.match(/[-\w]{25,}/) ? sheetUrl.match(/[-\w]{25,}/)[0] : "");
     const userSheet = "Users";
 
-    // 1. Ensure Users sheet exists in MASTER
+    // 1. Ensure Users sheet exists
     const ss = await sheets.spreadsheets.get({ spreadsheetId: MASTER_SS_ID });
     const sheetNames = ss.data.sheets.map(s => s.properties.title);
     if (!sheetNames.includes(userSheet)) {
@@ -222,7 +222,6 @@ async function registerLeadInMaster(sheets, payload) {
         spreadsheetId: MASTER_SS_ID,
         requestBody: { requests: [{ addSheet: { properties: { title: userSheet } } }] }
       });
-      // Initial headers
       await sheets.spreadsheets.values.update({
         spreadsheetId: MASTER_SS_ID,
         range: `${userSheet}!A1`,
@@ -231,7 +230,20 @@ async function registerLeadInMaster(sheets, payload) {
       });
     }
 
-    // 2. Prepare data
+    // 2. Check if user already exists to avoid duplicates
+    const existingRes = await sheets.spreadsheets.values.get({
+      spreadsheetId: MASTER_SS_ID,
+      range: `${userSheet}!A:C`
+    });
+    const existingRows = existingRes.data.values || [];
+    const userExists = existingRows.some(row => row[2] === ssId);
+    
+    if (userExists) {
+      console.log(`[API] User ${ssId} already registered. Skipping append.`);
+      return true;
+    }
+
+    // 3. Prepare data
     const accessEnds = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toLocaleDateString('ru-RU'); 
     const linkApp = `https://coinlover.ru/?ssId=${ssId}`;
     const linkSheet = sheetUrl || `https://docs.google.com/spreadsheets/d/${ssId}`;
@@ -245,7 +257,7 @@ async function registerLeadInMaster(sheets, payload) {
       accessEnds
     ];
 
-    // 3. Append to Users sheet
+    // 4. Append to Users sheet
     await sheets.spreadsheets.values.append({
       spreadsheetId: MASTER_SS_ID,
       range: `${userSheet}!A:F`,
