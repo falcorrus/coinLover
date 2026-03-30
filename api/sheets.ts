@@ -296,8 +296,15 @@ export default async function handler(req, res) {
         });
         const mRows = masterRes.data.values || [];
         if (mRows.length > 0) {
-          const headers = mRows[0].map(h => String(h).trim().toLowerCase());
-          console.log(`[API] Users Sheet Headers: ${JSON.stringify(headers)}`);
+          // If first row is a section header like "=== USERS ===", take the next row as headers
+          let headerRowIdx = 0;
+          if (String(mRows[0][0] || "").toLowerCase().includes("users") && mRows[1]) {
+            headerRowIdx = 1;
+          }
+
+          const headers = mRows[headerRowIdx].map(h => String(h).trim().toLowerCase());
+          console.log(`[API] Users Sheet Headers (from row ${headerRowIdx + 1}): ${JSON.stringify(headers)}`);
+          
           const idIdx = headers.indexOf("id");
           const accessIdx = headers.indexOf("access ends");
           
@@ -305,7 +312,8 @@ export default async function handler(req, res) {
           let accessEndsDate = null;
           let found = false;
 
-          for (let i = 1; i < mRows.length; i++) {
+          const dataStartIdx = headerRowIdx + 1;
+          for (let i = dataStartIdx; i < mRows.length; i++) {
             const rowId = String(mRows[i][idIdx] || "").trim();
             if (rowId) console.log(`[API] Comparing: '${cleanSsId}' with '${rowId}'`);
             if (rowId === cleanSsId) {
