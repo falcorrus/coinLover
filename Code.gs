@@ -247,13 +247,25 @@ function doGet(e) {
               dt = new Date(s);
               
               if (isNaN(dt.getTime())) {
-                // Try DD.MM.YYYY / DD-MM-YYYY
-                const dtStr = s.replace(/-/g, '.');
-                const p = dtStr.split('.');
-                if (p.length === 3) {
-                  let year = parseInt(p[2]);
-                  if (year < 100) year += 2000;
-                  dt = new Date(year, parseInt(p[1]) - 1, parseInt(p[0]), 12, 0, 0);
+                if (s.includes('/')) {
+                  const p = s.split(/[ /:]/);
+                  if (p.length >= 3) {
+                    const month = parseInt(p[0]) - 1;
+                    const day = parseInt(p[1]);
+                    let year = parseInt(p[2]);
+                    if (year < 100) year += 2000;
+                    const hour = p[3] ? parseInt(p[3]) : 12;
+                    const min = p[4] ? parseInt(p[4]) : 0;
+                    dt = new Date(year, month, day, hour, min, 0);
+                  }
+                } else {
+                  // Fallback for DD.MM.YYYY or DD-MM-YYYY (with dots/dashes)
+                  const p = s.split(/[.-]/);
+                  if (p.length >= 3) {
+                    let year = parseInt(p[2]); 
+                    if (year < 100) year += 2000;
+                    dt = new Date(year, parseInt(p[1]) - 1, parseInt(p[0]), 12, 0, 0);
+                  }
                 }
               }
             }
@@ -450,13 +462,25 @@ function parseDateSafe(s) {
   const str = String(s).trim();
   let d = new Date(str);
   if (isNaN(d.getTime())) {
-    // Try DD.MM.YYYY
-    const dtStr = str.replace(/-/g, '.');
-    const p = dtStr.split('.');
-    if (p.length === 3) {
-      let year = parseInt(p[2]);
-      if (year < 100) year += 2000;
-      d = new Date(year, parseInt(p[1]) - 1, parseInt(p[0]), 12, 0, 0);
+    if (str.includes('/')) {
+      const p = str.split(/[ /:]/);
+      if (p.length >= 3) {
+        const month = parseInt(p[0]) - 1;
+        const day = parseInt(p[1]);
+        let year = parseInt(p[2]);
+        if (year < 100) year += 2000;
+        const hour = p[3] ? parseInt(p[3]) : 12;
+        const min = p[4] ? parseInt(p[4]) : 0;
+        d = new Date(year, month, day, hour, min, 0);
+      }
+    } else {
+      // Try DD.MM.YYYY
+      const p = str.split(/[.-]/);
+      if (p.length >= 3) {
+        let year = parseInt(p[2]);
+        if (year < 100) year += 2000;
+        d = new Date(year, parseInt(p[1]) - 1, parseInt(p[0]), 12, 0, 0);
+      }
     }
   }
   return isNaN(d.getTime()) ? new Date() : d; 

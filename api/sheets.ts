@@ -490,13 +490,25 @@ export default async function handler(req, res) {
                let dt = new Date(s);
                
                if (isNaN(dt.getTime())) {
-                 // Fallback for DD.MM.YYYY or DD-MM-YYYY
-                 let dtStr = s.replace(/-/g, '.');
-                 const p = dtStr.split('.');
-                 if (p.length === 3) {
-                   let year = parseInt(p[2]); 
-                   if (year < 100) year += 2000;
-                   dt = new Date(year, parseInt(p[1]) - 1, parseInt(p[0]), 12, 0, 0);
+                 if (s.includes('/')) {
+                   const p = s.split(/[ /:]/);
+                   if (p.length >= 3) {
+                     const month = parseInt(p[0]) - 1;
+                     const day = parseInt(p[1]);
+                     let year = parseInt(p[2]);
+                     if (year < 100) year += 2000;
+                     const hour = p[3] ? parseInt(p[3]) : 12;
+                     const min = p[4] ? parseInt(p[4]) : 0;
+                     dt = new Date(year, month, day, hour, min, 0);
+                   }
+                 } else {
+                   // Fallback for DD.MM.YYYY or DD-MM-YYYY (with dots/dashes)
+                   const p = s.split(/[.-]/);
+                   if (p.length >= 3) {
+                     let year = parseInt(p[2]); 
+                     if (year < 100) year += 2000;
+                     dt = new Date(year, parseInt(p[1]) - 1, parseInt(p[0]), 12, 0, 0);
+                   }
                  }
                }
                
