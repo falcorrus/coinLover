@@ -384,11 +384,12 @@ function doPost(e) {
       const ids = all[0].map(h => String(h).trim().toLowerCase());
       const col = {}; ids.forEach((v, i) => col[v] = i);
       
+      const baseAmt = data.targetAmountUSD !== undefined && data.targetAmountUSD !== 0 ? data.targetAmountUSD : (data.sourceAmountUSD || 0);
       const f = { 
         "date": parseDateSafe(data.date), "type": data.type, "src": data.sourceName, "dst": data.destinationName,
         "tag": data.tagName || "", "s_amt": Number(data.sourceAmount), "s_curr": data.sourceCurrency,
         "t_amt": Number(data.targetAmount || data.sourceAmount), "t_curr": data.targetCurrency,
-        "base_amt": Number(data.targetAmountUSD || ""),
+        "base_amt": Number(baseAmt),
         "comment": data.comment || "", "id": data.id 
       };
       const rowData = ids.map(h => f[h] !== undefined ? f[h] : "");

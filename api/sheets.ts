@@ -580,7 +580,7 @@ export default async function handler(req, res) {
             "s_curr": payload.sourceCurrency, 
             "t_amt": payload.targetAmount || payload.sourceAmount, 
             "t_curr": payload.targetCurrency || payload.sourceCurrency, 
-            "base_amt": payload.targetAmountUSD || payload.sourceAmountUSD || 0, 
+            "base_amt": payload.targetAmountUSD !== undefined && payload.targetAmountUSD !== 0 ? payload.targetAmountUSD : (payload.sourceAmountUSD || 0), 
             "comment": payload.comment || "", 
             "id": payload.id 
           };
