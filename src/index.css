@@ -61,7 +61,7 @@
   --glass-item-bg: #F3FBF8;
   --glass-item-active: #DDE8E4;
   --glass-border: #D1D9D6;
-  --glass-border-highlight: #E9B298;
+  --glass-border-highlight: #F59E0B;
   --numpad-bg: #E8F0ED;
   --panel-bg: #E8F0ED;
   --btn-equals: #FFFFFF;
@@ -70,7 +70,7 @@
   
   --soft-ui-outset: -5px -5px 10px #FFFFFF, 5px 5px 10px #D1D9D6;
   --soft-ui-inset: inset 2px 2px 5px #D1D9D6, inset -2px -2px 5px #FFFFFF;
-  --copper-gradient: linear-gradient(135deg, #D27D56 0%, #E9B298 100%);
+  --copper-gradient: linear-gradient(135deg, #EAB308 0%, #FDE047 100%);
 
   /* Override Tailwind Fonts */
   --font-sans: 'Raleway', sans-serif;
