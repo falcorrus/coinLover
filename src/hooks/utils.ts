@@ -3,8 +3,7 @@ import { RatesService } from "../services/RatesService";
 
 export const getLocalTimeString = (dateInput?: string) => {
   const d = dateInput ? new Date(dateInput.replace(/-/g, '/').replace('T', ' ')) : new Date();
-  const pad = (n: number) => n.toString().padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  return d.toISOString();
 };
 
 export const enrichAccountsWithUSD = (accs: Account[]): Account[] => {

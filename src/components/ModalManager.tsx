@@ -75,6 +75,7 @@ interface ModalManagerProps {
   saveIncome: (income: Partial<IncomeSource>) => Promise<void>;
   deleteIncome: (id: string) => Promise<void>;
   updateLocalFromRemote: (data: any) => void;
+  skipConflict: (data: any) => void;
   onSwitchTable: (id: string) => void;
 }
 
@@ -89,7 +90,7 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
     setCalendarAnalyticsModal, setConfirmDelete, setNumpad, setIsTagModalOpen, setIsUsersModalOpen, setEditingTxId, setConflictData,
     setIsThemeModalOpen, setTheme,
     addTransaction, updateTransaction, deleteTransaction, saveAccount, deleteAccount, 
-    saveCategory, deleteCategory, saveIncome, deleteIncome, updateLocalFromRemote,
+    saveCategory, deleteCategory, saveIncome, deleteIncome, updateLocalFromRemote, skipConflict,
     onSwitchTable
   } = props;
 
@@ -251,8 +252,8 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
 
       {conflictData && (
         <ConfirmModal 
-          isOpen={true} title="Обнаружены изменения" message={`В облаке есть более свежие данные (версия от ${new Date((conflictData as any).timestamp.replace(/-/g, '/').replace('T', ' ')).toLocaleString()}). Загрузить их и перезаписать локальные данные?`}
-          confirmText="ЗАГРУЗИТЬ" cancelText="ОСТАВИТЬ МОИ" danger={false} onConfirm={() => updateLocalFromRemote(conflictData)} onCancel={() => { localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC, (conflictData as any).timestamp); setConflictData(null); }}
+          isOpen={true} title="Обнаружены изменения" message={`В облаке есть более свежие данные (версия от ${new Date((conflictData as any).timestamp).toLocaleString()}). Загрузить их и перезаписать локальные данные?`}
+          confirmText="ЗАГРУЗИТЬ" cancelText="ОСТАВИТЬ МОИ" danger={false} onConfirm={() => updateLocalFromRemote(conflictData)} onCancel={() => skipConflict(conflictData)}
         />
       )}
     </>

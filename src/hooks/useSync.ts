@@ -49,6 +49,12 @@ export const useSync = ({
     } catch (e) { return ""; }
   };
 
+  const skipConflict = useCallback((remote: SyncSettingsFields) => {
+    localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC, remote.timestamp);
+    lastRemoteSnapshot.current = getSettingsSnapshot(remote);
+    setConflictData(null);
+  }, []);
+
   const updateLocalFromRemote = useCallback((data: SyncSettingsFields & { transactions?: Transaction[], users?: { name: string; id: string }[] }) => {
     if (data.accounts) setAccounts(data.accounts);
     if (data.categories) setCategories(data.categories);
@@ -60,7 +66,7 @@ export const useSync = ({
       lastRemoteSnapshot.current = getSettingsSnapshot(data);
     }
     if (data.transactions && Array.isArray(data.transactions)) {
-      setTransactions([...data.transactions].sort((a, b) => new Date(b.date.replace(/-/g, '/').replace('T', ' ')).getTime() - new Date(a.date.replace(/-/g, '/').replace('T', ' ')).getTime()));
+      setTransactions([...data.transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
     }
     setConflictData(null);
     setAccessError(null);
@@ -81,8 +87,8 @@ export const useSync = ({
         }
 
         if (remote.timestamp && localLastSync) {
-          const remoteDate = new Date(remote.timestamp.replace(/-/g, '/').replace('T', ' '));
-          const localDate = new Date(localLastSync.replace(/-/g, '/').replace('T', ' '));
+          const remoteDate = new Date(remote.timestamp);
+          const localDate = new Date(localLastSync);
           const isNewer = localLastSync && (remoteDate.getTime() > localDate.getTime() + 5000);
           const remoteSnap = getSettingsSnapshot(remote);
           const isDifferentFromSnapshot = lastRemoteSnapshot.current && remoteSnap !== lastRemoteSnapshot.current;
@@ -123,8 +129,8 @@ export const useSync = ({
         return;
       }
 
-      const remoteDate = new Date(remote.timestamp.replace(/-/g, '/').replace('T', ' '));
-      const localDate = new Date(localLastSync.replace(/-/g, '/').replace('T', ' '));
+      const remoteDate = new Date(remote.timestamp);
+      const localDate = new Date(localLastSync);
       const isNewer = remoteDate.getTime() > localDate.getTime() + 2000;
       const isDifferentFromSnapshot = lastRemoteSnapshot.current && remoteSnap !== lastRemoteSnapshot.current;
 
@@ -147,8 +153,8 @@ export const useSync = ({
         if (remote && remote.timestamp) {
           const remoteSnap = getSettingsSnapshot(remote);
           const localLastSync = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC);
-          const localDate = localLastSync ? new Date(localLastSync.replace(/-/g, '/').replace('T', ' ')) : new Date(0);
-          const remoteDate = new Date(remote.timestamp.replace(/-/g, '/').replace('T', ' '));
+          const localDate = localLastSync ? new Date(localLastSync) : new Date(0);
+          const remoteDate = new Date(remote.timestamp);
           const isCloudNewer = localLastSync && (remoteDate.getTime() > localDate.getTime() + 5000);
           const isCloudChangedSinceLastSync = lastRemoteSnapshot.current && remoteSnap !== lastRemoteSnapshot.current;
 
@@ -190,6 +196,6 @@ export const useSync = ({
 
   return {
     syncStatus, setSyncStatus, conflictData, setConflictData, accessError, setAccessError,
-    pullSettings, pushSettings, checkConflicts, updateLocalFromRemote
+    pullSettings, pushSettings, checkConflicts, updateLocalFromRemote, skipConflict
   };
 };

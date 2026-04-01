@@ -32,7 +32,7 @@ export default function App() {
     accounts, setAccounts, categories, setCategories, incomes, setIncomes,
     transactions, setTransactions, syncStatus, users, addTransaction, updateTransaction, deleteTransaction, saveAccount, deleteAccount,
     saveCategory, deleteCategory, saveIncome, deleteIncome, syncCategories, syncIncomes, syncAccountsOrder,
-    pullSettings, checkConflicts, conflictData, setConflictData, updateLocalFromRemote, pushSettings, accessError, setAccessError
+    pullSettings, checkConflicts, conflictData, setConflictData, updateLocalFromRemote, skipConflict, pushSettings, accessError, setAccessError
   } = useFinance(activeTableId);
 
   const [isSplashVisible, setIsSplashVisible] = React.useState(true);
@@ -380,7 +380,7 @@ export default function App() {
           setEditingTxId={setEditingTxId} setConflictData={setConflictData} setIsThemeModalOpen={setIsThemeModalOpen} setTheme={setTheme}
           addTransaction={addTransaction} updateTransaction={updateTransaction} deleteTransaction={deleteTransaction}
           saveAccount={saveAccount} deleteAccount={deleteAccount} saveCategory={saveCategory} deleteCategory={deleteCategory}
-          saveIncome={saveIncome} deleteIncome={deleteIncome} updateLocalFromRemote={updateLocalFromRemote} onSwitchTable={handleSwitchTable}
+          saveIncome={saveIncome} deleteIncome={deleteIncome} updateLocalFromRemote={updateLocalFromRemote} skipConflict={skipConflict} onSwitchTable={handleSwitchTable}
         />
 
         {isAdminModalOpen && (
