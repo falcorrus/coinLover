@@ -3,6 +3,7 @@ import { DragStartEvent, DragMoveEvent, DragOverEvent, DragEndEvent } from "@dnd
 import { arrayMove } from "@dnd-kit/sortable";
 import { Account, Category, IncomeSource, DragItemType, NumpadData } from "../types";
 import { APP_SETTINGS } from "../constants/settings";
+import { RatesService } from "../services/RatesService";
 
 interface UseAppDnDProps {
   accounts: Account[];
@@ -74,7 +75,7 @@ export const useAppDnD = ({
     }
   }, [isSortingMode, setAccounts, setCategories, setIncomes]);
 
-  const handleDragEnd = useCallback((e: DragEndEvent) => {
+  const handleDragEnd = useCallback(async (e: DragEndEvent) => {
     if (sortingTimerRef.current) clearTimeout(sortingTimerRef.current);
     const { active, over } = e;
     const sorting = isSortingMode;
@@ -99,6 +100,7 @@ export const useAppDnD = ({
 
     if (activeData?.type === "account") {
       if (overData?.type === "category") {
+        await RatesService.ensureRates();
         const baseCur = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY) || "USD";
         const prefCur = localStorage.getItem("cl_numpad_pref_currency") || baseCur;
         setNumpad({
@@ -107,6 +109,7 @@ export const useAppDnD = ({
           targetLinked: true, activeField: "source", tag: overData.category.tags?.[0] || null, comment: ""
         });
       } else if (overData?.type === "account" && active.id !== over.id && !sorting) {
+        await RatesService.ensureRates();
         setNumpad({
           isOpen: true, type: "transfer", source: activeData.account, destination: overData.account,
           sourceAmount: "0", sourceCurrency: activeData.account.currency, targetAmount: "0", targetCurrency: overData.account.currency,
@@ -114,6 +117,7 @@ export const useAppDnD = ({
         });
       }
     } else if (activeData?.type === "income" && overData?.type === "account") {
+      await RatesService.ensureRates();
       const baseCur = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY) || "USD";
       const prefCur = localStorage.getItem("cl_numpad_pref_currency") || baseCur;
       setNumpad({

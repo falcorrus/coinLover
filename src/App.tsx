@@ -15,6 +15,7 @@ import { LandingPage } from "./components/LandingPage";
 import { OnboardingModal } from "./components/OnboardingModal";
 import { useCurrencyCalculations } from "./hooks/useCurrencyCalculations";
 import { safeParseDate } from "./hooks/utils";
+import { RatesService } from "./services/RatesService";
 
 // Layout Components
 import { AppHeader } from "./components/layout/AppHeader";
@@ -297,6 +298,9 @@ export default function App() {
     if (activeTableId) setGAUser(activeTableId);
     setTimeout(() => setIsSplashVisible(false), APP_SETTINGS.SPLASH_SCREEN_DURATION);
     setTimeout(() => checkConflicts(), APP_SETTINGS.CONFLICT_CHECK_DELAY);
+    
+    // Background rates sync
+    RatesService.syncRatesInBackground();
   }, [activeTableId, checkConflicts]);
 
   const toggleIncome = () => { const next = !isIncomeCollapsed; setIsIncomeCollapsed(next); setMode(next ? "expense" : "income"); };

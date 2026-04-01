@@ -171,10 +171,12 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
         isOpen={historyModal.isOpen} 
         onClose={() => window.history.back()} 
         entity={historyModal.entity as any} entityType={historyModal.type} transactions={historyModal.customTransactions || transactions} accounts={accounts} categories={categories} incomes={incomes} 
-        onEditTransaction={(tx) => { 
+        onEditTransaction={async (tx) => { 
           const source = tx.type === "income" ? incomes.find(i => i.id === tx.targetId) ?? null : accounts.find(a => a.id === tx.accountId) ?? null; 
           const destination = tx.type === "expense" ? categories.find(c => c.id === tx.targetId) ?? null : tx.type === "income" ? accounts.find(a => a.id === tx.accountId) ?? null : accounts.find(a => a.id === tx.targetId) ?? null; 
           if (!source || !destination) return; 
+          
+          await RatesService.ensureRates();
           setEditingTxId(tx.id);
           const actualSourceCurrency = tx.type === "income" ? tx.sourceCurrency : (source as Account).currency;
           setNumpad({ isOpen: true, type: tx.type, source, destination, sourceAmount: String(tx.sourceAmount), sourceCurrency: actualSourceCurrency, targetAmount: String(tx.targetAmount ?? tx.sourceAmount), targetCurrency: tx.targetCurrency, targetLinked: true, activeField: "source", tag: tx.tag ?? null, comment: tx.comment ?? "", returnState: { ...historyModal } }); 
