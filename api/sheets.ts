@@ -543,20 +543,92 @@ export default async function handler(req, res) {
         return res.status(200).json({ status: "success", message: "Table initialized" });
       }
 
-      if (payload.action === 'addTransaction' || payload.action === 'syncSettings') {
-        if (payload.action === 'addTransaction') {
+      if (payload.action === 'addTransaction' || payload.action === 'updateTransaction' || payload.action === 'syncSettings') {
+        if (payload.action === 'addTransaction' || payload.action === 'updateTransaction') {
           const headerRes = await sheets.spreadsheets.values.get({ spreadsheetId: targetSsId, range: `${txSheetName}!A1:Z1` });
           const headers = (headerRes.data.values?.[0] || []).map(h => String(h).trim().toLowerCase());
-          const dataMap = { "date": payload.date, "type": payload.type, "src": payload.sourceName, "dst": payload.destinationName, "tag": payload.tagName || "", "s_amt": payload.sourceAmount, "s_curr": payload.sourceCurrency, "t_amt": payload.targetAmount || payload.sourceAmount, "t_curr": payload.targetCurrency || payload.sourceCurrency, "base_amt": payload.targetAmountUSD || payload.sourceAmountUSD || 0, "comment": payload.comment || "", "id": payload.id };
+          const dataMap = { 
+            "date": payload.date, 
+            "type": payload.type, 
+            "src": payload.sourceName, 
+            "dst": payload.destinationName, 
+            "tag": payload.tagName || "", 
+            "s_amt": payload.sourceAmount, 
+            "s_curr": payload.sourceCurrency, 
+            "t_amt": payload.targetAmount || payload.sourceAmount, 
+            "t_curr": payload.targetCurrency || payload.sourceCurrency, 
+            "base_amt": payload.targetAmountUSD || payload.sourceAmountUSD || 0, 
+            "comment": payload.comment || "", 
+            "id": payload.id 
+          };
           const row = new Array(Math.max(headers.length, 12)).fill("");
           headers.forEach((h, idx) => { if (dataMap[h] !== undefined) row[idx] = dataMap[h]; });
-          await sheets.spreadsheets.values.append({ spreadsheetId: targetSsId, range: `${txSheetName}!A:Z`, valueInputOption: 'USER_ENTERED', requestBody: { values: [row] } });
+
+          if (payload.action === 'addTransaction') {
+            await sheets.spreadsheets.values.append({ 
+              spreadsheetId: targetSsId, 
+              range: `${txSheetName}!A:Z`, 
+              valueInputOption: 'USER_ENTERED', 
+              requestBody: { values: [row] } 
+            });
+          } else {
+            // updateTransaction: find row by ID
+            const allRes = await sheets.spreadsheets.values.get({ spreadsheetId: targetSsId, range: `${txSheetName}!A:Z` });
+            const allRows = allRes.data.values || [];
+            const idColIdx = headers.indexOf("id");
+            if (idColIdx !== -1) {
+              const rIdx = allRows.findIndex(r => String(r[idColIdx]) === String(payload.id));
+              if (rIdx !== -1) {
+                await sheets.spreadsheets.values.update({
+                  spreadsheetId: targetSsId,
+                  range: `${txSheetName}!A${rIdx + 1}`,
+                  valueInputOption: 'USER_ENTERED',
+                  requestBody: { values: [row] }
+                });
+              }
+            }
+          }
         }
         if (payload.accounts) await updateConfigs(sheets, targetSsId, configSheetName, payload);
         return res.status(200).json({ status: "success" });
       }
 
-      if (payload.action === 'deleteTransaction') return res.status(200).json({ status: "success" });
+      if (payload.action === 'deleteTransaction') {
+        const headerRes = await sheets.spreadsheets.values.get({ spreadsheetId: targetSsId, range: `${txSheetName}!A1:Z1` });
+        const headers = (headerRes.data.values?.[0] || []).map(h => String(h).trim().toLowerCase());
+        const idColIdx = headers.indexOf("id");
+        
+        if (idColIdx !== -1) {
+          const allRes = await sheets.spreadsheets.values.get({ spreadsheetId: targetSsId, range: `${txSheetName}!A:Z` });
+          const allRows = allRes.data.values || [];
+          const rIdx = allRows.findIndex(r => String(r[idColIdx]) === String(payload.id));
+          
+          if (rIdx !== -1) {
+            const ss = await sheets.spreadsheets.get({ spreadsheetId: targetSsId });
+            const sheetId = ss.data.sheets.find(s => s.properties.title === txSheetName)?.properties.sheetId;
+            
+            if (sheetId !== undefined) {
+              await sheets.spreadsheets.batchUpdate({
+                spreadsheetId: targetSsId,
+                requestBody: {
+                  requests: [{
+                    deleteDimension: {
+                      range: {
+                        sheetId: sheetId,
+                        dimension: "ROWS",
+                        startIndex: rIdx,
+                        endIndex: rIdx + 1
+                      }
+                    }
+                  }]
+                }
+              });
+            }
+          }
+        }
+        if (payload.accounts) await updateConfigs(sheets, targetSsId, configSheetName, payload);
+        return res.status(200).json({ status: "success" });
+      }
       return res.status(200).json({ status: "success", message: `Action ${payload.action} handled` });
     }
 

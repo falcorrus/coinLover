@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { Account, Transaction, Category, IncomeSource, TransactionType } from "../types";
+import { APP_SETTINGS } from "../constants/settings";
 import { googleSheetsService } from "../services/googleSheets";
 import { RatesService } from "../services/RatesService";
 import { getLocalTimeString, enrichAccountsWithUSD } from "./utils";
@@ -74,7 +75,10 @@ export const useTransactions = ({
     setAccounts(updatedAccounts);
     setSyncStatus("loading");
 
-    // Сначала отправляем транзакцию
+    const ts = getLocalTimeString();
+    const baseCurrency = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY) || "USD";
+
+    // Сначала отправляем транзакцию (теперь с балансами для атомарности)
     const txOk = await googleSheetsService.syncToSheets({ 
         action: "addTransaction", 
         targetSheet: "Transactions", 
@@ -91,11 +95,17 @@ export const useTransactions = ({
         targetCurrency: tCurr, 
         targetAmountUSD: newTx.targetAmountUSD, 
         comment: comment || undefined,
-        ssId
+        ssId,
+        accounts: enrichAccountsWithUSD(updatedAccounts),
+        categories,
+        incomes,
+        timestamp: ts,
+        baseCurrency
     });
 
-    // Затем обновляем балансы через pushSettings (с проверкой конфликта)
+    // Затем всё равно вызываем pushSettings для локальной синхронизации и контроля конфликтов
     if (txOk) {
+      localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC, ts);
       await pushSettings(updatedAccounts, categories, incomes, true);
     } else {
       setSyncStatus("error");
@@ -158,6 +168,9 @@ export const useTransactions = ({
     setAccounts(updatedAccounts);
     setSyncStatus("loading");
 
+    const ts = getLocalTimeString();
+    const baseCurrency = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY) || "USD";
+
     const txOk = await googleSheetsService.syncToSheets({ 
         action: "updateTransaction", 
         targetSheet: "Transactions", 
@@ -174,10 +187,16 @@ export const useTransactions = ({
         targetCurrency: tCurr, 
         targetAmountUSD: updatedTx.targetAmountUSD, 
         comment: comment || undefined,
-        ssId
+        ssId,
+        accounts: enrichAccountsWithUSD(updatedAccounts),
+        categories,
+        incomes,
+        timestamp: ts,
+        baseCurrency
     });
 
     if (txOk) {
+      localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC, ts);
       await pushSettings(updatedAccounts, categories, incomes, true);
     } else {
       setSyncStatus("error");
@@ -185,6 +204,9 @@ export const useTransactions = ({
   }, [accounts, categories, incomes, transactions, setAccounts, setTransactions, setSyncStatus, pushSettings, ssId]);
 
   const deleteTransaction = useCallback(async (txId: string) => {
+    // Гарантируем наличие курсов перед расчетом
+    await RatesService.ensureRates();
+
     const tx = transactions.find((t) => t.id === txId); if (!tx) return;
     setTransactions((prev) => prev.filter((t) => t.id !== txId));
     trackEvent("Transaction", "Delete", tx.type);
@@ -198,14 +220,23 @@ export const useTransactions = ({
     setAccounts(updatedAccounts);
     setSyncStatus("loading");
 
+    const ts = getLocalTimeString();
+    const baseCurrency = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY) || "USD";
+
     const txOk = await googleSheetsService.syncToSheets({ 
         action: "deleteTransaction", 
         targetSheet: "Transactions", 
         id: txId, 
-        ssId
+        ssId,
+        accounts: enrichAccountsWithUSD(updatedAccounts),
+        categories,
+        incomes,
+        timestamp: ts,
+        baseCurrency
     });
 
     if (txOk) {
+      localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC, ts);
       await pushSettings(updatedAccounts, categories, incomes, true);
     } else {
       setSyncStatus("error");
