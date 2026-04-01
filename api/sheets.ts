@@ -489,25 +489,31 @@ export default async function handler(req, res) {
                const s = String(dateRaw).trim();
                let dt = new Date(s);
                
-               if (isNaN(dt.getTime())) {
-                 if (s.includes('/')) {
+               // If slashes or dots, handle explicitly to avoid native parser issues
+               if (s.includes('/') || s.includes('.') || s.includes('-')) {
+                 const isISO = s.length >= 10 && s.charAt(4) === '-' && s.charAt(7) === '-';
+                 if (isISO) {
+                   dt = new Date(s);
+                 } else if (s.includes('/')) {
                    const p = s.split(/[ /:]/);
                    if (p.length >= 3) {
-                     const month = parseInt(p[0]) - 1;
-                     const day = parseInt(p[1]);
-                     let year = parseInt(p[2]);
-                     if (year < 100) year += 2000;
+                     let day, month, year;
+                     const v1 = parseInt(p[0]); const v2 = parseInt(p[1]); const v3 = parseInt(p[2]);
+                     if (v1 > 12) { day = v1; month = v2 - 1; }
+                     else if (v2 > 12) { month = v1 - 1; day = v2; }
+                     else { day = v1; month = v2 - 1; } // Prefer D/M/Y
+                     year = v3 < 100 ? 2000 + v3 : v3;
                      const hour = p[3] ? parseInt(p[3]) : 12;
                      const min = p[4] ? parseInt(p[4]) : 0;
                      dt = new Date(year, month, day, hour, min, 0);
                    }
                  } else {
-                   // Fallback for DD.MM.YYYY or DD-MM-YYYY (with dots/dashes)
+                   // Dots or Dashes (DD.MM.YYYY)
                    const p = s.split(/[.-]/);
                    if (p.length >= 3) {
-                     let year = parseInt(p[2]); 
+                     let day = parseInt(p[0]); let month = parseInt(p[1]) - 1; let year = parseInt(p[2]);
                      if (year < 100) year += 2000;
-                     dt = new Date(year, parseInt(p[1]) - 1, parseInt(p[0]), 12, 0, 0);
+                     dt = new Date(year, month, day, 12, 0, 0);
                    }
                  }
                }

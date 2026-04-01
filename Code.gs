@@ -271,7 +271,7 @@ function doGet(e) {
             }
 
             if (!dt || isNaN(dt.getTime())) continue;
-            const iso = Utilities.formatDate(dt, ss.getSpreadsheetTimeZone(), "yyyy-MM-dd'T'HH:mm:ss'Z'");
+            const iso = Utilities.formatDate(dt, "UTC", "yyyy-MM-dd'T'HH:mm:ss'Z'");
             
             const s_amt = parseNum(r[c_s_amt]);
             const t_amt = c_t_amt !== undefined ? parseNum(r[c_t_amt]) : s_amt;
