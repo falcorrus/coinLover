@@ -486,15 +486,20 @@ export default async function handler(req, res) {
                else if (type === "income") { aid = accMap[dstRaw] || dstRaw; tid = incMap[srcRaw] || srcRaw; }
                else if (type === "transfer") { aid = accMap[srcRaw] || srcRaw; tid = accMap[dstRaw] || dstRaw; }
 
-               let dtStr = String(dateRaw).trim().replace(/-/g, '/');
-               if (dtStr.includes('.')) {
+               const s = String(dateRaw).trim();
+               let dt = new Date(s);
+               
+               if (isNaN(dt.getTime())) {
+                 // Fallback for DD.MM.YYYY or DD-MM-YYYY
+                 let dtStr = s.replace(/-/g, '.');
                  const p = dtStr.split('.');
                  if (p.length === 3) {
-                   let year = parseInt(p[2]); if (year < 100) year += 2000;
-                   dtStr = `${year}-${p[1]}-${p[0]}T12:00:00`;
+                   let year = parseInt(p[2]); 
+                   if (year < 100) year += 2000;
+                   dt = new Date(year, parseInt(p[1]) - 1, parseInt(p[0]), 12, 0, 0);
                  }
                }
-               const dt = new Date(dtStr);
+               
                if (isNaN(dt.getTime())) continue;
 
                data.transactions.push({

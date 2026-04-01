@@ -243,20 +243,23 @@ function doGet(e) {
             if (dateRaw instanceof Date) {
               dt = dateRaw;
             } else {
-              let s = String(dateRaw).trim().replace(/-/g, '/');
-              if (s.includes('.')) {
-                const p = s.split('.');
+              const s = String(dateRaw).trim();
+              dt = new Date(s);
+              
+              if (isNaN(dt.getTime())) {
+                // Try DD.MM.YYYY / DD-MM-YYYY
+                const dtStr = s.replace(/-/g, '.');
+                const p = dtStr.split('.');
                 if (p.length === 3) {
                   let year = parseInt(p[2]);
                   if (year < 100) year += 2000;
-                  dt = new Date(year, parseInt(p[1]) - 1, parseInt(p[0]));
+                  dt = new Date(year, parseInt(p[1]) - 1, parseInt(p[0]), 12, 0, 0);
                 }
               }
-              if (!dt || isNaN(dt.getTime())) dt = new Date(s);
             }
 
             if (!dt || isNaN(dt.getTime())) continue;
-            const iso = Utilities.formatDate(dt, ss.getSpreadsheetTimeZone(), "yyyy-MM-dd'T'HH:mm:ss");
+            const iso = Utilities.formatDate(dt, ss.getSpreadsheetTimeZone(), "yyyy-MM-dd'T'HH:mm:ss'Z'");
             
             const s_amt = parseNum(r[c_s_amt]);
             const t_amt = c_t_amt !== undefined ? parseNum(r[c_t_amt]) : s_amt;
@@ -442,4 +445,19 @@ function getIdFromUrl(url) {
   return match ? match[0] : null;
 }
 
-function parseDateSafe(s) { if(!s) return new Date(); const d = new Date(String(s).replace('T',' ').replace(/-/g,'/')); return isNaN(d.getTime()) ? new Date() : d; }
+function parseDateSafe(s) { 
+  if(!s) return new Date(); 
+  const str = String(s).trim();
+  let d = new Date(str);
+  if (isNaN(d.getTime())) {
+    // Try DD.MM.YYYY
+    const dtStr = str.replace(/-/g, '.');
+    const p = dtStr.split('.');
+    if (p.length === 3) {
+      let year = parseInt(p[2]);
+      if (year < 100) year += 2000;
+      d = new Date(year, parseInt(p[1]) - 1, parseInt(p[0]), 12, 0, 0);
+    }
+  }
+  return isNaN(d.getTime()) ? new Date() : d; 
+}
