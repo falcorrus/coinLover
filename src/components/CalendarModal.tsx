@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { Transaction } from "../types";
+import { safeParseDate } from "../hooks/utils";
 
 interface Props {
     isOpen: boolean;
@@ -55,7 +56,7 @@ export const CalendarModal: React.FC<Props> = ({ isOpen, onClose, onSelect, tran
         if (!transactions.length) return null;
         
         const dayTx = transactions.filter(t => {
-            const d = new Date(t.date.replace(/-/g, '/').replace('T', ' '));
+            const d = safeParseDate(t.date);
             return d.getDate() === day && d.getMonth() === month && d.getFullYear() === year;
         });
 

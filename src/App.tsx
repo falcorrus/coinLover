@@ -14,6 +14,7 @@ import { ModalManager } from "./components/ModalManager";
 import { LandingPage } from "./components/LandingPage";
 import { OnboardingModal } from "./components/OnboardingModal";
 import { useCurrencyCalculations } from "./hooks/useCurrencyCalculations";
+import { safeParseDate } from "./hooks/utils";
 
 // Layout Components
 import { AppHeader } from "./components/layout/AppHeader";
@@ -220,10 +221,7 @@ export default function App() {
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
     return transactions.filter(t => {
-      if (!t.date) return false;
-      // Используем безопасный парсинг даты для мобильных браузеров
-      const safeDateStr = String(t.date).replace(/-/g, '/').replace('T', ' ');
-      const d = new Date(safeDateStr);
+      const d = safeParseDate(t.date);
       return !isNaN(d.getTime()) && d.getMonth() === currentMonth && d.getFullYear() === currentYear;
     });
   }, [transactions]);

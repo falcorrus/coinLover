@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import { X, ChevronLeft, ChevronRight, PieChart, List, Tag, RefreshCcw, MoreHorizontal, TrendingUp, TrendingDown, CheckCircle2, Circle } from "lucide-react";
 import { Transaction, Category, IncomeSource, Account } from "../types";
 import { IconMap } from "../constants";
+import { safeParseDate } from "../hooks/utils";
 import { googleSheetsService } from "../services/googleSheets";
 import { RatesService } from "../services/RatesService";
 
@@ -116,39 +117,9 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
     const currentKey = useMemo(() => analysisType === "income" ? (tab === "categories" ? "income" : "income_tags") : `expense_${tab}`, [analysisType, tab]);
     const selectedIds = useMemo(() => selections[currentKey] || new Set(), [selections, currentKey]);
 
-    const parseDate = (dateStr: string) => {
-        try {
-            const s = String(dateStr).trim();
-            let d = new Date(s);
-            if (!isNaN(d.getTime())) return d;
-            
-            d = new Date(s.replace(/-/g, '/').replace('T', ' '));
-            if (!isNaN(d.getTime())) return d;
-
-            if (s.includes('/')) {
-                const p = s.split('/');
-                if (p.length >= 3) {
-                    const m = parseInt(p[0]) - 1;
-                    const day = parseInt(p[1]);
-                    const y = parseInt(p[2].split(' ')[0]);
-                    const year = y < 100 ? 2000 + y : y;
-                    return new Date(year, m, day);
-                }
-            }
-            if (s.includes('.')) {
-                const p = s.split('.');
-                if (p.length >= 3) {
-                    const year = p[2].split(' ')[0].length === 4 ? parseInt(p[2]) : 2000 + parseInt(p[2]);
-                    return new Date(year, parseInt(p[1]) - 1, parseInt(p[0]));
-                }
-            }
-            return new Date(NaN);
-        } catch { return new Date(NaN); }
-    };
-
     const filteredTx = useMemo(() => transactions.filter(t => {
         if (t.type !== analysisType) return false;
-        const txDate = parseDate(t.date);
+        const txDate = safeParseDate(t.date);
         return !isNaN(txDate.getTime()) && txDate.getFullYear() === currentDate.getFullYear() && txDate.getMonth() === currentDate.getMonth();
     }), [transactions, analysisType, currentDate]);
 
@@ -231,7 +202,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
         const loadData = async () => {
             const cacheKey = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
             const globalMonthTx = globalTransactions.filter(t => {
-                const d = parseDate(t.date);
+                const d = safeParseDate(t.date);
                 return !isNaN(d.getTime()) && d.getFullYear() === currentDate.getFullYear() && (d.getMonth() + 1) === (currentDate.getMonth() + 1);
             });
             if (globalMonthTx.length > 0) { setTransactions(globalTransactions); globalAnalyticsCache.set(cacheKey, globalTransactions); return; }

@@ -3,6 +3,7 @@ import { X, ChevronLeft, ChevronRight, RefreshCcw, Calendar, Wallet, AlertCircle
 import { Transaction, Account, Category, IncomeSource } from "../types";
 import { googleSheetsService } from "../services/googleSheets";
 import { IconMap } from "../constants";
+import { safeParseDate } from "../hooks/utils";
 import { RatesService } from "../services/RatesService";
 
 interface CalendarAnalyticsModalProps {
@@ -83,7 +84,7 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
             const cacheKey = `${yearStr}-${monthStr}`;
 
             const globalMonthTx = globalTransactions.filter(t => {
-                const txDate = new Date(t.date.replace(/-/g, '/').replace('T', ' '));
+                const txDate = safeParseDate(t.date);
                 return txDate.getFullYear() === yearStr && (txDate.getMonth() + 1) === Number(monthStr);
             });
 
@@ -139,7 +140,7 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
 
     const filteredTx = useMemo(() => {
         return transactions.filter(t => {
-            const txDate = new Date(t.date.replace(/-/g, '/').replace('T', ' '));
+            const txDate = safeParseDate(t.date);
             return txDate.getFullYear() === currentDate.getFullYear() && txDate.getMonth() === currentDate.getMonth();
         });
     }, [transactions, currentDate]);
@@ -164,7 +165,7 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
 
     const getDailyData = (day: number) => {
         const dayTx = filteredTx.filter(t => {
-            const txDate = new Date(t.date.replace(/-/g, '/').replace('T', ' '));
+            const txDate = safeParseDate(t.date);
             return txDate.getDate() === day;
         });
 

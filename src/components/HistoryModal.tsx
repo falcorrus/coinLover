@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { X, ArrowDownLeft, ArrowUpRight, ArrowRight, Wallet, Pencil, Tag, ArrowRightLeft, AlertCircle, Check } from "lucide-react";
 import { Transaction, Account, Category, IncomeSource } from "../types";
 import { IconMap } from "../constants";
+import { safeParseDate } from "../hooks/utils";
 import { RatesService } from "../services/RatesService";
 
 interface HistoryModalProps {
@@ -37,7 +38,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
     }
 
     const sortedTransactions = [...filteredTransactions].sort((a, b) =>
-        new Date(b.date.replace(/-/g, '/').replace('T', ' ')).getTime() - new Date(a.date.replace(/-/g, '/').replace('T', ' ')).getTime()
+        safeParseDate(b.date).getTime() - safeParseDate(a.date).getTime()
     );
 
     const checkBroken = (tx: Transaction) => {
@@ -219,7 +220,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                                                 <div className="flex items-center gap-2 mt-0.5">
                                                     <span className="text-[10px] text-[var(--text-muted)] uppercase font-medium">
                                                         {(() => {
-                                                            const d = new Date(tx.date.replace(/-/g, '/').replace('T', ' '));
+                                                            const d = safeParseDate(tx.date);
                                                             return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}`;
                                                         })()}
                                                     </span>
