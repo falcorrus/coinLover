@@ -162,7 +162,32 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
         baseSymbol={props.baseSymbol || "$"} 
         categoryCurrencyMode={categoryCurrencyMode}
         localCurrencyCode={localCurrencyCode}
-        onItemClick={(item, type, dayTx) => { 
+        onItemClick={async (item, type, dayTx) => { 
+          if (dayTx && dayTx.length > 0) {
+            const tx = dayTx[0];
+            const source = tx.type === "income" ? incomes.find(i => i.id === tx.targetId) ?? null : accounts.find(a => a.id === tx.accountId) ?? null; 
+            const destination = tx.type === "expense" ? categories.find(c => c.id === tx.targetId) ?? null : tx.type === "income" ? accounts.find(a => a.id === tx.accountId) ?? null : accounts.find(a => a.id === tx.targetId) ?? null; 
+            if (source && destination) {
+              await RatesService.ensureRates();
+              setEditingTxId(tx.id);
+              const actualSourceCurrency = tx.type === "income" ? tx.sourceCurrency : (source as Account).currency;
+              setNumpad({ 
+                isOpen: true, 
+                type: tx.type, 
+                source, 
+                destination, 
+                sourceAmount: String(tx.sourceAmount), 
+                sourceCurrency: actualSourceCurrency, 
+                targetAmount: String(tx.targetAmount ?? tx.sourceAmount), 
+                targetCurrency: tx.targetCurrency, 
+                targetLinked: true, 
+                activeField: "source", 
+                tag: tx.tag ?? null, 
+                comment: tx.comment ?? ""
+              });
+              return;
+            }
+          }
           setHistoryModal({ isOpen: true, entity: item, type, customTransactions: dayTx, returnTo: "calendar" }); 
         }} 
       />
@@ -188,7 +213,13 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
         availableCurrencies={Array.from(new Set([...accounts.map(a => a.currency), numpad.sourceCurrency, numpad.targetCurrency]))} 
         transactions={transactions}
         isEditing={!!editingTxId}
-        onClose={() => { setNumpad({ ...numpad, isOpen: false, targetLinked: true, returnState: undefined }); setEditingTxId(null); }}
+        onClose={() => { 
+          if (numpad.returnState) {
+            setHistoryModal(numpad.returnState);
+          }
+          setNumpad({ ...numpad, isOpen: false, targetLinked: true, returnState: undefined }); 
+          setEditingTxId(null); 
+        }}
         onFieldChange={(f) => setNumpad(p => ({ ...p, activeField: f }))}
         onManageTags={() => setIsTagModalOpen(true)}
         onLinkToggle={() => { setNumpad(p => ({ ...p, targetLinked: !p.targetLinked })); if (navigator.vibrate) navigator.vibrate(10); }}
@@ -228,8 +259,17 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
           const fs = parseFloat(safeEval(numpad.sourceAmount)); const ft = parseFloat(safeEval(numpad.targetAmount));
           const customCurr = numpad.type === "income" ? numpad.sourceCurrency : numpad.targetCurrency;
           if (customCurr) localStorage.setItem("cl_numpad_pref_currency", customCurr);
-          if (editingTxId) updateTransaction(editingTxId, numpad.type, numpad.source!, numpad.destination!, fs, ft, numpad.tag || undefined, date, numpad.comment || undefined, customCurr);
-          else addTransaction(numpad.type, numpad.source!, numpad.destination!, fs, ft, numpad.tag || undefined, date, numpad.comment || undefined, customCurr);
+          
+          if (editingTxId) {
+            updateTransaction(editingTxId, numpad.type, numpad.source!, numpad.destination!, fs, ft, numpad.tag || undefined, date, numpad.comment || undefined, customCurr);
+          } else {
+            addTransaction(numpad.type, numpad.source!, numpad.destination!, fs, ft, numpad.tag || undefined, date, numpad.comment || undefined, customCurr);
+          }
+          
+          if (numpad.returnState) {
+            setHistoryModal(numpad.returnState);
+          }
+          
           setNumpad({ ...numpad, isOpen: false, sourceAmount: "0", targetAmount: "0", targetLinked: true, activeField: "source", comment: "", returnState: undefined });
           setEditingTxId(null);
         }}
