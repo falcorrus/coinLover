@@ -29,7 +29,7 @@ interface ModalManagerProps {
   isTagModalOpen: boolean;
   isUsersModalOpen: boolean;
   isThemeModalOpen: boolean;
-  theme: "modern" | "zen";
+  theme: "white" | "mint" | "black";
   conflictData: any; 
   accessError: string | null;
   setAccessError: (v: string | null) => void;
@@ -60,7 +60,7 @@ interface ModalManagerProps {
   setIsTagModalOpen: (v: boolean) => void;
   setIsUsersModalOpen: (v: boolean) => void;
   setIsThemeModalOpen: (v: boolean) => void;
-  setTheme: (v: "modern" | "zen") => void;
+  setTheme: (v: "white" | "mint" | "black") => void;
   setEditingTxId: (v: string | null) => void;
   setConflictData: (v: any) => void;
   

@@ -1,37 +1,60 @@
 import React from "react";
-import { X, Check, Palette, Sparkles, Sun } from "lucide-react";
+import { X, Check, Palette, Sparkles, Sun, Leaf } from "lucide-react";
 
 interface ThemeOption {
-  id: "modern" | "zen";
+  id: "white" | "mint" | "black";
   name: string;
   description: string;
   icon: React.ReactNode;
+  previewColor: string;
+  accentColor: string;
 }
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   currentTheme: string;
-  onSelect: (theme: "modern" | "zen") => void;
+  onSelect: (theme: "white" | "mint" | "black") => void;
 }
 
 const THEMES: ThemeOption[] = [
   {
-    id: "modern",
-    name: "Modern Glow",
-    description: "Borderless with soft neon glow",
-    icon: <Sparkles className="w-5 h-5 text-purple-400" />
+    id: "white",
+    name: "White",
+    description: "Minimalist purity and clarity",
+    icon: <Sun className="w-5 h-5 text-slate-600" />,
+    previewColor: "#FFFFFF",
+    accentColor: "#64748B"
   },
   {
-    id: "zen",
-    name: "Zen Precision",
-    description: "Architectural purity and clarity",
-    icon: <Sun className="w-5 h-5 text-slate-600" />
+    id: "mint",
+    name: "Mint",
+    description: "Organic feel and Soft UI",
+    icon: <Leaf className="w-5 h-5 text-emerald-600" />,
+    previewColor: "#E8F0ED",
+    accentColor: "#924A28"
+  },
+  {
+    id: "black",
+    name: "Black",
+    description: "Borderless with soft glow",
+    icon: <Sparkles className="w-5 h-5 text-purple-400" />,
+    previewColor: "#0D1117",
+    accentColor: "#a78bfa"
   }
 ];
 
 export const ThemeModal: React.FC<Props> = ({ isOpen, onClose, currentTheme, onSelect }) => {
   if (!isOpen) return null;
+
+  // Map legacy names to new ones for active state
+  const getActiveId = () => {
+    if (currentTheme === 'zen') return 'white';
+    if (currentTheme === 'modern' || currentTheme === 'dark') return 'black';
+    return currentTheme;
+  };
+
+  const activeId = getActiveId();
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center p-4 animate-in fade-in duration-300">
@@ -55,7 +78,7 @@ export const ThemeModal: React.FC<Props> = ({ isOpen, onClose, currentTheme, onS
 
         <div className="p-4 grid gap-3">
           {THEMES.map((theme) => {
-            const isActive = currentTheme === theme.id || (currentTheme === 'dark' && theme.id === 'modern');
+            const isActive = activeId === theme.id;
             
             return (
               <button
@@ -73,7 +96,7 @@ export const ThemeModal: React.FC<Props> = ({ isOpen, onClose, currentTheme, onS
                 <div 
                   className="absolute right-[-10px] top-[-10px] w-24 h-24 rounded-full opacity-10 blur-2xl group-hover:opacity-20 transition-opacity"
                   style={{ 
-                    backgroundColor: theme.id === 'zen' ? '#f8f9fa' : '#0D1117' 
+                    backgroundColor: theme.previewColor
                   }}
                 />
 
@@ -94,15 +117,15 @@ export const ThemeModal: React.FC<Props> = ({ isOpen, onClose, currentTheme, onS
                   <div 
                     className="w-8 h-8 rounded-lg border border-[var(--glass-border)]"
                     style={{ 
-                      backgroundColor: theme.id === 'zen' ? '#f8f9fa' : '#0D1117',
-                      filter: theme.id === 'modern' ? `drop-shadow(0 0 6px #a78bfa80)` : 'none'
+                      backgroundColor: theme.previewColor,
+                      filter: theme.id === 'black' ? `drop-shadow(0 0 6px #a78bfa80)` : 'none'
                     }}
                   />
                   <div 
                     className="w-8 h-8 rounded-full border border-[var(--glass-border)] flex items-center justify-center"
-                    style={{ backgroundColor: theme.id === 'zen' ? '#F8FAFC' : '#161b22' }}
+                    style={{ backgroundColor: theme.id === 'black' ? '#161b22' : theme.id === 'mint' ? '#F3FBF8' : '#F8FAFC' }}
                   >
-                    <div className="w-4 h-4 rounded-full" style={{ backgroundColor: theme.id === 'zen' ? '#1A1A1A' : '#a78bfa' }} />
+                    <div className="w-4 h-4 rounded-full" style={{ backgroundColor: theme.accentColor }} />
                   </div>
                 </div>
               </button>

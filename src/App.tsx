@@ -285,12 +285,13 @@ export default function App() {
     localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.PILL_MODE, pillMode);
     localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.THEME, theme);
     localStorage.setItem("cl_category_currency_mode", categoryCurrencyMode);
-    document.documentElement.classList.remove("zen", "light", "midnight", "modern", "dark", "mint");
+    document.documentElement.classList.remove("white", "black", "mint", "zen", "modern", "dark");
     
     // Не применяем темы на лендинге, так как у него свой фиксированный темный дизайн
     if (currentPath !== "/landing") {
-      if (theme === "zen") document.documentElement.classList.add("zen");
-      if (theme === "mint") document.documentElement.classList.add("mint");
+      if (theme === "white") document.documentElement.classList.add("white");
+      else if (theme === "mint") document.documentElement.classList.add("mint");
+      else if (theme === "black") document.documentElement.classList.add("black");
     }
   }, [pillMode, theme, categoryCurrencyMode, currentPath]);
 
