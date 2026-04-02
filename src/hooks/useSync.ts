@@ -89,7 +89,7 @@ export const useSync = ({
         if (remote.timestamp && localLastSync) {
           const remoteDate = new Date(remote.timestamp);
           const localDate = new Date(localLastSync);
-          const isNewer = localLastSync && (remoteDate.getTime() > localDate.getTime() + 5000);
+          const isNewer = localLastSync && (remoteDate.getTime() > localDate.getTime() + 10000);
           const remoteSnap = getSettingsSnapshot(remote);
           const isDifferentFromSnapshot = lastRemoteSnapshot.current && remoteSnap !== lastRemoteSnapshot.current;
 
@@ -131,7 +131,7 @@ export const useSync = ({
 
       const remoteDate = new Date(remote.timestamp);
       const localDate = new Date(localLastSync);
-      const isNewer = remoteDate.getTime() > localDate.getTime() + 2000;
+      const isNewer = remoteDate.getTime() > localDate.getTime() + 10000;
       const isDifferentFromSnapshot = lastRemoteSnapshot.current && remoteSnap !== lastRemoteSnapshot.current;
 
       if (isNewer || isDifferentFromSnapshot) {
@@ -155,13 +155,15 @@ export const useSync = ({
           const localLastSync = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC);
           const localDate = localLastSync ? new Date(localLastSync) : new Date(0);
           const remoteDate = new Date(remote.timestamp);
-          const isCloudNewer = localLastSync && (remoteDate.getTime() > localDate.getTime() + 5000);
+          const isCloudNewer = localLastSync && (remoteDate.getTime() > localDate.getTime() + 15000);
           const isCloudChangedSinceLastSync = lastRemoteSnapshot.current && remoteSnap !== lastRemoteSnapshot.current;
 
           if (isCloudNewer || isCloudChangedSinceLastSync) {
-            setConflictData(remote);
-            setSyncStatus("success");
-            return;
+            if (!immediate) {
+              setConflictData(remote);
+              setSyncStatus("success");
+              return;
+            }
           }
         }
       } catch (e: any) { 
