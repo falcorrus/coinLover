@@ -102,7 +102,12 @@ export default function App() {
   const [pillMode, setPillMode] = React.useState<"expense" | "income" | "balance">(() => (localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.PILL_MODE) as any) || "expense");
   const [isIncomeCollapsed, setIsIncomeCollapsed] = React.useState(true);
   const [isSettingsMenuOpen, setIsSettingsMenuOpen] = React.useState(false);
-  const [theme, setTheme] = React.useState<any>(() => localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.THEME) || "modern");
+  const [theme, setTheme] = React.useState<"white" | "mint" | "black">(() => {
+    const cached = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.THEME);
+    if (cached === "zen") return "white";
+    if (cached === "modern" || cached === "dark") return "black";
+    return (cached as any) || "black";
+  });
   const [editingTxId, setEditingTxId] = React.useState<string | null>(null);
   const [categoryCurrencyMode, setCategoryCurrencyMode] = React.useState<"base" | "local">(() => (localStorage.getItem("cl_category_currency_mode") as any) || "base");
 
@@ -289,9 +294,9 @@ export default function App() {
     
     // Не применяем темы на лендинге, так как у него свой фиксированный темный дизайн
     if (currentPath !== "/landing") {
-      if (theme === "white") document.documentElement.classList.add("white");
-      else if (theme === "mint") document.documentElement.classList.add("mint");
-      else if (theme === "black") document.documentElement.classList.add("black");
+      const activeClass = theme === "white" || (theme as string) === "zen" ? "white" : 
+                          theme === "mint" ? "mint" : "black";
+      document.documentElement.classList.add(activeClass);
     }
   }, [pillMode, theme, categoryCurrencyMode, currentPath]);
 
