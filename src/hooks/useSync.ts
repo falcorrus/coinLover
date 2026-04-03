@@ -151,8 +151,14 @@ export const useSync = ({
           const isCloudChangedSinceLastSync = lastRemoteSnapshot.current && remoteSnap !== lastRemoteSnapshot.current;
 
           if (isCloudNewer || isCloudChangedSinceLastSync) {
+            // Умное слияние: берем данные из облака, но сохраняем наши текущие балансы/изменения
+            // Сначала обновляем локальные справочники (категории, доходы и т.д.)
+            updateLocalFromRemote(remote);
+            
+            // Если это не немедленный пуш (например, просто фоновая синхронизация настроек), 
+            // то мы уже обновились и можем выйти.
+            // Но если мы ПЫТАЕМСЯ сохранить данные (push), мы должны продолжить с обновленными данными.
             if (!immediate) {
-              updateLocalFromRemote(remote);
               setSyncStatus("success");
               return;
             }
@@ -168,6 +174,9 @@ export const useSync = ({
 
       const ts = getLocalTimeString();
       const baseCurrency = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY) || "USD";
+      // Используем аргументы a, c, i, которые были переданы в функцию. 
+      // Если мы вызвали updateLocalFromRemote выше, то c и i в облаке могут быть новее, 
+      // но 'a' (аккаунты) содержат наши последние изменения баланса.
       const ok = await googleSheetsService.syncToSheets({ 
         action: "syncSettings", targetSheet: "Configs", 
         accounts: enrichAccountsWithUSD(a), categories: c, incomes: i, 

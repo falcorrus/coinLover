@@ -92,14 +92,65 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
   } = props;
 
   const safeEval = (str: string): string => {
+    if (!str || str === "0") return "0";
     try {
-      let expr = str.replace(/,/g, '.').replace(/\s/g, '');
-      expr = expr.replace(/(\d+(?:\.\d+)?)%/g, '($1/100)');
-      const sanitized = expr.replace(/[^-+/*0-9.()]/g, '');
+      // 1. Clean spaces and normalize separators
+      let expr = str.replace(/\s/g, "");
+      
+      // Handle cases with both dot and comma (e.g. 1.234,56 or 1,234.56)
+      if (expr.includes(".") && expr.includes(",")) {
+        if (expr.lastIndexOf(".") < expr.lastIndexOf(",")) {
+          // 1.234,56 style -> remove dot, convert comma to dot
+          expr = expr.replace(/\./g, "").replace(/,/g, ".");
+        } else {
+          // 1,234.56 style -> remove comma
+          expr = expr.replace(/,/g, "");
+        }
+      } else {
+        // Only one type of separator -> convert comma to dot
+        expr = expr.replace(/,/g, ".");
+      }
+
+      // 2. Handle percentages
+      expr = expr.replace(/(\d+(?:\.\d+)?)%/g, "($1/100)");
+
+      // 3. Final sanitization (only math chars allowed)
+      const sanitized = expr.replace(/[^-+/*0-9.()]/g, "");
       if (!sanitized) return "0";
-      const result = new Function(`return ${sanitized}`)();
-      return (Math.round(result * 100) / 100).toString();
-    } catch { return str; }
+
+      // 4. Multiple dots protection (keep only last one in each number block)
+      // This is a safety measure if input was "10.50.1"
+      const parts = sanitized.split(/([-+/*()])/);
+      const processedParts = parts.map(part => {
+        if (/^[\d.]+$/.test(part)) {
+          const dots = part.split(".");
+          if (dots.length > 2) {
+            const last = dots.pop();
+            return dots.join("") + "." + last;
+          }
+        }
+        return part;
+      });
+      const finalExpr = processedParts.join("");
+
+      // 5. Evaluate
+      // For simple numeric strings, use parseFloat directly for speed and safety
+      if (/^-?\d+(\.\d+)?$/.test(finalExpr)) {
+        const val = parseFloat(finalExpr);
+        return (Math.round(val * 100) / 100).toString();
+      }
+
+      const result = new Function(`return ${finalExpr}`)();
+      const numResult = Number(result);
+      if (isNaN(numResult) || !isFinite(numResult)) return "0";
+      return (Math.round(numResult * 100) / 100).toString();
+    } catch (e) { 
+      console.error("Eval error:", e);
+      // Fallback: just extract the first valid number
+      const fallback = str.replace(/,/g, ".").replace(/[^-0-9.]/g, "");
+      const val = parseFloat(fallback);
+      return isNaN(val) ? "0" : (Math.round(val * 100) / 100).toString();
+    }
   };
 
   return (
@@ -178,7 +229,7 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
                 targetAmount: String(tx.targetAmount ?? tx.sourceAmount), 
                 targetCurrency: tx.targetCurrency, 
                 targetLinked: true, 
-                activeField: "source", 
+                activeField: "destination", 
                 tag: tx.tag ?? null, 
                 comment: tx.comment ?? ""
               });
@@ -201,7 +252,7 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
           await RatesService.ensureRates();
           setEditingTxId(tx.id);
           const actualSourceCurrency = tx.type === "income" ? tx.sourceCurrency : (source as Account).currency;
-          setNumpad({ isOpen: true, type: tx.type, source, destination, sourceAmount: String(tx.sourceAmount), sourceCurrency: actualSourceCurrency, targetAmount: String(tx.targetAmount ?? tx.sourceAmount), targetCurrency: tx.targetCurrency, targetLinked: true, activeField: "source", tag: tx.tag ?? null, comment: tx.comment ?? "", returnState: { ...historyModal } }); 
+          setNumpad({ isOpen: true, type: tx.type, source, destination, sourceAmount: String(tx.sourceAmount), sourceCurrency: actualSourceCurrency, targetAmount: String(tx.targetAmount ?? tx.sourceAmount), targetCurrency: tx.targetCurrency, targetLinked: true, activeField: "destination", tag: tx.tag ?? null, comment: tx.comment ?? "", returnState: { ...historyModal } }); 
         }} 
       />
 
@@ -235,11 +286,30 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
         }}
         onPress={(val) => setNumpad(p => {
           const isSource = p.activeField === "source"; const key = isSource ? "sourceAmount" : "targetAmount"; const currStr = p[key];
+          
+          // Normalize input: treat comma as dot for logic
+          const inputVal = val === "," ? "." : val;
+
+          // Prevent multiple decimal points in a single number block
+          if (inputVal === ".") {
+            const parts = currStr.split(/[+\-*/%]/);
+            const lastPart = parts[parts.length - 1];
+            if (lastPart.includes(".")) return p;
+          }
+
           const computeTarget = (s: string): string => { const amt = parseFloat(safeEval(s)); return isNaN(amt) || amt === 0 ? "0" : (Math.round(RatesService.convert(amt, p.sourceCurrency, p.targetCurrency) * 100) / 100).toString(); };
           const computeSource = (t: string): string => { const amt = parseFloat(safeEval(t)); return isNaN(amt) || amt === 0 ? "0" : (Math.round(RatesService.convert(amt, p.targetCurrency, p.sourceCurrency) * 100) / 100).toString(); };
-          if (val === "C") return p.targetLinked ? { ...p, sourceAmount: "0", targetAmount: "0" } : { ...p, [key]: "0" };
-          if (val === "=") { const ev = safeEval(currStr); if (p.targetLinked) return isSource ? { ...p, sourceAmount: ev, targetAmount: computeTarget(ev) } : { ...p, targetAmount: ev, sourceAmount: computeSource(ev) }; return { ...p, [key]: ev }; }
-          const nv = currStr === "0" && !isNaN(Number(val)) ? val : currStr + val;
+          
+          if (inputVal === "C") return p.targetLinked ? { ...p, sourceAmount: "0", targetAmount: "0" } : { ...p, [key]: "0" };
+          
+          if (inputVal === "=") { 
+            const ev = safeEval(currStr); 
+            if (p.targetLinked) return isSource ? { ...p, sourceAmount: ev, targetAmount: computeTarget(ev) } : { ...p, targetAmount: ev, sourceAmount: computeSource(ev) }; 
+            return { ...p, [key]: ev }; 
+          }
+          
+          const nv = currStr === "0" && !isNaN(Number(inputVal)) ? inputVal : currStr + inputVal;
+          
           if (p.targetLinked) return isSource ? { ...p, sourceAmount: nv, targetAmount: computeTarget(nv) } : { ...p, targetAmount: nv, sourceAmount: computeSource(nv) };
           return { ...p, [key]: nv };
         })}
@@ -267,7 +337,7 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
             setHistoryModal(numpad.returnState);
           }
           
-          setNumpad({ ...numpad, isOpen: false, sourceAmount: "0", targetAmount: "0", targetLinked: true, activeField: "source", comment: "", returnState: undefined });
+          setNumpad({ ...numpad, isOpen: false, sourceAmount: "0", targetAmount: "0", targetLinked: true, activeField: "destination", comment: "", returnState: undefined });
           setEditingTxId(null);
         }}
       />

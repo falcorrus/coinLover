@@ -1,14 +1,21 @@
 import { APP_SETTINGS } from "../constants/settings";
 
 export class RatesService {
+    private static memoryRates: Record<string, number> | null = null;
+
     static getCachedRates(): Record<string, number> | null {
+        // 1. Try memory cache first (instant)
+        if (this.memoryRates) return this.memoryRates;
+
+        // 2. Try localStorage
         const cached = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.EXCHANGE_RATES);
         if (!cached) return null;
 
         try {
             const parsed = JSON.parse(cached);
             if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-                return parsed as Record<string, number>;
+                this.memoryRates = parsed; // Save to memory for next time
+                return this.memoryRates;
             }
             return null;
         } catch {
@@ -36,7 +43,7 @@ export class RatesService {
     }
 
     static async syncRatesInBackground(): Promise<void> {
-        if (!this.shouldSyncRates()) return;
+        if (!this.shouldSyncRates() && this.memoryRates) return;
 
         const baseCurrency = this.getBaseCurrency();
         try {
@@ -45,6 +52,7 @@ export class RatesService {
                 const data = await response.json();
                 if (data && data.rates) {
                     const rates = data.rates;
+                    this.memoryRates = rates; // Update memory cache
                     localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.EXCHANGE_RATES, JSON.stringify(rates));
                     localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.RATES_LAST_SYNC, Date.now().toString());
                     console.log(`Exchange rates for ${baseCurrency} updated successfully`);
@@ -56,7 +64,8 @@ export class RatesService {
     }
 
     static async ensureRates(): Promise<void> {
-        if (!this.getCachedRates() || this.shouldSyncRates()) {
+        const cached = this.getCachedRates();
+        if (!cached || this.shouldSyncRates()) {
             await this.syncRatesInBackground();
         }
     }
@@ -71,18 +80,21 @@ export class RatesService {
 
         const rates = this.getCachedRates();
         
-        // Если курсов вообще нет в кэше, мы не можем считать
+        // CRITICAL FIX: If rates are missing, return 0 instead of 'amount'.
+        // Returning 'amount' causes 100 RUB to look like 100 USD (a 100x error).
+        // Returning 0 is safe because the UI will show 0 while loading.
         if (!rates) {
-            console.error("Exchange rates not found in cache. Conversion failed.");
-            return amount;
+            console.warn("Exchange rates not found. Conversion deferred.");
+            return 0; 
         }
 
         const rateFrom = rates[from] ?? (from === base ? 1 : null);
         const rateTo = rates[to] ?? (to === base ? 1 : null);
 
         if (rateFrom === null || rateTo === null) {
-            console.warn(`Missing rate for ${from} or ${to} relative to ${base}.`);
-            return amount;
+            // If one of the currencies is unknown, returning 0 is safer than raw amount
+            console.warn(`Missing rate for ${from} or ${to}.`);
+            return 0;
         }
 
         return (amount / rateFrom) * rateTo;

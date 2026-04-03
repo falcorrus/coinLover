@@ -34,6 +34,9 @@ export const useAppDnD = ({
     setActiveDragType(e.active.data.current?.type as DragItemType);
     setHasMovedDuringDrag(false);
     
+    // Proactively ensure rates while dragging to prevent conversion errors during input
+    RatesService.ensureRates();
+
     if (sortingTimerRef.current) clearTimeout(sortingTimerRef.current);
     sortingTimerRef.current = setTimeout(() => {
       setIsSortingMode(true);
@@ -106,27 +109,26 @@ export const useAppDnD = ({
         setNumpad({
           isOpen: true, type: "expense", source: activeData.account, destination: overData.category,
           sourceAmount: "0", sourceCurrency: activeData.account.currency, targetAmount: "0", targetCurrency: prefCur,
-          targetLinked: true, activeField: "source", tag: overData.category.tags?.[0] || null, comment: ""
+          targetLinked: true, activeField: "destination", tag: overData.category.tags?.[0] || null, comment: ""
         });
-      } else if (overData?.type === "account" && active.id !== over.id && !sorting) {
+        } else if (overData?.type === "account" && active.id !== over.id && !sorting) {
         await RatesService.ensureRates();
         setNumpad({
           isOpen: true, type: "transfer", source: activeData.account, destination: overData.account,
           sourceAmount: "0", sourceCurrency: activeData.account.currency, targetAmount: "0", targetCurrency: overData.account.currency,
-          targetLinked: true, activeField: "source", tag: null, comment: ""
+          targetLinked: true, activeField: "destination", tag: null, comment: ""
         });
-      }
-    } else if (activeData?.type === "income" && overData?.type === "account") {
-      await RatesService.ensureRates();
-      const baseCur = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY) || "USD";
-      const prefCur = localStorage.getItem("cl_numpad_pref_currency") || baseCur;
-      setNumpad({
+        }
+        } else if (activeData?.type === "income" && overData?.type === "account") {
+        await RatesService.ensureRates();
+        const baseCur = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY) || "USD";
+        const prefCur = localStorage.getItem("cl_numpad_pref_currency") || baseCur;
+        setNumpad({
         isOpen: true, type: "income", source: activeData.income, destination: overData.account,
         sourceAmount: "0", sourceCurrency: prefCur, targetAmount: "0", targetCurrency: overData.account.currency,
-        targetLinked: true, activeField: "source", tag: activeData.income.tags?.[0] || null, comment: ""
-      });
-    }
-  }, [isSortingMode, hasMovedDuringDrag, accounts, categories, incomes, syncAccountsOrder, syncCategories, syncIncomes, setNumpad]);
+        targetLinked: true, activeField: "destination", tag: activeData.income.tags?.[0] || null, comment: ""
+        });
+        }  }, [isSortingMode, hasMovedDuringDrag, accounts, categories, incomes, syncAccountsOrder, syncCategories, syncIncomes, setNumpad]);
 
   return {
     activeDragId, activeDragType, isSortingMode, setIsSortingMode, overId,
