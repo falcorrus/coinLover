@@ -30,7 +30,6 @@ interface ModalManagerProps {
   isUsersModalOpen: boolean;
   isThemeModalOpen: boolean;
   theme: "white" | "mint" | "black";
-  conflictData: any; 
   accessError: string | null;
   setAccessError: (v: string | null) => void;
   editingTxId: string | null;
@@ -62,7 +61,6 @@ interface ModalManagerProps {
   setIsThemeModalOpen: (v: boolean) => void;
   setTheme: (v: "white" | "mint" | "black") => void;
   setEditingTxId: (v: string | null) => void;
-  setConflictData: (v: any) => void;
   
   // Logic Handlers
   addTransaction: (type: TransactionType, source: Account | IncomeSource, destination: Account | Category, sourceAmount: number, targetAmount?: number, tag?: string, customDate?: string, comment?: string, customCurrency?: string) => Promise<void>;
@@ -75,22 +73,21 @@ interface ModalManagerProps {
   saveIncome: (income: Partial<IncomeSource>) => Promise<void>;
   deleteIncome: (id: string) => Promise<void>;
   updateLocalFromRemote: (data: any) => void;
-  skipConflict: (data: any) => void;
   onSwitchTable: (id: string) => void;
 }
 
 export const ModalManager: React.FC<ModalManagerProps> = (props) => {
   const {
     accountModal, incomeModal, categoryModal, historyModal, analyticsModal,
-    calendarAnalyticsModal, confirmDelete, numpad, isTagModalOpen, isUsersModalOpen, conflictData, accessError, setAccessError, editingTxId,
+    calendarAnalyticsModal, confirmDelete, numpad, isTagModalOpen, isUsersModalOpen, accessError, setAccessError, editingTxId,
     isThemeModalOpen, theme,
     categoryCurrencyMode, localCurrencyCode,
     accounts, categories, incomes, transactions, allExistingTags, users, activeTableId,
     setAccountModal, setIncomeModal, setCategoryModal, setHistoryModal, setAnalyticsModal,
-    setCalendarAnalyticsModal, setConfirmDelete, setNumpad, setIsTagModalOpen, setIsUsersModalOpen, setEditingTxId, setConflictData,
+    setCalendarAnalyticsModal, setConfirmDelete, setNumpad, setIsTagModalOpen, setIsUsersModalOpen, setEditingTxId,
     setIsThemeModalOpen, setTheme,
     addTransaction, updateTransaction, deleteTransaction, saveAccount, deleteAccount, 
-    saveCategory, deleteCategory, saveIncome, deleteIncome, updateLocalFromRemote, skipConflict,
+    saveCategory, deleteCategory, saveIncome, deleteIncome, updateLocalFromRemote,
     onSwitchTable
   } = props;
 
@@ -291,13 +288,6 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
       />
       
       <ConfirmModal isOpen={confirmDelete.isOpen} title={confirmDelete.title} message={confirmDelete.message} onConfirm={confirmDelete.onConfirm} onCancel={() => setConfirmDelete(p => ({ ...p, isOpen: false }))} />
-
-      {conflictData && (
-        <ConfirmModal 
-          isOpen={true} title="Обнаружены изменения" message={`В облаке есть более свежие данные (версия от ${new Date((conflictData as any).timestamp).toLocaleString()}). Загрузить их и перезаписать локальные данные?`}
-          confirmText="ЗАГРУЗИТЬ" cancelText="ОСТАВИТЬ МОИ" danger={false} onConfirm={() => updateLocalFromRemote(conflictData)} onCancel={() => skipConflict(conflictData)}
-        />
-      )}
     </>
   );
 };

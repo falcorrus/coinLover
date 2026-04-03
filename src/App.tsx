@@ -34,7 +34,7 @@ export default function App() {
     accounts, setAccounts, categories, setCategories, incomes, setIncomes,
     transactions, setTransactions, syncStatus, users, addTransaction, updateTransaction, deleteTransaction, saveAccount, deleteAccount,
     saveCategory, deleteCategory, saveIncome, deleteIncome, syncCategories, syncIncomes, syncAccountsOrder,
-    pullSettings, checkConflicts, conflictData, setConflictData, updateLocalFromRemote, skipConflict, pushSettings, accessError, setAccessError
+    pullSettings, checkConflicts, updateLocalFromRemote, pushSettings, accessError, setAccessError
   } = useFinance(activeTableId);
 
   const [isSplashVisible, setIsSplashVisible] = React.useState(true);
@@ -141,7 +141,6 @@ export default function App() {
       case "theme": setIsThemeModalOpen(false); break;
       case "numpad": setNumpad((p: any) => ({ ...p, isOpen: false })); break;
       case "settings": setIsSettingsMenuOpen(false); break;
-      case "conflict": setConflictData(null); break;
     }
   };
 
@@ -159,8 +158,7 @@ export default function App() {
       { id: "users", open: isUsersModalOpen },
       { id: "theme", open: isThemeModalOpen },
       { id: "numpad", open: numpad.isOpen },
-      { id: "settings", open: isSettingsMenuOpen },
-      { id: "conflict", open: !!conflictData }
+      { id: "settings", open: isSettingsMenuOpen }
     ];
 
     const currentlyOpenIds = openModals.filter(m => m.open).map(m => m.id);
@@ -177,7 +175,7 @@ export default function App() {
   }, [
     accountModal.isOpen, incomeModal.isOpen, categoryModal.isOpen, historyModal.isOpen,
     analyticsModal.isOpen, calendarAnalyticsModal.isOpen, confirmDelete.isOpen,
-    isTagModalOpen, isUsersModalOpen, isThemeModalOpen, numpad.isOpen, isSettingsMenuOpen, conflictData
+    isTagModalOpen, isUsersModalOpen, isThemeModalOpen, numpad.isOpen, isSettingsMenuOpen
   ]);
 
   // 2. ВТОРИЧНЫЙ ЭФФЕКТ: Синхронизация modalStack с Историей Браузера
@@ -310,7 +308,7 @@ export default function App() {
   }, [activeTableId, checkConflicts]);
 
   const toggleIncome = () => { const next = !isIncomeCollapsed; setIsIncomeCollapsed(next); setMode(next ? "expense" : "income"); };
-  const isFullModalOpen = accountModal.isOpen || incomeModal.isOpen || categoryModal.isOpen || historyModal.isOpen || analyticsModal.isOpen || calendarAnalyticsModal.isOpen || numpad.isOpen || confirmDelete.isOpen || isTagModalOpen || !!conflictData;
+  const isFullModalOpen = accountModal.isOpen || incomeModal.isOpen || categoryModal.isOpen || historyModal.isOpen || analyticsModal.isOpen || calendarAnalyticsModal.isOpen || numpad.isOpen || confirmDelete.isOpen || isTagModalOpen;
   const anyModalOpen = isFullModalOpen || isSettingsMenuOpen;
 
   const allExistingTags = React.useMemo(() => {
@@ -376,7 +374,7 @@ export default function App() {
         <ModalManager
           accountModal={accountModal} incomeModal={incomeModal} categoryModal={categoryModal} historyModal={historyModal}
           analyticsModal={analyticsModal} calendarAnalyticsModal={calendarAnalyticsModal} confirmDelete={confirmDelete}
-          numpad={numpad} isTagModalOpen={isTagModalOpen} isUsersModalOpen={isUsersModalOpen} conflictData={conflictData} 
+          numpad={numpad} isTagModalOpen={isTagModalOpen} isUsersModalOpen={isUsersModalOpen} 
           accessError={accessError} setAccessError={setAccessError}
           editingTxId={editingTxId}
           isThemeModalOpen={isThemeModalOpen} theme={theme} categoryCurrencyMode={categoryCurrencyMode} localCurrencyCode={calculations.localCurrencyCode}
@@ -385,10 +383,10 @@ export default function App() {
           users={users} activeTableId={activeTableId} setAccountModal={setAccountModal} setIncomeModal={setIncomeModal} setCategoryModal={setCategoryModal}
           setHistoryModal={setHistoryModal} setAnalyticsModal={setAnalyticsModal} setCalendarAnalyticsModal={setCalendarAnalyticsModal}
           setConfirmDelete={setConfirmDelete} setNumpad={setNumpad} setIsTagModalOpen={setIsTagModalOpen} setIsUsersModalOpen={setIsUsersModalOpen}
-          setEditingTxId={setEditingTxId} setConflictData={setConflictData} setIsThemeModalOpen={setIsThemeModalOpen} setTheme={setTheme}
+          setEditingTxId={setEditingTxId} setIsThemeModalOpen={setIsThemeModalOpen} setTheme={setTheme}
           addTransaction={addTransaction} updateTransaction={updateTransaction} deleteTransaction={deleteTransaction}
           saveAccount={saveAccount} deleteAccount={deleteAccount} saveCategory={saveCategory} deleteCategory={deleteCategory}
-          saveIncome={saveIncome} deleteIncome={deleteIncome} updateLocalFromRemote={updateLocalFromRemote} skipConflict={skipConflict} onSwitchTable={handleSwitchTable}
+          saveIncome={saveIncome} deleteIncome={deleteIncome} updateLocalFromRemote={updateLocalFromRemote} onSwitchTable={handleSwitchTable}
         />
 
         {isAdminModalOpen && (

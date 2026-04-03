@@ -22,7 +22,6 @@ export const useSync = ({
   accounts, setAccounts, categories, setCategories, incomes, setIncomes, setTransactions, setUsers, ssId
 }: SyncStateProps) => {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>("idle");
-  const [conflictData, setConflictData] = useState<SyncSettingsFields | null>(null);
   const [accessError, setAccessError] = useState<string | null>(null);
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
   const lastRemoteSnapshot = useRef<string>("");
@@ -49,12 +48,6 @@ export const useSync = ({
     } catch (e) { return ""; }
   };
 
-  const skipConflict = useCallback((remote: SyncSettingsFields) => {
-    localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC, remote.timestamp);
-    lastRemoteSnapshot.current = getSettingsSnapshot(remote);
-    setConflictData(null);
-  }, []);
-
   const updateLocalFromRemote = useCallback((data: SyncSettingsFields & { transactions?: Transaction[], users?: { name: string; id: string }[] }) => {
     if (data.accounts) setAccounts(data.accounts);
     if (data.categories) setCategories(data.categories);
@@ -68,7 +61,6 @@ export const useSync = ({
     if (data.transactions && Array.isArray(data.transactions)) {
       setTransactions([...data.transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
     }
-    setConflictData(null);
     setAccessError(null);
   }, [setAccounts, setCategories, setIncomes, setTransactions, setUsers]);
 
@@ -94,7 +86,7 @@ export const useSync = ({
           const isDifferentFromSnapshot = lastRemoteSnapshot.current && remoteSnap !== lastRemoteSnapshot.current;
 
           if (isNewer || isDifferentFromSnapshot) {
-            setConflictData(remote);
+            updateLocalFromRemote(remote);
             setSyncStatus("success");
             return true;
           }
@@ -117,7 +109,7 @@ export const useSync = ({
   }, [updateLocalFromRemote, ssId, accounts.length, categories.length]);
 
   const checkConflicts = useCallback(async () => {
-    if (syncStatus === "loading" || !!conflictData || !!accessError) return;
+    if (syncStatus === "loading" || !!accessError) return;
     try {
       const remote = await googleSheetsService.fetchSettings(ssId);
       if (!remote || !remote.timestamp) return;
@@ -135,12 +127,12 @@ export const useSync = ({
       const isDifferentFromSnapshot = lastRemoteSnapshot.current && remoteSnap !== lastRemoteSnapshot.current;
 
       if (isNewer || isDifferentFromSnapshot) {
-        setConflictData(remote);
+        updateLocalFromRemote(remote);
       }
     } catch (e: any) { 
       if (e.statusCode === 403) setAccessError(e.message);
     }
-  }, [updateLocalFromRemote, ssId, syncStatus, conflictData, accessError, accounts.length, categories.length]);
+  }, [updateLocalFromRemote, ssId, syncStatus, accessError, accounts.length, categories.length]);
 
   const pushSettings = useCallback((a: Account[], c: Category[], i: IncomeSource[], immediate = false) => {
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
@@ -160,7 +152,7 @@ export const useSync = ({
 
           if (isCloudNewer || isCloudChangedSinceLastSync) {
             if (!immediate) {
-              setConflictData(remote);
+              updateLocalFromRemote(remote);
               setSyncStatus("success");
               return;
             }
@@ -197,7 +189,7 @@ export const useSync = ({
   }, [ssId, accounts, categories, incomes, accessError]);
 
   return {
-    syncStatus, setSyncStatus, conflictData, setConflictData, accessError, setAccessError,
-    pullSettings, pushSettings, checkConflicts, updateLocalFromRemote, skipConflict
+    syncStatus, setSyncStatus, accessError, setAccessError,
+    pullSettings, pushSettings, checkConflicts, updateLocalFromRemote
   };
 };

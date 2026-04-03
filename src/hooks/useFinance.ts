@@ -28,8 +28,8 @@ export const useFinance = (ssId?: string) => {
 
   // 1. Hook: Sync logic
   const {
-    syncStatus, setSyncStatus, conflictData, setConflictData, accessError, setAccessError,
-    pullSettings, pushSettings, checkConflicts, updateLocalFromRemote, skipConflict
+    syncStatus, setSyncStatus, accessError, setAccessError,
+    pullSettings, pushSettings, checkConflicts, updateLocalFromRemote
   } = useSync({
     accounts, setAccounts, categories, setCategories, incomes, setIncomes, setTransactions, setUsers, ssId
   });
@@ -62,7 +62,7 @@ export const useFinance = (ssId?: string) => {
   return {
     accounts, setAccounts, categories, setCategories, incomes, setIncomes, transactions, setTransactions, syncStatus,
     users, addTransaction, updateTransaction, deleteTransaction, saveAccount, deleteAccount, saveCategory, deleteCategory, saveIncome, deleteIncome,
-    syncCategories, syncIncomes, syncAccountsOrder, pullSettings, checkConflicts, conflictData, setConflictData, updateLocalFromRemote, skipConflict, accessError, setAccessError,
+    syncCategories, syncIncomes, syncAccountsOrder, pullSettings, checkConflicts, updateLocalFromRemote, accessError, setAccessError,
     pushSettings: (a?: Account[], c?: Category[], i?: IncomeSource[]) => pushSettings(a || accounts, c || categories, i || incomes)
   };
 };
