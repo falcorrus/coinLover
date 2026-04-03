@@ -459,10 +459,19 @@ export default async function handler(req, res) {
           const col = {}; headers.forEach((v, i) => col[v] = i);
           const findCol = (names) => { for (let n of names) if (col[n.toLowerCase()] !== undefined) return col[n.toLowerCase()]; return undefined; };
 
-          const c_date = findCol(["date", "дата"]), c_type = findCol(["type", "тип"]), c_src = findCol(["src", "source", "источник"]),
-                c_dst = findCol(["dst", "destination", "назначение"]), c_tag = findCol(["tag", "тег"]), c_s_amt = findCol(["s_amt", "amount", "сумма (исх)"]),
-                c_s_curr = findCol(["s_curr", "currency"]), c_s_base = findCol(["s_base", "base_amount"]), c_t_amt = findCol(["t_amt", "сумма (цель)"]),
-                c_t_curr = findCol(["t_curr"]), c_t_base = findCol(["t_base"]), c_comment = findCol(["comment", "комментарий"]), c_id = findCol(["id"]);
+          const c_date = findCol(["date", "дата", "день"]), 
+                c_type = findCol(["type", "тип"]), 
+                c_src = findCol(["src", "source", "источник", "откуда", "из"]),
+                c_dst = findCol(["dst", "destination", "назначение", "куда", "цель"]), 
+                c_tag = findCol(["tag", "тег", "метка"]), 
+                c_s_amt = findCol(["s_amt", "amount", "сумма (исх)", "сумма", "расход"]),
+                c_s_curr = findCol(["s_curr", "currency", "валюта (исх)", "валюта", "вал (исх)"]), 
+                c_s_base = findCol(["s_base", "base_amount", "сумма (база)", "usd"]), 
+                c_t_amt = findCol(["t_amt", "сумма (цель)", "получено"]),
+                c_t_curr = findCol(["t_curr", "валюта (цель)", "вал (цель)"]), 
+                c_t_base = findCol(["t_base", "цель (база)"]), 
+                c_comment = findCol(["comment", "комментарий", "примечание"]), 
+                c_id = findCol(["id", "идентификатор"]);
 
           if (c_date !== undefined) {
              const accMap = {}; data.accounts.forEach(a => { accMap[a.name] = a.id; accMap[a.id] = a.id; });

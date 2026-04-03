@@ -350,7 +350,7 @@ export default function App() {
           />
 
           <IncomeSection 
-            isIncomeCollapsed={isIncomeCollapsed} toggleIncome={toggleIncome} incomes={incomes} currentMonthTransactions={currentMonthTransactions}
+            isIncomeCollapsed={isIncomeCollapsed} toggleIncome={toggleIncome} incomes={incomes} accounts={accounts} currentMonthTransactions={currentMonthTransactions}
             categoryCurrencyMode={categoryCurrencyMode} baseCurrency={calculations.baseCurrency} localCurrencyCode={calculations.localCurrencyCode}
             activeDragId={activeDragId} isSortingMode={isSortingMode} setIsSortingMode={setIsSortingMode}
             setAnalyticsModal={setAnalyticsModal} setIncomeModal={setIncomeModal} setHistoryModal={setHistoryModal}
@@ -362,7 +362,7 @@ export default function App() {
           />
 
           <ExpenseSection 
-            mode={mode} categories={categories} currentMonthTransactions={currentMonthTransactions} categoryCurrencyMode={categoryCurrencyMode}
+            mode={mode} categories={categories} accounts={accounts} currentMonthTransactions={currentMonthTransactions} categoryCurrencyMode={categoryCurrencyMode}
             setCategoryCurrencyMode={setCategoryCurrencyMode} baseCurrency={calculations.baseCurrency} baseSymbol={calculations.baseSymbol}
             localCurrencyCode={calculations.localCurrencyCode} localSymbol={calculations.localSymbol} activeDragId={activeDragId}
             activeDragType={activeDragType} overId={overId} isSortingMode={isSortingMode} setIsSortingMode={setIsSortingMode}

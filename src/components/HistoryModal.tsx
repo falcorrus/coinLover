@@ -88,9 +88,10 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
         const baseCurrency = RatesService.getBaseCurrency();
         const sAmt = tx.sourceAmount ?? tx.amount ?? 0;
         const sAmtUsd = tx.sourceAmountUSD ?? tx.amountUSD;
-        const sCurr = tx.sourceCurrency ?? (accounts.find(a => a.id === tx.accountId)?.currency || baseCurrency);
+        const account = accounts.find(a => a.id === tx.accountId);
+        const sCurr = tx.sourceCurrency ?? (account?.currency || baseCurrency);
         const tAmt = tx.targetAmount ?? tx.amountLocal ?? sAmt;
-        const tCurr = tx.targetCurrency ?? tx.currencyLocal ?? sCurr;
+        const tCurr = tx.targetCurrency ?? tx.currencyLocal ?? (account?.currency || baseCurrency);
 
         const getSymbol = (code: string) => {
             const symbols: Record<string, string> = { "USD": "$", "EUR": "€", "GBP": "£", "RUB": "₽", "RSD": "din", "BRL": "R$", "ARS": "ARS" };

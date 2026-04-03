@@ -2,7 +2,7 @@ import * as React from "react";
 import { SortableContext, horizontalListSortingStrategy } from "@dnd-kit/sortable";
 import { ChevronRight, PieChart, Plus } from "lucide-react";
 import { APP_SETTINGS } from "../../constants/settings";
-import { IncomeSource, Transaction, HistoryModalState } from "../../types";
+import { IncomeSource, Transaction, HistoryModalState, Account } from "../../types";
 import { RatesService } from "../../services/RatesService";
 import { DraggableIncomeItem } from "../DraggableIncomeItem";
 
@@ -10,6 +10,7 @@ interface IncomeSectionProps {
   isIncomeCollapsed: boolean;
   toggleIncome: () => void;
   incomes: IncomeSource[];
+  accounts: Account[];
   currentMonthTransactions: Transaction[];
   categoryCurrencyMode: "base" | "local";
   baseCurrency: string;
@@ -23,7 +24,7 @@ interface IncomeSectionProps {
 }
 
 export function IncomeSection({
-  isIncomeCollapsed, toggleIncome, incomes, currentMonthTransactions, categoryCurrencyMode,
+  isIncomeCollapsed, toggleIncome, incomes, accounts, currentMonthTransactions, categoryCurrencyMode,
   baseCurrency, localCurrencyCode, activeDragId, isSortingMode, setIsSortingMode,
   setAnalyticsModal, setIncomeModal, setHistoryModal
 }: IncomeSectionProps) {
@@ -45,8 +46,9 @@ export function IncomeSection({
             const monthlyAmount = Math.round(currentMonthTransactions
               .filter(t => String(t.type).toLowerCase() === "income" && t.targetId === inc.id)
               .reduce((sum, t) => {
-                const tCurr = t.targetCurrency || baseCurrency;
+                const tCurr = t.targetCurrency || accounts.find(a => a.id === t.accountId)?.currency || baseCurrency;
                 if (categoryCurrencyMode === 'local' && tCurr === localCurrencyCode) return sum + (t.targetAmount || 0);
+                const sCurr = t.sourceCurrency || accounts.find(a => a.id === t.accountId)?.currency || baseCurrency;
                 const valBase = (t.targetAmountUSD && t.targetAmountUSD !== 0 && baseCurrency === 'USD')
                   ? t.targetAmountUSD
                   : RatesService.convert(t.targetAmount || 0, tCurr, baseCurrency);

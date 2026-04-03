@@ -172,11 +172,11 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
         const calcSum = (type: string, useBase: boolean) => Math.round(dayTx.filter(t => t.type === type).reduce((s, t) => {
             const valBase = (t.targetAmountUSD && t.targetAmountUSD !== 0 && baseCurrency === 'USD')
                 ? t.targetAmountUSD
-                : RatesService.convert(t.sourceAmount || 0, t.sourceCurrency || baseCurrency, baseCurrency);
+                : RatesService.convert(t.sourceAmount || 0, t.sourceCurrency || accounts.find(a => a.id === t.accountId)?.currency || baseCurrency, baseCurrency);
             
             if (useBase) return s + valBase;
             
-            const tCurr = t.targetCurrency || baseCurrency;
+            const tCurr = t.targetCurrency || accounts.find(a => a.id === t.accountId)?.currency || baseCurrency;
             if (tCurr === localCurrencyCode) return s + (t.targetAmount || 0);
             return s + RatesService.convert(valBase, baseCurrency, localCurrencyCode);
         }, 0));
@@ -212,9 +212,9 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
 
     const getAmountStr = (tx: Transaction, isOutflow: boolean) => {
         const sAmt = tx.sourceAmount || 0;
-        const sCurr = tx.sourceCurrency || baseCurrency;
+        const sCurr = tx.sourceCurrency || accounts.find(a => a.id === tx.accountId)?.currency || baseCurrency;
         const tAmt = tx.targetAmount || sAmt;
-        const tCurr = tx.targetCurrency || sCurr;
+        const tCurr = tx.targetCurrency || accounts.find(a => a.id === tx.accountId)?.currency || baseCurrency;
 
         const valBase = (tx.targetAmountUSD && tx.targetAmountUSD !== 0 && baseCurrency === 'USD')
             ? tx.targetAmountUSD
