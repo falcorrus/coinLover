@@ -439,7 +439,7 @@ export default async function handler(req, res) {
         if (!id || id.toLowerCase() === "id") continue;
 
         if (section === "acc") {
-          data.accounts.push({ id, name: val(uName, "Кошелек"), balance: num(uBal), balanceUSD: num(uBalBase) || num(uBal), color: val(uColor, "#ccc"), icon: val(uIcon, "wallet"), currency: val(uCurr, "USD") });
+          data.accounts.push({ id, name: val(uName, "Кошелек"), balance: num(uBal), balanceUSD: num(uBalBase) || num(uBal), color: val(uColor, "#ccc"), icon: val(uIcon, "wallet"), currency: val(uCurr, "") });
         } else if (section === "cat" || section === "inc") {
           const entity = { id, name: val(uName, "Без имени"), color: val(uColor, "#ccc"), icon: val(uIcon, section === "cat" ? "tag" : "business"), tags: val(uTags) ? val(uTags).split(",").map(t => t.trim()).filter(Boolean) : [] };
           if (section === "cat") data.categories.push(entity); else data.incomes.push(entity);
@@ -522,9 +522,9 @@ export default async function handler(req, res) {
 
                data.transactions.push({
                  id: String(c_id !== undefined ? r[c_id] : i), type, accountId: aid, targetId: tid,
-                 sourceAmount: parseNum(r[c_s_amt]), sourceCurrency: String(c_s_curr !== undefined ? r[c_s_curr] : "USD"),
+                 sourceAmount: parseNum(r[c_s_amt]), sourceCurrency: String(c_s_curr !== undefined && r[c_s_curr] !== undefined ? r[c_s_curr] : ""),
                  sourceAmountUSD: parseNum(r[c_s_base]), targetAmount: parseNum(c_t_amt !== undefined ? r[c_t_amt] : r[c_s_amt]),
-                 targetCurrency: String(c_t_curr !== undefined ? r[c_t_curr] : "USD"), targetAmountUSD: parseNum(c_t_base !== undefined ? r[c_t_base] : r[c_s_base]),
+                 targetCurrency: String(c_t_curr !== undefined && r[c_t_curr] !== undefined ? r[c_t_curr] : ""), targetAmountUSD: parseNum(c_t_base !== undefined ? r[c_t_base] : r[c_s_base]),
                  date: dt.toISOString(), tag: c_tag !== undefined ? String(r[c_tag]) : undefined, comment: c_comment !== undefined ? String(r[c_comment]) : undefined
                });
              }

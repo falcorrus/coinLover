@@ -100,7 +100,7 @@ function doGet(e) {
             const uCurr = col["currency"] !== undefined ? col["currency"] : 6;
 
             if (tSec === "acc" && (row[uId] || row[0])) {
-              tmplData.accounts.push({ id: String(row[uId] || row[0]), name: String(row[uName] || row[1]), balance: 0, balanceUSD: 0, color: row[uColor] || "#6d5dfc", icon: row[uIcon] || "wallet", currency: row[uCurr] || "USD" });
+              tmplData.accounts.push({ id: String(row[uId] || row[0]), name: String(row[uName] || row[1]), balance: 0, balanceUSD: 0, color: row[uColor] || "#6d5dfc", icon: row[uIcon] || "wallet", currency: row[uCurr] || "" });
             } else if (tSec === "cat" && (row[uId] || row[0])) {
               tmplData.categories.push({ id: String(row[uId] || row[0]), name: String(row[uName] || row[1]), color: row[uColor] || "#6d5dfc", icon: row[uIcon] || "more", tags: row[uTags] ? String(row[uTags]).split(",").map(t => t.trim()) : [] });
             } else if (tSec === "inc" && (row[uId] || row[0])) {
@@ -166,7 +166,7 @@ function doGet(e) {
         const uContact = col["contact"] !== undefined ? col["contact"] : col["контакт"];
 
         if (section === "acc" && (uId !== undefined || row[0])) {
-          data.accounts.push({ id: String(uId !== undefined ? row[uId] : row[0]), name: String(uName !== undefined ? row[uName] : row[1]), balance: parseNum(uBal !== undefined ? row[uBal] : row[2]), balanceUSD: parseNum(uBalBase !== undefined ? row[uBalBase] : row[3]), color: uColor !== undefined ? row[uColor] : row[4], icon: uIcon !== undefined ? row[uIcon] : (row[5] || "wallet"), currency: uCurr !== undefined ? row[uCurr] : (row[6] || "USD") });
+          data.accounts.push({ id: String(uId !== undefined ? row[uId] : row[0]), name: String(uName !== undefined ? row[uName] : row[1]), balance: parseNum(uBal !== undefined ? row[uBal] : row[2]), balanceUSD: parseNum(uBalBase !== undefined ? row[uBalBase] : row[3]), color: uColor !== undefined ? row[uColor] : row[4], icon: uIcon !== undefined ? row[uIcon] : (row[5] || "wallet"), currency: uCurr !== undefined ? row[uCurr] : (row[6] || "") });
         } else if (section === "cat" && (uId !== undefined || row[0])) {
           data.categories.push({ id: String(uId !== undefined ? row[uId] : row[0]), name: String(uName !== undefined ? row[uName] : row[1]), color: uColor !== undefined ? row[uColor] : row[2], icon: uIcon !== undefined ? row[uIcon] : (row[3] || "more"), tags: (uTags !== undefined ? row[uTags] : row[4]) ? String(uTags !== undefined ? row[uTags] : row[4]).split(",").map(t => t.trim()) : [] });
         } else if (section === "inc" && (uId !== undefined || row[0])) {
@@ -281,10 +281,10 @@ function doGet(e) {
               type: type, 
               accountId: aid, targetId: tid,
               sourceAmount: s_amt, 
-              sourceCurrency: String(c_s_curr !== undefined ? r[c_s_curr] : "USD"),
+              sourceCurrency: String(c_s_curr !== undefined ? r[c_s_curr] : ""),
               sourceAmountUSD: parseNum(r[c_s_base]),
               targetAmount: t_amt, 
-              targetCurrency: String(c_t_curr !== undefined ? r[c_t_curr] : "USD"),
+              targetCurrency: String(c_t_curr !== undefined ? r[c_t_curr] : ""),
               targetAmountUSD: parseNum(r[c_t_base]),
               date: iso, 
               tag: c_tag !== undefined ? String(r[c_tag]) : undefined, 
