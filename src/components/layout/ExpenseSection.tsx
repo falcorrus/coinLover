@@ -45,11 +45,11 @@ export function ExpenseSection({
               className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-all shadow-sm ${
                 categoryCurrencyMode === 'local' 
                   ? 'bg-[var(--primary-color)]/20 border-[var(--primary-color)]/30 text-[var(--primary-color)] shadow-[0_0_15px_rgba(109,93,252,0.2)]' 
-                  : 'bg-white/5 border-white/10 text-white/40 hover:bg-white/10'
+                  : 'bg-[var(--glass-item-bg)] border-[var(--glass-border)] text-[var(--text-main)] hover:bg-[var(--glass-item-active)]'
               }`}
               title={categoryCurrencyMode === 'base' ? "Переключить на локальную валюту" : "Переключить на базовую валюту"}
             >
-              <span className="text-[10px] font-black uppercase tracking-tighter">
+              <span className={`text-[10px] font-black uppercase tracking-tighter ${categoryCurrencyMode === 'base' ? 'opacity-60' : ''}`}>
                 {categoryCurrencyMode === 'base' ? baseCurrency : localCurrencyCode}
               </span>
             </button>

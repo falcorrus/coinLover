@@ -125,8 +125,10 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
 
     const getTxAmountInBase = (t: Transaction) => {
         const baseCur = RatesService.getBaseCurrency();
-        const sCurr = t.sourceCurrency || accounts.find(a => a.id === t.accountId)?.currency || baseCur;
-        const tCurr = t.targetCurrency || accounts.find(a => a.id === t.accountId)?.currency || baseCur;
+        // Robust account lookup: check by ID or Name
+        const account = accounts.find(a => a.id === t.accountId || a.name === t.accountId);
+        const sCurr = t.sourceCurrency || account?.currency || baseCur;
+        const tCurr = t.targetCurrency || account?.currency || baseCur;
         
         if (analysisType === "expense") {
             return (t.sourceAmountUSD && t.sourceAmountUSD !== 0 && baseCur === 'USD')

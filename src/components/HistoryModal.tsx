@@ -71,14 +71,15 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
         let counterpartItem: Account | Category | IncomeSource | undefined;
         if (tx.type === "expense") {
             counterpartItem = (entityType === "category" || entityType === "tag") 
-                ? accounts.find(a => a.id === tx.accountId)
+                ? accounts.find(a => a.id === tx.accountId || a.name === tx.accountId)
                 : categories.find(c => c.id === tx.targetId);
         } else if (tx.type === "income") {
             counterpartItem = (entityType === "income")
-                ? accounts.find(a => a.id === tx.accountId)
+                ? accounts.find(a => a.id === tx.accountId || a.name === tx.accountId)
                 : incomes.find(i => i.id === tx.targetId);
         } else if (tx.type === "transfer") {
-            counterpartItem = accounts.find(a => a.id === (tx.accountId === entity.id ? tx.targetId : tx.accountId));
+            const otherId = tx.accountId === entity.id ? tx.targetId : tx.accountId;
+            counterpartItem = accounts.find(a => a.id === otherId || a.name === otherId);
         }
 
         return { item: counterpartItem, isOutflow };
@@ -88,7 +89,8 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
         const baseCurrency = RatesService.getBaseCurrency();
         const sAmt = tx.sourceAmount ?? tx.amount ?? 0;
         const sAmtUsd = tx.sourceAmountUSD ?? tx.amountUSD;
-        const account = accounts.find(a => a.id === tx.accountId);
+        // Robust account lookup: check by ID or Name
+        const account = accounts.find(a => a.id === tx.accountId || a.name === tx.accountId);
         const sCurr = tx.sourceCurrency || (account?.currency || baseCurrency);
         const tAmt = tx.targetAmount ?? tx.amountLocal ?? sAmt;
         const tCurr = tx.targetCurrency || tx.currencyLocal || (account?.currency || baseCurrency);
