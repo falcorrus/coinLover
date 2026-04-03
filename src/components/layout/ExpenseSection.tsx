@@ -40,6 +40,19 @@ export function ExpenseSection({
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-[10px] font-black text-slate-500 uppercase">Расходы</h2>
           <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setCategoryCurrencyMode(categoryCurrencyMode === 'base' ? 'local' : 'base')}
+              className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-all shadow-sm ${
+                categoryCurrencyMode === 'local' 
+                  ? 'bg-[var(--primary-color)]/20 border-[var(--primary-color)]/30 text-[var(--primary-color)] shadow-[0_0_15px_rgba(109,93,252,0.2)]' 
+                  : 'bg-white/5 border-white/10 text-white/40 hover:bg-white/10'
+              }`}
+              title={categoryCurrencyMode === 'base' ? "Переключить на локальную валюту" : "Переключить на базовую валюту"}
+            >
+              <span className="text-[10px] font-black uppercase tracking-tighter">
+                {categoryCurrencyMode === 'base' ? baseCurrency : localCurrencyCode}
+              </span>
+            </button>
             <button onClick={() => setCalendarAnalyticsModal({ isOpen: true })} className="w-10 h-10 rounded-xl bg-[var(--primary-color)]/10 border border-[var(--primary-color)]/20 text-[var(--primary-color)] flex items-center justify-center hover:bg-[var(--primary-color)]/20 transition-all shadow-sm"><Calendar size={16} /></button>
             <button onClick={() => setAnalyticsModal({ isOpen: true, type: "expense" })} className="w-10 h-10 rounded-xl bg-[var(--danger-color)]/10 border border-[var(--danger-color)]/20 text-[var(--danger-color)] flex items-center justify-center hover:bg-[var(--danger-color)]/20 transition-all shadow-sm"><PieChart size={16} /></button>
             <button onClick={() => setCategoryModal({ isOpen: true, category: null })} className="w-9 h-9 rounded-xl bg-[var(--danger-color)]/10 text-[var(--danger-color)] flex items-center justify-center hover:bg-[var(--danger-color)]/20 transition-colors"><Plus size={18} /></button>
