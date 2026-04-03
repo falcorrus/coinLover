@@ -62,7 +62,7 @@ export function ExpenseSection({
               const spent = Math.round(catTx.reduce((s, t) => {
                 const tCurr = t.targetCurrency || "USD";
                 if (categoryCurrencyMode === 'local' && tCurr === localCurrencyCode) return s + (t.targetAmount || 0);
-                const sCurr = (t.sourceCurrency && isNaN(Number(t.sourceCurrency))) ? t.sourceCurrency : "USD";
+                const sCurr = t.sourceCurrency || "USD";
                 const valBase = (t.sourceAmountUSD && t.sourceAmountUSD !== 0 && baseCurrency === 'USD')
                   ? t.targetAmountUSD || t.sourceAmountUSD
                   : RatesService.convert(t.sourceAmount || 0, sCurr, baseCurrency);
