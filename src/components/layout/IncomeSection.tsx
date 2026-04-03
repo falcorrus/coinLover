@@ -45,7 +45,7 @@ export function IncomeSection({
             const monthlyAmount = Math.round(currentMonthTransactions
               .filter(t => String(t.type).toLowerCase() === "income" && t.targetId === inc.id)
               .reduce((sum, t) => {
-                const tCurr = t.targetCurrency || "USD";
+                const tCurr = t.targetCurrency || baseCurrency;
                 if (categoryCurrencyMode === 'local' && tCurr === localCurrencyCode) return sum + (t.targetAmount || 0);
                 const valBase = (t.targetAmountUSD && t.targetAmountUSD !== 0 && baseCurrency === 'USD')
                   ? t.targetAmountUSD
