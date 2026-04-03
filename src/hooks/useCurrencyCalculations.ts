@@ -20,13 +20,13 @@ export function useCurrencyCalculations(
   const baseSymbol = getSymbol(baseCurrency);
 
   const totalBalanceBase = React.useMemo(() => Math.round(accounts.reduce((s, a) => {
-    const aCurr = (a.currency && typeof a.currency === 'string' && isNaN(Number(a.currency))) ? a.currency : "USD";
+    const aCurr = a.currency || baseCurrency;
     const balance = isNaN(Number(a.balance)) ? 0 : a.balance;
     return s + RatesService.convert(balance, aCurr, baseCurrency);
   }, 0)), [accounts, baseCurrency]);
   
   const totalSpentBase = React.useMemo(() => Math.round(currentMonthTransactions.filter(t => String(t.type).toLowerCase() === "expense").reduce((s, t) => {
-    const sCurr = (t.sourceCurrency && typeof t.sourceCurrency === 'string' && isNaN(Number(t.sourceCurrency))) ? t.sourceCurrency : "USD";
+    const sCurr = t.sourceCurrency || baseCurrency;
     const amount = isNaN(Number(t.sourceAmount)) ? 0 : t.sourceAmount;
     const amountUSD = isNaN(Number(t.sourceAmountUSD)) ? 0 : t.sourceAmountUSD;
 
@@ -37,7 +37,7 @@ export function useCurrencyCalculations(
   }, 0)), [currentMonthTransactions, baseCurrency]);
 
   const totalEarnedBase = React.useMemo(() => Math.round(currentMonthTransactions.filter(t => String(t.type).toLowerCase() === "income").reduce((s, t) => {
-    const tCurr = (t.targetCurrency && typeof t.targetCurrency === 'string' && isNaN(Number(t.targetCurrency))) ? t.targetCurrency : "USD";
+    const tCurr = t.targetCurrency || baseCurrency;
     const amount = isNaN(Number(t.targetAmount)) ? 0 : t.targetAmount;
     const amountUSD = isNaN(Number(t.targetAmountUSD)) ? 0 : t.targetAmountUSD;
 
@@ -72,7 +72,7 @@ export function useCurrencyCalculations(
           return s + t.targetAmount;
         }
         // Иначе конвертируем из базы (которая уже рассчитана с учетом sourceAmountUSD)
-        const sCurr = (t.sourceCurrency && isNaN(Number(t.sourceCurrency))) ? t.sourceCurrency : "USD";
+        const sCurr = t.sourceCurrency || baseCurrency;
         const valBase = (t.sourceAmountUSD && t.sourceAmountUSD !== 0 && baseCurrency === 'USD') 
           ? t.sourceAmountUSD 
           : RatesService.convert(t.sourceAmount || 0, sCurr, baseCurrency);
@@ -87,7 +87,7 @@ export function useCurrencyCalculations(
         if (t.targetCurrency === localCur && t.targetAmount) {
           return s + t.targetAmount;
         }
-        const tCurr = (t.targetCurrency && isNaN(Number(t.targetCurrency))) ? t.targetCurrency : "USD";
+        const tCurr = t.targetCurrency || baseCurrency;
         const valBase = (t.targetAmountUSD && t.targetAmountUSD !== 0 && baseCurrency === 'USD')
           ? t.targetAmountUSD
           : RatesService.convert(t.targetAmount || 0, tCurr, baseCurrency);
