@@ -125,8 +125,8 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
 
     const getTxAmountInBase = (t: Transaction) => {
         const baseCur = RatesService.getBaseCurrency();
-        const sCurr = (t.sourceCurrency && isNaN(Number(t.sourceCurrency))) ? t.sourceCurrency : "USD";
-        const tCurr = (t.targetCurrency && isNaN(Number(t.targetCurrency))) ? t.targetCurrency : "USD";
+        const sCurr = t.sourceCurrency || baseCur;
+        const tCurr = t.targetCurrency || baseCur;
         
         if (analysisType === "expense") {
             return (t.sourceAmountUSD && t.sourceAmountUSD !== 0 && baseCur === 'USD')
