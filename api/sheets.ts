@@ -9,7 +9,8 @@ let sheetsClient: any = null;
 
 function parseNum(v: any) {
   if (v === undefined || v === null || v === "") return 0;
-  const s = String(v).replace(/[^\d.-]/g, '');
+  // Сначала меняем запятую на точку, затем удаляем всё лишнее кроме цифр, точки и минуса
+  const s = String(v).replace(',', '.').replace(/[^\d.-]/g, '');
   return parseFloat(s) || 0;
 }
 
