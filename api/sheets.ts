@@ -425,9 +425,14 @@ export default async function handler(req, res) {
           return -1;
         };
 
-        const uId = getIdx(["id"]), uName = getIdx(["name", "имя"]), uColor = getIdx(["color", "цвет"]),
-              uIcon = getIdx(["icon", "иконка"]), uTags = getIdx(["tags", "теги"]), uBal = getIdx(["balance", "баланс", "остаток"]),
-              uBalBase = getIdx(["balance_base", "usd"]), uCurr = getIdx(["currency", "валюта"]);
+        const uId = getIdx(["id", "идентификатор", "айди"]), 
+              uName = getIdx(["name", "имя", "название", "кошелек", "категория", "источник"]), 
+              uColor = getIdx(["color", "цвет"]),
+              uIcon = getIdx(["icon", "иконка"]), 
+              uTags = getIdx(["tags", "теги", "метки"]), 
+              uBal = getIdx(["balance", "баланс", "остаток"]),
+              uBalBase = getIdx(["balance_base", "usd", "база", "баланс (база)"]), 
+              uCurr = getIdx(["currency", "валюта", "вал"]);
 
         const val = (idx: number, def = "") => (idx !== -1 && row[idx] !== undefined) ? String(row[idx]).trim() : def;
         const num = (idx: number) => {
