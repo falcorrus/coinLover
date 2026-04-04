@@ -29,6 +29,8 @@ export class RatesService {
 
     static clearMemoryCache(): void {
         this.memoryRates = null;
+        localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.EXCHANGE_RATES);
+        localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.RATES_LAST_SYNC);
     }
 
     static shouldSyncRates(): boolean {
@@ -76,12 +78,14 @@ export class RatesService {
 
     static convert(amount: number, fromCurrency: string, toCurrency: string): number {
         if (!amount || isNaN(amount)) return 0;
-        if (!fromCurrency || !toCurrency || fromCurrency === toCurrency) return amount;
+        
+        const from = String(fromCurrency || "").trim().toUpperCase();
+        const to = String(toCurrency || "").trim().toUpperCase();
+        
+        if (!from || !to) return 0;
+        if (from === to) return amount;
 
-        const from = String(fromCurrency).toUpperCase();
-        const to = String(toCurrency).toUpperCase();
         const base = this.getBaseCurrency();
-
         const rates = this.getCachedRates();
         
         // CRITICAL FIX: If rates are missing, return 0 instead of 'amount'.
