@@ -32,7 +32,7 @@ export const useTransactions = ({
     
     if (type === "expense") { 
       sCurr = (source as Account).currency; 
-      tCurr = customCurrency || RatesService.getBaseCurrency(); 
+      tCurr = customCurrency || sCurr; 
     } else if (type === "income") { 
       tCurr = (destination as Account).currency;
       sCurr = customCurrency || tCurr; 
@@ -125,7 +125,7 @@ export const useTransactions = ({
 
     if (type === "expense") { 
       sCurr = (source as Account).currency; 
-      tCurr = customCurrency || oldTx.targetCurrency || baseCur; 
+      tCurr = customCurrency || oldTx.targetCurrency || sCurr; 
     } else if (type === "income") { 
       tCurr = (destination as Account).currency;
       sCurr = customCurrency || oldTx.sourceCurrency || tCurr;
