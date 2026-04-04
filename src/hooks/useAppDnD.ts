@@ -104,28 +104,33 @@ export const useAppDnD = ({
     if (activeData?.type === "account") {
       if (overData?.type === "category") {
         await RatesService.ensureRates();
-        const baseCur = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY) || "USD";
-        const prefCur = localStorage.getItem("cl_numpad_pref_currency") || baseCur;
+        const baseCur = RatesService.getBaseCurrency();
+        const sCurr = activeData.account.currency || baseCur;
+        // Предлагаем валюту кошелька как целевую по умолчанию для расходов
+        const prefCur = localStorage.getItem("cl_numpad_pref_currency") || sCurr;
         setNumpad({
           isOpen: true, type: "expense", source: activeData.account, destination: overData.category,
-          sourceAmount: "0", sourceCurrency: activeData.account.currency, targetAmount: "0", targetCurrency: prefCur,
+          sourceAmount: "0", sourceCurrency: sCurr, targetAmount: "0", targetCurrency: prefCur,
           targetLinked: true, activeField: "destination", tag: overData.category.tags?.[0] || null, comment: ""
         });
         } else if (overData?.type === "account" && active.id !== over.id && !sorting) {
         await RatesService.ensureRates();
+        const sCurr = activeData.account.currency || RatesService.getBaseCurrency();
+        const tCurr = overData.account.currency || RatesService.getBaseCurrency();
         setNumpad({
           isOpen: true, type: "transfer", source: activeData.account, destination: overData.account,
-          sourceAmount: "0", sourceCurrency: activeData.account.currency, targetAmount: "0", targetCurrency: overData.account.currency,
+          sourceAmount: "0", sourceCurrency: sCurr, targetAmount: "0", targetCurrency: tCurr,
           targetLinked: true, activeField: "destination", tag: null, comment: ""
         });
         }
         } else if (activeData?.type === "income" && overData?.type === "account") {
         await RatesService.ensureRates();
-        const baseCur = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY) || "USD";
-        const prefCur = localStorage.getItem("cl_numpad_pref_currency") || baseCur;
+        const baseCur = RatesService.getBaseCurrency();
+        const tCurr = overData.account.currency || baseCur;
+        const prefCur = localStorage.getItem("cl_numpad_pref_currency") || tCurr;
         setNumpad({
         isOpen: true, type: "income", source: activeData.income, destination: overData.account,
-        sourceAmount: "0", sourceCurrency: prefCur, targetAmount: "0", targetCurrency: overData.account.currency,
+        sourceAmount: "0", sourceCurrency: prefCur, targetAmount: "0", targetCurrency: tCurr,
         targetLinked: true, activeField: "destination", tag: activeData.income.tags?.[0] || null, comment: ""
         });
         }  }, [isSortingMode, hasMovedDuringDrag, accounts, categories, incomes, syncAccountsOrder, syncCategories, syncIncomes, setNumpad]);

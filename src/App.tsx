@@ -122,7 +122,20 @@ export default function App() {
   const [isTagModalOpen, setIsTagModalOpen] = React.useState(false);
   const [isUsersModalOpen, setIsUsersModalOpen] = React.useState(false);
   const [isThemeModalOpen, setIsThemeModalOpen] = React.useState(false);
-  const [numpad, setNumpad] = React.useState<any>({ isOpen: false, type: "expense", source: null, destination: null, sourceAmount: "0", sourceCurrency: "USD", targetAmount: "0", targetCurrency: "USD", targetLinked: true, activeField: "destination", tag: null, comment: "" });
+  const [numpad, setNumpad] = React.useState<any>({ 
+    isOpen: false, 
+    type: "expense", 
+    source: null, 
+    destination: null, 
+    sourceAmount: "0", 
+    sourceCurrency: "", 
+    targetAmount: "0", 
+    targetCurrency: "", 
+    targetLinked: true, 
+    activeField: "destination", 
+    tag: null, 
+    comment: "" 
+  });
 
   const [modalStack, setModalStack] = React.useState<string[]>([]);
   const stackRef = React.useRef<string[]>([]);
