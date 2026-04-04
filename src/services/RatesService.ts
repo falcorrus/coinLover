@@ -82,17 +82,19 @@ export class RatesService {
         const from = String(fromCurrency || "").trim().toUpperCase();
         const to = String(toCurrency || "").trim().toUpperCase();
         
-        if (!from || !to) return 0;
+        if (!from || !to) {
+            console.warn("Conversion failed: Missing currency code.");
+            return 0;
+        }
+        
         if (from === to) return amount;
 
         const base = this.getBaseCurrency();
         const rates = this.getCachedRates();
         
-        // CRITICAL FIX: If rates are missing, return 0 instead of 'amount'.
-        // Returning 'amount' causes 100 RUB to look like 100 USD (a 100x error).
-        // Returning 0 is safe because the UI will show 0 while loading.
         if (!rates) {
             console.warn("Exchange rates not found. Conversion deferred.");
+            this.syncRatesInBackground(); // Trigger fetch if missing
             return 0; 
         }
 
@@ -100,8 +102,7 @@ export class RatesService {
         const rateTo = rates[to] ?? (to === base ? 1 : null);
 
         if (rateFrom === null || rateTo === null) {
-            // If one of the currencies is unknown, returning 0 is safer than raw amount
-            console.warn(`Missing rate for ${from} or ${to}.`);
+            console.warn(`Missing rate for ${from} or ${to}. Base: ${base}`);
             return 0;
         }
 

@@ -35,15 +35,24 @@ export const useTransactions = ({
     const cachedNumpadT = localStorage.getItem("cl_numpad_pref_t_curr");
     const localCur = localStorage.getItem("cl_numpad_pref_currency") || cachedNumpadT || baseCur;
 
+    const findAcc = (id: string) => {
+      const aid = String(id || "").trim().toLowerCase();
+      return accounts.find(a => String(a.id).trim().toLowerCase() === aid || String(a.name).trim().toLowerCase() === aid);
+    };
+
     if (type === "expense") { 
-      sCurr = (source as Account).currency || cachedNumpadS || localCur; 
+      const acc = findAcc((source as Account).id);
+      sCurr = acc?.currency || cachedNumpadS || localCur; 
       tCurr = customCurrency || sCurr; 
     } else if (type === "income") { 
-      tCurr = (destination as Account).currency || cachedNumpadT || localCur;
+      const acc = findAcc((destination as Account).id);
+      tCurr = acc?.currency || cachedNumpadT || localCur;
       sCurr = customCurrency || tCurr; 
     } else { 
-      sCurr = (source as Account).currency || cachedNumpadS || localCur; 
-      tCurr = (destination as Account).currency || cachedNumpadT || localCur; 
+      const sAcc = findAcc((source as Account).id);
+      const tAcc = findAcc((destination as Account).id);
+      sCurr = sAcc?.currency || cachedNumpadS || localCur; 
+      tCurr = tAcc?.currency || cachedNumpadT || localCur; 
     }
 
     const sAmountUSD = RatesService.convert(sourceAmount, sCurr, baseCur);

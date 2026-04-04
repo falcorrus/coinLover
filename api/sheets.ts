@@ -433,7 +433,11 @@ export default async function handler(req, res) {
               uBalBase = getIdx(["balance_base", "usd", "база", "баланс (база)"]), 
               uCurr = getIdx(["currency", "валюта", "вал"]);
 
-        const val = (idx: number, def = "") => (idx !== -1 && row[idx] !== undefined) ? String(row[idx]).trim() : def;
+        const val = (idx: number, def = "") => {
+          if (idx === -1 || row[idx] === undefined) return def;
+          // Очистка от ведущих кавычек (бывает в Sheets) и невидимых пробелов
+          return String(row[idx]).trim().replace(/^'/, "");
+        };
         const num = (idx: number) => {
           if (idx === -1 || row[idx] === undefined) return 0;
           return parseNum(row[idx]);
@@ -451,7 +455,7 @@ export default async function handler(req, res) {
             balanceUSD: num(uBalBase) || num(uBal), 
             color: val(uColor, "#ccc"), 
             icon: val(uIcon, "wallet"), 
-            currency: accCurr 
+            currency: accCurr.toUpperCase() 
           });
         } else if (section === "cat" || section === "inc") {
           const entity = { id, name: val(uName, "Без имени"), color: val(uColor, "#ccc"), icon: val(uIcon, section === "cat" ? "tag" : "business"), tags: val(uTags) ? val(uTags).split(",").map(t => t.trim()).filter(Boolean) : [] };
