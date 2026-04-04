@@ -30,18 +30,22 @@ export const useTransactions = ({
     const finalTargetAmount = targetAmount ?? sourceAmount;
     let sCurr: string, tCurr: string;
     
+    const baseCur = RatesService.getBaseCurrency();
+    const cachedNumpadS = localStorage.getItem("cl_numpad_pref_s_curr");
+    const cachedNumpadT = localStorage.getItem("cl_numpad_pref_t_curr");
+    const localCur = localStorage.getItem("cl_numpad_pref_currency") || cachedNumpadT || baseCur;
+
     if (type === "expense") { 
-      sCurr = (source as Account).currency; 
+      sCurr = (source as Account).currency || cachedNumpadS || localCur; 
       tCurr = customCurrency || sCurr; 
     } else if (type === "income") { 
-      tCurr = (destination as Account).currency;
+      tCurr = (destination as Account).currency || cachedNumpadT || localCur;
       sCurr = customCurrency || tCurr; 
     } else { 
-      sCurr = (source as Account).currency; 
-      tCurr = (destination as Account).currency; 
+      sCurr = (source as Account).currency || cachedNumpadS || localCur; 
+      tCurr = (destination as Account).currency || cachedNumpadT || localCur; 
     }
 
-    const baseCur = RatesService.getBaseCurrency();
     const sAmountUSD = RatesService.convert(sourceAmount, sCurr, baseCur);
     const tAmountUSD = RatesService.convert(finalTargetAmount, tCurr, baseCur);
     

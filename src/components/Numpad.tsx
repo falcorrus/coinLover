@@ -244,7 +244,20 @@ export const Numpad: React.FC<Props> = ({
             <div className="flex justify-between items-center"><h3 className="text-sm font-bold uppercase text-[var(--text-main)]">Выберите валюту</h3><button onClick={() => setCurrencyPicker({ isOpen: false, field: null })} className="p-1 text-[var(--text-muted)] hover:text-[var(--text-main)]"><X size={20} /></button></div>
             <div className={`grid ${getGridCols()} gap-2`}>
               {availableCurrencies.map(curr => (
-                <button key={curr} onClick={() => { onCurrencyChange?.(currencyPicker.field!, curr); setCurrencyPicker({ isOpen: false, field: null }); }} className={`h-12 rounded-xl border font-bold text-sm transition-all ${(currencyPicker.field === "source" ? data.sourceCurrency : data.targetCurrency) === curr ? "bg-[#D4AF37] text-white border-[#D4AF37]" : "bg-[var(--glass-item-bg)] border-[var(--glass-border)] text-[var(--text-muted)] hover:bg-[var(--glass-item-active)]"}`}>{curr}</button>
+                <button 
+                  key={curr} 
+                  onClick={() => { 
+                    onCurrencyChange?.(currencyPicker.field!, curr); 
+                    // Кешируем выбор
+                    if (currencyPicker.field === "source") localStorage.setItem("cl_numpad_pref_s_curr", curr);
+                    else if (currencyPicker.field === "target") localStorage.setItem("cl_numpad_pref_t_curr", curr);
+                    
+                    setCurrencyPicker({ isOpen: false, field: null }); 
+                  }} 
+                  className={`h-12 rounded-xl border font-bold text-sm transition-all ${(currencyPicker.field === "source" ? data.sourceCurrency : data.targetCurrency) === curr ? "bg-[#D4AF37] text-white border-[#D4AF37]" : "bg-[var(--glass-item-bg)] border-[var(--glass-border)] text-[var(--text-muted)] hover:bg-[var(--glass-item-active)]"}`}
+                >
+                  {curr}
+                </button>
               ))}
             </div>
           </div>
