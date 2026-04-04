@@ -82,7 +82,7 @@ export function ExpenseSection({
                   spent={spent}
                   isDragging={activeDragId === cat.id}
                   activeDragType={activeDragType}
-                  overId={overId}
+                  isOver={overId === cat.id}
                   isSortingMode={isSortingMode}
                   onLongPress={() => { setIsSortingMode(false); setCategoryModal({ isOpen: true, category: cat }); }}
                   onSortingMode={() => setIsSortingMode(true)}
