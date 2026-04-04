@@ -9,9 +9,44 @@ let sheetsClient: any = null;
 
 function parseNum(v: any) {
   if (v === undefined || v === null || v === "") return 0;
-  // Сначала меняем запятую на точку, затем удаляем всё лишнее кроме цифр, точки и минуса
-  const s = String(v).replace(',', '.').replace(/[^\d.-]/g, '');
-  return parseFloat(s) || 0;
+  let s = String(v).trim();
+  
+  // Если есть и точки, и запятые
+  if (s.includes('.') && s.includes(',')) {
+    if (s.lastIndexOf('.') > s.lastIndexOf(',')) {
+      // Точка — десятичный (1,234.56) -> удаляем запятые
+      s = s.replace(/,/g, '');
+    } else {
+      // Запятая — десятичный (1.234,56) -> удаляем точки, запятую в точку
+      s = s.replace(/\./g, '').replace(',', '.');
+    }
+  } else {
+    // Только один вид разделителя (или ни одного)
+    const dots = (s.match(/\./g) || []).length;
+    const commas = (s.match(/,/g) || []).length;
+    
+    if (dots > 1) {
+      // Много точек -> разделитель тысяч (1.234.567)
+      s = s.replace(/\./g, '');
+    } else if (commas > 1) {
+      // Много запятых -> разделитель тысяч (1,234,567)
+      s = s.replace(/,/g, '');
+    } else if (commas === 1) {
+      // Одна запятая: 1,234 (тысяча) или 1,23 (десятичный)?
+      const parts = s.split(',');
+      if (parts[1].length === 3) {
+        // Ровно 3 знака -> скорее всего тысячи (1,000)
+        s = s.replace(',', '');
+      } else {
+        // 1 или 2 знака (или больше 3) -> десятичный (1,23)
+        s = s.replace(',', '.');
+      }
+    }
+  }
+  
+  // Очистка от всего, кроме цифр, одной точки и минуса
+  const cleaned = s.replace(/[^\d.-]/g, '');
+  return parseFloat(cleaned) || 0;
 }
 
 async function getSheetsClient() {
