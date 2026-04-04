@@ -64,9 +64,10 @@ export function ExpenseSection({
             {categories.map(cat => {
               const catTx = currentMonthTransactions.filter(t => String(t.type).toLowerCase() === "expense" && t.targetId === cat.id);
               const spent = Math.round(catTx.reduce((s, t) => {
-                const tCurr = t.targetCurrency || accounts.find(a => a.id === t.accountId)?.currency || baseCurrency;
+                const account = accounts.find(a => a.id === t.accountId || a.name === t.accountId);
+                const tCurr = t.targetCurrency || account?.currency || baseCurrency;
                 if (categoryCurrencyMode === 'local' && tCurr === localCurrencyCode) return s + (t.targetAmount || 0);
-                const sCurr = t.sourceCurrency || accounts.find(a => a.id === t.accountId)?.currency || baseCurrency;
+                const sCurr = t.sourceCurrency || account?.currency || baseCurrency;
                 const valBase = (t.sourceAmountUSD && t.sourceAmountUSD !== 0 && baseCurrency === 'USD')
                   ? t.targetAmountUSD || t.sourceAmountUSD
                   : RatesService.convert(t.sourceAmount || 0, sCurr, baseCurrency);

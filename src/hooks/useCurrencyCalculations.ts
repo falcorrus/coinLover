@@ -26,7 +26,8 @@ export function useCurrencyCalculations(
   }, 0)), [accounts, baseCurrency]);
   
   const totalSpentBase = React.useMemo(() => Math.round(currentMonthTransactions.filter(t => String(t.type).toLowerCase() === "expense").reduce((s, t) => {
-    const sCurr = t.sourceCurrency || accounts.find(a => a.id === t.accountId)?.currency || baseCurrency;
+    const account = accounts.find(a => a.id === t.accountId || a.name === t.accountId);
+    const sCurr = t.sourceCurrency || account?.currency || baseCurrency;
     const amount = isNaN(Number(t.sourceAmount)) ? 0 : t.sourceAmount;
     const amountUSD = isNaN(Number(t.sourceAmountUSD)) ? 0 : t.sourceAmountUSD;
 
@@ -37,7 +38,8 @@ export function useCurrencyCalculations(
   }, 0)), [currentMonthTransactions, baseCurrency]);
 
   const totalEarnedBase = React.useMemo(() => Math.round(currentMonthTransactions.filter(t => String(t.type).toLowerCase() === "income").reduce((s, t) => {
-    const tCurr = t.targetCurrency || accounts.find(a => a.id === t.accountId)?.currency || baseCurrency;
+    const account = accounts.find(a => a.id === t.accountId || a.name === t.accountId);
+    const tCurr = t.targetCurrency || account?.currency || baseCurrency;
     const amount = isNaN(Number(t.targetAmount)) ? 0 : t.targetAmount;
     const amountUSD = isNaN(Number(t.targetAmountUSD)) ? 0 : t.targetAmountUSD;
 
@@ -72,28 +74,30 @@ export function useCurrencyCalculations(
           return s + t.targetAmount;
         }
         // Иначе конвертируем из базы (которая уже рассчитана с учетом sourceAmountUSD)
-        const sCurr = t.sourceCurrency || accounts.find(a => a.id === t.accountId)?.currency || baseCurrency;
+        const account = accounts.find(a => a.id === t.accountId || a.name === t.accountId);
+        const sCurr = t.sourceCurrency || account?.currency || baseCurrency;
         const valBase = (t.sourceAmountUSD && t.sourceAmountUSD !== 0 && baseCurrency === 'USD') 
           ? t.sourceAmountUSD 
           : RatesService.convert(t.sourceAmount || 0, sCurr, baseCurrency);
-        
-        return s + RatesService.convert(valBase, baseCurrency, localCur);
-      }, 0));
 
-    const earnedLocal = Math.round(currentMonthTransactions
-      .filter(t => String(t.type).toLowerCase() === "income")
-      .reduce((s, t) => {
+        return s + RatesService.convert(valBase, baseCurrency, localCur);
+        }, 0));
+
+        const earnedLocal = Math.round(currentMonthTransactions
+        .filter(t => String(t.type).toLowerCase() === "income")
+        .reduce((s, t) => {
         // Для доходов targetAmount - это сумма, пришедшая на счет
         if (t.targetCurrency === localCur && t.targetAmount) {
           return s + t.targetAmount;
         }
-        const tCurr = t.targetCurrency || accounts.find(a => a.id === t.accountId)?.currency || baseCurrency;
+        const account = accounts.find(a => a.id === t.accountId || a.name === t.accountId);
+        const tCurr = t.targetCurrency || account?.currency || baseCurrency;
         const valBase = (t.targetAmountUSD && t.targetAmountUSD !== 0 && baseCurrency === 'USD')
           ? t.targetAmountUSD
           : RatesService.convert(t.targetAmount || 0, tCurr, baseCurrency);
 
         return s + RatesService.convert(valBase, baseCurrency, localCur);
-      }, 0));
+        }, 0));
 
     const balanceLocal = Math.round(RatesService.convert(totalBalanceBase, baseCurrency, localCur));
 
