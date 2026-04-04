@@ -109,11 +109,10 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
         const baseSymbol = getSymbol(baseCurrency);
 
         // Calculate amount in base currency for secondary display
+        // ALWAYS calculate fresh from source, ignore stale data from spreadsheet
         let secondaryAmount = null;
         if (displayCurrency !== baseCurrency) {
-            const amtInBase = (baseCurrency === 'USD' && sAmtUsd) 
-                ? sAmtUsd 
-                : RatesService.convert(displayAmount, displayCurrency, baseCurrency);
+            const amtInBase = RatesService.convert(displayAmount, displayCurrency, baseCurrency);
             secondaryAmount = Math.round(amtInBase);
         }
 

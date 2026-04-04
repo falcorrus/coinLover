@@ -30,11 +30,10 @@ export function useCurrencyCalculations(
     const account = accounts.find(a => String(a.id).trim().toLowerCase() === aid || String(a.name).trim().toLowerCase() === aid);
     const sCurr = t.sourceCurrency || account?.currency || baseCurrency;
     const amount = isNaN(Number(t.sourceAmount)) ? 0 : t.sourceAmount;
-    const amountUSD = isNaN(Number(t.sourceAmountUSD)) ? 0 : t.sourceAmountUSD;
 
-    const val = (amountUSD && amountUSD !== 0 && baseCurrency === 'USD') 
-      ? amountUSD 
-      : RatesService.convert(amount || 0, sCurr, baseCurrency);
+    // Игнорируем t.sourceAmountUSD из таблицы, так как там могут быть неверные данные (например в USD вместо EUR)
+    // Всегда считаем базу сами на лету
+    const val = RatesService.convert(amount || 0, sCurr, baseCurrency);
     return s + val;
   }, 0)), [currentMonthTransactions, baseCurrency, accounts]);
 
@@ -43,11 +42,9 @@ export function useCurrencyCalculations(
     const account = accounts.find(a => String(a.id).trim().toLowerCase() === aid || String(a.name).trim().toLowerCase() === aid);
     const tCurr = t.targetCurrency || account?.currency || baseCurrency;
     const amount = isNaN(Number(t.targetAmount)) ? 0 : t.targetAmount;
-    const amountUSD = isNaN(Number(t.targetAmountUSD)) ? 0 : t.targetAmountUSD;
 
-    const val = (amountUSD && amountUSD !== 0 && baseCurrency === 'USD')
-      ? amountUSD
-      : RatesService.convert(amount || 0, tCurr, baseCurrency);
+    // Аналогично для доходов
+    const val = RatesService.convert(amount || 0, tCurr, baseCurrency);
     return s + val;
   }, 0)), [currentMonthTransactions, baseCurrency, accounts]);
 
@@ -59,7 +56,6 @@ export function useCurrencyCalculations(
     const getSafeCurr = (t: Transaction) => {
       const aid = String(t.accountId || "").trim().toLowerCase();
       const account = accounts.find(a => String(a.id).trim().toLowerCase() === aid || String(a.name).trim().toLowerCase() === aid);
-      // SAFETY: If lookup fails, default to localCur (RSD) instead of baseCurrency (EUR/USD)
       return t.sourceCurrency || account?.currency || localCur;
     };
 
@@ -74,35 +70,25 @@ export function useCurrencyCalculations(
       };
     }
 
-    // Расчет в ЛОКАЛЬНОЙ ВАЛЮТЕ с приоритетом targetAmount
+    // Расчет в ЛОКАЛЬНОЙ ВАЛЮТЕ
     const spentLocal = Math.round(currentMonthTransactions
       .filter(t => String(t.type).toLowerCase() === "expense")
       .reduce((s, t) => {
-        // Если валюта цели совпадает с локальной - берем прямую цифру
-        if (t.targetCurrency === localCur && t.targetAmount) {
-          return s + t.targetAmount;
-        }
-        // Иначе конвертируем из базы (которая уже рассчитана с учетом sourceAmountUSD)
-        const sCurr = getSafeCurr(t);
-        const valBase = (t.sourceAmountUSD && t.sourceAmountUSD !== 0 && baseCurrency === 'USD') 
-          ? t.sourceAmountUSD 
-          : RatesService.convert(t.sourceAmount || 0, sCurr, baseCurrency);
+        if (t.targetCurrency === localCur && t.targetAmount) return s + t.targetAmount;
         
+        const sCurr = getSafeCurr(t);
+        // Считаем из оригинала, игнорируя колонку "USD" в таблице
+        const valBase = RatesService.convert(t.sourceAmount || 0, sCurr, baseCurrency);
         return s + RatesService.convert(valBase, baseCurrency, localCur);
       }, 0));
 
     const earnedLocal = Math.round(currentMonthTransactions
       .filter(t => String(t.type).toLowerCase() === "income")
       .reduce((s, t) => {
-        // Для доходов targetAmount - это сумма, пришедшая на счет
-        if (t.targetCurrency === localCur && t.targetAmount) {
-          return s + t.targetAmount;
-        }
+        if (t.targetCurrency === localCur && t.targetAmount) return s + t.targetAmount;
+        
         const tCurr = getSafeCurr(t);
-        const valBase = (t.targetAmountUSD && t.targetAmountUSD !== 0 && baseCurrency === 'USD')
-          ? t.targetAmountUSD
-          : RatesService.convert(t.targetAmount || 0, tCurr, baseCurrency);
-
+        const valBase = RatesService.convert(t.targetAmount || 0, tCurr, baseCurrency);
         return s + RatesService.convert(valBase, baseCurrency, localCur);
       }, 0));
 
