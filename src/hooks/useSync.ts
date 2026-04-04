@@ -2,6 +2,7 @@ import { useState, useCallback, useRef } from "react";
 import { APP_SETTINGS } from "../constants/settings";
 import { Account, Transaction, Category, IncomeSource, SyncSettingsFields } from "../types";
 import { googleSheetsService } from "../services/googleSheets";
+import { RatesService } from "../services/RatesService";
 import { getLocalTimeString, enrichAccountsWithUSD } from "./utils";
 
 export type SyncStatus = "idle" | "loading" | "error" | "success";
@@ -53,7 +54,17 @@ export const useSync = ({
     if (data.categories) setCategories(data.categories);
     if (data.incomes) setIncomes(data.incomes);
     if (data.users) setUsers(data.users);
-    if (data.baseCurrency) localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY, data.baseCurrency);
+    
+    if (data.baseCurrency) {
+      const oldBase = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY);
+      if (oldBase && oldBase !== data.baseCurrency) {
+        // Базовая валюта изменилась - сбрасываем курсы, чтобы они пересчитались
+        localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.EXCHANGE_RATES);
+        localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.RATES_LAST_SYNC);
+        RatesService.clearMemoryCache();
+      }
+      localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY, data.baseCurrency);
+    }
     if (data.timestamp) {
       localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC, data.timestamp);
       lastRemoteSnapshot.current = getSettingsSnapshot(data);

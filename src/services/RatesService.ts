@@ -27,6 +27,10 @@ export class RatesService {
         return localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY) || "USD";
     }
 
+    static clearMemoryCache(): void {
+        this.memoryRates = null;
+    }
+
     static shouldSyncRates(): boolean {
         const lastSync = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.RATES_LAST_SYNC);
         if (!lastSync) return true;
