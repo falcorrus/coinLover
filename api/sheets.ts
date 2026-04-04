@@ -474,9 +474,15 @@ export default async function handler(req, res) {
                 c_id = findCol(["id", "идентификатор"]);
 
           if (c_date !== undefined) {
-             const accMap = {}; data.accounts.forEach(a => { accMap[a.name] = a.id; accMap[a.id] = a.id; });
-             const catMap = {}; data.categories.forEach(c => { catMap[c.name] = c.id; catMap[c.id] = c.id; });
-             const incMap = {}; data.incomes.forEach(i => { incMap[i.name] = i.id; incMap[i.id] = i.id; });
+             const accMap = {}; 
+             data.accounts.forEach(a => { 
+               const aid = String(a.id).trim();
+               const aname = String(a.name).trim().toLowerCase();
+               accMap[aname] = aid; 
+               accMap[aid] = aid; 
+             });
+             const catMap = {}; data.categories.forEach(c => { catMap[String(c.name).trim().toLowerCase()] = String(c.id).trim(); catMap[String(c.id).trim()] = String(c.id).trim(); });
+             const incMap = {}; data.incomes.forEach(i => { incMap[String(i.name).trim().toLowerCase()] = String(i.id).trim(); incMap[String(i.id).trim()] = String(i.id).trim(); });
 
              for (let i = dataStartIndex; i < txRows.length; i++) {
                const r = txRows[i];
@@ -490,10 +496,13 @@ export default async function handler(req, res) {
                
                const srcRaw = String(r[c_src] || "").trim();
                const dstRaw = String(r[c_dst] || "").trim();
+               const srcKey = srcRaw.toLowerCase();
+               const dstKey = dstRaw.toLowerCase();
+
                let aid = "", tid = "";
-               if (type === "expense") { aid = accMap[srcRaw] || srcRaw; tid = catMap[dstRaw] || dstRaw; }
-               else if (type === "income") { aid = accMap[dstRaw] || dstRaw; tid = incMap[srcRaw] || srcRaw; }
-               else if (type === "transfer") { aid = accMap[srcRaw] || srcRaw; tid = accMap[dstRaw] || dstRaw; }
+               if (type === "expense") { aid = accMap[srcKey] || srcRaw; tid = catMap[dstKey] || dstRaw; }
+               else if (type === "income") { aid = accMap[dstKey] || dstRaw; tid = incMap[srcKey] || srcRaw; }
+               else if (type === "transfer") { aid = accMap[srcKey] || srcRaw; tid = accMap[dstKey] || dstRaw; }
 
                const s = String(dateRaw).trim();
                let dt = new Date(s);

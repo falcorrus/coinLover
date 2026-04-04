@@ -69,17 +69,18 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
         }
 
         let counterpartItem: Account | Category | IncomeSource | undefined;
+        const aid = String(tx.accountId || "").trim().toLowerCase();
         if (tx.type === "expense") {
             counterpartItem = (entityType === "category" || entityType === "tag") 
-                ? accounts.find(a => a.id === tx.accountId || a.name === tx.accountId)
+                ? accounts.find(a => String(a.id).trim().toLowerCase() === aid || String(a.name).trim().toLowerCase() === aid)
                 : categories.find(c => c.id === tx.targetId);
         } else if (tx.type === "income") {
             counterpartItem = (entityType === "income")
-                ? accounts.find(a => a.id === tx.accountId || a.name === tx.accountId)
+                ? accounts.find(a => String(a.id).trim().toLowerCase() === aid || String(a.name).trim().toLowerCase() === aid)
                 : incomes.find(i => i.id === tx.targetId);
         } else if (tx.type === "transfer") {
-            const otherId = tx.accountId === entity.id ? tx.targetId : tx.accountId;
-            counterpartItem = accounts.find(a => a.id === otherId || a.name === otherId);
+            const otherId = String(tx.accountId === entity.id ? tx.targetId : tx.accountId).trim().toLowerCase();
+            counterpartItem = accounts.find(a => String(a.id).trim().toLowerCase() === otherId || String(a.name).trim().toLowerCase() === otherId);
         }
 
         return { item: counterpartItem, isOutflow };
@@ -89,8 +90,9 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
         const baseCurrency = RatesService.getBaseCurrency();
         const sAmt = tx.sourceAmount ?? tx.amount ?? 0;
         const sAmtUsd = tx.sourceAmountUSD ?? tx.amountUSD;
-        // Robust account lookup: check by ID or Name
-        const account = accounts.find(a => a.id === tx.accountId || a.name === tx.accountId);
+        // Robust account lookup
+        const aid = String(tx.accountId || "").trim().toLowerCase();
+        const account = accounts.find(a => String(a.id).trim().toLowerCase() === aid || String(a.name).trim().toLowerCase() === aid);
         const sCurr = tx.sourceCurrency || (account?.currency || baseCurrency);
         const tAmt = tx.targetAmount ?? tx.amountLocal ?? sAmt;
         const tCurr = tx.targetCurrency || tx.currencyLocal || (account?.currency || baseCurrency);

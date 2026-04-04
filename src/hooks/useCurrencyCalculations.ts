@@ -26,7 +26,8 @@ export function useCurrencyCalculations(
   }, 0)), [accounts, baseCurrency]);
   
   const totalSpentBase = React.useMemo(() => Math.round(currentMonthTransactions.filter(t => String(t.type).toLowerCase() === "expense").reduce((s, t) => {
-    const account = accounts.find(a => a.id === t.accountId || a.name === t.accountId);
+    const aid = String(t.accountId || "").trim().toLowerCase();
+    const account = accounts.find(a => String(a.id).trim().toLowerCase() === aid || String(a.name).trim().toLowerCase() === aid);
     const sCurr = t.sourceCurrency || account?.currency || baseCurrency;
     const amount = isNaN(Number(t.sourceAmount)) ? 0 : t.sourceAmount;
     const amountUSD = isNaN(Number(t.sourceAmountUSD)) ? 0 : t.sourceAmountUSD;
@@ -38,7 +39,8 @@ export function useCurrencyCalculations(
   }, 0)), [currentMonthTransactions, baseCurrency]);
 
   const totalEarnedBase = React.useMemo(() => Math.round(currentMonthTransactions.filter(t => String(t.type).toLowerCase() === "income").reduce((s, t) => {
-    const account = accounts.find(a => a.id === t.accountId || a.name === t.accountId);
+    const aid = String(t.accountId || "").trim().toLowerCase();
+    const account = accounts.find(a => String(a.id).trim().toLowerCase() === aid || String(a.name).trim().toLowerCase() === aid);
     const tCurr = t.targetCurrency || account?.currency || baseCurrency;
     const amount = isNaN(Number(t.targetAmount)) ? 0 : t.targetAmount;
     const amountUSD = isNaN(Number(t.targetAmountUSD)) ? 0 : t.targetAmountUSD;
@@ -74,7 +76,8 @@ export function useCurrencyCalculations(
           return s + t.targetAmount;
         }
         // Иначе конвертируем из базы (которая уже рассчитана с учетом sourceAmountUSD)
-        const account = accounts.find(a => a.id === t.accountId || a.name === t.accountId);
+        const aid = String(t.accountId || "").trim().toLowerCase();
+        const account = accounts.find(a => String(a.id).trim().toLowerCase() === aid || String(a.name).trim().toLowerCase() === aid);
         const sCurr = t.sourceCurrency || account?.currency || baseCurrency;
         const valBase = (t.sourceAmountUSD && t.sourceAmountUSD !== 0 && baseCurrency === 'USD') 
           ? t.sourceAmountUSD 
@@ -90,7 +93,8 @@ export function useCurrencyCalculations(
         if (t.targetCurrency === localCur && t.targetAmount) {
           return s + t.targetAmount;
         }
-        const account = accounts.find(a => a.id === t.accountId || a.name === t.accountId);
+        const targetAid = String(t.accountId || "").trim().toLowerCase();
+        const account = accounts.find(a => String(a.id).trim().toLowerCase() === targetAid || String(a.name).trim().toLowerCase() === targetAid);
         const tCurr = t.targetCurrency || account?.currency || baseCurrency;
         const valBase = (t.targetAmountUSD && t.targetAmountUSD !== 0 && baseCurrency === 'USD')
           ? t.targetAmountUSD
