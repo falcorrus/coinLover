@@ -405,13 +405,12 @@ export default async function handler(req, res) {
       for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
         if (!row || !row[0]) continue;
-        const key = String(row[0]).trim().toLowerCase();
-        
-        if (key.includes("updated")) { data.timestamp = row[1]; continue; }
-        if (key.includes("base_currency")) { data.baseCurrency = String(row[1]).trim() || "USD"; continue; }
-        if (key.includes("wallets") || key.includes("accounts")) { section = "acc"; sectionHeaderIdx = i + 1; continue; }
-        if (key.includes("categories")) { section = "cat"; sectionHeaderIdx = i + 1; continue; }
-        if (key.includes("incomes")) { section = "inc"; sectionHeaderIdx = i + 1; continue; }
+        const key = String(row[0] || "").toLowerCase().trim();
+        if (key.includes("updated") || key.includes("обновлено")) { data.timestamp = row[1]; continue; }
+        if (key.includes("base_currency") || key.includes("базовая валюта") || key.includes("base_curr")) { data.baseCurrency = String(row[1] || "").trim() || "USD"; continue; }
+        if (key.includes("wallets") || key.includes("accounts") || key.includes("кошельки") || key.includes("счета")) { section = "acc"; sectionHeaderIdx = i + 1; continue; }
+        if (key.includes("categories") || key.includes("категории")) { section = "cat"; sectionHeaderIdx = i + 1; continue; }
+        if (key.includes("incomes") || key.includes("доходы")) { section = "inc"; sectionHeaderIdx = i + 1; continue; }
         if (key.startsWith("===")) { section = ""; sectionHeaderIdx = -1; continue; }
         
         if (sectionHeaderIdx === -1 || i <= sectionHeaderIdx) continue;
@@ -559,8 +558,8 @@ export default async function handler(req, res) {
                
                if (isNaN(dt.getTime())) continue;
 
-               const sCurr = String(c_s_curr !== undefined && r[c_s_curr] !== undefined && r[c_s_curr] !== "" ? r[c_s_curr] : (accMap[srcKey] ? data.accounts.find(a => a.id === accMap[srcKey])?.currency : "") || data.baseCurrency || "USD");
-               const tCurr = String(c_t_curr !== undefined && r[c_t_curr] !== undefined && r[c_t_curr] !== "" ? r[c_t_curr] : sCurr);
+               const sCurr = String(c_s_curr !== undefined && r[c_s_curr] !== undefined && r[c_s_curr] !== "" ? r[c_s_curr] : "");
+               const tCurr = String(c_t_curr !== undefined && r[c_t_curr] !== undefined && r[c_t_curr] !== "" ? r[c_t_curr] : "");
 
                data.transactions.push({
                  id: String(c_id !== undefined ? r[c_id] : i), type, accountId: aid, targetId: tid,
