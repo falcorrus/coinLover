@@ -3,7 +3,7 @@ import { Account, Transaction, Category, IncomeSource, TransactionType } from ".
 import { APP_SETTINGS } from "../constants/settings";
 import { googleSheetsService } from "../services/googleSheets";
 import { RatesService } from "../services/RatesService";
-import { getLocalTimeString, enrichAccountsWithUSD } from "./utils";
+import { getLocalTimeString, enrichAccountsWithUSD, formatDateOnly, formatDateTime } from "./utils";
 import { trackEvent } from "../services/analytics";
 
 interface TransactionStateProps {
@@ -26,7 +26,7 @@ export const useTransactions = ({
     // Гарантируем наличие курсов перед расчетом
     await RatesService.ensureRates();
     
-    const date = customDate ? getLocalTimeString(customDate) : getLocalTimeString();
+    const date = customDate ? formatDateTime(customDate) : formatDateTime();
     const finalTargetAmount = targetAmount ?? sourceAmount;
     let sCurr: string, tCurr: string;
     
@@ -130,7 +130,7 @@ export const useTransactions = ({
     await RatesService.ensureRates();
 
     const oldTx = transactions.find(t => t.id === txId); if (!oldTx) return;
-    const date = customDate ? getLocalTimeString(customDate) : oldTx.date;
+    const date = customDate ? formatDateTime(customDate) : oldTx.date;
     const finalTargetAmount = targetAmount ?? sourceAmount;
     let sCurr: string, tCurr: string;
     
