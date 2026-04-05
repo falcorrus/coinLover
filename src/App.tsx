@@ -333,7 +333,12 @@ export default function App() {
   }, [transactions, categories, incomes]);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: APP_SETTINGS.DND_ACTIVATION_DISTANCE } }));
-  if (currentPath === "/landing") return <LandingPage />;
+
+  const isDemoMode = !activeTableId && localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE) === "true";
+
+  if (currentPath === "/landing" || (!activeTableId && !isDemoMode)) {
+    return <LandingPage />;
+  }
 
   return (
     <DndContext sensors={sensors} collisionDetection={rectIntersection} onDragStart={handleDragStart} onDragMove={handleDragMove} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
@@ -350,13 +355,14 @@ export default function App() {
 
       <div className={`min-h-screen flex flex-col max-w-md mx-auto relative shadow-2xl overflow-hidden bg-[var(--bg-color)] text-[var(--text-main)] font-sans select-none transition-colors duration-300 ${theme} ${theme === 'mint' ? 'paper-grain' : ''}`}>
         <style>{`body { overflow: hidden; overscroll-behavior: none; background: var(--bg-color); } * { -webkit-tap-highlight-color: transparent; }`}</style>
-        
+
         <div className="absolute top-4 right-4 z-50"><div className={`w-2 h-2 rounded-full ${syncStatus === "loading" ? "bg-amber-400 animate-pulse" : syncStatus === "success" ? "bg-emerald-500/50" : syncStatus === "error" ? "bg-rose-500" : "bg-white/10"}`} /></div>
 
         <div className={`flex-1 flex flex-col overflow-hidden animate-in zoom-in-95 duration-500 transition-all duration-500 ease-out ${isFullModalOpen ? "scale-[0.96] blur-[3px] opacity-60" : "scale-100 blur-0 opacity-100"}`}>
-          <AppHeader 
-            isIncomeCollapsed={isIncomeCollapsed} toggleIncome={toggleIncome} isDemo={localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE) !== "false"}
+          <AppHeader
+            isIncomeCollapsed={isIncomeCollapsed} toggleIncome={toggleIncome} isDemo={isDemoMode}
             settingsLongPress={settingsLongPress} handleMenuClick={handleMenuClick} isSettingsMenuOpen={isSettingsMenuOpen} setIsSettingsMenuOpen={setIsSettingsMenuOpen}
+
             pullSettings={pullSettings} setHistoryModal={setHistoryModal} setCalendarAnalyticsModal={setCalendarAnalyticsModal} setAnalyticsModal={setAnalyticsModal}
             theme={theme} setTheme={setTheme} syncStatus={syncStatus} pillMode={pillMode} setPillMode={setPillMode}
             currentSymbol={calculations.currentSymbol} displaySpent={calculations.displaySpent} displayEarned={calculations.displayEarned} displayBalance={calculations.displayBalance}
