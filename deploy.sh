@@ -65,6 +65,11 @@ deploy_env() {
     git reset --hard origin/$branch
     git pull origin $branch
     
+    # Ensure .env exists (copy from main if missing in dev)
+    if [ ! -f ".env" ] && [ "$name" == "dev" ]; then
+      cp /root/MyProjects/coinLover/.env .env || true
+    fi
+    
     # Generate docker-compose on the fly
     cat > docker-compose.yml << EOT
 services:

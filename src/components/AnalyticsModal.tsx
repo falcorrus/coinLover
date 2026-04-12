@@ -378,11 +378,39 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                                         })()}
                                         <circle cx="50" cy="50" r="25" fill="var(--bg-color)" />
                                     </svg>
-                                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                        <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] tracking-tighter mb-0.5">Total</span>
-                                        <span className="text-sm font-black text-[var(--text-main)]">
-                                            {displaySymbol} {Math.round(displayTotal).toLocaleString()}
-                                        </span>
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none px-12 text-center">
+                                        {(() => {
+                                            const baseCur = RatesService.getBaseCurrency();
+                                            const isBase = currencyMode === 'base';
+                                            const getSymbol = (code: string) => {
+                                                const symbols: Record<string, string> = { "USD": "$", "EUR": "€", "GBP": "£", "RUB": "₽", "RSD": "din", "BRL": "R$", "ARS": "ARS" };
+                                                return symbols[code.toUpperCase()] || code;
+                                            };
+                                            const symbol = isBase ? getSymbol(baseCur) : getSymbol(localCurrencyCode);
+                                            
+                                            if (expandedItemId) {
+                                                const item = listItems.find(i => i.id === expandedItemId);
+                                                if (item) {
+                                                    const itemAmount = isBase ? item.amount : RatesService.convert(item.amount, baseCur, localCurrencyCode);
+                                                    return (
+                                                        <>
+                                                            <span className="text-[10px] uppercase font-bold tracking-tighter mb-0.5 truncate w-full" style={{ color: item.color }}>{item.name}</span>
+                                                            <span className="text-sm font-black text-[var(--text-main)]">
+                                                                {symbol} {Math.round(itemAmount).toLocaleString()}
+                                                            </span>
+                                                        </>
+                                                    );
+                                                }
+                                            }
+                                            return (
+                                                <>
+                                                    <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] tracking-tighter mb-0.5">Всего</span>
+                                                    <span className="text-sm font-black text-[var(--text-main)]">
+                                                        {symbol} {Math.round(displayTotal).toLocaleString()}
+                                                    </span>
+                                                </>
+                                            );
+                                        })()}
                                     </div>
                                 </div>
                                 
