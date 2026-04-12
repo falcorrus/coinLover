@@ -131,8 +131,9 @@
 
 .mint .coin-target-glow {
   transform: scale(1.1) translateY(2px) !important;
-  box-shadow: var(--soft-ui-inset) !important;
+  box-shadow: var(--soft-ui-inset), 0 0 0 3px var(--primary-color) !important;
   background: var(--bg-color) !important;
+  border: 2px solid var(--primary-color) !important;
 }
 
 .mint .numpad-sheet {
@@ -346,7 +347,7 @@ body {
 .coin-target-glow {
   background: var(--glass-border-highlight) !important;
   box-shadow: 0 0 20px var(--glass-border-highlight) !important;
-  border-color: var(--text-muted) !important;
+  border: 2px solid var(--primary-color) !important;
   transform: scale(1.2) !important;
   transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, background 0.25s ease !important;
 }
@@ -354,6 +355,7 @@ body {
 .white 
  .coin-target-glow {
   box-shadow: 0 0 10px var(--glass-border-highlight) !important;
+  border: 2px solid var(--primary-color) !important;
   transform: scale(1.1) !important;
 }
 

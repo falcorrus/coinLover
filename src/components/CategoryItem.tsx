@@ -121,11 +121,11 @@ export const CategoryItem: React.FC<Props> = ({
           touchAction: "none",
           filter: theme === 'modern' ? `drop-shadow(0 0 15px ${category.color}60)` : 'none'
         }}
-        className={`flex items-center justify-center transition-all duration-300 relative ${
+        className={`flex items-center justify-center transition-all duration-300 relative rounded-2xl ${
           isDragging ? "scale-110" :
           (isPressing && isSortingMode) ? "scale-110 rotate-3" :
           isPressing ? "scale-90" : "group-active:scale-90"
-        } ${isTarget ? "scale-125" : ""}`}
+        } ${isTarget ? "coin-target-glow" : ""}`}
       >
         <Icon 
           size={52} 
