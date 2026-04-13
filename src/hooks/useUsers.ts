@@ -3,13 +3,19 @@ import { APP_SETTINGS } from "../constants/settings";
 
 export const useUsers = () => {
   const [activeTableId, setActiveTableId] = useState<string>(() => {
-    // 1. Приоритет URL-параметрам
+    // 1. Приоритет URL-пути (e.g. /s/ID) и параметрам
     const urlParams = new URLSearchParams(window.location.search);
     const ssIdFromUrl = urlParams.get("ssId");
     const isDemoParam = urlParams.get("demo") === "true";
     
-    if (ssIdFromUrl || isDemoParam) {
-      console.log(isDemoParam ? "Demo mode requested via URL" : "New ssId detected in URL, clearing old data...");
+    // Check for path-based ID: /s/ABC
+    const pathMatch = window.location.pathname.match(/^\/s\/([-\w]{25,})/);
+    const ssIdFromPath = pathMatch ? pathMatch[1] : null;
+
+    const targetSsId = ssIdFromPath || ssIdFromUrl;
+    
+    if (targetSsId || isDemoParam) {
+      console.log(isDemoParam ? "Demo mode requested via URL" : "New ssId detected in URL/Path, clearing old data...");
       
       // Очищаем старые данные при смене режима или таблицы
       localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.ACCOUNTS);
@@ -23,15 +29,14 @@ export const useUsers = () => {
         localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.ACTIVE_TABLE_ID);
         localStorage.removeItem("cl_onboarding_completed");
       } else {
-        localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.ACTIVE_TABLE_ID, ssIdFromUrl!);
+        localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.ACTIVE_TABLE_ID, targetSsId!);
         localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE, "false");
       }
 
-      // Очищаем URL
-      const newUrl = window.location.pathname + window.location.hash;
-      window.history.replaceState({}, document.title, newUrl);
+      // Очищаем URL (убираем /s/ID или ?ssId=)
+      window.history.replaceState({}, document.title, "/");
 
-      return isDemoParam ? "" : ssIdFromUrl!;
+      return isDemoParam ? "" : targetSsId!;
     }
 
     // 2. Фолбек на localStorage

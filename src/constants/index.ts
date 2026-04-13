@@ -32,14 +32,16 @@ export const INITIAL_ACCOUNTS: Account[] = [
 ];
 
 export const DEFAULT_CATEGORIES: Category[] = [
-  { id: "cat-1", name: "Магазины", color: "#f59e0b", icon: "shop", tags: ["еда", "покупки", "туризм"] },
-  { id: "cat-2", name: "Жилье", color: "#f43f5e", icon: "rent", tags: ["квартира", "туризм"] },
-  { id: "cat-3", name: "Развлечения", color: "#ec4899", icon: "cafe", tags: ["транспорт", "такси", "кафе", "туризм", "разовое"] },
-  { id: "cat-4", name: "Дети", color: "#fbbf24", icon: "baby", tags: ["разовое", "занятия", "няня"] },
-  { id: "cat-5", name: "Разное", color: "#64748b", icon: "more", tags: ["разовое", "медицина", "IT", "корр", "фондовый"] },
-  { id: "cat-6", name: "Здоровье", color: "#10b981", icon: "health", tags: ["аптека", "врач"] },
-  { id: "cat-7", name: "Инвестиции", color: "#06b6d4", icon: "activity", tags: ["акции", "крипта"] },
-  { id: "cat-8", name: "Работа", color: "#6d5dfc", icon: "business", tags: ["софт", "обучение"] },
+  { id: "cat-home", name: "Жилье", color: "#f43f5e", icon: "rent", tags: ["Аренда", "Коммуналка", "Интернет", "Связь", "Быт", "Ремонт"] },
+  { id: "cat-food", name: "Еда", color: "#f59e0b", icon: "food", tags: ["Продукты", "Кафе", "Доставка", "Алкоголь"] },
+  { id: "cat-transport", name: "Транспорт", color: "#3b82f6", icon: "transit", tags: ["Бензин", "Такси", "Парковка", "ТО", "Страховка", "Общественный"] },
+  { id: "cat-kids", name: "Дети", color: "#fbbf24", icon: "baby", tags: ["Даня", "Миша", "Юра", "Максим"] },
+  { id: "cat-health", name: "Здоровье", color: "#10b981", icon: "health", tags: ["Аптека", "Врачи", "Анализы", "Стоматолог"] },
+  { id: "cat-leisure", name: "Досуг", color: "#ec4899", icon: "cafe", tags: ["Развлечения", "Спорт", "Туризм", "Кино", "Рестораны", "Подарки"] },
+  { id: "cat-shopping", name: "Покупки", color: "#06b6d4", icon: "shop", tags: ["Одежда", "Обувь", "Техника", "Аксессуары"] },
+  { id: "cat-education", name: "Образование", color: "#6d5dfc", icon: "laptop", tags: ["Курсы", "Книги", "Подписки", "Софт"] },
+  { id: "cat-invest", name: "Инвестиции", color: "#8b5cf6", icon: "activity", tags: ["Акции", "Крипта", "Комиссии", "Налоги"] },
+  { id: "cat-other", name: "Прочее", color: "#64748b", icon: "more", tags: ["Разное", "Корректировка"] },
 ];
 
 export const INITIAL_INCOMES: IncomeSource[] = [
