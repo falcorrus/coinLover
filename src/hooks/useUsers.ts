@@ -9,7 +9,8 @@ export const useUsers = () => {
     const isDemoParam = urlParams.get("demo") === "true";
     
     // Check for path-based ID: /s/ABC
-    const pathMatch = window.location.pathname.match(/^\/s\/([-\w]{25,})/);
+    // Упрощаем регулярку и убираем жесткую проверку длины
+    const pathMatch = window.location.pathname.match(/\/s\/([-\w]+)/);
     const ssIdFromPath = pathMatch ? pathMatch[1] : null;
 
     const targetSsId = ssIdFromPath || ssIdFromUrl;
@@ -23,20 +24,22 @@ export const useUsers = () => {
       localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.INCOMES);
       localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.TRANSACTIONS);
       localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC);
+      localStorage.removeItem("cl_onboarding_completed");
       
       if (isDemoParam) {
         localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE, "true");
-        localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.ACTIVE_TABLE_ID);
-        localStorage.removeItem("cl_onboarding_completed");
+        localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.ACTIVE_TABLE_ID, "");
+        return "";
       } else {
         localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.ACTIVE_TABLE_ID, targetSsId!);
         localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE, "false");
+        
+        // ВАЖНО: Мы НЕ делаем replaceState сразу, чтобы Safari мог сохранить URL с ID на экран Домой.
+        // Мы сделаем это позже или оставим как есть - /s/ID не мешает работе приложения.
+        // Если очень хочется очистить, можно сделать это через useEffect.
+        
+        return targetSsId!;
       }
-
-      // Очищаем URL (убираем /s/ID или ?ssId=)
-      window.history.replaceState({}, document.title, "/");
-
-      return isDemoParam ? "" : targetSsId!;
     }
 
     // 2. Фолбек на localStorage

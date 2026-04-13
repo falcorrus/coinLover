@@ -234,7 +234,7 @@ export const LandingPage: React.FC = () => {
         <div className="absolute top-[-10%] right-[-10%] w-[300px] md:w-[500px] height-[500px] bg-[#6d5dfc]/10 blur-[120px] rounded-full" />
       </div>
 
-      <nav className="fixed top-0 left-0 right-0 z-50 p-4 md:p-6 backdrop-blur-md border-b border-white/5">
+      <nav className="fixed top-0 left-0 right-0 z-50 p-4 md:p-6 backdrop-blur-md border-b border-white/5 pt-[env(safe-area-inset-top)]">
         <div className="max-w-6xl mx-auto w-full flex justify-between items-center">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 md:w-8 md:h-8 bg-[#6d5dfc] rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(109,93,252,0.5)]">

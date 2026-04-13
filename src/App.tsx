@@ -27,7 +27,8 @@ import { googleSheetsService } from "./services/googleSheets";
 import { setGAUser, trackScreen, trackEvent } from "./services/analytics";
 
 export default function App() {
-  const [currentPath] = React.useState(window.location.pathname);
+  const currentPath = window.location.pathname;
+  const isUserPath = currentPath.startsWith("/s/");
   const { activeTableId, switchTable } = useUsers();
 
   const {
@@ -304,12 +305,15 @@ export default function App() {
     document.documentElement.classList.remove("white", "black", "mint", "zen", "modern", "dark");
     
     // Не применяем темы на лендинге, так как у него свой фиксированный темный дизайн
-    if (currentPath !== "/landing") {
+    if (currentPath !== "/landing" && !isUserPath) {
       const activeClass = theme === "white" || (theme as string) === "zen" ? "white" : 
                           theme === "mint" ? "mint" : "black";
       document.documentElement.classList.add(activeClass);
+    } else {
+      // Для /s/ID и /landing используем темную тему по умолчанию (черный фон лендинга или лоадера)
+      document.documentElement.classList.add("black");
     }
-  }, [pillMode, theme, categoryCurrencyMode, currentPath]);
+  }, [pillMode, theme, categoryCurrencyMode, currentPath, isUserPath]);
 
   React.useEffect(() => {
     if (activeTableId) setGAUser(activeTableId);
@@ -336,7 +340,8 @@ export default function App() {
 
   const isDemoMode = !activeTableId && localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE) === "true";
 
-  if (currentPath === "/landing" || (!activeTableId && !isDemoMode)) {
+  // Учитываем /s/ID при проверке - если мы на пути пользователя, НЕ показываем лендинг
+  if (currentPath === "/landing" || (!activeTableId && !isDemoMode && !isUserPath)) {
     return <LandingPage />;
   }
 
