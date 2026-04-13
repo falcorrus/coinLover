@@ -100,7 +100,7 @@
   font-family: 'Lora', serif;
 }
 
-.mint .glass-card, .mint .glass-item, .mint .glass-icon-btn, .mint .soft-ui-outset {
+.mint .glass-panel, .mint .glass-card, .mint .glass-item, .mint .glass-icon-btn, .mint .soft-ui-outset {
   box-shadow: var(--soft-ui-outset);
   border: none;
   background: var(--glass-card-bg);
