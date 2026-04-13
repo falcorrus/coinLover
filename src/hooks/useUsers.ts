@@ -30,15 +30,14 @@ export const useUsers = () => {
         localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE, "true");
         localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.ACTIVE_TABLE_ID, "");
         return "";
-      } else {
-        localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.ACTIVE_TABLE_ID, targetSsId!);
+      } else if (targetSsId) {
+        // Мы на пути /s/ID или имеем ?ssId=ID - ПРИНУДИТЕЛЬНО выключаем Демо
         localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE, "false");
+        localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.ACTIVE_TABLE_ID, targetSsId);
         
         // ВАЖНО: Мы НЕ делаем replaceState сразу, чтобы Safari мог сохранить URL с ID на экран Домой.
-        // Мы сделаем это позже или оставим как есть - /s/ID не мешает работе приложения.
-        // Если очень хочется очистить, можно сделать это через useEffect.
         
-        return targetSsId!;
+        return targetSsId;
       }
     }
 

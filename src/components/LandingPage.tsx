@@ -167,7 +167,14 @@ export const LandingPage: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const handleDemo = () => { window.location.href = "/?demo=true"; };
+  const handleDemo = () => { 
+    const savedId = localStorage.getItem("cl_active_table_id");
+    if (savedId) {
+      window.location.href = "/";
+    } else {
+      window.location.href = "/?demo=true"; 
+    }
+  };
   
   const extractSsId = (url: string) => {
     const match = url.match(/[-\w]{25,}/);
