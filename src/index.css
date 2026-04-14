@@ -130,7 +130,7 @@
 }
 
 .mint .coin-target-glow {
-  transform: scale(1.1) translateY(2px) !important;
+  transform: scale(1.2) translateY(2px) !important;
   box-shadow: var(--soft-ui-inset) !important;
   background: var(--bg-color) !important;
 }
@@ -354,7 +354,7 @@ body {
 .white 
  .coin-target-glow {
   box-shadow: 0 0 10px var(--glass-border-highlight) !important;
-  transform: scale(1.1) !important;
+  transform: scale(1.2) !important;
 }
 
 /* Premium iOS-style Grab effect */
