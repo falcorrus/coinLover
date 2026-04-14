@@ -61,7 +61,7 @@
   --glass-item-bg: #F3FBF8;
   --glass-item-active: #DDE8E4;
   --glass-border: #D1D9D6;
-  --glass-border-highlight: #F59E0B;
+  --glass-border-highlight: #CA8A04; /* Harvest Gold */
   --numpad-bg: #E8F0ED;
   --panel-bg: #E8F0ED;
   --btn-equals: #FFFFFF;
@@ -131,7 +131,8 @@
 
 .mint .coin-target-glow {
   transform: scale(1.2) !important;
-  box-shadow: var(--soft-ui-outset), 0 0 20px rgba(146, 74, 40, 0.3) !important;
+  box-shadow: var(--soft-ui-outset), 0 0 20px rgba(146, 74, 40, 0.2) !important;
+  background: #924A2815 !important;
 }
 
 .mint .numpad-sheet {
