@@ -29,20 +29,32 @@ export const useUsers = () => {
       if (isDemoParam) {
         localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE, "true");
         localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.ACTIVE_TABLE_ID, "");
+        document.cookie = "cl_active_table_id=; path=/; max-age=0"; // Clear cookie
         return "";
       } else if (targetSsId) {
-        // Мы на пути /s/ID или имеем ?ssId=ID - ПРИНУДИТЕЛЬНО выключаем Демо
         localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE, "false");
         localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.ACTIVE_TABLE_ID, targetSsId);
         
-        // ВАЖНО: Мы НЕ делаем replaceState сразу, чтобы Safari мог сохранить URL с ID на экран Домой.
+        // Устанавливаем Cookie на 1 год. Это "мостик" для iOS PWA.
+        document.cookie = `cl_active_table_id=${targetSsId}; path=/; max-age=${60*60*24*365}; SameSite=Lax`;
         
         return targetSsId;
       }
     }
 
-    // 2. Фолбек на localStorage
-    return localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.ACTIVE_TABLE_ID) || "";
+    // 2. Фолбек на localStorage или Cookie
+    const localId = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.ACTIVE_TABLE_ID);
+    if (localId) return localId;
+
+    // Пытаемся достать из Cookie (важно для первого запуска PWA на iPhone)
+    const cookieMatch = document.cookie.match(/cl_active_table_id=([^;]+)/);
+    if (cookieMatch && cookieMatch[1]) {
+      const cookieId = cookieMatch[1];
+      localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.ACTIVE_TABLE_ID, cookieId);
+      return cookieId;
+    }
+
+    return "";
   });
 
   useEffect(() => {
