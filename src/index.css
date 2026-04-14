@@ -130,9 +130,8 @@
 }
 
 .mint .coin-target-glow {
-  transform: scale(1.2) translateY(2px) !important;
-  box-shadow: var(--soft-ui-inset) !important;
-  background: var(--bg-color) !important;
+  transform: scale(1.2) !important;
+  box-shadow: var(--soft-ui-outset), 0 0 20px rgba(146, 74, 40, 0.3) !important;
 }
 
 .mint .numpad-sheet {
