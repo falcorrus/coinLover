@@ -24,16 +24,26 @@ interface AppHeaderProps {
   displaySpent: number;
   displayEarned: number;
   displayBalance: number;
+  categoriesCount: number;
 }
 
 // ... (props update)
 export function AppHeader({
   isIncomeCollapsed, toggleIncome, isDemo, settingsLongPress, handleMenuClick, isSettingsMenuOpen,
   setIsSettingsMenuOpen, pullSettings, setHistoryModal, setCalendarAnalyticsModal, setAnalyticsModal,
-  theme, setTheme, syncStatus, pillMode, setPillMode, currentSymbol, displaySpent, displayEarned, displayBalance
+  theme, setTheme, syncStatus, pillMode, setPillMode, currentSymbol, displaySpent, displayEarned, displayBalance,
+  categoriesCount
 }: AppHeaderProps) {
+  const isCompact = categoriesCount > 8;
+
+  const PillButton = (
+    <button onClick={() => setPillMode(p => p === "expense" ? "income" : p === "income" ? "balance" : "expense")} className={`mx-auto px-5 py-2 rounded-full bg-[var(--glass-item-bg)] border border-[var(--glass-border)] flex items-center gap-2 hover:bg-[var(--glass-item-active)] active:scale-95 transition-all shadow-sm ${isCompact ? '' : 'mt-2'}`}>
+      {pillMode === "expense" ? (<><TrendingDown size={14} className="text-[#cda434]" /><span className="text-xs font-serif font-bold text-[#cda434]">-{currentSymbol} {displaySpent.toLocaleString()} в этом месяце</span></>) : pillMode === "income" ? (<><TrendingUp size={14} className="text-[#10b981]" /><span className="text-xs font-serif font-bold text-[#10b981]">+{currentSymbol} {displayEarned.toLocaleString()} в этом месяце</span></>) : (<><Wallet size={14} className="text-[var(--primary-color)]" /><span className="text-xs font-serif font-bold text-[var(--primary-color)]">Общий баланс: {currentSymbol} {displayBalance.toLocaleString()}</span></>)}
+    </button>
+  );
+
   return (
-    <header className="px-6 py-8 flex flex-col gap-2 text-center shrink-0">
+    <header className={`px-6 flex flex-col gap-2 text-center shrink-0 ${isCompact ? 'py-4' : 'py-8'}`}>
       <div className="flex justify-between items-center mb-2">
         <button onClick={toggleIncome} className="glass-icon-btn w-10 h-10 relative">
           <Plus size={APP_SETTINGS.UI.ICON_SIZE_LARGE} className={`text-[#10b981] transition-transform duration-300 ${!isIncomeCollapsed ? "rotate-45" : ""}`} />
@@ -46,7 +56,7 @@ export function AppHeader({
             </span>
           )}
         </button>
-        <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] font-serif">Total Balance</p>
+        {isCompact ? PillButton : <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] font-serif">Total Balance</p>}
         <div className="relative">
           <button {...settingsLongPress} onClick={handleMenuClick} className="glass-icon-btn w-10 h-10 text-slate-500"><Menu size={APP_SETTINGS.UI.ICON_SIZE_LARGE} className={`transition-transform duration-300 ${isSettingsMenuOpen ? "rotate-90" : ""}`} /></button>
           {isSettingsMenuOpen && (
@@ -82,9 +92,7 @@ export function AppHeader({
           )}
         </div>
       </div>
-      <button onClick={() => setPillMode(p => p === "expense" ? "income" : p === "income" ? "balance" : "expense")} className="mt-2 mx-auto px-5 py-2 rounded-full bg-[var(--glass-item-bg)] border border-[var(--glass-border)] flex items-center gap-2 hover:bg-[var(--glass-item-active)] active:scale-95 transition-all shadow-sm">
-        {pillMode === "expense" ? (<><TrendingDown size={14} className="text-[#cda434]" /><span className="text-xs font-serif font-bold text-[#cda434]">-{currentSymbol} {displaySpent.toLocaleString()} в этом месяце</span></>) : pillMode === "income" ? (<><TrendingUp size={14} className="text-[#10b981]" /><span className="text-xs font-serif font-bold text-[#10b981]">+{currentSymbol} {displayEarned.toLocaleString()} в этом месяце</span></>) : (<><Wallet size={14} className="text-[var(--primary-color)]" /><span className="text-xs font-serif font-bold text-[var(--primary-color)]">Общий баланс: {currentSymbol} {displayBalance.toLocaleString()}</span></>)}
-      </button>
+      {!isCompact && PillButton}
     </header>
   );
 }

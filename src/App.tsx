@@ -371,6 +371,7 @@ export default function App() {
             pullSettings={pullSettings} setHistoryModal={setHistoryModal} setCalendarAnalyticsModal={setCalendarAnalyticsModal} setAnalyticsModal={setAnalyticsModal}
             theme={theme} setTheme={setTheme} syncStatus={syncStatus} pillMode={pillMode} setPillMode={setPillMode}
             currentSymbol={calculations.currentSymbol} displaySpent={calculations.displaySpent} displayEarned={calculations.displayEarned} displayBalance={calculations.displayBalance}
+            categoriesCount={categories.length}
           />
 
           <IncomeSection 
