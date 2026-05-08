@@ -348,8 +348,8 @@ export default function App() {
   return (
     <DndContext sensors={sensors} collisionDetection={rectIntersection} onDragStart={handleDragStart} onDragMove={handleDragMove} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
       {isSplashVisible && (
-        <div className="fixed inset-0 z-[2000] bg-[#050505] flex items-center justify-center animate-in fade-in duration-300">
-          <div className="flex flex-col items-center gap-6">
+        <div className="fixed inset-0 z-[2000] bg-[#050505] animate-in fade-in duration-300">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-6 w-full">
             <div className="w-32 h-32 rounded-[48px] bg-gradient-to-br from-amber-300 via-amber-500 to-amber-600 flex items-center justify-center shadow-2xl animate-pulse">
               <Heart size={APP_SETTINGS.UI.ICON_SIZE_SPLASH} fill="white" className="text-white drop-shadow-lg" />
             </div>
@@ -358,8 +358,8 @@ export default function App() {
         </div>
       )}
 
-      <div className={`min-h-screen flex flex-col max-w-md mx-auto relative shadow-2xl overflow-hidden bg-[var(--bg-color)] text-[var(--text-main)] font-sans select-none transition-colors duration-300 ${theme} ${theme === 'mint' ? 'paper-grain' : ''}`}>
-        <style>{`body { overflow: hidden; overscroll-behavior: none; background: var(--bg-color); } * { -webkit-tap-highlight-color: transparent; }`}</style>
+      <div className={`h-full flex flex-col max-w-md mx-auto relative shadow-2xl overflow-hidden bg-[var(--bg-color)] text-[var(--text-main)] font-sans select-none transition-colors duration-300 ${theme} ${theme === 'mint' ? 'paper-grain' : ''}`}>
+        <style>{`body { background: var(--bg-color); } * { -webkit-tap-highlight-color: transparent; }`}</style>
 
         <div className="absolute top-4 right-4 z-50"><div className={`w-2 h-2 rounded-full ${syncStatus === "loading" ? "bg-amber-400 animate-pulse" : syncStatus === "success" ? "bg-emerald-500/50" : syncStatus === "error" ? "bg-rose-500" : "bg-white/10"}`} /></div>
 
