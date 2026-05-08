@@ -138,6 +138,13 @@ export default function App() {
     comment: "" 
   });
 
+  const [viewportHeight, setViewportHeight] = React.useState(window.innerHeight);
+
+  React.useEffect(() => {
+    // Фиксируем высоту один раз при загрузке
+    setViewportHeight(window.innerHeight);
+  }, []);
+
   const [modalStack, setModalStack] = React.useState<string[]>([]);
   const stackRef = React.useRef<string[]>([]);
 
@@ -349,7 +356,10 @@ export default function App() {
     <DndContext sensors={sensors} collisionDetection={rectIntersection} onDragStart={handleDragStart} onDragMove={handleDragMove} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
       {isSplashVisible && (
         <div className="fixed inset-0 z-[2000] bg-[#050505]">
-          <div className="absolute bottom-1/2 left-1/2 -translate-x-1/2 translate-y-1/2 flex flex-col items-center gap-6 w-full">
+          <div 
+            className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center gap-6 w-full"
+            style={{ bottom: `${viewportHeight / 2}px`, transform: `translate(-50%, 50%)` }}
+          >
             <div className="w-32 h-32 rounded-[48px] bg-gradient-to-br from-amber-300 via-amber-500 to-amber-600 flex items-center justify-center shadow-2xl animate-pulse">
               <Heart size={APP_SETTINGS.UI.ICON_SIZE_SPLASH} fill="white" className="text-white drop-shadow-lg" />
             </div>
