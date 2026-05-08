@@ -381,24 +381,85 @@ function doPost(e) {
     if (["addTransaction", "updateTransaction", "deleteTransaction"].includes(data.action)) {
       let txSheet = ss.getSheetByName(txSheetName) || ss.insertSheet(txSheetName);
       const all = txSheet.getDataRange().getValues();
-      const ids = all[0].map(h => String(h).trim().toLowerCase());
-      const col = {}; ids.forEach((v, i) => col[v] = i);
+      const rawHeaders = all[0];
+      const ids = rawHeaders.map(h => String(h).trim().toLowerCase());
       
       const baseAmt = data.targetAmountUSD !== undefined && data.targetAmountUSD !== 0 ? data.targetAmountUSD : (data.sourceAmountUSD || 0);
       const f = { 
-        "date": parseDateSafe(data.date), "type": data.type, "src": data.sourceName, "dst": data.destinationName,
+        "date": parseDateSafe(data.date), "type": data.type, "src": data.sourceName || "Unknown Source", "dst": data.destinationName || "Unknown Destination",
         "tag": data.tagName || "", "s_amt": Number(data.sourceAmount), "s_curr": data.sourceCurrency,
         "t_amt": Number(data.targetAmount || data.sourceAmount), "t_curr": data.targetCurrency,
         "base_amt": Number(baseAmt),
         "comment": data.comment || "", "id": data.id 
       };
-      const rowData = ids.map(h => f[h] !== undefined ? f[h] : "");
+
+      // Robustness: fallbacks for Unknown names
+      if (f.src === "Unknown Source" && data.type === "income" && data.targetId && data.incomes) {
+        const inc = data.incomes.find(i => i.id === data.targetId);
+        if (inc) f.src = inc.name;
+      }
+      if (f.dst === "Unknown Destination" && (data.type === "income" || data.type === "transfer") && data.accountId && data.accounts) {
+        const acc = data.accounts.find(a => a.id === data.accountId);
+        if (acc) f.dst = acc.name;
+      }
+      if (f.src === "Unknown Source" && (data.type === "expense" || data.type === "transfer") && data.accountId && data.accounts) {
+        const acc = data.accounts.find(a => a.id === data.accountId);
+        if (acc) f.src = acc.name;
+      }
+      if (f.dst === "Unknown Destination" && data.type === "expense" && data.targetId && data.categories) {
+        const cat = data.categories.find(c => c.id === data.targetId);
+        if (cat) f.dst = cat.name;
+      }
+
+      const aliases = {
+        "date": ["date", "дата", "день", "day"],
+        "type": ["type", "тип"],
+        "src": ["src", "source", "источник", "откуда", "из", "кошелек (исх)", "wallet (src)", "wallet", "кошелек"],
+        "dst": ["dst", "destination", "назначение", "куда", "цель", "категория", "кошелек (цель)", "wallet (dst)"],
+        "tag": ["tag", "тег", "метка"],
+        "s_amt": ["s_amt", "amount", "source_amount", "сумма (исх)", "сумма", "расход", "amount_src"],
+        "s_curr": ["s_curr", "currency", "source_currency", "валюта (исх)", "валюта", "вал", "curr_src"],
+        "t_amt": ["t_amt", "target_amount", "сумма (цель)", "получено", "amount_dst"],
+        "t_curr": ["t_curr", "target_currency", "валюта (цель)", "вал (цель)", "curr_dst"],
+        "base_amt": ["base_amt", "base_amount", "source_base", "сумма (база)", "usd", "цель (база)", "base amt", "usd amt"],
+        "comment": ["comment", "комментарий", "примечание", "notes"],
+        "id": ["id", "идентификатор", "индентификатор"]
+      };
+
+      const rowData = ids.map(h => "");
+      Object.keys(aliases).forEach(field => {
+        const fieldAliases = aliases[field];
+        for (const alias of fieldAliases) {
+          const idx = ids.indexOf(alias.toLowerCase());
+          if (idx !== -1) {
+            if (f[field] !== undefined) rowData[idx] = f[field];
+            break;
+          }
+        }
+      });
+
       if (data.action === "addTransaction") txSheet.appendRow(rowData);
       else if (data.action === "updateTransaction") {
-        let rIdx = -1; for(let i=1; i<all.length; i++) if(String(all[i][col["id"]]) === String(data.id)) { rIdx=i+1; break; }
-        if (rIdx !== -1) txSheet.getRange(rIdx, 1, 1, ids.length).setValues([rowData]);
+        let idColIdx = -1;
+        const idAliases = ["id", "идентификатор", "индентификатор"];
+        for (const alias of idAliases) {
+          idColIdx = ids.indexOf(alias.toLowerCase());
+          if (idColIdx !== -1) break;
+        }
+        if (idColIdx !== -1) {
+          let rIdx = -1; for(let i=1; i<all.length; i++) if(String(all[i][idColIdx]) === String(data.id)) { rIdx=i+1; break; }
+          if (rIdx !== -1) txSheet.getRange(rIdx, 1, 1, ids.length).setValues([rowData]);
+        }
       } else if (data.action === "deleteTransaction") {
-        for(let i=all.length-1; i>=1; i--) if(String(all[i][col["id"]]) === String(data.id)) txSheet.deleteRow(i+1);
+        let idColIdx = -1;
+        const idAliases = ["id", "идентификатор", "индентификатор"];
+        for (const alias of idAliases) {
+          idColIdx = ids.indexOf(alias.toLowerCase());
+          if (idColIdx !== -1) break;
+        }
+        if (idColIdx !== -1) {
+          for(let i=all.length-1; i>=1; i--) if(String(all[i][idColIdx]) === String(data.id)) txSheet.deleteRow(i+1);
+        }
       }
 
       if (data.accounts) syncSettingsInternal(data);

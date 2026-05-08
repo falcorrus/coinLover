@@ -96,6 +96,8 @@ export type SyncPayload =
     type: TransactionType;
     sourceName: string;
     destinationName: string;
+    accountId?: string;
+    targetId?: string;
     tagName: string;
     sourceAmount: number;
     sourceCurrency: string;
@@ -114,6 +116,8 @@ export type SyncPayload =
     type: TransactionType;
     sourceName: string;
     destinationName: string;
+    accountId?: string;
+    targetId?: string;
     tagName: string;
     sourceAmount: number;
     sourceCurrency: string;

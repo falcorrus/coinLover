@@ -521,12 +521,12 @@ export default async function handler(req, res) {
 
           const c_date = findCol(["date", "дата", "день", "day"]), 
                 c_type = findCol(["type", "тип"]), 
-                c_src = findCol(["src", "source", "источник", "откуда", "из", "кошелек (исх)"]),
-                c_dst = findCol(["dst", "destination", "назначение", "куда", "цель", "категория"]), 
+                c_src = findCol(["src", "source", "источник", "откуда", "из", "кошелек (исх)", "wallet (src)"]),
+                c_dst = findCol(["dst", "destination", "назначение", "куда", "цель", "категория", "кошелек (цель)", "wallet (dst)"]), 
                 c_tag = findCol(["tag", "тег", "метка"]), 
                 c_s_amt = findCol(["s_amt", "amount", "source_amount", "сумма (исх)", "сумма", "расход", "amount_src"]),
                 c_s_curr = findCol(["s_curr", "currency", "source_currency", "валюта (исх)", "валюта", "вал", "curr_src"]), 
-                c_s_base = findCol(["s_base", "base_amount", "source_base", "сумма (база)", "usd", "base_amt"]), 
+                c_s_base = findCol(["s_base", "base_amount", "source_base", "сумма (база)", "usd", "base_amt", "base amt", "usd amt"]), 
                 c_t_amt = findCol(["t_amt", "target_amount", "сумма (цель)", "получено", "amount_dst"]),
                 c_t_curr = findCol(["t_curr", "target_currency", "валюта (цель)", "вал (цель)", "curr_dst"]), 
                 c_t_base = findCol(["t_base", "target_base", "цель (база)"]), 
@@ -650,8 +650,10 @@ export default async function handler(req, res) {
       if (payload.action === 'addTransaction' || payload.action === 'updateTransaction' || payload.action === 'syncSettings') {
         if (payload.action === 'addTransaction' || payload.action === 'updateTransaction') {
           const headerRes = await sheets.spreadsheets.values.get({ spreadsheetId: targetSsId, range: `${txSheetName}!A1:Z1` });
-          const headers = (headerRes.data.values?.[0] || []).map(h => String(h).trim().toLowerCase());
-          const dataMap = { 
+          const rawHeaders = headerRes.data.values?.[0] || [];
+          const headers = rawHeaders.map(h => String(h).trim().toLowerCase());
+          
+          const dataMap: any = { 
             "date": payload.date, 
             "type": payload.type, 
             "src": payload.sourceName, 
@@ -665,8 +667,54 @@ export default async function handler(req, res) {
             "comment": payload.comment || "", 
             "id": payload.id 
           };
+
+          // Robustness: if names are generic, try to resolve from IDs and payload lists
+          if (dataMap.src === "Unknown Source" && payload.type === "income" && payload.targetId && payload.incomes) {
+            const inc = payload.incomes.find(i => i.id === payload.targetId);
+            if (inc) dataMap.src = inc.name;
+          }
+          if (dataMap.dst === "Unknown Destination" && (payload.type === "income" || payload.type === "transfer") && payload.accountId && payload.accounts) {
+            const acc = payload.accounts.find(a => a.id === payload.accountId);
+            if (acc) dataMap.dst = acc.name;
+          }
+          if (dataMap.src === "Unknown Source" && (payload.type === "expense" || payload.type === "transfer") && payload.accountId && payload.accounts) {
+            const acc = payload.accounts.find(a => a.id === payload.accountId);
+            if (acc) dataMap.src = acc.name;
+          }
+          if (dataMap.dst === "Unknown Destination" && payload.type === "expense" && payload.targetId && payload.categories) {
+            const cat = payload.categories.find(c => c.id === payload.targetId);
+            if (cat) dataMap.dst = cat.name;
+          }
+
+          const aliases = {
+            "date": ["date", "дата", "день", "day"],
+            "type": ["type", "тип"],
+            "src": ["src", "source", "источник", "откуда", "из", "кошелек (исх)", "wallet (src)"],
+            "dst": ["dst", "destination", "назначение", "куда", "цель", "категория", "кошелек (цель)", "wallet (dst)"],
+            "tag": ["tag", "тег", "метка"],
+            "s_amt": ["s_amt", "amount", "source_amount", "сумма (исх)", "сумма", "расход", "amount_src"],
+            "s_curr": ["s_curr", "currency", "source_currency", "валюта (исх)", "валюта", "вал", "curr_src"],
+            "t_amt": ["t_amt", "target_amount", "сумма (цель)", "получено", "amount_dst"],
+            "t_curr": ["t_curr", "target_currency", "валюта (цель)", "вал (цель)", "curr_dst"],
+            "base_amt": ["base_amt", "base_amount", "source_base", "сумма (база)", "usd", "цель (база)", "base amt", "usd amt"],
+            "comment": ["comment", "комментарий", "примечание", "notes"],
+            "id": ["id", "идентификатор", "индентификатор"]
+          };
+
           const row = new Array(Math.max(headers.length, 12)).fill("");
-          headers.forEach((h, idx) => { if (dataMap[h] !== undefined) row[idx] = dataMap[h]; });
+          
+          // Map each data field to its corresponding column in the sheet
+          Object.entries(aliases).forEach(([field, fieldAliases]) => {
+            for (const alias of fieldAliases) {
+              const idx = headers.indexOf(alias.toLowerCase());
+              if (idx !== -1) {
+                if (dataMap[field] !== undefined) {
+                  row[idx] = dataMap[field];
+                }
+                break; // Found the column, move to next field
+              }
+            }
+          });
 
           if (payload.action === 'addTransaction') {
             await sheets.spreadsheets.values.append({ 
@@ -699,8 +747,15 @@ export default async function handler(req, res) {
 
       if (payload.action === 'deleteTransaction') {
         const headerRes = await sheets.spreadsheets.values.get({ spreadsheetId: targetSsId, range: `${txSheetName}!A1:Z1` });
-        const headers = (headerRes.data.values?.[0] || []).map(h => String(h).trim().toLowerCase());
-        const idColIdx = headers.indexOf("id");
+        const rawHeaders = headerRes.data.values?.[0] || [];
+        const headers = rawHeaders.map(h => String(h).trim().toLowerCase());
+        
+        const idAliases = ["id", "идентификатор", "индентификатор"];
+        let idColIdx = -1;
+        for (const alias of idAliases) {
+          idColIdx = headers.indexOf(alias.toLowerCase());
+          if (idColIdx !== -1) break;
+        }
         
         if (idColIdx !== -1) {
           const allRes = await sheets.spreadsheets.values.get({ spreadsheetId: targetSsId, range: `${txSheetName}!A:Z` });

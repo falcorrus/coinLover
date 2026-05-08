@@ -58,6 +58,17 @@ export const useTransactions = ({
     const sAmountUSD = RatesService.convert(sourceAmount, sCurr, baseCur);
     const tAmountUSD = RatesService.convert(finalTargetAmount, tCurr, baseCur);
     
+    // Resolve names from latest state to ensure accuracy
+    const resolvedSource = type === "income" 
+      ? incomes.find(i => i.id === source.id) 
+      : accounts.find(a => a.id === source.id);
+    const resolvedDest = (type === "expense") 
+      ? categories.find(c => c.id === destination.id) 
+      : accounts.find(a => a.id === destination.id);
+
+    const sName = resolvedSource?.name || source.name || "Unknown Source";
+    const dName = resolvedDest?.name || destination.name || "Unknown Destination";
+
     const newTx: Transaction = { 
       id: Date.now().toString(), 
       type, 
@@ -98,8 +109,10 @@ export const useTransactions = ({
         id: newTx.id, 
         date, 
         type, 
-        sourceName: source.name, 
-        destinationName: destination.name, 
+        sourceName: sName, 
+        destinationName: dName, 
+        accountId: newTx.accountId,
+        targetId: newTx.targetId,
         tagName: tag ?? "", 
         sourceAmount, 
         sourceCurrency: sCurr, 
@@ -114,7 +127,7 @@ export const useTransactions = ({
         incomes,
         timestamp: ts,
         baseCurrency
-    });
+    } as any);
 
     // Затем всё равно вызываем pushSettings для локальной синхронизации и контроля конфликтов
     if (txOk) {
@@ -150,6 +163,17 @@ export const useTransactions = ({
     const sAmountUSD = RatesService.convert(sourceAmount, sCurr, baseCur);
     const tAmountUSD = RatesService.convert(finalTargetAmount, tCurr, baseCur);
     
+    // Resolve names from latest state to ensure accuracy
+    const resolvedSource = type === "income" 
+      ? incomes.find(i => i.id === source.id) 
+      : accounts.find(a => a.id === source.id);
+    const resolvedDest = (type === "expense") 
+      ? categories.find(c => c.id === destination.id) 
+      : accounts.find(a => a.id === destination.id);
+
+    const sName = resolvedSource?.name || source.name || "Unknown Source";
+    const dName = resolvedDest?.name || destination.name || "Unknown Destination";
+
     const updatedTx: Transaction = { 
       ...oldTx, 
       type, 
@@ -190,8 +214,10 @@ export const useTransactions = ({
         id: txId, 
         date, 
         type, 
-        sourceName: source.name, 
-        destinationName: destination.name, 
+        sourceName: sName, 
+        destinationName: dName, 
+        accountId: updatedTx.accountId,
+        targetId: updatedTx.targetId,
         tagName: tag ?? "", 
         sourceAmount, 
         sourceCurrency: sCurr, 
@@ -206,7 +232,7 @@ export const useTransactions = ({
         incomes,
         timestamp: ts,
         baseCurrency
-    });
+    } as any);
 
     if (txOk) {
       localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC, ts);

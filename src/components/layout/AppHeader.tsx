@@ -43,7 +43,7 @@ export function AppHeader({
   );
 
   return (
-    <header className={`px-6 flex flex-col gap-2 text-center shrink-0 ${isCompact ? 'pt-4 pb-2' : 'pt-8 pb-4'}`}>
+    <header className={`px-6 flex flex-col gap-2 text-center shrink-0 ${isCompact ? 'pt-[calc(1rem+env(safe-area-inset-top,0px))] pb-2' : 'pt-[calc(2rem+env(safe-area-inset-top,0px))] pb-4'}`}>
       <div className="flex justify-between items-center mb-2">
         <button onClick={toggleIncome} className="glass-icon-btn w-10 h-10 relative">
           <Plus size={APP_SETTINGS.UI.ICON_SIZE_LARGE} className={`text-[#10b981] transition-transform duration-300 ${!isIncomeCollapsed ? "rotate-45" : ""}`} />
