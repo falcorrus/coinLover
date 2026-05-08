@@ -60,7 +60,7 @@ export const ThemeModal: React.FC<Props> = ({ isOpen, onClose, currentTheme, onS
     <div className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center p-4 animate-in fade-in duration-300">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       
-      <div className="relative w-full max-w-md bg-[var(--panel-bg)] border border-[var(--glass-border)] rounded-[32px] overflow-hidden shadow-2xl animate-in slide-in-from-bottom duration-500 sm:zoom-in-95">
+      <div className="relative w-full max-w-md bg-[var(--panel-bg)] border border-[var(--glass-border)] rounded-[32px] overflow-hidden shadow-2xl animate-in slide-in-from-bottom duration-300 sm:zoom-in-95">
         <div className="px-6 py-5 border-b border-[var(--glass-border)] flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-primary/10 rounded-xl text-primary">

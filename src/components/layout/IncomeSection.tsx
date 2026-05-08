@@ -29,7 +29,7 @@ export function IncomeSection({
   setAnalyticsModal, setIncomeModal, setHistoryModal
 }: IncomeSectionProps) {
   return (
-    <section className={`px-0 overflow-hidden transition-all duration-500 shrink-0 ${isIncomeCollapsed ? "max-h-0 opacity-0" : "max-h-[160px] opacity-100 py-1"}`}>
+    <section className={`px-0 overflow-hidden transition-all duration-300 shrink-0 ${isIncomeCollapsed ? "max-h-0 opacity-0" : "max-h-[160px] opacity-100 py-1"}`}>
       <div className="px-6 py-2 flex justify-between items-center">
         <div onClick={toggleIncome} className="flex items-center gap-2 cursor-pointer group">
           <ChevronRight size={APP_SETTINGS.UI.ICON_SIZE_SMALL} className="text-slate-500 rotate-90" />

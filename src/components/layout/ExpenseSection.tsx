@@ -35,7 +35,7 @@ export function ExpenseSection({
   setCalendarAnalyticsModal, theme
 }: ExpenseSectionProps) {
   return (
-    <section className={`px-0 flex-1 pt-4 pb-8 overflow-y-auto hide-scrollbar z-10 relative transition-all duration-500 ${mode === "income" ? "opacity-30 pointer-events-none grayscale" : "opacity-100"}`}>
+    <section className={`px-0 flex-1 pt-4 pb-8 overflow-y-auto hide-scrollbar z-10 relative transition-all duration-300 ${mode === "income" ? "opacity-30 pointer-events-none grayscale" : "opacity-100"}`}>
       <div className="px-6 py-2">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-[10px] font-black text-slate-500 uppercase">Расходы</h2>

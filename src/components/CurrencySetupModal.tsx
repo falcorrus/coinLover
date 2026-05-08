@@ -13,7 +13,7 @@ export const CurrencySetupModal: React.FC<Props> = ({ isOpen, onSelect }) => {
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6 animate-in fade-in duration-300">
       <div className="absolute inset-0 bg-black/80 backdrop-blur-md" />
       
-      <div className="relative w-full max-w-sm bg-[#121212] border border-white/10 rounded-[32px] p-8 shadow-2xl flex flex-col items-center text-center animate-in zoom-in-95 duration-500">
+      <div className="relative w-full max-w-sm bg-[#121212] border border-white/10 rounded-[32px] p-8 shadow-2xl flex flex-col items-center text-center animate-in zoom-in-95 duration-300">
         <div className="w-20 h-20 rounded-full bg-amber-500/10 flex items-center justify-center mb-6 border border-amber-500/20">
           <DollarSign size={40} className="text-amber-500" />
         </div>

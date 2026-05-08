@@ -363,7 +363,7 @@ export default function App() {
 
         <div className="absolute top-4 right-4 z-50"><div className={`w-2 h-2 rounded-full ${syncStatus === "loading" ? "bg-amber-400 animate-pulse" : syncStatus === "success" ? "bg-emerald-500/50" : syncStatus === "error" ? "bg-rose-500" : "bg-white/10"}`} /></div>
 
-        <div className={`flex-1 flex flex-col overflow-hidden animate-in zoom-in-95 duration-500 transition-all duration-500 ease-out ${isFullModalOpen ? "scale-[0.96] blur-[3px] opacity-60" : "scale-100 blur-0 opacity-100"}`}>
+        <div className={`flex-1 flex flex-col overflow-hidden animate-in zoom-in-95 duration-300 transition-all duration-300 ease-out ${isFullModalOpen ? "scale-[0.96] blur-[3px] opacity-60" : "scale-100 blur-0 opacity-100"}`}>
           <AppHeader
             isIncomeCollapsed={isIncomeCollapsed} toggleIncome={toggleIncome} isDemo={isDemoMode}
             settingsLongPress={settingsLongPress} handleMenuClick={handleMenuClick} isSettingsMenuOpen={isSettingsMenuOpen} setIsSettingsMenuOpen={setIsSettingsMenuOpen}

@@ -343,7 +343,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                         {listItems.length === 0 && !isLoading ? (
                             <div className="absolute inset-0 flex items-center justify-center text-[var(--text-muted)] text-xs uppercase font-bold tracking-widest">Нет данных</div>
                         ) : viewType === "chart" ? (
-                            <div className="flex flex-col items-center justify-center h-full animate-in zoom-in-95 duration-500">
+                            <div className="flex flex-col items-center justify-center h-full animate-in zoom-in-95 duration-300">
                                 <div className="relative w-64 h-64 mb-8">
                                     <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
                                         {(() => {
@@ -365,7 +365,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                                                         key={item.id}
                                                         d={`M 50 50 L ${startX} ${startY} A 45 45 0 ${largeArcFlag} 1 ${endX} ${endY} Z`}
                                                         fill={item.color}
-                                                        className="transition-all duration-500 hover:opacity-80 cursor-pointer"
+                                                        className="transition-all duration-300 hover:opacity-80 cursor-pointer"
                                                         onClick={() => setExpandedItemId(expandedItemId === item.id ? null : item.id)}
                                                         style={{ 
                                                             filter: expandedItemId === item.id ? 'brightness(1.2) drop-shadow(0 0 5px rgba(255,255,255,0.2))' : 'none',
