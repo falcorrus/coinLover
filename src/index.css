@@ -402,3 +402,18 @@ body {
 .animate-wiggle {
   animation: wiggle 0.3s ease-in-out infinite;
 }
+
+/* Safe Area Handling for PWA/iOS */
+@supports (padding: env(safe-area-inset-top)) {
+  .safe-pt {
+    padding-top: 47px; /* Fallback for older notched iPhones */
+    padding-top: env(safe-area-inset-top, 47px);
+  }
+}
+
+@media all and (display-mode: standalone) {
+  .safe-pt {
+    /* Hard-enforce minimum padding in standalone mode if system insets are flaky */
+    padding-top: max(47px, env(safe-area-inset-top, 47px)) !important;
+  }
+}
