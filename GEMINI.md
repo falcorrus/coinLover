@@ -13,7 +13,7 @@
 - **Flexible Parsing:** Бэкенд на Python поддерживает двойные заголовки и синонимы секций (`WALLETS`/`ACCOUNTS`).
 
 ## Deployment Policy
-- **Standard Action:** On "deploy" command, always run `./deploy.sh` without arguments and follow interactive prompts (1-Dev, 2-Main, 3-Both).
+- **Standard Action:** On "deploy" command, ALWAYS use `ask_user` to clarify the target (Main, Dev, or Both) BEFORE running `./deploy.sh`. 
 - **Production Flow:** To deploy to **MAIN**, strictly follow this sequence:
   1. Ensure latest code is in `preview` branch.
   2. Switch to `main` branch: `git checkout main`.
