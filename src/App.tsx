@@ -348,7 +348,7 @@ export default function App() {
   return (
     <DndContext sensors={sensors} collisionDetection={rectIntersection} onDragStart={handleDragStart} onDragMove={handleDragMove} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
       {isSplashVisible && (
-        <div className="fixed inset-0 z-[2000] bg-[#050505] animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-[2000] bg-[#050505]">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-6 w-full">
             <div className="w-32 h-32 rounded-[48px] bg-gradient-to-br from-amber-300 via-amber-500 to-amber-600 flex items-center justify-center shadow-2xl animate-pulse">
               <Heart size={APP_SETTINGS.UI.ICON_SIZE_SPLASH} fill="white" className="text-white drop-shadow-lg" />
