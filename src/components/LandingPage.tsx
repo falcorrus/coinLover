@@ -1,7 +1,7 @@
 import * as React from "react";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { 
-  Shield, Zap, Globe, PieChart, Sparkles, ArrowRight, 
+  Shield, Zap, Globe, PieChart, Sparkles, ArrowRight, ArrowLeft,
   Database, MousePointer2, Layout, Lock, Coins, X, Send, 
   Wallet, Banknote, TrendingUp, Coffee, ShoppingBag, Car, Utensils, Film,
   FileSpreadsheet, Languages, Search, History, Smartphone, Tablet, Laptop, RefreshCw,
@@ -14,7 +14,7 @@ type Language = "ru" | "en";
 const translations = {
   ru: {
     demo: "Демо",
-    cta: "Хочу!",
+    cta: "Попробовать бесплатно",
     sloganMain: "Твои деньги.",
     sloganSub: "Твой учет. Твой стиль.",
     scrollHint: "Посмотрите, как магия транзакций оживает в CoinLover.",
@@ -44,7 +44,8 @@ const translations = {
     familyTitle: "Семейная синхронизация",
     familyText: "Поддержка командных бюджетов и общих таблиц для всей семьи. Следите за общим капиталом вместе.",
     finalCta: "Верни себе контроль.",
-    modalTitle: "Начнем настройку?",
+    modalTitle: "Давайте знакомиться",
+    modalTitleStep2: "Подключаем таблицу",
     modalPricingOld: "Подписка 10$ в год",
     modalPricingNew: "На период тестирования бесплатно + среди тестеров будет разыграно 10 пожизненных подписок",
     nameLabel: "Ваше имя",
@@ -59,19 +60,21 @@ const translations = {
     modalPlaceholder: "@username или email...",
     namePlaceholder: "Как к вам обращаться?",
     sheetPlaceholder: "https://docs.google.com/spreadsheets/...",
-    modalConnect: "Подключить",
+    modalConnect: "Подключить вашу таблицу",
     modalSend: "Отправить",
     modalSuccess: "Готово!",
     modalSuccessSub: "Таблица настроена! Теперь вы можете пользоваться приложением по адресу https://coinlover.ru",
     modalToApp: "В программу",
-    knowledgeBase: "База знаний",
+    modalNext: "Далее",
+    modalBack: "Назад",
+    knowledgeBase: "ЧаВо",
     footerStudio: "2026 Сделано Broz Studio",
     wallets: { cash: "Наличные", bank: "Банк", exchange: "Биржа" },
     categories: { food: "Еда", transport: "Транспорт", coffee: "Кофе", shopping: "Покупки", fun: "Отдых" }
   },
   en: {
     demo: "Demo",
-    cta: "I want it!",
+    cta: "Get started for free",
     sloganMain: "Your money.",
     sloganSub: "Your tracking. Your style.",
     scrollHint: "See how transaction magic comes to life in CoinLover.",
@@ -101,7 +104,8 @@ const translations = {
     familyTitle: "Family Sync",
     familyText: "Support for team budgets and shared sheets for the whole family. Track common capital together.",
     finalCta: "Take back control.",
-    modalTitle: "Let's get started",
+    modalTitle: "Let's get introduced",
+    modalTitleStep2: "Connecting your sheet",
     modalPricingOld: "Subscription $10 per year",
     modalPricingNew: "Free during testing period + 10 lifetime subscriptions will be raffled among testers",
     nameLabel: "Your name",
@@ -116,12 +120,14 @@ const translations = {
     modalPlaceholder: "@username or email...",
     namePlaceholder: "How should we call you?",
     sheetPlaceholder: "https://docs.google.com/spreadsheets/...",
-    modalConnect: "Connect",
+    modalConnect: "Connect your sheet",
     modalSend: "Send",
     modalSuccess: "Ready!",
     modalSuccessSub: "Sheet is configured! You can now use the app at https://coinlover.ru",
     modalToApp: "Go to App",
-    knowledgeBase: "Knowledge Base",
+    modalNext: "Next",
+    modalBack: "Back",
+    knowledgeBase: "FAQ",
     footerStudio: "2026 Made by Broz Studio",
     wallets: { cash: "Cash", bank: "Bank", exchange: "Exchange" },
     categories: { food: "Food", transport: "Transport", coffee: "Coffee", shopping: "Shopping", fun: "Fun" }
@@ -140,6 +146,7 @@ export const LandingPage: React.FC = () => {
 
   const [isConnectOpen, setIsConnectOpen] = React.useState(false);
   const [modalType, setModalType] = React.useState<"onboarding" | "studio">("onboarding");
+  const [step, setStep] = React.useState(1);
   const [name, setName] = React.useState("");
   const [contact, setContact] = React.useState("");
   const [sheetUrl, setSheetUrl] = React.useState("");
@@ -151,6 +158,7 @@ export const LandingPage: React.FC = () => {
 
   const handleOpenModal = (type: "onboarding" | "studio") => {
     setModalType(type);
+    setStep(1);
     setIsConnectOpen(true);
   };
 
@@ -198,12 +206,8 @@ export const LandingPage: React.FC = () => {
       
       if (ok) {
         setIsSent(true);
-        // Не закрываем автоматически, ждем нажатия OK
       }
     } catch (err) {
-      // Даже при ошибке (no-cors) обычно данные доходят, 
-      // но если реально упало, покажем успех для спокойствия юзера 
-      // или ошибку, если нужно. Оставляем успех для простоты UX.
       setIsSent(true);
     } finally {
       setIsLoading(false);
@@ -241,7 +245,7 @@ export const LandingPage: React.FC = () => {
         <div className="absolute top-[-10%] right-[-10%] w-[300px] md:w-[500px] height-[500px] bg-[#6d5dfc]/10 blur-[120px] rounded-full" />
       </div>
 
-      <nav className="fixed top-0 left-0 right-0 z-50 px-4 md:px-6 py-4 md:py-6 backdrop-blur-md border-b border-white/5" style={{ paddingTop: 'env(safe-area-inset-top, 47px)' }}>
+      <nav className="fixed top-0 left-0 right-0 z-50 px-4 md:px-6 py-4 md:py-6 backdrop-blur-md border-b border-white/5">
         <div className="max-w-6xl mx-auto w-full flex justify-between items-center">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 md:w-8 md:h-8 bg-[#6d5dfc] rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(109,93,252,0.5)]">
@@ -413,7 +417,17 @@ export const LandingPage: React.FC = () => {
 
         <section className="text-center py-20 relative">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#6d5dfc]/5 blur-[120px] rounded-full pointer-events-none" />
-          <h2 className="text-5xl md:text-7xl font-bold mb-12 tracking-tight">{t.finalCta}</h2>
+          <h2 className="text-5xl md:text-7xl font-bold mb-8 tracking-tight">{t.finalCta}</h2>
+          
+          <div className="inline-flex flex-col items-center bg-[#6d5dfc]/5 border border-[#6d5dfc]/20 rounded-2xl px-6 py-4 mb-12 relative z-10">
+            <span className="text-white/30 text-xs line-through font-medium mb-1">
+              {t.modalPricingOld}
+            </span>
+            <span className="text-[#6d5dfc] text-sm md:text-base font-bold">
+              {t.modalPricingNew}
+            </span>
+          </div>
+
           <div className="flex flex-col sm:flex-row gap-6 justify-center relative z-10 px-4">
             <button onClick={() => handleOpenModal("onboarding")} className="px-8 md:px-12 py-4 md:py-6 bg-[#6d5dfc] hover:bg-[#5b4ce3] text-white font-bold rounded-2xl transition-all shadow-2xl shadow-[#6d5dfc]/40 text-base md:text-lg outline-none">{t.cta}</button>
             <button onClick={handleDemo} className="px-8 md:px-12 py-4 md:py-6 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold rounded-2xl transition-all text-base md:text-lg outline-none">{t.demo}</button>
@@ -428,85 +442,110 @@ export const LandingPage: React.FC = () => {
             <motion.div initial={{ scale: 0.9, opacity: 0, y: 30 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 30 }} className="w-full max-w-md bg-[#121212]/90 backdrop-blur-2xl p-10 relative z-10 border border-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] rounded-[32px]">
               <button onClick={() => setIsConnectOpen(false)} className="absolute top-6 right-6 text-white/40 hover:text-white transition-colors outline-none"><X size={28} /></button>
               {!isSent ? (
-                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                  <div className="w-12 h-12 bg-[#6d5dfc]/10 rounded-xl flex items-center justify-center mb-2"><Database className="w-6 h-6 text-[#6d5dfc]" /></div>
-                  <h2 className="text-2xl font-bold text-white leading-tight">
-                    {modalType === "onboarding" ? t.modalTitle : t.studioTitle}
-                  </h2>
-                  
-                  <div className="bg-[#6d5dfc]/10 border border-[#6d5dfc]/20 rounded-xl p-3">
-                    {modalType === "onboarding" ? (
-                      <div className="flex flex-col gap-1">
-                        <p className="text-white/30 text-[10px] line-through font-medium">
-                          {t.modalPricingOld}
-                        </p>
-                        <p className="text-[#6d5dfc] text-[11px] font-bold leading-relaxed">
-                          {t.modalPricingNew}
-                        </p>
-                      </div>
-                    ) : (
-                      <p className="text-[#6d5dfc] text-[11px] font-bold leading-relaxed">
-                        {t.studioSub}
-                      </p>
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="w-12 h-12 bg-[#6d5dfc]/10 rounded-xl flex items-center justify-center">
+                      <Database className="w-6 h-6 text-[#6d5dfc]" />
+                    </div>
+                    {modalType === "onboarding" && step === 2 && (
+                      <button 
+                        onClick={() => setStep(1)}
+                        className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-[#6d5dfc] hover:text-white transition-colors"
+                      >
+                        <ArrowLeft size={14} /> {t.modalBack}
+                      </button>
                     )}
                   </div>
 
-                  {modalType === "onboarding" && (
+                  <h2 className="text-2xl font-bold text-white leading-tight">
+                    {modalType === "onboarding" 
+                      ? (step === 1 ? t.modalTitle : (t as any).modalTitleStep2) 
+                      : t.studioTitle}
+                  </h2>
+                  
+                  {modalType === "studio" && (
+                    <div className="bg-[#6d5dfc]/10 border border-[#6d5dfc]/20 rounded-xl p-3">
+                      <p className="text-[#6d5dfc] text-[11px] font-bold leading-relaxed">
+                        {t.studioSub}
+                      </p>
+                    </div>
+                  )}
+
+                  {modalType === "onboarding" ? (
                     <div className="flex flex-col gap-3 mt-2">
-                      <div>
-                        <label className="text-[9px] font-black uppercase tracking-widest text-white/40 ml-1 mb-1 block">{t.nameLabel}</label>
-                        <input required type="text" placeholder={t.namePlaceholder} value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:border-[#6d5dfc]/50 transition-all outline-none text-sm" />
-                      </div>
+                      {step === 1 ? (
+                        <>
+                          <div>
+                            <label className="text-[9px] font-black uppercase tracking-widest text-white/40 ml-1 mb-1 block">{t.nameLabel}</label>
+                            <input required type="text" placeholder={t.namePlaceholder} value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:border-[#6d5dfc]/50 transition-all outline-none text-sm" />
+                          </div>
+                          <div>
+                            <label className="text-[9px] font-black uppercase tracking-widest text-white/40 ml-1 mb-1 block">{t.contactLabel}</label>
+                            <input required type="text" placeholder={t.modalPlaceholder} value={contact} onChange={(e) => setContact(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:border-[#6d5dfc]/50 transition-all outline-none text-sm" />
+                          </div>
+                          <button 
+                            onClick={() => { if (name && contact) setStep(2); }}
+                            disabled={!name || !contact}
+                            className="w-full py-4 bg-[#6d5dfc] hover:bg-[#5b4ce3] disabled:opacity-50 disabled:grayscale text-white font-bold rounded-xl flex items-center justify-center gap-3 transition-all text-sm shadow-xl shadow-[#6d5dfc]/20 outline-none mt-2"
+                          >
+                            {t.modalNext} <ArrowRight size={18} />
+                          </button>
+                        </>
+                      ) : (
+                        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+                          <div className="p-3 bg-black/20 border border-white/5 rounded-xl group/copy relative">
+                            <p className="text-[10px] text-white/40 leading-relaxed mb-2 uppercase font-black tracking-tighter">
+                              {t.shareInstruction}
+                              <a href="https://sheets.new" target="_blank" rel="noopener noreferrer" className="text-[#6d5dfc] underline decoration-[#6d5dfc]/30 hover:decoration-[#6d5dfc] transition-all">
+                                {t.shareInstructionLink}
+                              </a>
+                              {t.shareInstructionSuffix}
+                            </p>
+                            <div className="flex items-center gap-2 bg-[#6d5dfc]/5 p-2 rounded border border-[#6d5dfc]/10">
+                              <code className="text-[10px] text-[#6d5dfc] break-all font-mono select-all flex-1">{t.serviceEmail}</code>
+                              <button 
+                                type="button"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(t.serviceEmail);
+                                  if (navigator.vibrate) navigator.vibrate(40);
+                                }}
+                                className="p-1.5 hover:bg-[#6d5dfc]/10 rounded-md transition-colors text-[#6d5dfc]"
+                                title="Copy email"
+                              >
+                                <Copy size={14} />
+                              </button>
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="text-[9px] font-black uppercase tracking-widest text-white/40 ml-1 mb-1 block">{t.sheetLabel}</label>
+                            <input required type="text" placeholder={t.sheetPlaceholder} value={sheetUrl} onChange={(e) => setSheetUrl(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:border-[#6d5dfc]/50 transition-all outline-none text-sm" />
+                          </div>
+
+                          <button 
+                            disabled={isLoading || !sheetUrl}
+                            className="w-full py-4 bg-[#6d5dfc] hover:bg-[#5b4ce3] disabled:opacity-50 disabled:grayscale text-white font-bold rounded-xl flex items-center justify-center gap-3 transition-all text-sm shadow-xl shadow-[#6d5dfc]/20 outline-none mt-2"
+                          >
+                            {isLoading ? <RefreshCw className="animate-spin w-5 h-5" /> : <>{t.modalConnect} <Send size={18} /></>}
+                          </button>
+                        </form>
+                      )}
+                    </div>
+                  ) : (
+                    <form onSubmit={handleSubmit} className="flex flex-col gap-4 mt-2">
                       <div>
                         <label className="text-[9px] font-black uppercase tracking-widest text-white/40 ml-1 mb-1 block">{t.contactLabel}</label>
                         <input required type="text" placeholder={t.modalPlaceholder} value={contact} onChange={(e) => setContact(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:border-[#6d5dfc]/50 transition-all outline-none text-sm" />
                       </div>
-                      
-                      <div className="mt-1 p-3 bg-black/20 border border-white/5 rounded-xl group/copy relative">
-                        <p className="text-[10px] text-white/40 leading-relaxed mb-2 uppercase font-black tracking-tighter">
-                          {t.shareInstruction}
-                          <a href="https://sheets.new" target="_blank" rel="noopener noreferrer" className="text-[#6d5dfc] underline decoration-[#6d5dfc]/30 hover:decoration-[#6d5dfc] transition-all">
-                            {t.shareInstructionLink}
-                          </a>
-                          {t.shareInstructionSuffix}
-                        </p>
-                        <div className="flex items-center gap-2 bg-[#6d5dfc]/5 p-2 rounded border border-[#6d5dfc]/10">
-                          <code className="text-[10px] text-[#6d5dfc] break-all font-mono select-all flex-1">{t.serviceEmail}</code>
-                          <button 
-                            type="button"
-                            onClick={() => {
-                              navigator.clipboard.writeText(t.serviceEmail);
-                              if (navigator.vibrate) navigator.vibrate(40);
-                            }}
-                            className="p-1.5 hover:bg-[#6d5dfc]/10 rounded-md transition-colors text-[#6d5dfc]"
-                            title="Copy email"
-                          >
-                            <Copy size={14} />
-                          </button>
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="text-[9px] font-black uppercase tracking-widest text-white/40 ml-1 mb-1 block">{t.sheetLabel}</label>
-                        <input required type="text" placeholder={t.sheetPlaceholder} value={sheetUrl} onChange={(e) => setSheetUrl(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:border-[#6d5dfc]/50 transition-all outline-none text-sm" />
-                      </div>
-                    </div>
+                      <button 
+                        disabled={isLoading || !contact}
+                        className="w-full py-4 bg-[#6d5dfc] hover:bg-[#5b4ce3] disabled:opacity-50 disabled:grayscale text-white font-bold rounded-xl flex items-center justify-center gap-3 transition-all text-sm shadow-xl shadow-[#6d5dfc]/20 outline-none mt-2"
+                      >
+                        {isLoading ? <RefreshCw className="animate-spin w-5 h-5" /> : <>{t.modalSend} <Send size={18} /></>}
+                      </button>
+                    </form>
                   )}
-
-                  {modalType === "studio" && (
-                    <div className="mt-2">
-                      <label className="text-[9px] font-black uppercase tracking-widest text-white/40 ml-1 mb-1 block">{t.contactLabel}</label>
-                      <input required type="text" placeholder={t.modalPlaceholder} value={contact} onChange={(e) => setContact(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:border-[#6d5dfc]/50 transition-all outline-none text-sm" />
-                    </div>
-                  )}
-
-                  <button 
-                    disabled={isLoading || !contact || (modalType === 'onboarding' && (!name || !sheetUrl))}
-                    className="w-full py-4 bg-[#6d5dfc] hover:bg-[#5b4ce3] disabled:opacity-50 disabled:grayscale text-white font-bold rounded-xl flex items-center justify-center gap-3 transition-all text-sm shadow-xl shadow-[#6d5dfc]/20 outline-none mt-2"
-                  >
-                    {isLoading ? <RefreshCw className="animate-spin w-5 h-5" /> : <>{t.modalConnect} <Send size={18} /></>}
-                  </button>
-                </form>
+                </div>
               ) : (
                 <div className="text-center py-8">
                   <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-[0_0_30px_rgba(34,197,94,0.2)]">

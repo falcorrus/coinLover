@@ -312,13 +312,14 @@ export default function App() {
     document.documentElement.classList.remove("white", "black", "mint", "zen", "modern", "dark");
     
     // Не применяем темы на лендинге, так как у него свой фиксированный темный дизайн
-    if (currentPath !== "/landing" && !isUserPath) {
+    if (currentPath === "/landing") {
+      document.documentElement.classList.add("black", "landing-mode");
+    } else if (isUserPath) {
+      document.documentElement.classList.add("black");
+    } else {
       const activeClass = theme === "white" || (theme as string) === "zen" ? "white" : 
                           theme === "mint" ? "mint" : "black";
       document.documentElement.classList.add(activeClass);
-    } else {
-      // Для /s/ID и /landing используем темную тему по умолчанию (черный фон лендинга или лоадера)
-      document.documentElement.classList.add("black");
     }
   }, [pillMode, theme, categoryCurrencyMode, currentPath, isUserPath]);
 

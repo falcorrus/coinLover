@@ -14,6 +14,14 @@ html, body, #root {
   overscroll-behavior: none;
 }
 
+html.landing-mode, 
+html.landing-mode body,
+html.landing-mode #root {
+  height: auto !important;
+  overflow: auto !important;
+  overscroll-behavior: auto !important;
+}
+
 :root {
   /* Black Glow (Default) - "Borderless Style" */
   --bg-color: #0D1117;
