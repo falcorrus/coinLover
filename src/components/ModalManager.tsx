@@ -308,7 +308,12 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
             return { ...p, [key]: ev }; 
           }
           
-          const nv = currStr === "0" && !isNaN(Number(inputVal)) ? inputVal : currStr + inputVal;
+          let nv;
+          if (["+", "-", "*", "/", "%"].includes(inputVal) && currStr !== "0") {
+            nv = currStr + "\n" + inputVal;
+          } else {
+            nv = currStr === "0" && !isNaN(Number(inputVal)) ? inputVal : currStr + inputVal;
+          }
           
           if (p.targetLinked) return isSource ? { ...p, sourceAmount: nv, targetAmount: computeTarget(nv) } : { ...p, targetAmount: nv, sourceAmount: computeSource(nv) };
           return { ...p, [key]: nv };

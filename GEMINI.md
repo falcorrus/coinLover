@@ -6,6 +6,13 @@
 - **Link:** Folder `/Users/eugene/MyProjects/CoinLover/Obsidian_Docs` points to the project notes in Obsidian.
 - **File Storage:** Все новые `.md` файлы (дизайны, планы, логи) сохраняй только в `/Users/eugene/MyProjects/CoinLover/Obsidian_Docs`.
 
+## Behavioral Overrides
+- **Senior Engineer Mode:** Пиши максимально кратко, технично, без приветствий и лишних объяснений. Фокус на результате и техническом обосновании.
+- **Token Optimization:** 
+    - Игнорируй `node_modules/`, `dist/`, `.git/` через `.geminiignore`.
+    - Не читай файлы целиком, если можно использовать `grep_search` или `start_line`/`end_line`.
+    - Минимизируй вывод инструментов в ответах.
+
 ## Sync & Database Policy
 - **Primary Sync:** Всегда использовать VPS Proxy (`/api/sheets/`) вместо прямых запросов к Google Apps Script. Это решает проблемы CORS и прав доступа.
 - **Service Account:** Для доступа к таблицам используется `coinlover-service-acc@baonlineru.iam.gserviceaccount.com`. Клиент должен добавить этот email как Editor.

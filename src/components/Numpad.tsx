@@ -82,6 +82,14 @@ export const Numpad: React.FC<Props> = ({
     return "grid-cols-3";
   };
 
+  const getAmountFontSize = (amount: string) => {
+    const len = amount.length;
+    if (len <= 7) return "text-3xl sm:text-4xl";
+    if (len <= 11) return "text-2xl sm:text-3xl";
+    if (len <= 16) return "text-xl sm:text-2xl";
+    return "text-lg sm:text-xl";
+  };
+
   return (
     <div className="fixed inset-0 z-[400] flex flex-col bg-black/40 backdrop-blur-sm animate-in fade-in duration-300 font-sans">
       <div className="flex-1 flex flex-col bg-[var(--bg-color)] max-w-md mx-auto w-full shadow-2xl animate-in slide-in-from-right duration-300 ease-in-out">
@@ -111,8 +119,8 @@ export const Numpad: React.FC<Props> = ({
                 ? (data.type === 'expense' ? 'bg-[#D4AF37]/20 border-[#D4AF37] ring-1 ring-[#D4AF37]/50 scale-[1.02]' : 'bg-[var(--success-color)]/20 border-[var(--success-color)] ring-1 ring-[var(--success-color)]/50 scale-[1.02]')
                 : 'bg-[var(--glass-item-bg)] border-[var(--glass-border)] opacity-50'}`}
             >
-              <div className="h-2/3 flex items-center justify-end px-5">
-                <span className={`text-3xl sm:text-4xl font-light tracking-tighter text-right overflow-hidden leading-tight ${data.activeField === "source" ? "text-[var(--text-main)]" : "text-[var(--text-muted)]"}`}>{data.sourceAmount}</span>
+              <div className="h-2/3 flex items-center justify-end px-5 overflow-hidden">
+                <span className={`font-light tracking-tighter text-right leading-tight break-all whitespace-pre-wrap ${getAmountFontSize(data.sourceAmount)} ${data.activeField === "source" ? "text-[var(--text-main)]" : "text-[var(--text-muted)]"}`}>{data.sourceAmount}</span>
               </div>
               <div className="h-1/3 flex items-center justify-between px-5 bg-black/10">
                 {data.type === 'income' ? (
@@ -141,8 +149,8 @@ export const Numpad: React.FC<Props> = ({
                 ? (data.type === 'expense' ? 'bg-[#D4AF37]/20 border-[#D4AF37] ring-1 ring-[#D4AF37]/50 scale-[1.02]' : 'bg-[var(--success-color)]/20 border-[var(--success-color)] ring-1 ring-[var(--success-color)]/50 scale-[1.02]')
                 : 'bg-[var(--glass-item-bg)] border-[var(--glass-border)] opacity-50'}`}
             >
-              <div className="h-2/3 flex items-center justify-end px-5">
-                <span className={`text-3xl sm:text-4xl font-light tracking-tighter text-right overflow-hidden leading-tight ${data.activeField === "destination" ? "text-[var(--text-main)]" : "text-[var(--text-muted)]"}`}>{data.targetAmount}</span>
+              <div className="h-2/3 flex items-center justify-end px-5 overflow-hidden">
+                <span className={`font-light tracking-tighter text-right leading-tight break-all whitespace-pre-wrap ${getAmountFontSize(data.targetAmount)} ${data.activeField === "destination" ? "text-[var(--text-main)]" : "text-[var(--text-muted)]"}`}>{data.targetAmount}</span>
               </div>
               <div className="h-1/3 flex items-center justify-between px-5 bg-black/10">
                 {data.type === 'expense' ? (
