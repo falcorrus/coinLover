@@ -205,12 +205,12 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                     ) : (
                         <div className="flex flex-col gap-8">
                             {groupedTransactions.map(group => (
-                                <div key={group.date} className="flex flex-col gap-3">
-                                    <div className="flex items-center gap-3 px-1">
-                                        <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">{group.date}</span>
+                                <div key={group.date} className="flex flex-col gap-4">
+                                    <div className="flex items-center gap-3 py-2">
+                                        <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] whitespace-nowrap">{group.date}</span>
                                         <div className="h-px flex-1 bg-[var(--glass-border)] opacity-30" />
                                     </div>
-                                    <div className="flex flex-col gap-4">
+                                    <div className="flex flex-col gap-5">
                                         {group.items.map(tx => {
                                             const { item, isOutflow } = getCounterpartInfo(tx);
                                             const status = checkBroken(tx);
@@ -239,10 +239,10 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                                                             <Icon size={18} />
                                                             {status.isBroken && <div className="absolute -top-1 -right-1 bg-rose-500 w-3 h-3 rounded-full border-2 border-[var(--bg-color)]" />}
                                                         </div>
-                                                        <div className="flex flex-col overflow-hidden flex-1 max-w-[180px]">
-                                                            <span className={`text-sm font-semibold truncate ${status.isBroken ? 'text-rose-400' : 'text-[var(--text-main)]'}`}>{displayName}</span>
-                                                            <div className="flex items-center gap-2 mt-0.5">
-                                                                {tx.tag && <span className="text-[8px] px-2 py-0.5 bg-white/5 border border-white/5 rounded-lg text-slate-400 font-bold uppercase shrink-0 tracking-widest">{tx.tag}</span>}
+                                                        <div className="flex flex-col overflow-hidden flex-1">
+                                                            <div className="flex items-baseline gap-2">
+                                                                <span className={`text-sm font-semibold truncate ${status.isBroken ? 'text-rose-400' : 'text-[var(--text-main)]'}`}>{displayName}</span>
+                                                                {tx.tag && <span className="text-[8px] px-2 py-0.5 bg-white/5 border border-white/5 rounded-lg text-slate-400 font-bold uppercase shrink-0 tracking-widest leading-none">{tx.tag}</span>}
                                                             </div>
                                                             {tx.comment && <span className="text-[10px] text-[var(--text-muted)] italic truncate mt-0.5 opacity-80">{tx.comment}</span>}
                                                         </div>

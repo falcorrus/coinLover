@@ -228,8 +228,12 @@ export const Numpad: React.FC<Props> = ({
             <button onClick={() => onPress("1")} className="h-16 bg-[var(--numpad-bg)] flex items-center justify-center text-2xl font-light text-[var(--text-main)] active:bg-[var(--glass-item-active)] transition-all">1</button>
             <button onClick={() => onPress("2")} className="h-16 bg-[var(--numpad-bg)] flex items-center justify-center text-2xl font-light text-[var(--text-main)] active:bg-[var(--glass-item-active)] transition-all">2</button>
             <button onClick={() => onPress("3")} className="h-16 bg-[var(--numpad-bg)] flex items-center justify-center text-2xl font-light text-[var(--text-main)] active:bg-[var(--glass-item-active)] transition-all">3</button>
-            <button onClick={() => setIsCommentOpen(true)} className={`h-16 flex items-center justify-center active:bg-[var(--glass-item-active)] transition-all ${hasComment ? "bg-[var(--primary-color)]/10 text-[var(--primary-color)]" : "bg-[var(--panel-bg)] text-[var(--text-muted)]"}`}><MessageSquare size={20} /></button>
-            <button onClick={() => onPress("C")} className="h-16 bg-[var(--panel-bg)] flex items-center justify-center text-[var(--text-muted)] active:bg-[var(--glass-item-active)] transition-all"><RotateCcw size={20} /></button>
+            <button 
+              onClick={() => setIsCommentOpen(true)} 
+              className={`h-16 flex items-center justify-center active:bg-[var(--glass-item-active)] transition-all border-l border-white/5 ${hasComment ? "bg-[var(--primary-color)]/20 text-[var(--primary-color)] shadow-[inset_0_0_15px_rgba(0,0,0,0.1)]" : "bg-[var(--panel-bg)]/80 text-[var(--text-muted)] hover:text-[var(--text-main)]"}`}
+            >
+              <MessageSquare size={20} className={hasComment ? "scale-110" : ""} />
+            </button>            <button onClick={() => onPress("C")} className="h-16 bg-[var(--panel-bg)] flex items-center justify-center text-[var(--text-muted)] active:bg-[var(--glass-item-active)] transition-all"><RotateCcw size={20} /></button>
 
             {/* Row 2 */}
             <button onClick={() => onPress("4")} className="h-16 bg-[var(--numpad-bg)] flex items-center justify-center text-2xl font-light text-[var(--text-main)] active:bg-[var(--glass-item-active)] transition-all">4</button>

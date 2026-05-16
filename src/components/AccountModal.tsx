@@ -1,5 +1,5 @@
 import React from "react";
-import { X, Trash2, Wallet } from "lucide-react";
+import { X, Trash2, Wallet, AlertCircle } from "lucide-react";
 import { Account } from "../types";
 import { COLORS, ACCOUNT_ICONS, IconMap } from "../constants";
 
@@ -19,6 +19,7 @@ export const AccountModal: React.FC<Props> = ({ isOpen, account, onClose, onSave
   const [currency, setCurrency] = React.useState("USD");
   const [icon, setIcon] = React.useState("wallet");
   const [color, setColor] = React.useState("var(--primary-color)");
+  const [showCurrencyInfo, setShowCurrencyInfo] = React.useState(false);
 
   React.useEffect(() => {
     if (isOpen) {
@@ -27,18 +28,45 @@ export const AccountModal: React.FC<Props> = ({ isOpen, account, onClose, onSave
       setCurrency(account?.currency || "USD");
       setIcon(account?.icon || "wallet");
       setColor(account?.color || "var(--primary-color)");
+      setShowCurrencyInfo(false);
     }
   }, [isOpen, account]);
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[200] flex items-center justify-center p-6 animate-in fade-in duration-300">
-      <div className="glass-panel w-full max-w-sm p-8 flex flex-col gap-6 shadow-2xl shadow-[var(--shadow-color)] animate-in zoom-in-95 duration-300 text-[var(--text-main)] text-left overflow-y-auto max-h-[90vh] hide-scrollbar">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[200] flex items-center justify-center p-6 animate-in fade-in duration-300" onClick={onClose}>
+      <div className="glass-panel w-full max-w-sm p-8 flex flex-col gap-6 shadow-2xl shadow-[var(--shadow-color)] animate-in zoom-in-95 duration-300 text-[var(--text-main)] text-left overflow-y-auto max-h-[90vh] hide-scrollbar relative" onClick={e => e.stopPropagation()}>
         <div className="flex justify-between items-center text-[var(--text-main)]">
           <h3 className="text-lg font-bold uppercase text-[var(--text-main)]">{account ? "Изменить кошелек" : "Новый кошелек"}</h3>
           <button onClick={onClose} className="p-2 -mr-2 text-[var(--text-main)]"><X size={24} /></button>
         </div>
+
+        {/* Custom Currency Info Popup */}
+        {showCurrencyInfo && (
+          <>
+            <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px] z-[205] rounded-3xl" onClick={() => setShowCurrencyInfo(false)} />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[85%] bg-[var(--panel-bg)] border border-[var(--primary-color)]/30 rounded-2xl p-5 z-[210] shadow-2xl animate-in fade-in zoom-in-90 duration-200">
+              <div className="flex flex-col gap-3">
+                <div className="flex justify-between items-start">
+                  <div className="w-8 h-8 rounded-lg bg-[var(--primary-color)]/10 flex items-center justify-center text-[var(--primary-color)]">
+                    <AlertCircle size={18} />
+                  </div>
+                  <button onClick={() => setShowCurrencyInfo(false)} className="text-[var(--text-muted)] hover:text-[var(--text-main)]"><X size={16} /></button>
+                </div>
+                <p className="text-xs leading-relaxed font-medium text-[var(--text-main)]">
+                  Можно любую валюту, для которой есть трёхбуквенный международный код
+                </p>
+                <button 
+                  onClick={() => setShowCurrencyInfo(false)}
+                  className="mt-1 py-2 bg-[var(--primary-color)]/10 hover:bg-[var(--primary-color)]/20 text-[var(--primary-color)] text-[10px] font-black uppercase tracking-widest rounded-lg transition-all"
+                >
+                  Понятно
+                </button>
+              </div>
+            </div>
+          </>
+        )}
 
         <div className="flex flex-col gap-4 text-[var(--text-main)]">
           <div className="flex flex-col gap-1.5 text-[var(--text-main)] relative">
@@ -68,7 +96,16 @@ export const AccountModal: React.FC<Props> = ({ isOpen, account, onClose, onSave
               />
             </div>
             <div className="flex flex-col gap-1.5 text-[var(--text-main)]">
-              <label className="text-[10px] font-bold text-[var(--text-muted)] uppercase">Валюта</label>
+              <div className="flex items-center gap-1.5">
+                <label className="text-[10px] font-bold text-[var(--text-muted)] uppercase">Валюта</label>
+                <button 
+                  type="button"
+                  onClick={() => setShowCurrencyInfo(true)}
+                  className="text-[var(--text-muted)] hover:text-[var(--primary-color)] transition-colors"
+                >
+                  <AlertCircle size={10} />
+                </button>
+              </div>
               <input
                 type="text"
                 value={currency}
