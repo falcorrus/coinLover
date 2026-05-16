@@ -8,6 +8,7 @@ import {
   Fingerprint, Move, Copy, Check
 } from "lucide-react";
 import { googleSheetsService } from "../services/googleSheets";
+import { trackEvent, trackScreen } from "../services/analytics";
 
 type Language = "ru" | "en";
 
@@ -156,7 +157,12 @@ export const LandingPage: React.FC = () => {
 
   const t = translations[lang];
 
+  React.useEffect(() => {
+    trackScreen("Landing Page");
+  }, []);
+
   const handleOpenModal = (type: "onboarding" | "studio") => {
+    trackEvent("modal_open", { type });
     setModalType(type);
     setStep(1);
     setIsConnectOpen(true);
@@ -176,6 +182,7 @@ export const LandingPage: React.FC = () => {
   }, []);
 
   const handleDemo = () => { 
+    trackEvent("demo_click", { category: "engagement" });
     const savedId = localStorage.getItem("cl_active_table_id");
     if (savedId) {
       window.location.href = "/";
@@ -206,6 +213,12 @@ export const LandingPage: React.FC = () => {
       
       if (ok) {
         setIsSent(true);
+        // Log lead event in GA4
+        trackEvent("generate_lead", {
+          category: "engagement",
+          label: modalType === "onboarding" ? "Onboarding" : "Studio",
+          value: modalType === "onboarding" ? 1 : 10
+        });
       }
     } catch (err) {
       setIsSent(true);
@@ -256,16 +269,18 @@ export const LandingPage: React.FC = () => {
           <div className="flex items-center gap-2 md:gap-4">
             <div className="flex bg-white/5 rounded-lg p-1 mr-2 border border-white/5">
               <button 
+                id="btn_lang_ru"
                 onClick={() => setLang("ru")}
                 className={`px-2 py-1 text-[10px] font-bold rounded transition-all ${lang === 'ru' ? 'bg-[#6d5dfc] text-white' : 'text-white/40'}`}
               >RU</button>
               <button 
+                id="btn_lang_en"
                 onClick={() => setLang("en")}
                 className={`px-2 py-1 text-[10px] font-bold rounded transition-all ${lang === 'en' ? 'bg-[#6d5dfc] text-white' : 'text-white/40'}`}
               >EN</button>
             </div>
-            <button onClick={handleDemo} className="px-2 md:px-4 py-2 text-[10px] md:text-sm font-medium text-white/70 hover:text-white transition-colors outline-none">{t.demo}</button>
-            <button onClick={() => handleOpenModal("onboarding")} className="px-3 md:px-4 py-2 bg-[#6d5dfc] hover:bg-[#5b4ce3] text-white text-[10px] md:text-sm font-semibold rounded-xl transition-all shadow-lg shadow-[#6d5dfc]/20 whitespace-nowrap outline-none">
+            <button id="btn_demo_top" onClick={handleDemo} className="px-2 md:px-4 py-2 text-[10px] md:text-sm font-medium text-white/70 hover:text-white transition-colors outline-none">{t.demo}</button>
+            <button id="btn_signup_top" onClick={() => handleOpenModal("onboarding")} className="px-3 md:px-4 py-2 bg-[#6d5dfc] hover:bg-[#5b4ce3] text-white text-[10px] md:text-sm font-semibold rounded-xl transition-all shadow-lg shadow-[#6d5dfc]/20 whitespace-nowrap outline-none">
               <span>{t.cta}</span>
             </button>
           </div>
@@ -290,7 +305,7 @@ export const LandingPage: React.FC = () => {
               transition={{ duration: 1, delay: 0.4 }}
               className="glass-panel p-2 border-white/10 shadow-2xl relative z-10 overflow-hidden w-fit max-w-[280px] md:max-w-[320px] mx-auto rounded-[40px]"
             >
-              <video autoPlay muted loop playsInline className="w-full h-auto rounded-[32px] block shadow-2xl">
+              <video id="video_hero" autoPlay muted loop playsInline className="w-full h-auto rounded-[32px] block shadow-2xl">
                 <source src="/hero-demo.mp4" type="video/mp4" />
               </video>
               <div className="absolute inset-0 bg-gradient-to-t from-[#050505]/20 to-transparent pointer-events-none rounded-[32px]" />
@@ -429,8 +444,8 @@ export const LandingPage: React.FC = () => {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-6 justify-center relative z-10 px-4">
-            <button onClick={() => handleOpenModal("onboarding")} className="px-8 md:px-12 py-4 md:py-6 bg-[#6d5dfc] hover:bg-[#5b4ce3] text-white font-bold rounded-2xl transition-all shadow-2xl shadow-[#6d5dfc]/40 text-base md:text-lg outline-none">{t.cta}</button>
-            <button onClick={handleDemo} className="px-8 md:px-12 py-4 md:py-6 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold rounded-2xl transition-all text-base md:text-lg outline-none">{t.demo}</button>
+            <button id="btn_signup_bottom" onClick={() => handleOpenModal("onboarding")} className="px-8 md:px-12 py-4 md:py-6 bg-[#6d5dfc] hover:bg-[#5b4ce3] text-white font-bold rounded-2xl transition-all shadow-2xl shadow-[#6d5dfc]/40 text-base md:text-lg outline-none">{t.cta}</button>
+            <button id="btn_demo_bottom" onClick={handleDemo} className="px-8 md:px-12 py-4 md:py-6 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold rounded-2xl transition-all text-base md:text-lg outline-none">{t.demo}</button>
           </div>
         </section>
       </div>
@@ -449,6 +464,7 @@ export const LandingPage: React.FC = () => {
                     </div>
                     {modalType === "onboarding" && step === 2 && (
                       <button 
+                        id="btn_modal_back"
                         onClick={() => setStep(1)}
                         className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-[#6d5dfc] hover:text-white transition-colors"
                       >
@@ -484,6 +500,7 @@ export const LandingPage: React.FC = () => {
                             <input required type="text" placeholder={t.modalPlaceholder} value={contact} onChange={(e) => setContact(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:border-[#6d5dfc]/50 transition-all outline-none text-sm" />
                           </div>
                           <button 
+                            id="btn_modal_next"
                             onClick={() => { if (name && contact) setStep(2); }}
                             disabled={!name || !contact}
                             className="w-full py-4 bg-[#6d5dfc] hover:bg-[#5b4ce3] disabled:opacity-50 disabled:grayscale text-white font-bold rounded-xl flex items-center justify-center gap-3 transition-all text-sm shadow-xl shadow-[#6d5dfc]/20 outline-none mt-2"
@@ -504,6 +521,7 @@ export const LandingPage: React.FC = () => {
                             <div className="flex items-center gap-2 bg-[#6d5dfc]/5 p-2 rounded border border-[#6d5dfc]/10">
                               <code className="text-[10px] text-[#6d5dfc] break-all font-mono select-all flex-1">{t.serviceEmail}</code>
                               <button 
+                                id="btn_copy_email"
                                 type="button"
                                 onClick={() => {
                                   navigator.clipboard.writeText(t.serviceEmail);
@@ -523,6 +541,7 @@ export const LandingPage: React.FC = () => {
                           </div>
 
                           <button 
+                            id="btn_modal_connect"
                             disabled={isLoading || !sheetUrl}
                             className="w-full py-4 bg-[#6d5dfc] hover:bg-[#5b4ce3] disabled:opacity-50 disabled:grayscale text-white font-bold rounded-xl flex items-center justify-center gap-3 transition-all text-sm shadow-xl shadow-[#6d5dfc]/20 outline-none mt-2"
                           >
@@ -538,6 +557,7 @@ export const LandingPage: React.FC = () => {
                         <input required type="text" placeholder={t.modalPlaceholder} value={contact} onChange={(e) => setContact(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:border-[#6d5dfc]/50 transition-all outline-none text-sm" />
                       </div>
                       <button 
+                        id="btn_modal_send"
                         disabled={isLoading || !contact}
                         className="w-full py-4 bg-[#6d5dfc] hover:bg-[#5b4ce3] disabled:opacity-50 disabled:grayscale text-white font-bold rounded-xl flex items-center justify-center gap-3 transition-all text-sm shadow-xl shadow-[#6d5dfc]/20 outline-none mt-2"
                       >
@@ -556,6 +576,7 @@ export const LandingPage: React.FC = () => {
                     {t.modalSuccessSub}
                   </p>
                   <button 
+                    id="btn_modal_go_to_app"
                     onClick={() => {
                       const id = extractSsId(sheetUrl);
                       window.location.href = `/?ssId=${id || ""}`;
@@ -576,6 +597,7 @@ export const LandingPage: React.FC = () => {
           <div className="flex items-center gap-3"><div className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center"><Coins className="w-4 h-4 text-white/40" /></div><span className="font-bold text-white/30 tracking-widest uppercase text-xs">CoinLover</span></div>
           
           <a 
+            id="btn_faq"
             href="https://coin.rag.reloto.ru/" 
             target="_blank" 
             rel="noopener noreferrer"
@@ -586,6 +608,7 @@ export const LandingPage: React.FC = () => {
           </a>
 
           <button 
+            id="btn_studio"
             onClick={() => handleOpenModal("studio")}
             className="tracking-widest uppercase text-white/30 hover:text-white transition-colors outline-none text-[10px] md:text-xs"
           >

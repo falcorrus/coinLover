@@ -14,10 +14,6 @@ export const trackScreen = (screenName: string) => {
   ReactGA.send({ hitType: "pageview", page: screenName, title: screenName });
 };
 
-export const trackEvent = (category: string, action: string, label?: string) => {
-  ReactGA.event({
-    category,
-    action,
-    label,
-  });
+export const trackEvent = (action: string, params?: any) => {
+  ReactGA.event(action, params);
 };
