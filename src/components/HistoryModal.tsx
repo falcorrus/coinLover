@@ -233,23 +233,23 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                                             }
 
                                             return (
-                                                <div key={tx.id} className={`flex justify-between items-center bg-[var(--glass-item-bg)]/50 p-3 -mx-2 rounded-2xl transition-all cursor-pointer hover:bg-[var(--glass-item-active)] active:scale-[0.98]`} onClick={() => handleTransactionClick(tx)}>
-                                                    <div className="flex items-center gap-3">
+                                                <div key={tx.id} className={`flex items-center bg-[var(--glass-item-bg)]/50 p-3 -mx-2 rounded-2xl transition-all cursor-pointer hover:bg-[var(--glass-item-active)] active:scale-[0.98]`} onClick={() => handleTransactionClick(tx)}>
+                                                    <div className="flex items-center gap-3 min-w-0 flex-1">
                                                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center relative shadow-inner shrink-0 ${status.isBroken ? 'bg-rose-500/20 text-rose-500' : 'bg-[var(--glass-item-bg)] text-[var(--text-muted)]'}`} style={{ color: !status.isBroken ? (item as any)?.color : undefined }}>
                                                             <Icon size={18} />
                                                             {status.isBroken && <div className="absolute -top-1 -right-1 bg-rose-500 w-3 h-3 rounded-full border-2 border-[var(--bg-color)]" />}
                                                         </div>
-                                                        <div className="flex flex-col overflow-hidden flex-1">
-                                                            <div className="flex items-baseline gap-2">
+                                                        <div className="flex flex-col min-w-0 flex-1">
+                                                            <div className="flex items-baseline gap-2 overflow-hidden">
                                                                 <span className={`text-sm font-semibold truncate ${status.isBroken ? 'text-rose-400' : 'text-[var(--text-main)]'}`}>{displayName}</span>
                                                                 {tx.tag && <span className="text-[8px] px-2 py-0.5 bg-white/5 border border-white/5 rounded-lg text-slate-400 font-bold uppercase shrink-0 tracking-widest leading-none">{tx.tag}</span>}
                                                             </div>
                                                             {tx.comment && <span className="text-[10px] text-[var(--text-muted)] italic truncate mt-0.5 opacity-80">{tx.comment}</span>}
                                                         </div>
                                                     </div>
-                                                    <div className="flex flex-col items-end shrink-0 pl-2">
-                                                        <span className={`text-sm font-black ${amountInfo.color} tracking-tight`}>{amountInfo.amount}</span>
-                                                        {amountInfo.secondaryAmount && <span className="text-[10px] text-[var(--text-muted)] font-bold opacity-60">≈ {amountInfo.secondaryAmount}</span>}
+                                                    <div className="flex flex-col items-end shrink-0 pl-3 ml-auto min-w-[90px]">
+                                                        <span className={`text-sm font-black ${amountInfo.color} tracking-tight whitespace-nowrap`}>{amountInfo.amount}</span>
+                                                        {amountInfo.secondaryAmount && <span className="text-[10px] text-[var(--text-muted)] font-bold opacity-60 whitespace-nowrap">≈ {amountInfo.secondaryAmount}</span>}
                                                         {status.isBroken && <span className="text-[9px] text-rose-500 font-bold uppercase mt-1 animate-pulse">Исправить</span>}
                                                     </div>
                                                 </div>
