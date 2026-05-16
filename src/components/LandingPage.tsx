@@ -157,10 +157,6 @@ export const LandingPage: React.FC = () => {
 
   const t = translations[lang];
 
-  React.useEffect(() => {
-    trackScreen("Landing Page");
-  }, []);
-
   const handleOpenModal = (type: "onboarding" | "studio") => {
     trackEvent("modal_open", { type });
     setModalType(type);
@@ -168,9 +164,20 @@ export const LandingPage: React.FC = () => {
     setIsConnectOpen(true);
   };
 
+  const handleLanguageChange = (newLang: Language) => {
+    setLang(newLang);
+    trackEvent("change_language", { language_code: newLang });
+  };
+
   React.useEffect(() => {
     localStorage.setItem("cl_lang", lang);
   }, [lang]);
+
+  React.useEffect(() => {
+    trackScreen("Landing Page");
+    // Track initial language
+    trackEvent("change_language", { language_code: lang, initial: true });
+  }, []);
 
   const { scrollYProgress } = useScroll();
   
@@ -270,12 +277,12 @@ export const LandingPage: React.FC = () => {
             <div className="flex bg-white/5 rounded-lg p-1 mr-2 border border-white/5">
               <button 
                 id="btn_lang_ru"
-                onClick={() => setLang("ru")}
+                onClick={() => handleLanguageChange("ru")}
                 className={`px-2 py-1 text-[10px] font-bold rounded transition-all ${lang === 'ru' ? 'bg-[#6d5dfc] text-white' : 'text-white/40'}`}
               >RU</button>
               <button 
                 id="btn_lang_en"
-                onClick={() => setLang("en")}
+                onClick={() => handleLanguageChange("en")}
                 className={`px-2 py-1 text-[10px] font-bold rounded transition-all ${lang === 'en' ? 'bg-[#6d5dfc] text-white' : 'text-white/40'}`}
               >EN</button>
             </div>
