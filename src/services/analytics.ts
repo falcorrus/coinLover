@@ -14,6 +14,15 @@ export const trackScreen = (screenName: string) => {
   ReactGA.send({ hitType: "pageview", page: screenName, title: screenName });
 };
 
-export const trackEvent = (action: string, params?: any) => {
-  ReactGA.event(action, params);
+export const trackEvent = (actionOrCategory: string, paramsOrAction?: any, label?: string) => {
+  if (typeof paramsOrAction === "string") {
+    // Old style: trackEvent(category, action, label)
+    ReactGA.event(paramsOrAction, {
+      event_category: actionOrCategory,
+      event_label: label,
+    });
+  } else {
+    // New style: trackEvent(action, params)
+    ReactGA.event(actionOrCategory, paramsOrAction);
+  }
 };
