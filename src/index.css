@@ -420,16 +420,19 @@ body {
 }
 
 /* Safe Area Handling for PWA/iOS */
+.safe-pt {
+  padding-top: 24px; /* Base padding for browser mode */
+}
+
 @supports (padding: env(safe-area-inset-top)) {
   .safe-pt {
-    padding-top: 47px; /* Fallback for older notched iPhones */
-    padding-top: env(safe-area-inset-top, 47px);
+    padding-top: max(24px, env(safe-area-inset-top));
   }
 }
 
 @media all and (display-mode: standalone) {
   .safe-pt {
-    /* Hard-enforce minimum padding in standalone mode if system insets are flaky */
-    padding-top: max(47px, env(safe-area-inset-top, 47px)) !important;
+    /* Hard-enforce minimum padding in standalone mode */
+    padding-top: max(24px, env(safe-area-inset-top)) !important;
   }
 }

@@ -240,11 +240,13 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                                                             {status.isBroken && <div className="absolute -top-1 -right-1 bg-rose-500 w-3 h-3 rounded-full border-2 border-[var(--bg-color)]" />}
                                                         </div>
                                                         <div className="flex flex-col min-w-0 flex-1">
-                                                            <div className="flex items-baseline gap-2 overflow-hidden">
+                                                            <div className="flex items-baseline overflow-hidden">
                                                                 <span className={`text-sm font-semibold truncate ${status.isBroken ? 'text-rose-400' : 'text-[var(--text-main)]'}`}>{displayName}</span>
-                                                                {tx.tag && <span className="text-[8px] px-2 py-0.5 bg-white/5 border border-white/5 rounded-lg text-slate-400 font-bold uppercase shrink-0 tracking-widest leading-none">{tx.tag}</span>}
                                                             </div>
-                                                            {tx.comment && <span className="text-[10px] text-[var(--text-muted)] italic truncate mt-0.5 opacity-80">{tx.comment}</span>}
+                                                            <div className="flex items-center gap-2 mt-1 overflow-hidden h-4">
+                                                                {tx.tag && <span className="inline-flex items-center px-2 py-[1px] bg-white/5 border border-white/5 rounded-lg text-slate-400 text-[8px] font-bold uppercase shrink-0 tracking-widest leading-none translate-y-[0.5px]">{tx.tag}</span>}
+                                                                {tx.comment && <span className="text-[10px] text-[var(--text-muted)] italic truncate opacity-80 leading-none">{tx.comment}</span>}
+                                                            </div>
                                                         </div>
                                                     </div>
                                                     <div className="flex flex-col items-end shrink-0 pl-3 ml-auto min-w-[90px]">
