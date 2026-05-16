@@ -28,7 +28,7 @@ function ensureInitialized(ss, configName = "Configs", txName = "Transactions") 
   
   if (conf.getLastRow() === 0) {
     const configHeaders = [
-      ["Updated", new Date().toISOString(), "", "", "", "", ""],
+      ["Updated", formatDate(new Date()), "", "", "", "", ""],
       ["Base_Currency", "USD", "", "", "", "", ""],
       ["", "", "", "", "", "", ""],
       [" === WALLETS ===", "", "", "", "", "", ""],
@@ -520,7 +520,7 @@ function getIdFromUrl(url) {
 }
 
 function parseDateSafe(s) { 
-  if(!s) return new Date(); 
+  if(!s) return formatDate(new Date()); 
   const str = String(s).trim();
   let d = new Date(str);
   if (isNaN(d.getTime())) {
@@ -545,5 +545,15 @@ function parseDateSafe(s) {
       }
     }
   }
-  return isNaN(d.getTime()) ? new Date() : d; 
+  return isNaN(d.getTime()) ? formatDate(new Date()) : formatDate(d); 
+}
+
+function formatDate(date) {
+  const pad = (n) => n < 10 ? '0' + n : n;
+  const d = pad(date.getDate());
+  const m = pad(date.getMonth() + 1);
+  const y = date.getFullYear();
+  const h = pad(date.getHours());
+  const min = pad(date.getMinutes());
+  return d + '.' + m + '.' + y + ' ' + h + ':' + min;
 }

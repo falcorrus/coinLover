@@ -86,7 +86,7 @@ export const useTransactions = ({
     };
     
     setTransactions((prev) => [newTx, ...prev]);
-    trackEvent("Transaction", "Add", type);
+    trackEvent("TransactionAdd", { category: "Transaction", label: type });
     const updatedAccounts = accounts.map((a) => {
       if (type === "expense" && a.id === (source as Account).id) return { ...a, balance: a.balance - sourceAmount };
       if (type === "income" && a.id === (destination as Account).id) return { ...a, balance: a.balance + finalTargetAmount };
@@ -191,7 +191,7 @@ export const useTransactions = ({
     };
 
     setTransactions(prev => prev.map(t => t.id === txId ? updatedTx : t));
-    trackEvent("Transaction", "Update", type);
+    trackEvent("TransactionUpdate", { category: "Transaction", label: type });
     const updatedAccounts = accounts.map(a => {
       let balance = a.balance;
       if (oldTx.type === "expense" && a.id === oldTx.accountId) balance += oldTx.sourceAmount;
@@ -248,7 +248,7 @@ export const useTransactions = ({
 
     const tx = transactions.find((t) => t.id === txId); if (!tx) return;
     setTransactions((prev) => prev.filter((t) => t.id !== txId));
-    trackEvent("Transaction", "Delete", tx.type);
+    trackEvent("TransactionDelete", { category: "Transaction", label: tx.type });
     const updatedAccounts = accounts.map((a) => {
       let balance = a.balance;
       if (tx.type === "expense" && a.id === tx.accountId) balance += tx.sourceAmount;

@@ -297,7 +297,7 @@ export default function App() {
     switchTable(id); 
     localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE, "false");
     
-    trackEvent("User", "SwitchTable", id); 
+    trackEvent("SwitchTable", { category: "User", label: id }); 
     setIsUsersModalOpen(false);
     
     // 4. Переходим на чистый URL (удаляем ssId, если он там был)
