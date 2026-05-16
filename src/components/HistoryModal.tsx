@@ -41,6 +41,20 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
         safeParseDate(b.date).getTime() - safeParseDate(a.date).getTime()
     );
 
+    // Group transactions by date
+    const groupedTransactions: { date: string, items: Transaction[] }[] = [];
+    sortedTransactions.forEach(tx => {
+        const d = safeParseDate(tx.date);
+        const dateStr = `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}`;
+        
+        const existingGroup = groupedTransactions.find(g => g.date === dateStr);
+        if (existingGroup) {
+            existingGroup.items.push(tx);
+        } else {
+            groupedTransactions.push({ date: dateStr, items: [tx] });
+        }
+    });
+
     const checkBroken = (tx: Transaction) => {
         const acc = accounts.find(a => a.id === tx.accountId);
         let targetExists = false;
@@ -186,60 +200,64 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                 </div>
 
                 <div className="flex-1 overflow-y-auto hide-scrollbar p-6">
-                    {sortedTransactions.length === 0 ? (
+                    {groupedTransactions.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-40 text-[var(--text-muted)] gap-2"><span className="text-sm font-semibold">Нет записей</span><span className="text-xs opacity-60">Транзакции пока отсутствуют</span></div>
                     ) : (
-                        <div className="flex flex-col gap-5">
-                            {sortedTransactions.map(tx => {
-                                const { item, isOutflow } = getCounterpartInfo(tx);
-                                const status = checkBroken(tx);
-                                const Icon = item ? (IconMap[(item as any).icon] || Wallet) : (status.isBroken ? AlertCircle : Wallet);
-                                const amountInfo = getAmountStr(tx, isOutflow);
-                                
-                                let displayName = item?.name || (status.isBroken ? "Требует внимания" : "Unknown");
-                                if (entityType === "feed") {
-                                    const s = accounts.find(a => a.id === tx.accountId);
-                                    if (tx.type === "expense") {
-                                        const dName = categories.find(c => c.id === tx.targetId)?.name || "?";
-                                        displayName = `${s?.name || "?"} → ${dName}`;
-                                    } else if (tx.type === "income") {
-                                        const dName = incomes.find(i => i.id === tx.targetId)?.name || "?";
-                                        displayName = `${dName} → ${s?.name || "?"}`;
-                                    } else {
-                                        const dName = accounts.find(a => a.id === tx.targetId)?.name || "?";
-                                        displayName = `${s?.name || "?"} → ${dName}`;
-                                    }
-                                }
-
-                                return (
-                                    <div key={tx.id} className={`flex justify-between items-center bg-[var(--glass-item-bg)]/50 p-3 -mx-3 rounded-2xl transition-colors cursor-pointer hover:bg-[var(--glass-item-active)]`} onClick={() => handleTransactionClick(tx)}>
-                                        <div className="flex items-center gap-3">
-                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center relative shadow-inner shrink-0 ${status.isBroken ? 'bg-rose-500/20 text-rose-500' : 'bg-[var(--glass-item-bg)] text-[var(--text-muted)]'}`} style={{ color: !status.isBroken ? (item as any)?.color : undefined }}>
-                                                <Icon size={18} />
-                                                {status.isBroken && <div className="absolute -top-1 -right-1 bg-rose-500 w-3 h-3 rounded-full border-2 border-[var(--bg-color)]" />}
-                                            </div>
-                                            <div className="flex flex-col overflow-hidden flex-1 max-w-[180px]">
-                                                <span className={`text-sm font-semibold truncate ${status.isBroken ? 'text-rose-400' : 'text-[var(--text-main)]'}`}>{displayName}</span>
-                                                <div className="flex items-center gap-2 mt-0.5">
-                                                    <span className="text-[10px] text-[var(--text-muted)] uppercase font-medium">
-                                                        {(() => {
-                                                            const d = safeParseDate(tx.date);
-                                                            return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}`;
-                                                        })()}
-                                                    </span>
-                                                    {tx.tag && <span className="text-[8px] px-2 py-0.5 bg-white/5 border border-white/5 rounded-lg text-slate-400 font-bold uppercase shrink-0 tracking-widest">{tx.tag}</span>}
-                                                </div>
-                                                {tx.comment && <span className="text-[10px] text-[var(--text-muted)] italic truncate mt-0.5 opacity-80">{tx.comment}</span>}
-                                            </div>
-                                        </div>
-                                        <div className="flex flex-col items-end shrink-0 pl-2">
-                                            <span className={`text-sm font-black ${amountInfo.color} tracking-tight`}>{amountInfo.amount}</span>
-                                            {amountInfo.secondaryAmount && <span className="text-[10px] text-[var(--text-muted)] font-bold opacity-60">≈ {amountInfo.secondaryAmount}</span>}
-                                            {status.isBroken && <span className="text-[9px] text-rose-500 font-bold uppercase mt-1 animate-pulse">Исправить</span>}
-                                        </div>
+                        <div className="flex flex-col gap-8">
+                            {groupedTransactions.map(group => (
+                                <div key={group.date} className="flex flex-col gap-3">
+                                    <div className="flex items-center gap-3 px-1">
+                                        <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">{group.date}</span>
+                                        <div className="h-px flex-1 bg-[var(--glass-border)] opacity-30" />
                                     </div>
-                                );
-                            })}
+                                    <div className="flex flex-col gap-4">
+                                        {group.items.map(tx => {
+                                            const { item, isOutflow } = getCounterpartInfo(tx);
+                                            const status = checkBroken(tx);
+                                            const Icon = item ? (IconMap[(item as any).icon] || Wallet) : (status.isBroken ? AlertCircle : Wallet);
+                                            const amountInfo = getAmountStr(tx, isOutflow);
+                                            
+                                            let displayName = item?.name || (status.isBroken ? "Требует внимания" : "Unknown");
+                                            if (entityType === "feed") {
+                                                const s = accounts.find(a => a.id === tx.accountId);
+                                                if (tx.type === "expense") {
+                                                    const dName = categories.find(c => c.id === tx.targetId)?.name || "?";
+                                                    displayName = `${s?.name || "?"} → ${dName}`;
+                                                } else if (tx.type === "income") {
+                                                    const dName = incomes.find(i => i.id === tx.targetId)?.name || "?";
+                                                    displayName = `${dName} → ${s?.name || "?"}`;
+                                                } else {
+                                                    const dName = accounts.find(a => a.id === tx.targetId)?.name || "?";
+                                                    displayName = `${s?.name || "?"} → ${dName}`;
+                                                }
+                                            }
+
+                                            return (
+                                                <div key={tx.id} className={`flex justify-between items-center bg-[var(--glass-item-bg)]/50 p-3 -mx-2 rounded-2xl transition-all cursor-pointer hover:bg-[var(--glass-item-active)] active:scale-[0.98]`} onClick={() => handleTransactionClick(tx)}>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center relative shadow-inner shrink-0 ${status.isBroken ? 'bg-rose-500/20 text-rose-500' : 'bg-[var(--glass-item-bg)] text-[var(--text-muted)]'}`} style={{ color: !status.isBroken ? (item as any)?.color : undefined }}>
+                                                            <Icon size={18} />
+                                                            {status.isBroken && <div className="absolute -top-1 -right-1 bg-rose-500 w-3 h-3 rounded-full border-2 border-[var(--bg-color)]" />}
+                                                        </div>
+                                                        <div className="flex flex-col overflow-hidden flex-1 max-w-[180px]">
+                                                            <span className={`text-sm font-semibold truncate ${status.isBroken ? 'text-rose-400' : 'text-[var(--text-main)]'}`}>{displayName}</span>
+                                                            <div className="flex items-center gap-2 mt-0.5">
+                                                                {tx.tag && <span className="text-[8px] px-2 py-0.5 bg-white/5 border border-white/5 rounded-lg text-slate-400 font-bold uppercase shrink-0 tracking-widest">{tx.tag}</span>}
+                                                            </div>
+                                                            {tx.comment && <span className="text-[10px] text-[var(--text-muted)] italic truncate mt-0.5 opacity-80">{tx.comment}</span>}
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex flex-col items-end shrink-0 pl-2">
+                                                        <span className={`text-sm font-black ${amountInfo.color} tracking-tight`}>{amountInfo.amount}</span>
+                                                        {amountInfo.secondaryAmount && <span className="text-[10px] text-[var(--text-muted)] font-bold opacity-60">≈ {amountInfo.secondaryAmount}</span>}
+                                                        {status.isBroken && <span className="text-[9px] text-rose-500 font-bold uppercase mt-1 animate-pulse">Исправить</span>}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     )}
                 </div>

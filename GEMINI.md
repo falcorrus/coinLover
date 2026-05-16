@@ -1,5 +1,12 @@
 # CoinLover
 
+## Success Loop (триггер "работает.")
+При подтверждении успеха пользователем, ты ОБЯЗАН выполнить:
+1. **Анализ:** Сформулируй, какую проблему решили и как (техническая суть).
+2. **SOLUTIONS.md:** Добавь подробное описание в `!Docs/!SOLUTIONS.md`.
+3. **Memoir AI:** Сохрани технический факт: `memoir -s ~/.gemini/memory/memoir_store remember "текст" --path .`.
+4. **Global Memory:** Добавь краткую запись: `python3 ~/.gemini/commands/manager.py remember "текст"`.
+
 ## Architecture & Resources
 - **Source Code:** `/Users/eugene/MyProjects/CoinLover`
 - **Obsidian Docs:** `3. РЕСУРСЫ/00! Мои приложения/coinLover/`
