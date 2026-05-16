@@ -41,7 +41,7 @@ export const AccountModal: React.FC<Props> = ({ isOpen, account, onClose, onSave
         </div>
 
         <div className="flex flex-col gap-4 text-[var(--text-main)]">
-          <div className="flex flex-col gap-1.5 text-[var(--text-main)]">
+          <div className="flex flex-col gap-1.5 text-[var(--text-main)] relative">
             <label className="text-[10px] font-bold text-[var(--text-muted)] uppercase">Название</label>
             <input
               type="text"
@@ -50,6 +50,11 @@ export const AccountModal: React.FC<Props> = ({ isOpen, account, onClose, onSave
               placeholder="Напр. Личный"
               className="bg-[var(--glass-item-bg)] border border-[var(--glass-border)] rounded-xl px-4 py-3 outline-none text-[var(--text-main)] w-full focus:border-[var(--primary-color)]/50"
             />
+            {!name.trim() && (
+              <span className="text-[9px] text-[var(--primary-color)] font-medium mt-1 ml-1 animate-pulse">
+                Назовите кошелек. Позже сможете редактировать долгим нажатием на иконку
+              </span>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -123,7 +128,8 @@ export const AccountModal: React.FC<Props> = ({ isOpen, account, onClose, onSave
           )}
           <button
             onClick={() => onSave(name, parseFloat(balance), currency, icon, color)}
-            className="flex-1 h-14 rounded-2xl bg-[var(--primary-color)] text-white font-bold shadow-lg shadow-[var(--primary-color)]/20 uppercase text-center"
+            disabled={!name.trim()}
+            className="flex-1 h-14 rounded-2xl bg-[var(--primary-color)] text-white font-bold shadow-lg shadow-[var(--primary-color)]/20 uppercase text-center disabled:opacity-30 disabled:grayscale disabled:cursor-not-allowed transition-all"
           >
             СОХРАНИТЬ
           </button>

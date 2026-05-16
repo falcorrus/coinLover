@@ -1,5 +1,5 @@
 import React from "react";
-import { X, ChevronRight, Check, CalendarDays, Delete, Divide, Plus, Minus, Equal, Percent, MessageSquare, Link2, Trash2, ArrowDown, RotateCcw } from "lucide-react";
+import { X, ChevronRight, Check, CalendarDays, Delete, Divide, Plus, Minus, Equal, Percent, MessageSquare, Link2, Trash2, ArrowDown, RotateCcw, Wallet } from "lucide-react";
 import { NumpadData, Category, Account, IncomeSource, Transaction } from "../types";
 import { IconMap } from "../constants";
 import { CalendarModal } from "./CalendarModal";
@@ -21,21 +21,27 @@ interface Props {
   onRemove?: () => void;
   onManageTags?: () => void;
   isEditing?: boolean;
+  accounts?: Account[];
+  categories?: Category[];
+  incomes?: IncomeSource[];
+  onEntityChange?: (field: "source" | "destination", entity: Account | Category | IncomeSource) => void;
 }
 
 export const Numpad: React.FC<Props> = ({ 
   data, availableCurrencies, transactions = [], onClose, onFieldChange, onCurrencyChange, 
-  onPress, onDelete, onSubmit, onTagSelect, onCommentChange, onLinkToggle, onRemove, onManageTags, isEditing 
+  onPress, onDelete, onSubmit, onTagSelect, onCommentChange, onLinkToggle, onRemove, onManageTags, isEditing,
+  accounts = [], categories = [], incomes = [], onEntityChange
 }) => {
   const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
   const [isCommentOpen, setIsCommentOpen] = React.useState(false);
+  const [pickingEntity, setPickingEntity] = React.useState<"source" | "destination" | null>(null);
   const [currencyPicker, setCurrencyPicker] = React.useState<{ isOpen: boolean; field: "source" | "target" | null }>({ isOpen: false, field: null });
   const [commentDraft, setCommentDraft] = React.useState("");
 
   React.useEffect(() => { if (isCommentOpen) setCommentDraft(data.comment); }, [isCommentOpen, data.comment]);
 
   React.useEffect(() => {
-    if (!data.isOpen || isCommentOpen || isCalendarOpen || currencyPicker.isOpen) return;
+    if (!data.isOpen || isCommentOpen || isCalendarOpen || currencyPicker.isOpen || pickingEntity) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       // Numbers and basic operators
@@ -61,7 +67,7 @@ export const Numpad: React.FC<Props> = ({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [data.isOpen, data.activeField, data.sourceAmount, isCommentOpen, isCalendarOpen, currencyPicker.isOpen, onPress, onDelete, onSubmit, onClose, onFieldChange]);
+  }, [data.isOpen, data.activeField, data.sourceAmount, isCommentOpen, isCalendarOpen, currencyPicker.isOpen, pickingEntity, onPress, onDelete, onSubmit, onClose, onFieldChange]);
 
   if (!data.isOpen) return null;
 
@@ -70,6 +76,13 @@ export const Numpad: React.FC<Props> = ({
   const handleTagClick = (t: string) => { onTagSelect(data.tag === t ? null : t); };
   const handleCommentSave = () => { onCommentChange(commentDraft.trim()); setIsCommentOpen(false); };
   const hasComment = data.comment.trim().length > 0;
+
+  const handlePickEntity = (entity: Account | Category | IncomeSource) => {
+    if (pickingEntity && onEntityChange) {
+      onEntityChange(pickingEntity, entity);
+    }
+    setPickingEntity(null);
+  };
 
   const getGridCols = () => {
     const count = availableCurrencies.length;
@@ -100,10 +113,20 @@ export const Numpad: React.FC<Props> = ({
             {isEditing && onRemove && (<button onClick={onRemove} className="p-2 text-[var(--danger-color)]"><Trash2 size={20} /></button>)}
           </div>
           <div className="flex items-center gap-3 text-sm font-semibold tracking-wide">
-            <span className="text-[var(--text-muted)] uppercase">{data.source?.name}</span>
+            <button 
+              onClick={() => setPickingEntity("source")}
+              className="text-[var(--text-muted)] uppercase hover:text-[var(--text-main)] transition-colors active:scale-95"
+            >
+              {data.source?.name}
+            </button>
             <ChevronRight size={16} className={data.type === 'expense' ? "text-[#D4AF37]" : "text-[var(--success-color)]"} />
             <div className="flex flex-col items-center">
-              <span className="text-[var(--text-main)] uppercase">{data.destination?.name}</span>
+              <button 
+                onClick={() => setPickingEntity("destination")}
+                className="text-[var(--text-main)] uppercase hover:opacity-70 transition-all active:scale-95"
+              >
+                {data.destination?.name}
+              </button>
               {data.tag && <span className="text-[9px] text-[var(--success-color)] font-black uppercase mt-1">{data.tag}</span>}
             </div>
           </div>
@@ -279,6 +302,80 @@ export const Numpad: React.FC<Props> = ({
             <div className="flex justify-between items-center"><div className="flex items-center gap-2"><MessageSquare size={16} className="text-[var(--primary-color)]" /><h3 className="text-sm font-bold uppercase text-[var(--text-main)]">Комментарий</h3></div><button onClick={() => setIsCommentOpen(false)} className="p-1 text-[var(--text-muted)] hover:text-[var(--text-main)]"><X size={20} /></button></div>
             <textarea autoFocus value={commentDraft} onChange={e => setCommentDraft(e.target.value)} placeholder="Заметка..." rows={3} className="bg-[var(--glass-item-bg)] border border-[var(--glass-border)] rounded-xl px-4 py-3 outline-none text-[var(--text-main)] resize-none text-sm focus:border-[var(--primary-color)]/50 transition-all" />
             <div className="flex gap-3"><button onClick={() => { setCommentDraft(""); onCommentChange(""); setIsCommentOpen(false); }} className="flex-1 h-12 rounded-xl bg-[var(--glass-item-bg)] text-[var(--text-muted)] font-bold text-sm">ОЧИСТИТЬ</button><button onClick={handleCommentSave} className="flex-1 h-12 rounded-xl bg-[var(--primary-color)] text-white font-bold shadow-lg text-sm active:scale-95 transition-all">СОХРАНИТЬ</button></div>
+          </div>
+        </div>
+      )}
+
+      {/* Entity Picker Modal */}
+      {pickingEntity && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[500] flex items-end justify-center animate-in fade-in duration-300" onClick={() => setPickingEntity(null)}>
+          <div className="w-full max-w-md bg-[var(--bg-color)] border-t border-x border-[var(--glass-border)] rounded-t-[32px] max-h-[85vh] flex flex-col animate-in slide-in-from-bottom duration-300 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center p-6 border-b border-[var(--glass-border)] shrink-0 bg-[var(--panel-bg)]/50">
+              <div className="flex flex-col">
+                <h3 className="text-sm font-black uppercase text-[var(--text-main)] tracking-widest">
+                  {pickingEntity === "source" 
+                    ? (data.type === "income" ? "Выберите источник" : "Выберите кошелек") 
+                    : (data.type === "expense" ? "Выберите категорию" : "Выберите кошелек")}
+                </h3>
+                <span className="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-tighter mt-1">Нажмите для изменения</span>
+              </div>
+              <button onClick={() => setPickingEntity(null)} className="w-8 h-8 rounded-lg bg-[var(--glass-item-bg)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-main)]"><X size={18} /></button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2 hide-scrollbar">
+              {/* Option 1: Accounts */}
+              {((pickingEntity === "source" && data.type !== "income") || (pickingEntity === "destination" && data.type !== "expense")) && (
+                <div className="flex flex-col gap-2 mb-4">
+                  <h4 className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] px-2 mb-1">Кошельки</h4>
+                  {accounts.map(acc => (
+                    <button key={acc.id} onClick={() => handlePickEntity(acc)} className={`flex items-center gap-4 p-4 rounded-2xl transition-all text-left active:scale-[0.98] ${ (pickingEntity === "source" ? data.source?.id : data.destination?.id) === acc.id ? 'bg-[var(--primary-color)]/10 ring-1 ring-[var(--primary-color)]/30' : 'bg-[var(--glass-item-bg)]/50 hover:bg-[var(--glass-item-active)]'}`}>
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-inner shrink-0" style={{ backgroundColor: `${acc.color}20`, color: acc.color }}>
+                        {React.createElement(IconMap[acc.icon] || Wallet, { size: 20 })}
+                      </div>
+                      <div className="flex flex-col flex-1 overflow-hidden">
+                        <span className="text-sm font-bold text-[var(--text-main)] truncate">{acc.name}</span>
+                        <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest">{Math.round(acc.balance).toLocaleString()} {acc.currency}</span>
+                      </div>
+                      {((pickingEntity === "source" ? data.source?.id : data.destination?.id) === acc.id) && <Check size={16} className="text-[var(--primary-color)]" />}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Option 2: Categories */}
+              {(pickingEntity === "destination" && data.type === "expense") && (
+                <div className="flex flex-col gap-2 mb-4">
+                  <h4 className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] px-2 mb-1">Категории</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    {categories.map(cat => (
+                      <button key={cat.id} onClick={() => handlePickEntity(cat)} className={`flex items-center gap-3 p-3 rounded-2xl transition-all text-left active:scale-[0.98] ${data.destination?.id === cat.id ? 'bg-[var(--primary-color)]/10 ring-1 ring-[var(--primary-color)]/30' : 'bg-[var(--glass-item-bg)]/50 hover:bg-[var(--glass-item-active)]'}`}>
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center shadow-inner shrink-0" style={{ backgroundColor: `${cat.color}20`, color: cat.color }}>
+                          {React.createElement(IconMap[cat.icon] || Wallet, { size: 16 })}
+                        </div>
+                        <span className="text-xs font-bold text-[var(--text-main)] truncate">{cat.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Option 3: Income Sources */}
+              {(pickingEntity === "source" && data.type === "income") && (
+                <div className="flex flex-col gap-2 mb-4">
+                  <h4 className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] px-2 mb-1">Источники дохода</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    {incomes.map(inc => (
+                      <button key={inc.id} onClick={() => handlePickEntity(inc)} className={`flex items-center gap-3 p-3 rounded-2xl transition-all text-left active:scale-[0.98] ${data.source?.id === inc.id ? 'bg-[var(--primary-color)]/10 ring-1 ring-[var(--primary-color)]/30' : 'bg-[var(--glass-item-bg)]/50 hover:bg-[var(--glass-item-active)]'}`}>
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center shadow-inner shrink-0" style={{ backgroundColor: `${inc.color}20`, color: inc.color }}>
+                          {React.createElement(IconMap[inc.icon] || Wallet, { size: 16 })}
+                        </div>
+                        <span className="text-xs font-bold text-[var(--text-main)] truncate">{inc.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

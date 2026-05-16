@@ -260,6 +260,9 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
         data={numpad} 
         availableCurrencies={Array.from(new Set([...accounts.map(a => a.currency), numpad.sourceCurrency, numpad.targetCurrency]))} 
         transactions={transactions}
+        accounts={accounts}
+        categories={categories}
+        incomes={incomes}
         isEditing={!!editingTxId}
         onClose={() => { 
           if (numpad.returnState) {
@@ -270,6 +273,40 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
         }}
         onFieldChange={(f) => setNumpad(p => ({ ...p, activeField: f }))}
         onManageTags={() => setIsTagModalOpen(true)}
+        onEntityChange={(field, entity) => {
+          setNumpad(p => {
+            const update: Partial<NumpadData> = {};
+            if (field === "source") {
+              update.source = entity as any;
+              // If it's a wallet (Account), update source currency
+              if ('currency' in entity) {
+                update.sourceCurrency = (entity as Account).currency;
+                // If linked, also update target amount based on new source currency
+                if (p.targetLinked) {
+                  const evalAmt = parseFloat(safeEval(p.sourceAmount));
+                  if (evalAmt > 0) {
+                    update.targetAmount = (Math.round(RatesService.convert(evalAmt, update.sourceCurrency, p.targetCurrency) * 100) / 100).toString();
+                  }
+                }
+              }
+            } else {
+              update.destination = entity as any;
+              // If it's a wallet (Account), update target currency
+              if ('currency' in entity) {
+                update.targetCurrency = (entity as Account).currency;
+                // If linked, also update target amount based on new target currency
+                if (p.targetLinked) {
+                  const evalAmt = parseFloat(safeEval(p.sourceAmount));
+                  if (evalAmt > 0) {
+                    update.targetAmount = (Math.round(RatesService.convert(evalAmt, p.sourceCurrency, update.targetCurrency) * 100) / 100).toString();
+                  }
+                }
+              }
+            }
+            return { ...p, ...update };
+          });
+          if (navigator.vibrate) navigator.vibrate(10);
+        }}
         onLinkToggle={() => { setNumpad(p => ({ ...p, targetLinked: !p.targetLinked })); if (navigator.vibrate) navigator.vibrate(10); }}
         onCurrencyChange={(field, curr) => {
           if (field === "target") localStorage.setItem("cl_numpad_pref_currency", curr);

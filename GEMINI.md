@@ -27,6 +27,7 @@
 - **Flexible Parsing:** Бэкенд на Python поддерживает двойные заголовки и синонимы секций (`WALLETS`/`ACCOUNTS`).
 
 ## Deployment Policy
+- **STRICT RULE:** NEVER deploy automatically. Deployment MUST only be triggered by an explicit user directive (e.g., "deploy", "деплой").
 - **Standard Action:** On "deploy" command, ALWAYS use `ask_user` to clarify the target (Main, Dev, or Both) BEFORE running `./deploy.sh`. 
 - **Production Flow:** To deploy to **MAIN**, strictly follow this sequence:
   1. Ensure latest code is in `preview` branch.
