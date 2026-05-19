@@ -42,8 +42,10 @@ export default function App() {
   const [isSplashVisible, setIsSplashVisible] = React.useState(true);
   const [isOnboarding, setIsOnboarding] = React.useState(false);
   const onboardingTriggered = React.useRef(false);
+  const isDemoMode = (!activeTableId && localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE) === "true") || urlParams.get("demo") === "true";
 
   React.useEffect(() => {
+    // 1. Дебаг-флаг всегда в приоритете
     const debugOnboarding = urlParams.get("debug_onboarding") === "true";
     if (debugOnboarding && !onboardingTriggered.current) {
       setIsOnboarding(true);
@@ -51,19 +53,28 @@ export default function App() {
       return;
     }
 
-    // Триггерим онбординг только один раз при успешной первой синхронизации, 
-    // если данных действительно 0 и мы еще не показывали его в этой сессии
-    if (syncStatus === "success" && accounts.length === 0 && !onboardingTriggered.current) {
-      const isCompleted = localStorage.getItem("cl_onboarding_completed") === "true";
-      // Если в таблице пусто, но флаг "завершено" стоит — значит мы переключились на новую таблицу
-      // В этом случае всё равно показываем онбординг, но только один раз
-      setIsOnboarding(true);
-      onboardingTriggered.current = true;
-    } else if (accounts.length > 0) {
+    // 2. В демо-режиме онбординг НЕ показываем
+    if (isDemoMode) {
+      setIsOnboarding(false);
+      return;
+    }
+
+    // 3. Если данные есть — онбординг пройден
+    if (accounts.length > 0) {
       localStorage.setItem("cl_onboarding_completed", "true");
       setIsOnboarding(false);
+      return;
     }
-  }, [syncStatus, accounts.length]);
+
+    // 4. Триггерим онбординг только один раз при успешной первой синхронизации пустой таблицы
+    if (syncStatus === "success" && accounts.length === 0 && !onboardingTriggered.current) {
+      const isCompleted = localStorage.getItem("cl_onboarding_completed") === "true";
+      if (!isCompleted) {
+        setIsOnboarding(true);
+        onboardingTriggered.current = true;
+      }
+    }
+  }, [syncStatus, accounts.length, isDemoMode]);
 
   // Сбрасываем триггер при смене таблицы
   React.useEffect(() => {
@@ -353,8 +364,6 @@ export default function App() {
   }, [transactions, categories, incomes]);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: APP_SETTINGS.DND_ACTIVATION_DISTANCE } }));
-
-  const isDemoMode = (!activeTableId && localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE) === "true") || urlParams.get("demo") === "true";
 
   // Учитываем /s/ID при проверке - если мы на пути пользователя, НЕ показываем лендинг
   if (!isOnboarding && (currentPath === "/landing" || (!activeTableId && !isDemoMode && !isUserPath))) {
