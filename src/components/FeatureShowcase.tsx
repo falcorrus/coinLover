@@ -20,28 +20,28 @@ interface Props {
 
 // Helpers to match your screenshot UI
 const WalletCircle = ({ color, icon: Icon, name, balance, currency }: any) => (
-  <div className="flex flex-col items-center gap-2">
+  <div className="flex flex-col items-center" style={{ gap: '8px' }}>
     <div 
-      className="w-16 h-16 rounded-full flex items-center justify-center border-2"
+      className="w-[64px] h-[64px] rounded-full flex items-center justify-center border-2 shrink-0"
       style={{ backgroundColor: `${color}15`, borderColor: `${color}40`, color: color }}
     >
       <Icon size={32} />
     </div>
     <div className="text-center">
-      <div className="text-[8px] font-black uppercase text-white/40 tracking-widest">{name}</div>
-      <div className="text-[10px] font-black text-white">{balance} <span className="text-white/40">{currency}</span></div>
+      <div className="text-[8px] font-black uppercase text-white/40 tracking-widest leading-none mb-1">{name}</div>
+      <div className="text-[10px] font-black text-white leading-none">{balance} <span className="text-white/40">{currency}</span></div>
     </div>
   </div>
 );
 
 const CategoryItem = ({ color, icon: Icon, name, amount }: any) => (
-  <div className="flex flex-col items-center gap-2">
-    <div className="text-center">
+  <div className="flex flex-col items-center" style={{ gap: '8px' }}>
+    <div className="text-center shrink-0">
       <Icon size={40} style={{ color }} />
     </div>
     <div className="text-center">
-      <div className="text-[8px] font-black uppercase text-white tracking-widest">{name}</div>
-      <div className="text-[10px] font-black text-white/40">-{amount}</div>
+      <div className="text-[8px] font-black uppercase text-white tracking-widest leading-none mb-1">{name}</div>
+      <div className="text-[10px] font-black text-white/40 leading-none">-{amount}</div>
     </div>
   </div>
 );
