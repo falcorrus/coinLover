@@ -20,9 +20,9 @@ interface Props {
 
 // Helpers to match your screenshot UI
 const WalletCircle = ({ color, icon: Icon, name, balance, currency }: any) => (
-  <div className="flex flex-col items-center" style={{ gap: '8px' }}>
+  <div className="flex flex-col items-center gap-2">
     <div 
-      className="w-[64px] h-[64px] rounded-full flex items-center justify-center border-2 shrink-0"
+      className="w-16 h-16 rounded-full flex items-center justify-center border-2"
       style={{ backgroundColor: `${color}15`, borderColor: `${color}40`, color: color }}
     >
       <Icon size={32} />
@@ -35,8 +35,8 @@ const WalletCircle = ({ color, icon: Icon, name, balance, currency }: any) => (
 );
 
 const CategoryItem = ({ color, icon: Icon, name, amount }: any) => (
-  <div className="flex flex-col items-center" style={{ gap: '8px' }}>
-    <div className="text-center shrink-0">
+  <div className="flex flex-col items-center gap-2">
+    <div className="text-center">
       <Icon size={40} style={{ color }} />
     </div>
     <div className="text-center">
