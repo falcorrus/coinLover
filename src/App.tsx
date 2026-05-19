@@ -45,8 +45,9 @@ export default function App() {
 
   React.useEffect(() => {
     const debugOnboarding = urlParams.get("debug_onboarding") === "true";
-    if (debugOnboarding) {
+    if (debugOnboarding && !onboardingTriggered.current) {
       setIsOnboarding(true);
+      onboardingTriggered.current = true;
       return;
     }
 
