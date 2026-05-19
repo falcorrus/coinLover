@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import { DollarSign, Check, ChevronRight, LayoutTemplate, SquareDashed, ArrowLeft, Coins, Info, Search, X } from "lucide-react";
 import { RatesService } from "../services/RatesService";
 import { APP_SETTINGS } from "../constants/settings";
+import { FeatureShowcase } from "./FeatureShowcase";
 
 interface Props {
   isOpen: boolean;
@@ -33,7 +34,7 @@ const CURRENCY_MAP: Record<string, string> = {
 };
 
 export const OnboardingModal: React.FC<Props> = ({ isOpen, onComplete }) => {
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
   const [selectedCurrency, setSelectedCurrency] = useState("USD");
   const [localCurrency, setLocalCurrency] = useState("RUB");
   const [useTemplate, setUseTemplate] = useState<boolean>(true);
@@ -64,7 +65,9 @@ export const OnboardingModal: React.FC<Props> = ({ isOpen, onComplete }) => {
       <div className="fixed inset-0 z-[501] flex items-center justify-center p-4 pointer-events-none">
         <div className="w-full max-w-sm bg-[var(--bg-color)] border border-[var(--glass-border)] rounded-[32px] shadow-2xl overflow-hidden pointer-events-auto flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300 slide-in-from-bottom-8">
           
-          {step === 1 ? (
+          {step === 0 ? (
+            <FeatureShowcase onComplete={() => setStep(1)} />
+          ) : step === 1 ? (
             <>
               <div className="p-8 text-center flex flex-col items-center gap-4 border-b border-[var(--glass-border)]/50 shrink-0 relative">
                 <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/20">

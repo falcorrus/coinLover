@@ -28,6 +28,7 @@ import { setGAUser, trackScreen, trackEvent } from "./services/analytics";
 
 export default function App() {
   const currentPath = window.location.pathname;
+  const urlParams = new URLSearchParams(window.location.search);
   const isUserPath = currentPath.startsWith("/s/");
   const { activeTableId, switchTable } = useUsers();
 
@@ -43,6 +44,12 @@ export default function App() {
   const onboardingTriggered = React.useRef(false);
 
   React.useEffect(() => {
+    const debugOnboarding = urlParams.get("debug_onboarding") === "true";
+    if (debugOnboarding) {
+      setIsOnboarding(true);
+      return;
+    }
+
     // Триггерим онбординг только один раз при успешной первой синхронизации, 
     // если данных действительно 0 и мы еще не показывали его в этой сессии
     if (syncStatus === "success" && accounts.length === 0 && !onboardingTriggered.current) {
@@ -346,10 +353,10 @@ export default function App() {
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: APP_SETTINGS.DND_ACTIVATION_DISTANCE } }));
 
-  const isDemoMode = !activeTableId && localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE) === "true";
+  const isDemoMode = (!activeTableId && localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE) === "true") || urlParams.get("demo") === "true";
 
   // Учитываем /s/ID при проверке - если мы на пути пользователя, НЕ показываем лендинг
-  if (currentPath === "/landing" || (!activeTableId && !isDemoMode && !isUserPath)) {
+  if (!isOnboarding && (currentPath === "/landing" || (!activeTableId && !isDemoMode && !isUserPath))) {
     return <LandingPage />;
   }
 
