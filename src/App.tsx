@@ -365,8 +365,13 @@ export default function App() {
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: APP_SETTINGS.DND_ACTIVATION_DISTANCE } }));
 
+  // /landing всегда показываем лендинг, независимо от состояния онбординга
+  if (currentPath === "/landing") {
+    return <LandingPage />;
+  }
+
   // Учитываем /s/ID при проверке - если мы на пути пользователя, НЕ показываем лендинг
-  if (!isOnboarding && (currentPath === "/landing" || (!activeTableId && !isDemoMode && !isUserPath))) {
+  if (!isOnboarding && !activeTableId && !isDemoMode && !isUserPath) {
     return <LandingPage />;
   }
 
