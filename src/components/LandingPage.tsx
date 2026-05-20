@@ -136,6 +136,14 @@ const translations = {
 };
 
 export const LandingPage: React.FC = () => {
+  // Синхронно включаем скролл до первой отрисовки (иначе Brave/Safari могут заблокировать)
+  React.useLayoutEffect(() => {
+    document.documentElement.classList.add("landing-mode");
+    return () => {
+      document.documentElement.classList.remove("landing-mode");
+    };
+  }, []);
+
   const [lang, setLang] = React.useState<Language>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("cl_lang") as Language;
