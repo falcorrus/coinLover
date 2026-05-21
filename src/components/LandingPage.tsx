@@ -73,11 +73,11 @@ const translations = {
     wallets: { cash: "Наличные", bank: "Банк", exchange: "Биржа" },
     categories: { food: "Еда", transport: "Транспорт", coffee: "Кофе", shopping: "Покупки", fun: "Отдых" },
     modalTitleLogin: "Вход в CoinLover",
-    modalLoginPlaceholder: "@username или email...",
+    modalLoginPlaceholder: "https://docs.google.com/spreadsheets/d/...",
     modalLoginBtn: "Войти",
     modalLoginSuccess: "Успешный вход!",
-    modalLoginSuccessSub: "Мы нашли вашу таблицу. Сессия запускается...",
-    modalLoginError: "Пользователь не найден",
+    modalLoginSuccessSub: "Мы нашли вашу таблицу. Запускаем сессию...",
+    modalLoginError: "Некорректная ссылка или таблица не найдена",
     loginTabLabel: "Уже зарегистрированы?",
     signupTabLabel: "Новый пользователь?",
     loginBtn: "Войти",
@@ -142,11 +142,11 @@ const translations = {
     wallets: { cash: "Cash", bank: "Bank", exchange: "Exchange" },
     categories: { food: "Food", transport: "Transport", coffee: "Coffee", shopping: "Shopping", fun: "Fun" },
     modalTitleLogin: "Log In to CoinLover",
-    modalLoginPlaceholder: "@username or email...",
+    modalLoginPlaceholder: "https://docs.google.com/spreadsheets/d/...",
     modalLoginBtn: "Log In",
     modalLoginSuccess: "Logged in!",
     modalLoginSuccessSub: "We found your sheet. Starting session...",
-    modalLoginError: "User not found",
+    modalLoginError: "Invalid URL or sheet not found",
     loginTabLabel: "Already registered?",
     signupTabLabel: "New user?",
     loginBtn: "Log In",
@@ -216,37 +216,36 @@ export const LandingPage: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const handleDemo = () => { 
-    trackEvent("demo_click", { category: "engagement" });
-    const savedId = localStorage.getItem("cl_active_table_id");
-    if (savedId) {
-      window.location.href = "/";
-    } else {
-      window.location.href = "/?demo=true"; 
-    }
-  };
-  
   const extractSsId = (url: string) => {
     const match = url.match(/[-\w]{25,}/);
     return match ? match[0] : null;
   };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!contact || (modalType === "onboarding" && (!name || !sheetUrl))) return;
+    if (modalType === "login" && !sheetUrl) return;
+    if (modalType === "studio" && !contact) return;
+    if (modalType === "onboarding" && (!contact || !name || !sheetUrl)) return;
     
     setIsLoading(true);
     setErrorMsg("");
     try {
       if (modalType === "login") {
-        const result = await googleSheetsService.findUserByContact(contact);
-        if (result.status === "success" && result.data?.ssId) {
-          const targetSsId = result.data.ssId;
-          localStorage.setItem("cl_active_table_id", targetSsId);
-          localStorage.setItem("cl_demo_mode", "false");
-          document.cookie = `cl_active_table_id=${targetSsId}; path=/; max-age=${60*60*24*365}; SameSite=Lax`;
+        const parsedSsId = extractSsId(sheetUrl);
+        if (!parsedSsId) {
+          setErrorMsg(t.modalLoginError);
+          setIsLoading(false);
+          return;
+        }
+
+        const isOk = await googleSheetsService.initTable(parsedSsId);
+        if (isOk) {
+          localStorage.setItem("cl_active_table_id", parsedSsId);
+          // Пользователь уже имеет таблицу — онбординг не нужен
+          localStorage.setItem("cl_onboarding_completed", "true");
+          document.cookie = `cl_active_table_id=${parsedSsId}; path=/; max-age=${60*60*24*365}; SameSite=Lax`;
           
           setIsSent(true);
-          trackEvent("login_success", { contact });
+          trackEvent("login_success", { parsedSsId });
           
           setTimeout(() => {
             window.location.href = "/";
@@ -339,7 +338,7 @@ export const LandingPage: React.FC = () => {
                 className={`px-2 py-1 text-[10px] font-bold rounded transition-all ${lang === 'en' ? 'bg-[#6d5dfc] text-white' : 'text-white/40'}`}
               >EN</button>
             </div>
-            <button id="btn_demo_top" onClick={handleDemo} className="px-2 md:px-4 py-2 text-[10px] md:text-sm font-medium text-white/70 hover:text-white transition-colors outline-none">{t.demo}</button>
+
             <button id="btn_login_top" onClick={() => handleOpenModal("login")} className="px-2 md:px-4 py-2 text-[10px] md:text-sm font-medium text-white/70 hover:text-white transition-colors outline-none">{t.loginBtn}</button>
             <button id="btn_signup_top" onClick={() => handleOpenModal("onboarding")} className="px-3 md:px-4 py-2 bg-[#6d5dfc] hover:bg-[#5b4ce3] text-white text-[10px] md:text-sm font-semibold rounded-xl transition-all shadow-lg shadow-[#6d5dfc]/20 whitespace-nowrap outline-none">
               <span>{t.cta}</span>
@@ -506,7 +505,7 @@ export const LandingPage: React.FC = () => {
 
           <div className="flex flex-col sm:flex-row gap-6 justify-center relative z-10 px-4">
             <button id="btn_signup_bottom" onClick={() => handleOpenModal("onboarding")} className="px-8 md:px-12 py-4 md:py-6 bg-[#6d5dfc] hover:bg-[#5b4ce3] text-white font-bold rounded-2xl transition-all shadow-2xl shadow-[#6d5dfc]/40 text-base md:text-lg outline-none">{t.cta}</button>
-            <button id="btn_demo_bottom" onClick={handleDemo} className="px-8 md:px-12 py-4 md:py-6 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold rounded-2xl transition-all text-base md:text-lg outline-none">{t.demo}</button>
+
           </div>
         </section>
       </div>
@@ -644,8 +643,8 @@ export const LandingPage: React.FC = () => {
                   {modalType === "login" && (
                     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                       <div>
-                        <label className="text-[9px] font-black uppercase tracking-widest text-white/40 ml-1 mb-1 block">{t.contactLabel}</label>
-                        <input required type="text" placeholder={t.modalLoginPlaceholder} value={contact} onChange={(e) => setContact(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:border-[#6d5dfc]/50 transition-all outline-none text-sm" />
+                        <label className="text-[9px] font-black uppercase tracking-widest text-white/40 ml-1 mb-1 block">{t.sheetLabel}</label>
+                        <input required type="text" placeholder={t.modalLoginPlaceholder} value={sheetUrl} onChange={(e) => setSheetUrl(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:border-[#6d5dfc]/50 transition-all outline-none text-sm" />
                       </div>
 
                       {errorMsg && (
@@ -656,7 +655,7 @@ export const LandingPage: React.FC = () => {
 
                       <button 
                         id="btn_modal_login_submit"
-                        disabled={isLoading || !contact}
+                        disabled={isLoading || !sheetUrl}
                         className="w-full py-4 bg-[#6d5dfc] hover:bg-[#5b4ce3] disabled:opacity-50 disabled:grayscale text-white font-bold rounded-xl flex items-center justify-center gap-3 transition-all text-sm shadow-xl shadow-[#6d5dfc]/20 outline-none mt-2"
                       >
                         {isLoading ? <RefreshCw className="animate-spin w-5 h-5" /> : <>{t.modalLoginBtn} <ArrowRight size={18} /></>}

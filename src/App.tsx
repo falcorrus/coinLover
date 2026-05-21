@@ -73,21 +73,21 @@ const isNativeApp = React.useMemo(() => {
     }
 
     // 3. Если данные есть — онбординг пройден
-    if (accounts.length > 0) {
+    if (accounts.length > 0 || transactions.length > 0) {
       localStorage.setItem("cl_onboarding_completed", "true");
       setIsOnboarding(false);
       return;
     }
 
     // 4. Триггерим онбординг только один раз при успешной первой синхронизации пустой таблицы
-    if (syncStatus === "success" && accounts.length === 0 && !onboardingTriggered.current) {
+    if (syncStatus === "success" && accounts.length === 0 && transactions.length === 0 && !onboardingTriggered.current) {
       const isCompleted = localStorage.getItem("cl_onboarding_completed") === "true";
       if (!isCompleted) {
         setIsOnboarding(true);
         onboardingTriggered.current = true;
       }
     }
-  }, [syncStatus, accounts.length, isDemoMode]);
+  }, [syncStatus, accounts.length, transactions.length, isDemoMode]);
 
   // Сбрасываем триггер при смене таблицы
   React.useEffect(() => {
