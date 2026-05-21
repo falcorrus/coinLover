@@ -122,6 +122,26 @@ export const googleSheetsService = {
     }
   },
 
+  async findUserByContact(contact: string): Promise<any> {
+    const GOOGLE_SCRIPT_URL = getGoogleScriptUrl();
+    try {
+      const response = await universalFetch(GOOGLE_SCRIPT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "findUserByContact", contact }),
+      });
+      
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.message || `HTTP error! status: ${response.status}`);
+      }
+      return result;
+    } catch (error: any) {
+      console.error("Find user failed:", error);
+      throw error;
+    }
+  },
+
   async initTable(ssId: string): Promise<boolean> {
     return this.syncToSheets({ action: "initTable", ssId });
   },

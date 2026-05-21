@@ -308,6 +308,58 @@ async function registerLeadInMaster(sheets, payload) {
   }
 }
 
+function cleanContact(c: string): string {
+  if (!c) return "";
+  let clean = c.trim().toLowerCase();
+  if (clean.startsWith("@")) {
+    clean = clean.substring(1);
+  }
+  return clean;
+}
+
+async function findUserByContactInMaster(sheets, contact: string) {
+  const cleanSearch = cleanContact(contact);
+  if (!cleanSearch) return null;
+
+  const masterRes = await sheets.spreadsheets.values.get({
+    spreadsheetId: MASTER_SS_ID,
+    range: 'Users!A:F'
+  });
+  const mRows = masterRes.data.values || [];
+  if (mRows.length === 0) return null;
+
+  // Ищем заголовки
+  let headerRowIdx = 0;
+  if (String(mRows[0][0] || "").toLowerCase().includes("users") && mRows[1]) {
+    headerRowIdx = 1;
+  }
+
+  const headers = mRows[headerRowIdx].map(h => String(h).trim().toLowerCase());
+  const contactIdx = headers.indexOf("contact");
+  const idIdx = headers.indexOf("id");
+  const nameIdx = headers.indexOf("name");
+  const accessIdx = headers.indexOf("access ends");
+
+  if (contactIdx === -1 || idIdx === -1) {
+    console.error("[API] Contact or ID column not found in Users sheet");
+    return null;
+  }
+
+  const dataStartIdx = headerRowIdx + 1;
+  for (let i = dataStartIdx; i < mRows.length; i++) {
+    const rowContact = String(mRows[i][contactIdx] || "");
+    const cleanRowContact = cleanContact(rowContact);
+    if (cleanRowContact === cleanSearch) {
+      const ssId = String(mRows[i][idIdx] || "").trim();
+      const name = nameIdx !== -1 ? String(mRows[i][nameIdx] || "").trim() : "";
+      const accessEnds = accessIdx !== -1 ? String(mRows[i][accessIdx] || "").trim() : "";
+      return { ssId, name, accessEnds };
+    }
+  }
+
+  return null;
+}
+
 export default async function handler(req, res) {
   console.log(`[API] ${req.method} ${req.url}`);
   const sheets = await getSheetsClient();
@@ -624,6 +676,18 @@ export default async function handler(req, res) {
       const txSheetName = isDemo ? "Transactions-demo" : "Transactions";
       
       console.log(`[API] POST Action: ${payload.action} on SS: ${targetSsId}`);
+
+      if (payload.action === 'findUserByContact') {
+        const contact = payload.contact || "";
+        if (!contact) {
+          return res.status(400).json({ status: "error", message: "Контакт не указан" });
+        }
+        const user = await findUserByContactInMaster(sheets, contact);
+        if (!user) {
+          return res.status(404).json({ status: "error", code: "user_not_found", message: "Пользователь с таким Email или Telegram не найден. Зарегистрируйтесь на сайте." });
+        }
+        return res.status(200).json({ status: "success", data: user });
+      }
 
       if (payload.action === 'registerLead') {
         const ok = await registerLeadInMaster(sheets, payload);

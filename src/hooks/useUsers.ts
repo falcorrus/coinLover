@@ -46,15 +46,6 @@ export const useUsers = () => {
     const localId = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.ACTIVE_TABLE_ID);
     if (localId) return localId;
 
-    // 3. Авто-инициализация для мобильного приложения (Capacitor)
-    const isCapacitor = (window as any).Capacitor?.isNativePlatform || (window as any).Capacitor?.platform !== undefined;
-    if (isCapacitor && (!localId || localId === "")) {
-      const defaultMobileId = "1IQCs35RQlMMQsGB-CRczJeuRqa8WIxW4Sy_kjZyHP2M"; // Ваша таблица
-      localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.ACTIVE_TABLE_ID, defaultMobileId);
-      localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE, "false");
-      return defaultMobileId;
-    }
-
     // Пытаемся достать из Cookie (важно для первого запуска PWA на iPhone)
     const cookieMatch = document.cookie.match(/cl_active_table_id=([^;]+)/);
     if (cookieMatch && cookieMatch[1]) {

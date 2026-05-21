@@ -12,6 +12,7 @@ import { useUsers } from "./hooks/useUsers";
 import { useLongPress } from "./hooks/useLongPress";
 import { ModalManager } from "./components/ModalManager";
 import { LandingPage } from "./components/LandingPage";
+import { NativeAuthScreen } from "./components/NativeAuthScreen";
 import { OnboardingModal } from "./components/OnboardingModal";
 import { useCurrencyCalculations } from "./hooks/useCurrencyCalculations";
 import { safeParseDate } from "./hooks/utils";
@@ -42,6 +43,17 @@ export default function App() {
   } = useFinance(activeTableId);
 
   const isStandalone = typeof window !== "undefined" && (!!(window as any).__IS_PWA__ || window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone);
+  const isNativeApp = React.useMemo(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("force_native") === "true") return true;
+
+    return typeof window !== "undefined" && (
+      (window as any).Capacitor?.isNativePlatform ||
+      !!(window as any).__IS_PWA__ ||
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as any).standalone
+    );
+  }, []);
   const [isSplashVisible, setIsSplashVisible] = React.useState(!isStandalone);
   const [isSplashFading, setIsSplashFading] = React.useState(false);
   const [isOnboarding, setIsOnboarding] = React.useState(false);
@@ -397,6 +409,9 @@ export default function App() {
 
   // Учитываем /s/ID при проверке - если мы на пути пользователя, НЕ показываем лендинг
   if (!isOnboarding && !activeTableId && !isDemoMode && !isUserPath) {
+    if (isNativeApp) {
+      return <NativeAuthScreen />;
+    }
     return <LandingPage />;
   }
 

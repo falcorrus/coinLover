@@ -71,7 +71,16 @@ const translations = {
     knowledgeBase: "ЧаВо",
     footerStudio: "2026 Сделано Broz Studio",
     wallets: { cash: "Наличные", bank: "Банк", exchange: "Биржа" },
-    categories: { food: "Еда", transport: "Транспорт", coffee: "Кофе", shopping: "Покупки", fun: "Отдых" }
+    categories: { food: "Еда", transport: "Транспорт", coffee: "Кофе", shopping: "Покупки", fun: "Отдых" },
+    modalTitleLogin: "Вход в CoinLover",
+    modalLoginPlaceholder: "@username или email...",
+    modalLoginBtn: "Войти",
+    modalLoginSuccess: "Успешный вход!",
+    modalLoginSuccessSub: "Мы нашли вашу таблицу. Сессия запускается...",
+    modalLoginError: "Пользователь не найден",
+    loginTabLabel: "Уже зарегистрированы?",
+    signupTabLabel: "Новый пользователь?",
+    loginBtn: "Войти",
   },
   en: {
     demo: "Demo",
@@ -131,7 +140,16 @@ const translations = {
     knowledgeBase: "FAQ",
     footerStudio: "2026 Made by Broz Studio",
     wallets: { cash: "Cash", bank: "Bank", exchange: "Exchange" },
-    categories: { food: "Food", transport: "Transport", coffee: "Coffee", shopping: "Shopping", fun: "Fun" }
+    categories: { food: "Food", transport: "Transport", coffee: "Coffee", shopping: "Shopping", fun: "Fun" },
+    modalTitleLogin: "Log In to CoinLover",
+    modalLoginPlaceholder: "@username or email...",
+    modalLoginBtn: "Log In",
+    modalLoginSuccess: "Logged in!",
+    modalLoginSuccessSub: "We found your sheet. Starting session...",
+    modalLoginError: "User not found",
+    loginTabLabel: "Already registered?",
+    signupTabLabel: "New user?",
+    loginBtn: "Log In",
   }
 };
 
@@ -154,21 +172,23 @@ export const LandingPage: React.FC = () => {
   });
 
   const [isConnectOpen, setIsConnectOpen] = React.useState(false);
-  const [modalType, setModalType] = React.useState<"onboarding" | "studio">("onboarding");
+  const [modalType, setModalType] = React.useState<"onboarding" | "studio" | "login">("onboarding");
   const [step, setStep] = React.useState(1);
   const [name, setName] = React.useState("");
   const [contact, setContact] = React.useState("");
   const [sheetUrl, setSheetUrl] = React.useState("");
   const [isSent, setIsSent] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
+  const [errorMsg, setErrorMsg] = React.useState("");
   const [analyticsImageIndex, setAnalyticsImageIndex] = React.useState(0);
 
   const t = translations[lang];
 
-  const handleOpenModal = (type: "onboarding" | "studio") => {
+  const handleOpenModal = (type: "onboarding" | "studio" | "login") => {
     trackEvent("modal_open", { type });
     setModalType(type);
     setStep(1);
+    setErrorMsg("");
     setIsConnectOpen(true);
   };
 
@@ -215,28 +235,52 @@ export const LandingPage: React.FC = () => {
     if (!contact || (modalType === "onboarding" && (!name || !sheetUrl))) return;
     
     setIsLoading(true);
+    setErrorMsg("");
     try {
-      const payload = {
-        action: "registerLead",
-        name: name || "Studio Lead",
-        contact,
-        sheetUrl: sheetUrl || "",
-        type: modalType
-      };
+      if (modalType === "login") {
+        const result = await googleSheetsService.findUserByContact(contact);
+        if (result.status === "success" && result.data?.ssId) {
+          const targetSsId = result.data.ssId;
+          localStorage.setItem("cl_active_table_id", targetSsId);
+          localStorage.setItem("cl_demo_mode", "false");
+          document.cookie = `cl_active_table_id=${targetSsId}; path=/; max-age=${60*60*24*365}; SameSite=Lax`;
+          
+          setIsSent(true);
+          trackEvent("login_success", { contact });
+          
+          setTimeout(() => {
+            window.location.href = "/";
+          }, 1500);
+        } else {
+          setErrorMsg(t.modalLoginError);
+        }
+      } else {
+        const payload = {
+          action: "registerLead",
+          name: name || "Studio Lead",
+          contact,
+          sheetUrl: sheetUrl || "",
+          type: modalType
+        };
 
-      const ok = await googleSheetsService.syncToSheets(payload as any);
-      
-      if (ok) {
-        setIsSent(true);
-        // Log lead event in GA4
-        trackEvent("generate_lead", {
-          category: "engagement",
-          label: modalType === "onboarding" ? "Onboarding" : "Studio",
-          value: modalType === "onboarding" ? 1 : 10
-        });
+        const ok = await googleSheetsService.syncToSheets(payload as any);
+        
+        if (ok) {
+          setIsSent(true);
+          // Log lead event in GA4
+          trackEvent("generate_lead", {
+            category: "engagement",
+            label: modalType === "onboarding" ? "Onboarding" : "Studio",
+            value: modalType === "onboarding" ? 1 : 10
+          });
+        }
       }
-    } catch (err) {
-      setIsSent(true);
+    } catch (err: any) {
+      if (modalType === "login") {
+        setErrorMsg(err.message || t.modalLoginError);
+      } else {
+        setIsSent(true);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -248,6 +292,7 @@ export const LandingPage: React.FC = () => {
     setContact(""); 
     setName(""); 
     setSheetUrl(""); 
+    setErrorMsg("");
   };
 
   const wallets = [
@@ -295,6 +340,7 @@ export const LandingPage: React.FC = () => {
               >EN</button>
             </div>
             <button id="btn_demo_top" onClick={handleDemo} className="px-2 md:px-4 py-2 text-[10px] md:text-sm font-medium text-white/70 hover:text-white transition-colors outline-none">{t.demo}</button>
+            <button id="btn_login_top" onClick={() => handleOpenModal("login")} className="px-2 md:px-4 py-2 text-[10px] md:text-sm font-medium text-white/70 hover:text-white transition-colors outline-none">{t.loginBtn}</button>
             <button id="btn_signup_top" onClick={() => handleOpenModal("onboarding")} className="px-3 md:px-4 py-2 bg-[#6d5dfc] hover:bg-[#5b4ce3] text-white text-[10px] md:text-sm font-semibold rounded-xl transition-all shadow-lg shadow-[#6d5dfc]/20 whitespace-nowrap outline-none">
               <span>{t.cta}</span>
             </button>
@@ -491,8 +537,36 @@ export const LandingPage: React.FC = () => {
                   <h2 className="text-2xl font-bold text-white leading-tight">
                     {modalType === "onboarding" 
                       ? (step === 1 ? t.modalTitle : (t as any).modalTitleStep2) 
-                      : t.studioTitle}
+                      : modalType === "login"
+                        ? t.modalTitleLogin
+                        : t.studioTitle}
                   </h2>
+
+                  {(modalType === "onboarding" || modalType === "login") && (
+                    <div className="flex bg-white/5 rounded-xl p-1 border border-white/5 mt-1 mb-2">
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          setModalType("onboarding");
+                          setStep(1);
+                          setErrorMsg("");
+                        }}
+                        className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${modalType === "onboarding" ? 'bg-[#6d5dfc] text-white shadow-md' : 'text-white/40 hover:text-white'}`}
+                      >
+                        {t.signupTabLabel}
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          setModalType("login");
+                          setErrorMsg("");
+                        }}
+                        className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${modalType === "login" ? 'bg-[#6d5dfc] text-white shadow-md' : 'text-white/40 hover:text-white'}`}
+                      >
+                        {t.loginTabLabel}
+                      </button>
+                    </div>
+                  )}
                   
                   {modalType === "studio" && (
                     <div className="bg-[#6d5dfc]/10 border border-[#6d5dfc]/20 rounded-xl p-3">
@@ -502,8 +576,8 @@ export const LandingPage: React.FC = () => {
                     </div>
                   )}
 
-                  {modalType === "onboarding" ? (
-                    <div className="flex flex-col gap-3 mt-2">
+                  {modalType === "onboarding" && (
+                    <div className="flex flex-col gap-3">
                       {step === 1 ? (
                         <>
                           <div>
@@ -565,7 +639,32 @@ export const LandingPage: React.FC = () => {
                         </form>
                       )}
                     </div>
-                  ) : (
+                  )}
+
+                  {modalType === "login" && (
+                    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                      <div>
+                        <label className="text-[9px] font-black uppercase tracking-widest text-white/40 ml-1 mb-1 block">{t.contactLabel}</label>
+                        <input required type="text" placeholder={t.modalLoginPlaceholder} value={contact} onChange={(e) => setContact(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:border-[#6d5dfc]/50 transition-all outline-none text-sm" />
+                      </div>
+
+                      {errorMsg && (
+                        <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-xs py-2.5 px-3.5 rounded-xl font-medium">
+                          {errorMsg}
+                        </div>
+                      )}
+
+                      <button 
+                        id="btn_modal_login_submit"
+                        disabled={isLoading || !contact}
+                        className="w-full py-4 bg-[#6d5dfc] hover:bg-[#5b4ce3] disabled:opacity-50 disabled:grayscale text-white font-bold rounded-xl flex items-center justify-center gap-3 transition-all text-sm shadow-xl shadow-[#6d5dfc]/20 outline-none mt-2"
+                      >
+                        {isLoading ? <RefreshCw className="animate-spin w-5 h-5" /> : <>{t.modalLoginBtn} <ArrowRight size={18} /></>}
+                      </button>
+                    </form>
+                  )}
+
+                  {modalType === "studio" && (
                     <form onSubmit={handleSubmit} className="flex flex-col gap-4 mt-2">
                       <div>
                         <label className="text-[9px] font-black uppercase tracking-widest text-white/40 ml-1 mb-1 block">{t.contactLabel}</label>
@@ -586,20 +685,24 @@ export const LandingPage: React.FC = () => {
                   <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-[0_0_30px_rgba(34,197,94,0.2)]">
                     <Sparkles className="w-10 h-10 text-green-500" />
                   </div>
-                  <h2 className="text-3xl font-bold mb-3 text-white">{t.modalSuccess}</h2>
+                  <h2 className="text-3xl font-bold mb-3 text-white">
+                    {modalType === "login" ? t.modalLoginSuccess : t.modalSuccess}
+                  </h2>
                   <p className="text-white/50 text-sm leading-relaxed mb-10 px-4">
-                    {t.modalSuccessSub}
+                    {modalType === "login" ? t.modalLoginSuccessSub : t.modalSuccessSub}
                   </p>
-                  <button 
-                    id="btn_modal_go_to_app"
-                    onClick={() => {
-                      const id = extractSsId(sheetUrl);
-                      window.location.href = `/?ssId=${id || ""}`;
-                    }}
-                    className="w-full py-4 bg-green-500 hover:bg-green-400 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all text-sm outline-none"
-                  >
-                    {t.modalToApp} <ArrowRight size={18} />
-                  </button>
+                  {modalType !== "login" && (
+                    <button 
+                      id="btn_modal_go_to_app"
+                      onClick={() => {
+                        const id = extractSsId(sheetUrl);
+                        window.location.href = `/?ssId=${id || ""}`;
+                      }}
+                      className="w-full py-4 bg-green-500 hover:bg-green-400 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all text-sm outline-none"
+                    >
+                      {t.modalToApp} <ArrowRight size={18} />
+                    </button>
+                  )}
                 </div>
               )}
             </motion.div>
