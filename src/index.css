@@ -462,18 +462,25 @@ svg {
 
 /* Safe Area Handling for PWA/iOS/Android */
 .safe-pt {
-  padding-top: 10px !important;
+  padding-top: 8px !important;
+}
+.safe-pt-header {
+  padding-top: 12px !important;
 }
 
 @supports (padding: env(safe-area-inset-top)) {
   .safe-pt {
-    padding-top: max(10px, env(safe-area-inset-top)) !important;
+    padding-top: max(8px, env(safe-area-inset-top)) !important;
+  }
+  .safe-pt-header {
+    padding-top: max(12px, env(safe-area-inset-top)) !important;
   }
 }
 
 /* If app is launched in standalone mode (PWA Add to Home Screen) */
 @media (display-mode: standalone) {
-  .safe-pt {
+  .safe-pt, .safe-pt-header {
     padding-top: calc(env(safe-area-inset-top, 0px) + 16px) !important;
   }
 }
+
