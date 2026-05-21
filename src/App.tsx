@@ -26,9 +26,9 @@ import { ExpenseSection } from "./components/layout/ExpenseSection";
 
 import { googleSheetsService } from "./services/googleSheets";
 import { setGAUser, trackScreen, trackEvent } from "./services/analytics";
+import { Capacitor } from "@capacitor/core";
 import { App as CapacitorApp } from "@capacitor/app";
 import { SplashScreen } from "@capacitor/splash-screen";
-
 export default function App() {
   const currentPath = window.location.pathname;
   const urlParams = new URLSearchParams(window.location.search);
@@ -43,14 +43,14 @@ export default function App() {
   } = useFinance(activeTableId);
 
   const isStandalone = typeof window !== "undefined" && (!!(window as any).__IS_PWA__ || window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone);
-  const isNativeApp = React.useMemo(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("force_native") === "true") return true;
+  // Updated native app detection using Capacitor.getPlatform()
+const isNativeApp = React.useMemo(() => {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("force_native") === "true") return true;
+  // Capacitor.getPlatform() returns 'android', 'ios', or 'web'
+  return Capacitor.getPlatform() !== "web";
+}, []);
 
-    // Для веба и PWA всегда показываем лендинг на coinlover.ru при отсутствии ssId.
-    // Нативный вход (NativeAuthScreen) показываем ТОЛЬКО в настоящем мобильном Capacitor приложении.
-    return typeof window !== "undefined" && !!(window as any).Capacitor?.isNativePlatform;
-  }, []);
   const [isSplashVisible, setIsSplashVisible] = React.useState(!isStandalone);
   const [isSplashFading, setIsSplashFading] = React.useState(false);
   const [isOnboarding, setIsOnboarding] = React.useState(false);
@@ -369,7 +369,8 @@ export default function App() {
     }
     
     // Мгновенно скрываем нативный сплеш Capacitor (статичная иконка)
-    SplashScreen.hide().catch(() => {});
+    // @ts-ignore
+SplashScreen.hide().catch(() => {});
 
     // Плавное скрытие кастомного React Splash Screen (мерцающий)
     const timer = setTimeout(() => {

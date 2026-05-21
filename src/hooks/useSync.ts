@@ -82,6 +82,52 @@ export const useSync = ({
       return false;
     }
     setSyncStatus("loading");
+
+    if (isDemo) {
+      try {
+        const savedAccounts = localStorage.getItem("cl_demo_cl_accounts");
+        const savedCategories = localStorage.getItem("cl_demo_cl_categories");
+        const savedIncomes = localStorage.getItem("cl_demo_cl_incomes");
+        const savedTransactions = localStorage.getItem("cl_demo_cl_transactions");
+
+        if (savedAccounts || savedCategories || savedIncomes || savedTransactions) {
+          updateLocalFromRemote({
+            accounts: savedAccounts ? JSON.parse(savedAccounts) : [],
+            categories: savedCategories ? JSON.parse(savedCategories) : [],
+            incomes: savedIncomes ? JSON.parse(savedIncomes) : [],
+            transactions: savedTransactions ? JSON.parse(savedTransactions) : [],
+            timestamp: new Date().toISOString(),
+            baseCurrency: "RUB"
+          });
+        } else {
+          // Инициализируем красивыми мок-данными
+          const { DEMO_ACCOUNTS, DEMO_CATEGORIES, DEMO_INCOMES, getDemoTransactions } = await import("../constants/demoDataTemplate");
+          const txs = getDemoTransactions();
+          
+          localStorage.setItem("cl_demo_cl_accounts", JSON.stringify(DEMO_ACCOUNTS));
+          localStorage.setItem("cl_demo_cl_categories", JSON.stringify(DEMO_CATEGORIES));
+          localStorage.setItem("cl_demo_cl_incomes", JSON.stringify(DEMO_INCOMES));
+          localStorage.setItem("cl_demo_cl_transactions", JSON.stringify(txs));
+          localStorage.setItem("cl_demo_cl_last_sync", new Date().toISOString());
+
+          updateLocalFromRemote({
+            accounts: DEMO_ACCOUNTS,
+            categories: DEMO_CATEGORIES,
+            incomes: DEMO_INCOMES,
+            transactions: txs,
+            timestamp: new Date().toISOString(),
+            baseCurrency: "RUB"
+          });
+        }
+        setSyncStatus("success");
+        return true;
+      } catch (err) {
+        console.error("Failed to initialize demo data:", err);
+        setSyncStatus("error");
+        return false;
+      }
+    }
+
     try {
       const remote = await googleSheetsService.fetchSettings(ssId);
       if (remote) {
@@ -127,7 +173,8 @@ export const useSync = ({
   const checkConflicts = useCallback(async () => {
     if (syncStatus === "loading" || !!accessError) return;
     const isDemo = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE) === "true";
-    if (!ssId && !isDemo) return;
+    if (isDemo) return;
+    if (!ssId) return;
     try {
       const remote = await googleSheetsService.fetchSettings(ssId);
       if (!remote || !remote.timestamp) return;
@@ -153,6 +200,16 @@ export const useSync = ({
   }, [updateLocalFromRemote, ssId, syncStatus, accessError, accounts.length, categories.length]);
 
   const pushSettings = useCallback((a: Account[], c: Category[], i: IncomeSource[], immediate = false) => {
+    const isDemo = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE) === "true";
+    if (isDemo) {
+      localStorage.setItem("cl_demo_cl_accounts", JSON.stringify(a));
+      localStorage.setItem("cl_demo_cl_categories", JSON.stringify(c));
+      localStorage.setItem("cl_demo_cl_incomes", JSON.stringify(i));
+      localStorage.setItem("cl_demo_cl_last_sync", new Date().toISOString());
+      setSyncStatus("success");
+      return true;
+    }
+
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
     if (accessError) return Promise.resolve(false);
     
@@ -169,13 +226,7 @@ export const useSync = ({
           const isCloudChangedSinceLastSync = lastRemoteSnapshot.current && remoteSnap !== lastRemoteSnapshot.current;
 
           if (isCloudNewer || isCloudChangedSinceLastSync) {
-            // Умное слияние: берем данные из облака, но сохраняем наши текущие балансы/изменения
-            // Сначала обновляем локальные справочники (категории, доходы и т.д.)
             updateLocalFromRemote(remote);
-            
-            // Если это не немедленный пуш (например, просто фоновая синхронизация настроек), 
-            // то мы уже обновились и можем выйти.
-            // Но если мы ПЫТАЕМСЯ сохранить данные (push), мы должны продолжить с обновленными данными.
             if (!immediate) {
               setSyncStatus("success");
               return;
@@ -192,9 +243,6 @@ export const useSync = ({
 
       const ts = getLocalTimeString();
       const baseCurrency = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY) || "USD";
-      // Используем аргументы a, c, i, которые были переданы в функцию. 
-      // Если мы вызвали updateLocalFromRemote выше, то c и i в облаке могут быть новее, 
-      // но 'a' (аккаунты) содержат наши последние изменения баланса.
       const ok = await googleSheetsService.syncToSheets({ 
         action: "syncSettings", targetSheet: "Configs", 
         accounts: enrichAccountsWithUSD(a), categories: c, incomes: i, 
