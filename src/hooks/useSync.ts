@@ -76,6 +76,11 @@ export const useSync = ({
   }, [setAccounts, setCategories, setIncomes, setTransactions, setUsers]);
 
   const pullSettings = useCallback(async () => {
+    const isDemo = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE) === "true";
+    if (!ssId && !isDemo) {
+      setSyncStatus("idle");
+      return false;
+    }
     setSyncStatus("loading");
     try {
       const remote = await googleSheetsService.fetchSettings(ssId);
@@ -121,6 +126,8 @@ export const useSync = ({
 
   const checkConflicts = useCallback(async () => {
     if (syncStatus === "loading" || !!accessError) return;
+    const isDemo = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE) === "true";
+    if (!ssId && !isDemo) return;
     try {
       const remote = await googleSheetsService.fetchSettings(ssId);
       if (!remote || !remote.timestamp) return;

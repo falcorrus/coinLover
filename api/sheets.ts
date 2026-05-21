@@ -373,6 +373,23 @@ export default async function handler(req, res) {
   const { method, query, body } = req;
   const ssId = query.ssId || (body && body.ssId);
 
+  const parsedBody = typeof body === 'string' ? JSON.parse(body) : body;
+  const isDemo = query.demo === 'true' || (parsedBody && parsedBody.demo === true);
+  const action = query.action || (parsedBody && parsedBody.action);
+
+  const isAllowedWithoutSsId = 
+    isDemo || 
+    action === 'template' || 
+    action === 'findUserByContact' || 
+    action === 'registerLead';
+
+  if (!ssId && !isAllowedWithoutSsId) {
+    return res.status(400).json({
+      status: "error",
+      message: "ssId (Google Spreadsheet ID) is required for this request."
+    });
+  }
+
   try {
     // Check access in MASTER SS / Users sheet
     if (ssId && ssId !== MASTER_SS_ID) {
