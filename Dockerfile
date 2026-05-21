@@ -15,8 +15,10 @@ COPY --from=build /app/server.ts ./
 COPY --from=build /app/package*.json ./
 # COPY --from=build /app/google-credentials.json ./ 
 
-# Install only production dependencies
-RUN npm install --omit=dev
+# Install only production dependencies (with build tools for native modules like better-sqlite3)
+RUN apk add --no-cache python3 make g++ && \
+    npm install --omit=dev && \
+    apk del python3 make g++
 
 # We use tsx to run our server.ts directly or we can compile it
 RUN npm install -g tsx
