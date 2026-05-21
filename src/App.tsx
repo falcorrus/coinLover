@@ -358,11 +358,12 @@ export default function App() {
       setGAUser(activeTableId);
     }
     
-    // Плавное скрытие Splash Screen
+    // Мгновенно скрываем нативный сплеш Capacitor (статичная иконка)
+    SplashScreen.hide().catch(() => {});
+
+    // Плавное скрытие кастомного React Splash Screen (мерцающий)
     const timer = setTimeout(() => {
       setIsSplashFading(true);
-      // Скрываем нативный сплеш Capacitor (если он есть)
-      SplashScreen.hide().catch(() => {});
       
       // Полностью удаляем из DOM после завершения анимации (500мс)
       setTimeout(() => setIsSplashVisible(false), 500);
