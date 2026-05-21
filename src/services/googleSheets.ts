@@ -4,7 +4,11 @@ import { CapacitorHttp } from "@capacitor/core";
 
 const getGoogleScriptUrl = () => {
   const isNative = (window as any).Capacitor?.isNativePlatform;
-  return isNative ? "https://coinlover.ru/api/sheets" : "/api/sheets";
+  if (isNative) {
+    const isProd = (import.meta as any).env.PROD;
+    return isProd ? "https://coinlover.ru/api/sheets" : "https://coin.reloto.ru/api/sheets";
+  }
+  return "/api/sheets";
 };
 
 // Universal fetch that uses native HTTP on mobile to bypass CORS
