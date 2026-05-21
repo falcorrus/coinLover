@@ -1,12 +1,50 @@
-import { GOOGLE_SCRIPT_URL } from "../constants";
 import { APP_SETTINGS } from "../constants/settings";
 import { SyncPayload } from "../types";
+import { CapacitorHttp } from "@capacitor/core";
+
+const getGoogleScriptUrl = () => {
+  const isNative = (window as any).Capacitor?.isNativePlatform;
+  return isNative ? "https://coinlover.ru/api/sheets" : "/api/sheets";
+};
+
+// Universal fetch that uses native HTTP on mobile to bypass CORS
+const universalFetch = async (url: string, options?: any) => {
+  const isNative = (window as any).Capacitor?.isNativePlatform;
+  
+  if (isNative) {
+    try {
+      const response = await CapacitorHttp.request({
+        url,
+        method: options?.method || 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...options?.headers
+        },
+        data: options?.body ? (typeof options.body === 'string' ? JSON.parse(options.body) : options.body) : undefined,
+        connectTimeout: 10000,
+        readTimeout: 10000
+      });
+      
+      return {
+        ok: response.status >= 200 && response.status < 300,
+        status: response.status,
+        json: async () => response.data
+      };
+    } catch (e: any) {
+      console.error("Native fetch failed:", e);
+      throw e;
+    }
+  }
+  
+  return fetch(url, options);
+};
 
 /**
  * Service for communicating with Google Sheets via Google Apps Script Web App.
  */
 export const googleSheetsService = {
   async fetchSettings(ssId?: string, retries = 2): Promise<any> {
+    const GOOGLE_SCRIPT_URL = getGoogleScriptUrl();
     try {
       const isDemo = ssId ? false : (window.localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE) === "true");
       let url = isDemo ? `${GOOGLE_SCRIPT_URL}?demo=true` : GOOGLE_SCRIPT_URL;
@@ -15,7 +53,7 @@ export const googleSheetsService = {
         url += (url.includes('?') ? '&' : '?') + `ssId=${ssId}`;
       }
       
-      const response = await fetch(url);
+      const response = await universalFetch(url);
       if (response.status === 403) {
         const errorData = await response.json();
         throw { statusCode: 403, ...errorData };
@@ -25,7 +63,7 @@ export const googleSheetsService = {
       const result = await response.json();
       if (result.status === "success") return result.data;
       throw new Error(result.message || "Failed to fetch settings from GAS");
-    } catch (error: any) {
+      } catch (error: any) {
       if (error.statusCode === 403) throw error; 
       if (retries > 0) {
         console.warn(`Fetch settings failed, retrying... (${retries} left)`, error);
@@ -38,6 +76,7 @@ export const googleSheetsService = {
   },
 
   async fetchMonthData(month: string, ssId?: string): Promise<any> {
+    const GOOGLE_SCRIPT_URL = getGoogleScriptUrl();
     try {
       const isDemo = ssId ? false : (window.localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE) === "true");
       let url = `${GOOGLE_SCRIPT_URL}?month=${month}${isDemo ? '&demo=true' : ''}`;
@@ -46,7 +85,7 @@ export const googleSheetsService = {
         url += `&ssId=${ssId}`;
       }
       
-      const response = await fetch(url);
+      const response = await universalFetch(url);
       if (response.status === 403) {
         const errorData = await response.json();
         throw { statusCode: 403, ...errorData };
@@ -64,11 +103,12 @@ export const googleSheetsService = {
   },
 
   async syncToSheets(data: SyncPayload): Promise<boolean> {
+    const GOOGLE_SCRIPT_URL = getGoogleScriptUrl();
     try {
       const isDemo = data.ssId ? false : (window.localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE) === "true");
       const payload = { ...data, demo: isDemo };
       
-      const response = await fetch(GOOGLE_SCRIPT_URL, {
+      const response = await universalFetch(GOOGLE_SCRIPT_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -87,9 +127,10 @@ export const googleSheetsService = {
   },
 
   async fetchTemplate(): Promise<{ accounts?: any[], categories?: any[], incomes?: any[] } | null> {
+    const GOOGLE_SCRIPT_URL = getGoogleScriptUrl();
     try {
       const url = `${GOOGLE_SCRIPT_URL}?action=template`;
-      const response = await fetch(url);
+      const response = await universalFetch(url);
       if (!response.ok) return null;
       
       const result = await response.json();

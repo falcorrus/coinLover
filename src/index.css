@@ -460,20 +460,13 @@ svg {
   pointer-events: none;
 }
 
-/* Safe Area Handling for PWA/iOS */
+/* Safe Area Handling for PWA/iOS/Android */
 .safe-pt {
-  padding-top: 24px; /* Base padding for browser mode */
+  padding-top: 38px !important; /* Increased base padding for notches */
 }
 
 @supports (padding: env(safe-area-inset-top)) {
   .safe-pt {
-    padding-top: max(24px, env(safe-area-inset-top));
-  }
-}
-
-@media all and (display-mode: standalone) {
-  .safe-pt {
-    /* Hard-enforce minimum padding in standalone mode */
-    padding-top: max(24px, env(safe-area-inset-top)) !important;
+    padding-top: max(38px, env(safe-area-inset-top)) !important;
   }
 }

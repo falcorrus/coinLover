@@ -273,7 +273,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[200] animate-in fade-in duration-300 flex justify-center" onClick={onClose}>
             <div className="w-full max-w-md h-full animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
-                <div className="bg-[var(--bg-color)] w-full h-full flex flex-col overflow-hidden relative shadow-2xl" style={{ paddingTop: `env(safe-area-inset-top)` }}>
+                <div className="bg-[var(--bg-color)] w-full h-full flex flex-col overflow-hidden relative shadow-2xl safe-pt">
                     {/* Header */}
                     <div className="flex justify-between items-center p-6 border-b border-[var(--glass-border)] shrink-0">
                         <div className="flex items-center gap-3">

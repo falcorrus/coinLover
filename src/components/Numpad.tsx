@@ -104,8 +104,14 @@ export const Numpad: React.FC<Props> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[400] flex flex-col bg-black/40 backdrop-blur-sm animate-in fade-in duration-300 font-sans">
-      <div className="flex-1 flex flex-col bg-[var(--bg-color)] max-w-md mx-auto w-full shadow-2xl animate-in slide-in-from-right duration-300 ease-in-out">
+    <div className="fixed inset-0 z-[400] flex justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-300 font-sans" onClick={onClose}>
+      <div 
+        className="w-full max-w-md h-full animate-in slide-in-from-right duration-300 ease-in-out"
+        onClick={e => e.stopPropagation()}
+      >
+        <div 
+          className="bg-[var(--bg-color)] w-full h-full flex flex-col overflow-hidden relative shadow-2xl safe-pt"
+        >
         {/* Header */}
         <div className="flex justify-between items-center px-4 py-4 bg-[var(--glass-bg)] border-b border-[var(--glass-border)] text-[var(--text-main)] shrink-0">
           <div className="flex items-center gap-1">
@@ -269,6 +275,7 @@ export const Numpad: React.FC<Props> = ({
         </div>
       </div>
     </div>
+  </div>
 
       <CalendarModal isOpen={isCalendarOpen} onClose={() => setIsCalendarOpen(false)} onSelect={handleDateSelect} transactions={transactions} />
 

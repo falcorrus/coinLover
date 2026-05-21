@@ -15,8 +15,8 @@ interface AppHeaderProps {
   setHistoryModal: (val: HistoryModalState) => void;
   setCalendarAnalyticsModal: (val: { isOpen: boolean }) => void;
   setAnalyticsModal: (val: { isOpen: boolean; type: "expense" | "income" }) => void;
-  theme: "modern" | "zen" | "mint";
-  setTheme: (t: "modern" | "zen" | "mint") => void;
+  theme: "white" | "zen" | "mint" | "black" | "modern";
+  setTheme: (t: "white" | "mint" | "black") => void;
   syncStatus: string;
   pillMode: "expense" | "income" | "balance";
   setPillMode: React.Dispatch<React.SetStateAction<"expense" | "income" | "balance">>;
@@ -65,8 +65,8 @@ export function AppHeader({
               <div className="absolute top-12 right-0 w-48 bg-[var(--bg-color)] border border-[var(--glass-border)] rounded-2xl shadow-2xl flex flex-col z-[201] p-2 animate-in fade-in zoom-in-95 origin-top-right">
                 <div className="flex items-center justify-around p-3 border-b border-[var(--glass-border)]/50 mb-1">
                   <button 
-                    onClick={() => { setTheme("zen"); setIsSettingsMenuOpen(false); }}
-                    className={`p-2 rounded-xl transition-all ${theme === 'zen' ? 'bg-amber-100 text-amber-600 scale-110' : 'text-slate-400 hover:bg-slate-100'}`}
+                    onClick={() => { setTheme("white"); setIsSettingsMenuOpen(false); }}
+                    className={`p-2 rounded-xl transition-all ${theme === 'white' || theme === 'zen' ? 'bg-amber-100 text-amber-600 scale-110' : 'text-slate-400 hover:bg-slate-100'}`}
                   >
                     <Sun size={20} />
                   </button>
@@ -77,8 +77,8 @@ export function AppHeader({
                     <Sparkles size={20} />
                   </button>
                   <button 
-                    onClick={() => { setTheme("modern"); setIsSettingsMenuOpen(false); }}
-                    className={`p-2 rounded-xl transition-all ${theme === 'modern' ? 'bg-purple-500/20 text-purple-400 scale-110' : 'text-slate-400 hover:bg-white/5'}`}
+                    onClick={() => { setTheme("black"); setIsSettingsMenuOpen(false); }}
+                    className={`p-2 rounded-xl transition-all ${theme === 'black' || theme === 'modern' ? 'bg-purple-500/20 text-purple-400 scale-110' : 'text-slate-400 hover:bg-white/5'}`}
                   >
                     <Moon size={20} />
                   </button>

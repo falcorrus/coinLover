@@ -7,7 +7,8 @@ import {
 import React from "react";
 import { Account, Category, IncomeSource } from "../types";
 
-export const GOOGLE_SCRIPT_URL = "/api/sheets";
+// Removed static GOOGLE_SCRIPT_URL to avoid early execution issues.
+// Use getGoogleScriptUrl() from services instead.
 
 export const IconMap: Record<string, React.FC<{ size?: number; color?: string; className?: string; fill?: string }>> = {
   wallet: Wallet, card: CreditCard, savings: PiggyBank,

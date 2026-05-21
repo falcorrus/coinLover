@@ -25,6 +25,8 @@ import { ExpenseSection } from "./components/layout/ExpenseSection";
 
 import { googleSheetsService } from "./services/googleSheets";
 import { setGAUser, trackScreen, trackEvent } from "./services/analytics";
+import { App as CapacitorApp } from "@capacitor/app";
+import { SplashScreen } from "@capacitor/splash-screen";
 
 export default function App() {
   const currentPath = window.location.pathname;
@@ -40,6 +42,7 @@ export default function App() {
   } = useFinance(activeTableId);
 
   const [isSplashVisible, setIsSplashVisible] = React.useState(true);
+  const [isSplashFading, setIsSplashFading] = React.useState(false);
   const [isOnboarding, setIsOnboarding] = React.useState(false);
   const onboardingTriggered = React.useRef(false);
   const isDemoMode = (!activeTableId && localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE) === "true") || urlParams.get("demo") === "true";
@@ -124,9 +127,9 @@ export default function App() {
   const [isSettingsMenuOpen, setIsSettingsMenuOpen] = React.useState(false);
   const [theme, setTheme] = React.useState<"white" | "mint" | "black">(() => {
     const cached = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.THEME);
-    if (cached === "zen") return "white";
-    if (cached === "modern" || cached === "dark") return "black";
-    return (cached as any) || "black";
+    if (cached === "zen" || cached === "white") return "white";
+    if (cached === "mint") return "mint";
+    return "black";
   });
   const [editingTxId, setEditingTxId] = React.useState<string | null>(null);
   const [categoryCurrencyMode, setCategoryCurrencyMode] = React.useState<"base" | "local">(() => (localStorage.getItem("cl_category_currency_mode") as any) || "base");
@@ -252,11 +255,23 @@ export default function App() {
       }
     };
 
+    // Capacitor Native Back Button handling
+    const backListener = CapacitorApp.addListener('backButton', () => {
+      if (stackRef.current.length > 0) {
+        window.history.back();
+      } else {
+        // Если окон нет, можно либо ничего не делать (дефолтное поведение - выход),
+        // либо явно минимизировать приложение:
+        // CapacitorApp.exitApp();
+      }
+    });
+
     window.addEventListener("popstate", handlePopState);
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("popstate", handlePopState);
       window.removeEventListener("keydown", handleKeyDown);
+      backListener.then(l => l.remove());
     };
   }, []);
 
@@ -333,18 +348,26 @@ export default function App() {
     // Не применяем темы на лендинге, так как у него свой фиксированный темный дизайн
     if (currentPath === "/landing") {
       document.documentElement.classList.add("black", "landing-mode");
-    } else if (isUserPath) {
-      document.documentElement.classList.add("black");
     } else {
-      const activeClass = theme === "white" || (theme as string) === "zen" ? "white" : 
-                          theme === "mint" ? "mint" : "black";
-      document.documentElement.classList.add(activeClass);
+      document.documentElement.classList.add(theme);
     }
   }, [pillMode, theme, categoryCurrencyMode, currentPath, isUserPath]);
 
   React.useEffect(() => {
-    if (activeTableId) setGAUser(activeTableId);
-    setTimeout(() => setIsSplashVisible(false), APP_SETTINGS.SPLASH_SCREEN_DURATION);
+    if (activeTableId) {
+      setGAUser(activeTableId);
+    }
+    
+    // Плавное скрытие Splash Screen
+    const timer = setTimeout(() => {
+      setIsSplashFading(true);
+      // Скрываем нативный сплеш Capacitor (если он есть)
+      SplashScreen.hide().catch(() => {});
+      
+      // Полностью удаляем из DOM после завершения анимации (500мс)
+      setTimeout(() => setIsSplashVisible(false), 500);
+    }, APP_SETTINGS.SPLASH_SCREEN_DURATION);
+
     setTimeout(() => checkConflicts(), APP_SETTINGS.CONFLICT_CHECK_DELAY);
     
     // Background rates sync
@@ -378,11 +401,8 @@ export default function App() {
   return (
     <DndContext sensors={sensors} collisionDetection={rectIntersection} onDragStart={handleDragStart} onDragMove={handleDragMove} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
       {isSplashVisible && (
-        <div className="fixed inset-0 z-[2000] bg-[#050505]">
-          <div 
-            className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center gap-6 w-full"
-            style={{ bottom: `${viewportHeight / 2}px`, transform: `translate(-50%, 50%)` }}
-          >
+        <div className={`fixed inset-0 z-[2000] bg-[#050505] flex flex-col items-center justify-center transition-all duration-500 ease-in-out ${isSplashFading ? 'opacity-0 scale-110 pointer-events-none' : 'opacity-100 scale-100'}`}>
+          <div className="flex flex-col items-center gap-6">
             <div className="w-32 h-32 rounded-[48px] bg-gradient-to-br from-amber-300 via-amber-500 to-amber-600 flex items-center justify-center shadow-2xl animate-pulse">
               <Heart size={APP_SETTINGS.UI.ICON_SIZE_SPLASH} fill="white" className="text-white drop-shadow-lg" />
             </div>
