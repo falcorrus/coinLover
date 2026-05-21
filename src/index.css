@@ -470,3 +470,10 @@ svg {
     padding-top: max(38px, env(safe-area-inset-top)) !important;
   }
 }
+
+/* If app is launched in standalone mode (PWA Add to Home Screen) */
+@media (display-mode: standalone) {
+  .safe-pt {
+    padding-top: env(safe-area-inset-top, 0px) !important;
+  }
+}
