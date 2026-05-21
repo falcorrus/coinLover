@@ -47,12 +47,9 @@ export default function App() {
     const params = new URLSearchParams(window.location.search);
     if (params.get("force_native") === "true") return true;
 
-    return typeof window !== "undefined" && (
-      (window as any).Capacitor?.isNativePlatform ||
-      !!(window as any).__IS_PWA__ ||
-      window.matchMedia('(display-mode: standalone)').matches ||
-      (window.navigator as any).standalone
-    );
+    // Для веба и PWA всегда показываем лендинг на coinlover.ru при отсутствии ssId.
+    // Нативный вход (NativeAuthScreen) показываем ТОЛЬКО в настоящем мобильном Capacitor приложении.
+    return typeof window !== "undefined" && !!(window as any).Capacitor?.isNativePlatform;
   }, []);
   const [isSplashVisible, setIsSplashVisible] = React.useState(!isStandalone);
   const [isSplashFading, setIsSplashFading] = React.useState(false);
