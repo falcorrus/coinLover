@@ -433,7 +433,7 @@ SplashScreen.hide().catch(() => {});
 
         <div className={`flex-1 flex flex-col overflow-hidden animate-in zoom-in-95 duration-300 transition-all duration-300 ease-out ${isFullModalOpen ? "scale-[0.96] blur-[3px] opacity-60" : "scale-100 blur-0 opacity-100"}`}>
           <AppHeader
-            isIncomeCollapsed={isIncomeCollapsed} toggleIncome={toggleIncome} isDemo={isDemoMode}
+            isIncomeCollapsed={isIncomeCollapsed} toggleIncome={toggleIncome}
             settingsLongPress={settingsLongPress} handleMenuClick={handleMenuClick} isSettingsMenuOpen={isSettingsMenuOpen} setIsSettingsMenuOpen={setIsSettingsMenuOpen}
 
             pullSettings={pullSettings} setHistoryModal={setHistoryModal} setCalendarAnalyticsModal={setCalendarAnalyticsModal} setAnalyticsModal={setAnalyticsModal}
