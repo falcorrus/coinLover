@@ -41,7 +41,7 @@ export default function App() {
     pullSettings, checkConflicts, updateLocalFromRemote, pushSettings, accessError, setAccessError
   } = useFinance(activeTableId);
 
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
+  const isStandalone = typeof window !== "undefined" && (!!(window as any).__IS_PWA__ || window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone);
   const [isSplashVisible, setIsSplashVisible] = React.useState(!isStandalone);
   const [isSplashFading, setIsSplashFading] = React.useState(false);
   const [isOnboarding, setIsOnboarding] = React.useState(false);
