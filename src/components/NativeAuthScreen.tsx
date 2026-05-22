@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { googleSheetsService } from "../services/googleSheets";
+import { APP_SETTINGS } from "../constants/settings";
 
 // Translations
 const translations = {
@@ -110,8 +111,8 @@ export const NativeAuthScreen: React.FC = () => {
 
   const handleDemoSignIn = () => {
     if (navigator.vibrate) navigator.vibrate(40);
-    localStorage.removeItem("cl_active_table_id");
-    localStorage.setItem("cl_demo_mode", "true");
+    localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.ACTIVE_TABLE_ID);
+    localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE, "true");
     window.location.href = "/?demo=true";
   };
 

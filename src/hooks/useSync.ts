@@ -227,10 +227,8 @@ export const useSync = ({
 
           if (isCloudNewer || isCloudChangedSinceLastSync) {
             updateLocalFromRemote(remote);
-            if (!immediate) {
-              setSyncStatus("success");
-              return;
-            }
+            setSyncStatus("success");
+            return;
           }
         }
       } catch (e: any) { 
@@ -243,6 +241,14 @@ export const useSync = ({
 
       const ts = getLocalTimeString();
       const baseCurrency = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY) || "USD";
+      
+      // Safeguard: don't push if all entities are empty (likely a race condition or error)
+      if (a.length === 0 && c.length === 0 && i.length === 0) {
+        console.warn("Sync: Attempted to push empty settings, skipping to prevent data loss.");
+        setSyncStatus("success");
+        return;
+      }
+
       const ok = await googleSheetsService.syncToSheets({ 
         action: "syncSettings", targetSheet: "Configs", 
         accounts: enrichAccountsWithUSD(a), categories: c, incomes: i, 

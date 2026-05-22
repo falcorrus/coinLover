@@ -26,7 +26,17 @@ function ensureInitialized(ss, configName = "Configs", txName = "Transactions") 
   let conf = ss.getSheetByName(configName) || ss.insertSheet(configName);
   let txs = ss.getSheetByName(txName) || ss.insertSheet(txName);
   
-  if (conf.getLastRow() === 0) {
+  // Check if Configs has the essential markers, not just rows
+  const confData = conf.getDataRange().getValues();
+  let hasWallets = false;
+  for (let i = 0; i < confData.length; i++) {
+    if (String(confData[i][0]).toLowerCase().indexOf("wallets") !== -1) {
+      hasWallets = true;
+      break;
+    }
+  }
+
+  if (!hasWallets || conf.getLastRow() === 0) {
     const configHeaders = [
       ["Updated", formatDate(new Date()), "", "", "", "", ""],
       ["Base_Currency", "USD", "", "", "", "", ""],
@@ -35,6 +45,8 @@ function ensureInitialized(ss, configName = "Configs", txName = "Transactions") 
       ["id", "name", "balance", "balance_base", "color", "icon", "currency"],
       ["ID", "Название", "Баланс", "Баланс (база)", "Цвет", "Иконка", "Валюта"]
     ];
+    // If sheet was not empty but missing wallets, clear it first to avoid mess
+    if (conf.getLastRow() > 0) conf.clear();
     conf.getRange(1, 1, configHeaders.length, 7).setValues(configHeaders);
   }
   
@@ -320,6 +332,17 @@ function doPost(e) {
     const syncSettingsInternal = (settingsData) => {
       let sheet = ss.getSheetByName(configSheetName) || ss.insertSheet(configSheetName);
       
+      // Safeguard: if we receive completely empty data, don't wipe the existing sheet
+      // This is a safety measure against frontend race conditions.
+      const isIncomingEmpty = (!settingsData.accounts || settingsData.accounts.length === 0) && 
+                              (!settingsData.categories || settingsData.categories.length === 0) &&
+                              (!settingsData.incomes || settingsData.incomes.length === 0);
+      
+      if (isIncomingEmpty && sheet.getLastRow() > 10) {
+        console.warn("syncSettingsInternal: Received empty data for a non-empty sheet. Skipping to prevent data loss.");
+        return { status: "error", message: "Prevented wiping non-empty sheet with empty data" };
+      }
+
       let baseCurrency = settingsData.baseCurrency;
       if (!baseCurrency && sheet.getLastRow() >= 2) {
         try {
