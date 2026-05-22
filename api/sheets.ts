@@ -426,6 +426,7 @@ export default async function handler(req, res) {
               if (accessIdx !== -1 && mRows[i][accessIdx]) {
                 const rawDateStr = String(mRows[i][accessIdx]).trim();
                 accessEndsDate = rawDateStr;
+                let d: Date | null = null;
                 
                 // Parse DD.MM.YYYY
                 const parts = rawDateStr.split('.');
