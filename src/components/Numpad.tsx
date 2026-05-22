@@ -308,8 +308,8 @@ export const Numpad: React.FC<Props> = ({
 
       {/* Comment Modal */}
       {isCommentOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[300] flex items-end justify-center animate-in fade-in duration-300">
-          <div className="w-full max-w-md bg-[var(--bg-color)] border border-[var(--glass-border)] rounded-t-3xl p-6 flex flex-col gap-4 animate-in slide-in-from-bottom duration-300 shadow-2xl shadow-[var(--shadow-color)]">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[300] flex items-end justify-center animate-in fade-in duration-300" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-md bg-[var(--bg-color)] border border-[var(--glass-border)] rounded-t-3xl p-6 flex flex-col gap-4 animate-in slide-in-from-bottom duration-300 shadow-2xl shadow-[var(--shadow-color)]" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center"><div className="flex items-center gap-2"><MessageSquare size={16} className="text-[var(--primary-color)]" /><h3 className="text-sm font-bold uppercase text-[var(--text-main)]">Комментарий</h3></div><button onClick={() => setIsCommentOpen(false)} className="p-1 text-[var(--text-muted)] hover:text-[var(--text-main)]"><X size={20} /></button></div>
             <textarea autoFocus value={commentDraft} onChange={e => setCommentDraft(e.target.value)} placeholder="Заметка..." rows={3} className="bg-[var(--glass-item-bg)] border border-[var(--glass-border)] rounded-xl px-4 py-3 outline-none text-[var(--text-main)] resize-none text-sm focus:border-[var(--primary-color)]/50 transition-all" />
             <div className="flex gap-3"><button onClick={() => { setCommentDraft(""); onCommentChange(""); setIsCommentOpen(false); }} className="flex-1 h-12 rounded-xl bg-[var(--glass-item-bg)] text-[var(--text-muted)] font-bold text-sm">ОЧИСТИТЬ</button><button onClick={handleCommentSave} className="flex-1 h-12 rounded-xl bg-[var(--primary-color)] text-white font-bold shadow-lg text-sm active:scale-95 transition-all">СОХРАНИТЬ</button></div>
