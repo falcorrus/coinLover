@@ -541,31 +541,22 @@ export const LandingPage: React.FC = () => {
                         : t.studioTitle}
                   </h2>
 
-                  {(modalType === "onboarding" || modalType === "login") && (
-                    <div className="flex bg-white/5 rounded-xl p-1 border border-white/5 mt-1 mb-2">
-                      <button 
-                        type="button"
-                        onClick={() => {
-                          setModalType("onboarding");
-                          setStep(1);
-                          setErrorMsg("");
-                        }}
-                        className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${modalType === "onboarding" ? 'bg-[#6d5dfc] text-white shadow-md' : 'text-white/40 hover:text-white'}`}
-                      >
-                        {t.signupTabLabel}
-                      </button>
-                      <button 
-                        type="button"
-                        onClick={() => {
-                          setModalType("login");
-                          setErrorMsg("");
-                        }}
-                        className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${modalType === "login" ? 'bg-[#6d5dfc] text-white shadow-md' : 'text-white/40 hover:text-white'}`}
-                      >
-                        {t.loginTabLabel}
-                      </button>
-                    </div>
-                  )}
+                    {false && (
+                      <div className="flex bg-white/5 rounded-xl p-1 border border-white/5 mt-1 mb-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setModalType("onboarding");
+                            setStep(1);
+                            setErrorMsg("");
+                          }}
+                          className="flex-1 py-2 text-xs font-bold rounded-lg transition-all bg-[#6d5dfc] text-white shadow-md"
+                        >
+                          {t.signupTabLabel}
+                        </button>
+                      </div>
+                    )}
+                    
                   
                   {modalType === "studio" && (
                     <div className="bg-[#6d5dfc]/10 border border-[#6d5dfc]/20 rounded-xl p-3">
