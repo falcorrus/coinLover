@@ -237,16 +237,17 @@ export const LandingPage: React.FC = () => {
           return;
         }
 
-        const isOk = await googleSheetsService.initTable(parsedSsId);
-        if (isOk) {
+        // Пытаемся получить настройки (GET). Это безопасно и не затирает данные.
+        const remoteData = await googleSheetsService.fetchSettings(parsedSsId);
+        if (remoteData) {
           localStorage.setItem("cl_active_table_id", parsedSsId);
           // Пользователь уже имеет таблицу — онбординг не нужен
           localStorage.setItem("cl_onboarding_completed", "true");
           document.cookie = `cl_active_table_id=${parsedSsId}; path=/; max-age=${60*60*24*365}; SameSite=Lax`;
-          
+
           setIsSent(true);
           trackEvent("login_success", { parsedSsId });
-          
+
           setTimeout(() => {
             window.location.href = "/";
           }, 1500);
@@ -254,6 +255,7 @@ export const LandingPage: React.FC = () => {
           setErrorMsg(t.modalLoginError);
         }
       } else {
+
         const payload = {
           action: "registerLead",
           name: name || "Studio Lead",

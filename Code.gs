@@ -26,17 +26,9 @@ function ensureInitialized(ss, configName = "Configs", txName = "Transactions") 
   let conf = ss.getSheetByName(configName) || ss.insertSheet(configName);
   let txs = ss.getSheetByName(txName) || ss.insertSheet(txName);
   
-  // Check if Configs has the essential markers, not just rows
-  const confData = conf.getDataRange().getValues();
-  let hasWallets = false;
-  for (let i = 0; i < confData.length; i++) {
-    if (String(confData[i][0]).toLowerCase().indexOf("wallets") !== -1) {
-      hasWallets = true;
-      break;
-    }
-  }
-
-  if (!hasWallets || conf.getLastRow() === 0) {
+  // ONLY add headers if the sheet is brand new or completely empty.
+  // This is the safest way to prevent accidental data loss.
+  if (conf.getLastRow() === 0) {
     const configHeaders = [
       ["Updated", formatDate(new Date()), "", "", "", "", ""],
       ["Base_Currency", "USD", "", "", "", "", ""],
@@ -45,8 +37,6 @@ function ensureInitialized(ss, configName = "Configs", txName = "Transactions") 
       ["id", "name", "balance", "balance_base", "color", "icon", "currency"],
       ["ID", "Название", "Баланс", "Баланс (база)", "Цвет", "Иконка", "Валюта"]
     ];
-    // If sheet was not empty but missing wallets, clear it first to avoid mess
-    if (conf.getLastRow() > 0) conf.clear();
     conf.getRange(1, 1, configHeaders.length, 7).setValues(configHeaders);
   }
   
@@ -138,27 +128,22 @@ function doGet(e) {
 
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
-      if (!row || !row[0]) continue;
-      const key = String(row[0]).trim().toLowerCase();
+      if (!row || row.length === 0) continue;
+      const val0 = String(row[0] || "").trim();
+      const key = val0.toLowerCase();
       
       if (key.indexOf("updated") !== -1) { data.timestamp = row[1]; continue; }
-      if (key.indexOf("base_currency") !== -1) { data.baseCurrency = String(row[1]).trim() || "USD"; continue; }
+      if (key.indexOf("base_currency") !== -1) { data.baseCurrency = String(row[1] || "USD").trim(); continue; }
       
       if (key.indexOf("wallets") !== -1) { section = "acc"; sectionIdRowIdx = i + 1; continue; }
       if (key.indexOf("categories") !== -1) { section = "cat"; sectionIdRowIdx = i + 1; continue; }
       if (key.indexOf("incomes") !== -1) { section = "inc"; sectionIdRowIdx = i + 1; continue; }
       if (ss.getId() === MASTER_SS_ID && key.indexOf("users") !== -1) { section = "usr"; sectionIdRowIdx = i + 1; continue; }
       
-      if (sectionIdRowIdx === -1) continue;
-      if (i < sectionIdRowIdx) continue;
-      if (i === sectionIdRowIdx) continue;
+      if (sectionIdRowIdx === -1 || i <= sectionIdRowIdx) continue;
 
-      if (i === sectionIdRowIdx + 1) {
-        const val0 = String(row[0]).trim().toLowerCase();
-        if (val0 === "id" || val0 === "name" || val0 === "имя" || val0 === "название") {
-          continue;
-        }
-      }
+      // Skip sub-headers or empty rows
+      if (key === "id" || key === "name" || key === "название" || key === "имя" || !val0) continue;
 
       const col = {}; 
       const idRow = rows[sectionIdRowIdx];
@@ -166,7 +151,10 @@ function doGet(e) {
       idRow.forEach((v, idx) => { if(v) col[String(v).trim().toLowerCase()] = idx; });
 
       try {
-        const uId = col["id"] !== undefined ? col["id"] : col["id"];
+        const uIdIdx = col["id"] !== undefined ? col["id"] : 0;
+        const idVal = String(row[uIdIdx] || "").trim();
+        if (!idVal) continue;
+
         const uName = col["name"] !== undefined ? col["name"] : col["название"];
         const uColor = col["color"] !== undefined ? col["color"] : col["цвет"];
         const uIcon = col["icon"] !== undefined ? col["icon"] : col["иконка"];
@@ -177,21 +165,33 @@ function doGet(e) {
         const uLink = col["link"] !== undefined ? col["link"] : col["ссылка"];
         const uContact = col["contact"] !== undefined ? col["contact"] : col["контакт"];
 
-        if (section === "acc" && (uId !== undefined || row[0])) {
-          data.accounts.push({ id: String(uId !== undefined ? row[uId] : row[0]), name: String(uName !== undefined ? row[uName] : row[1]), balance: parseNum(uBal !== undefined ? row[uBal] : row[2]), balanceUSD: parseNum(uBalBase !== undefined ? row[uBalBase] : row[3]), color: uColor !== undefined ? row[uColor] : row[4], icon: uIcon !== undefined ? row[uIcon] : (row[5] || "wallet"), currency: uCurr !== undefined ? row[uCurr] : (row[6] || "") });
-        } else if (section === "cat" && (uId !== undefined || row[0])) {
-          data.categories.push({ id: String(uId !== undefined ? row[uId] : row[0]), name: String(uName !== undefined ? row[uName] : row[1]), color: uColor !== undefined ? row[uColor] : row[2], icon: uIcon !== undefined ? row[uIcon] : (row[3] || "more"), tags: (uTags !== undefined ? row[uTags] : row[4]) ? String(uTags !== undefined ? row[uTags] : row[4]).split(",").map(t => t.trim()) : [] });
-        } else if (section === "inc" && (uId !== undefined || row[0])) {
-          data.incomes.push({ id: String(uId !== undefined ? row[uId] : row[0]), name: String(uName !== undefined ? row[uName] : row[1]), color: uColor !== undefined ? row[uColor] : row[2], icon: uIcon !== undefined ? row[uIcon] : (row[3] || "business"), tags: (uTags !== undefined ? row[uTags] : row[4]) ? String(uTags !== undefined ? row[uTags] : row[4]).split(",").map(t => t.trim()) : [] });
+        if (section === "acc") {
+          data.accounts.push({ id: idVal, name: String(uName !== undefined ? row[uName] : row[1]), balance: parseNum(uBal !== undefined ? row[uBal] : row[2]), balanceUSD: parseNum(uBalBase !== undefined ? row[uBalBase] : row[3]), color: uColor !== undefined ? row[uColor] : row[4], icon: uIcon !== undefined ? row[uIcon] : (row[5] || "wallet"), currency: uCurr !== undefined ? row[uCurr] : (row[6] || "") });
+        } else if (section === "cat") {
+          data.categories.push({ id: idVal, name: String(uName !== undefined ? row[uName] : row[1]), color: uColor !== undefined ? row[uColor] : row[2], icon: uIcon !== undefined ? row[uIcon] : (row[3] || "more"), tags: (uTags !== undefined ? row[uTags] : row[4]) ? String(uTags !== undefined ? row[uTags] : row[4]).split(",").map(t => t.trim()) : [] });
+        } else if (section === "inc") {
+          data.incomes.push({ id: idVal, name: String(uName !== undefined ? row[uName] : row[1]), color: uColor !== undefined ? row[uColor] : row[2], icon: uIcon !== undefined ? row[uIcon] : (row[3] || "business"), tags: (uTags !== undefined ? row[uTags] : row[4]) ? String(uTags !== undefined ? row[uTags] : row[4]).split(",").map(t => t.trim()) : [] });
         } else if (section === "usr") {
-          let usId = col["id"] !== undefined ? row[col["id"]] : row[2];
           let usName = col["name"] !== undefined ? row[col["name"]] : (col["имя"] !== undefined ? row[col["имя"]] : row[0]);
           let usLink = col["link"] !== undefined ? row[col["link"]] : row[3];
           let usContact = col["contact"] !== undefined ? row[col["contact"]] : row[1];
-          data.users.push({ name: String(usName || "").trim(), contact: String(usContact || "").trim(), id: String(usId || "").trim(), link: String(usLink || "").trim() });
+          data.users.push({ name: String(usName || "").trim(), contact: String(usContact || "").trim(), id: idVal, link: String(usLink || "").trim() });
         }
       } catch (e) {}
     }
+
+    // Deduplicate by ID
+    const dedupe = (arr) => {
+      const seen = new Set();
+      return arr.filter(item => {
+        if (seen.has(item.id)) return false;
+        seen.add(item.id);
+        return true;
+      });
+    };
+    data.accounts = dedupe(data.accounts);
+    data.categories = dedupe(data.categories);
+    data.incomes = dedupe(data.incomes);
 
     try {
       const txSheet = ss.getSheetByName(txSheetName);
@@ -333,7 +333,6 @@ function doPost(e) {
       let sheet = ss.getSheetByName(configSheetName) || ss.insertSheet(configSheetName);
       
       // Safeguard: if we receive completely empty data, don't wipe the existing sheet
-      // This is a safety measure against frontend race conditions.
       const isIncomingEmpty = (!settingsData.accounts || settingsData.accounts.length === 0) && 
                               (!settingsData.categories || settingsData.categories.length === 0) &&
                               (!settingsData.incomes || settingsData.incomes.length === 0);
@@ -342,6 +341,21 @@ function doPost(e) {
         console.warn("syncSettingsInternal: Received empty data for a non-empty sheet. Skipping to prevent data loss.");
         return { status: "error", message: "Prevented wiping non-empty sheet with empty data" };
       }
+
+      // Deduplicate incoming data by ID just in case
+      const dedupe = (arr) => {
+        if (!arr) return [];
+        const seen = new Set();
+        return arr.filter(item => {
+          if (!item.id || seen.has(item.id)) return false;
+          seen.add(item.id);
+          return true;
+        });
+      };
+      
+      const accounts = dedupe(settingsData.accounts);
+      const categories = dedupe(settingsData.categories);
+      const incomes = dedupe(settingsData.incomes);
 
       let baseCurrency = settingsData.baseCurrency;
       if (!baseCurrency && sheet.getLastRow() >= 2) {
@@ -379,17 +393,17 @@ function doPost(e) {
       pushRow([""]); pushRow([" === WALLETS ==="]);
       pushRow(["id", "name", "balance", "balance_base", "color", "icon", "currency"]);
       pushRow(["ID", "Название", "Баланс", "Баланс (база)", "Цвет", "Иконка", "Валюта"]);
-      if (settingsData.accounts) settingsData.accounts.forEach(a => pushRow([a.id, a.name, a.balance, a.balanceUSD || "", a.color, a.icon, a.currency]));
+      accounts.forEach(a => pushRow([a.id, a.name, a.balance, a.balanceUSD || "", a.color, a.icon, a.currency]));
       
       pushRow([""]); pushRow([" === CATEGORIES ==="]);
       pushRow(["id", "name", "color", "icon", "tags"]);
       pushRow(["ID", "Название", "Цвет", "Иконка", "Теги"]);
-      if (settingsData.categories) settingsData.categories.forEach(c => pushRow([c.id, c.name, c.color, c.icon, Array.isArray(c.tags) ? c.tags.join(", ") : c.tags]));
+      categories.forEach(c => pushRow([c.id, c.name, c.color, c.icon, Array.isArray(c.tags) ? c.tags.join(", ") : c.tags]));
       
       pushRow([""]); pushRow([" === INCOMES ==="]);
       pushRow(["id", "name", "color", "icon", "tags"]);
       pushRow(["ID", "Название", "Цвет", "Иконка", "Теги"]);
-      if (settingsData.incomes) settingsData.incomes.forEach(i => pushRow([i.id, i.name, i.color, i.icon, Array.isArray(i.tags) ? i.tags.join(", ") : i.tags]));
+      incomes.forEach(i => pushRow([i.id, i.name, i.color, i.icon, Array.isArray(i.tags) ? i.tags.join(", ") : i.tags]));
       
       if (existingUsers.length > 0) {
         pushRow([""]); pushRow([" === USERS ==="]);

@@ -86,8 +86,9 @@ export const NativeAuthScreen: React.FC = () => {
     setErrorMsg("");
 
     try {
-      const isOk = await googleSheetsService.initTable(parsedSsId);
-      if (isOk) {
+      // Пытаемся получить настройки (GET). Это безопасно и не затирает данные.
+      const remoteData = await googleSheetsService.fetchSettings(parsedSsId);
+      if (remoteData) {
         if (navigator.vibrate) navigator.vibrate(80);
 
         localStorage.setItem("cl_active_table_id", parsedSsId);
