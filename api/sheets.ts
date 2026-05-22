@@ -424,23 +424,27 @@ export default async function handler(req, res) {
             if (rowId === cleanSsId) {
               found = true;
               if (accessIdx !== -1 && mRows[i][accessIdx]) {
-                accessEndsDate = String(mRows[i][accessIdx]).trim();
-                let d = new Date(accessEndsDate); // Try native ISO first
+                const rawDateStr = String(mRows[i][accessIdx]).trim();
+                accessEndsDate = rawDateStr;
                 
-                if (isNaN(d.getTime())) {
-                  // Try DD.MM.YYYY or DD.MM.YY
-                  const parts = accessEndsDate.split(/[./-]/).map(p => p.trim());
-                  if (parts.length >= 3) {
-                    let year = parts[2];
-                    if (year.length === 2) year = "20" + year; // Convert YY to 20YY
-                    d = new Date(`${year}-${parts[1]}-${parts[0]}T23:59:59`);
+                // Parse DD.MM.YYYY
+                const parts = rawDateStr.split('.');
+                if (parts.length === 3) {
+                  const day = parseInt(parts[0], 10);
+                  const month = parseInt(parts[1], 10);
+                  const year = parseInt(parts[2], 10);
+                  
+                  if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+                    // Set to end of the day in UTC
+                    d = new Date(Date.UTC(year, month - 1, day, 23, 59, 59));
                   }
                 }
 
-                if (!isNaN(d.getTime())) {
+                if (d && !isNaN(d.getTime())) {
+                  // Use UTC timestamp for comparison
                   const now = new Date();
-                  if (d < now) accessValid = false;
-                  console.log(`[API] Access check for ${cleanSsId}: Found. Expiry: ${d.toISOString()}, Valid: ${accessValid}`);
+                  if (d.getTime() < now.getTime()) accessValid = false;
+                  console.log(`[API] Access check for ${cleanSsId}: Found. Expiry: ${d.toISOString()}, Now: ${now.toISOString()}, Valid: ${accessValid}`);
                 }
               }
               break;
