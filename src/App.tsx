@@ -55,10 +55,10 @@ const isNativeApp = React.useMemo(() => {
   const [isSplashFading, setIsSplashFading] = React.useState(false);
   const [isOnboarding, setIsOnboarding] = React.useState(false);
   const onboardingTriggered = React.useRef(false);
-  const isDemoMode = (!activeTableId && localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE) === "true") || urlParams.get("demo") === "true";
 
   React.useEffect(() => {
     // 1. Дебаг-флаг всегда в приоритете
+    const urlParams = new URLSearchParams(window.location.search);
     const debugOnboarding = urlParams.get("debug_onboarding") === "true";
     if (debugOnboarding && !onboardingTriggered.current) {
       setIsOnboarding(true);
@@ -66,20 +66,14 @@ const isNativeApp = React.useMemo(() => {
       return;
     }
 
-    // 2. В демо-режиме онбординг НЕ показываем
-    if (isDemoMode) {
-      setIsOnboarding(false);
-      return;
-    }
-
-    // 3. Если данные есть — онбординг пройден
+    // 2. Если данные есть — онбординг пройден
     if (accounts.length > 0 || transactions.length > 0) {
       localStorage.setItem("cl_onboarding_completed", "true");
       setIsOnboarding(false);
       return;
     }
 
-    // 4. Триггерим онбординг только один раз при успешной первой синхронизации пустой таблицы
+    // 3. Триггерим онбординг только один раз при успешной первой синхронизации пустой таблицы
     if (syncStatus === "success" && accounts.length === 0 && transactions.length === 0 && !onboardingTriggered.current) {
       const isCompleted = localStorage.getItem("cl_onboarding_completed") === "true";
       if (!isCompleted) {
@@ -87,7 +81,7 @@ const isNativeApp = React.useMemo(() => {
         onboardingTriggered.current = true;
       }
     }
-  }, [syncStatus, accounts.length, transactions.length, isDemoMode]);
+  }, [syncStatus, accounts.length, transactions.length]);
 
   // Сбрасываем триггер при смене таблицы
   React.useEffect(() => {
@@ -302,8 +296,8 @@ const isNativeApp = React.useMemo(() => {
 
   const settingsLongPress = useLongPress(() => { 
     setIsSettingsMenuOpen(false); 
-    const isDemo = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE) !== "false";
-    if (isDemo) {
+    const isDemoMode = false;
+    if (isDemoMode) {
       setIsAdminModalOpen(true);
     } else {
       setIsUsersModalOpen(true); 
@@ -337,9 +331,8 @@ const isNativeApp = React.useMemo(() => {
     localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.TRANSACTIONS);
     localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC);
     
-    // 3. Переключаем ID и отключаем демо
+    // 3. Переключаем ID
     switchTable(id); 
-    localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE, "false");
     
     trackEvent("SwitchTable", { category: "User", label: id }); 
     setIsUsersModalOpen(false);
@@ -405,8 +398,8 @@ SplashScreen.hide().catch(() => {});
     return <LandingPage />;
   }
 
-  // Учитываем /s/ID при проверке - если мы на пути пользователя, НЕ показываем лендинг
-  if (!isOnboarding && !activeTableId && !isDemoMode && !isUserPath) {
+  // Show landing when no active table and either root or non‑user path
+  if (!activeTableId && !isUserPath) {
     if (isNativeApp) {
       return <NativeAuthScreen />;
     }
