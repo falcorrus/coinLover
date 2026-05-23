@@ -58,7 +58,7 @@ export function StoriesSection({
   const mouseStartY = React.useRef(0);
   const mouseStartTime = React.useRef(0);
 
-  // Tips Content (3 slides)
+  // Tips Content (2 slides)
   const tips = [
     {
       title: "Сортировка жестом ⚙️",
@@ -67,10 +67,6 @@ export function StoriesSection({
     {
       title: "Быстрый ввод ✍️",
       text: "Перетащи иконку дохода на кошелек или кошелек на категорию расходов для моментальной записи транзакции. Drag-and-drop жесты делают учет приятным!",
-    },
-    {
-      title: "Telegram-бот 🤖",
-      text: "Устал вводить руками? Напиши нашему Telegram-боту, и он автоматически разнесет расходы из голосовых сообщений прямо в твою таблицу!",
     },
   ];
 
@@ -95,7 +91,7 @@ export function StoriesSection({
     { id: "overview", title: "Обзор", icon: BarChart3, color: "#a78bfa", gradient: "from-[#a78bfa] to-[#6d5dfc]", slideCount: 3 },
     { id: "zen", title: "Дзен", icon: Flame, color: "#f43f5e", gradient: "from-[#f43f5e] to-[#ec4899]", slideCount: 3 },
     { id: "rates", title: "Курсы", icon: Coins, color: "#10b981", gradient: "from-[#10b981] to-[#059669]", slideCount: 2 },
-    { id: "tips", title: "Фишки", icon: HelpCircle, color: "#3b82f6", gradient: "from-[#3b82f6] to-[#2563eb]", slideCount: 3 },
+    { id: "tips", title: "Фишки", icon: HelpCircle, color: "#3b82f6", gradient: "from-[#3b82f6] to-[#2563eb]", slideCount: 2 },
     { id: "actions", title: "Пульт", icon: Zap, color: "#eab308", gradient: "from-[#eab308] to-[#ca8a04]", slideCount: 1 },
   ];
 
