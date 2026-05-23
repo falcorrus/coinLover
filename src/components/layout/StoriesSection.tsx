@@ -3,6 +3,7 @@ import { Sparkles, Flame, Coins, Zap, HelpCircle, X, Sun, Moon, Palette, BarChar
 import { Account, Transaction } from "../../types";
 import { IconMap } from "../../constants";
 import { RatesService } from "../../services/RatesService";
+import { safeParseDate } from "../../hooks/utils";
 
 interface StoriesSectionProps {
   accounts: Account[];
@@ -281,10 +282,30 @@ export function StoriesSection({
       return s + RatesService.convert(amount, tCurr, baseCurrency);
     }, 0));
 
-  // Today totals
-  const todayStr = new Date().toISOString().split("T")[0];
+  // Today totals - Highly robust today detection combining prefix matching and components check
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+  const currentDay = now.getDate();
+  const todayPrefix = `${String(currentDay).padStart(2, '0')}.${String(currentMonth + 1).padStart(2, '0')}.${currentYear}`;
+
   const spentToday = Math.round(currentMonthTransactions
-    .filter((t) => t.type === "expense" && t.date.startsWith(todayStr))
+    .filter((t) => {
+      if (t.type !== "expense") return false;
+      const dateStr = String(t.date || "").trim();
+      
+      // 1. Direct string prefix match (e.g. "22.05.2026 23:55" starts with "22.05.2026")
+      if (dateStr.startsWith(todayPrefix)) return true;
+
+      // 2. Component match via safeParseDate
+      const d = safeParseDate(t.date);
+      return (
+        !isNaN(d.getTime()) &&
+        d.getDate() === currentDay &&
+        d.getMonth() === currentMonth &&
+        d.getFullYear() === currentYear
+      );
+    })
     .reduce((s, t) => {
       const account = accounts.find((a) => a.id === t.accountId);
       const sCurr = t.sourceCurrency || account?.currency || baseCurrency;
@@ -305,7 +326,6 @@ export function StoriesSection({
   });
 
   const currencySplit = Object.keys(currencyBaseMap).map((cur) => {
-    // Show total original balance for this currency
     const totalOriginalAmt = accounts.filter(a => a.currency === cur).reduce((sum, a) => sum + a.balance, 0);
     const inBase = currencyBaseMap[cur];
     const percentage = totalInBase > 0 ? Math.round((inBase / totalInBase) * 100) : 0;
