@@ -128,18 +128,18 @@ export const DraggableIncomeItem: React.FC<Props> = ({
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
         style={{ touchAction: "none" }}
-        className={`draggable-coin coin-wallet w-[52px] h-[52px] mb-2 border border-[#10b981]/30 bg-[#10b981]/10 transition-all duration-300 relative ${isDragging ? "grabbed-elevation" :
+        className={`draggable-coin coin-wallet mb-2 border border-[#10b981]/30 bg-[#10b981]/10 transition-all duration-300 relative ${isDragging ? "grabbed-elevation" :
           (isPressing && isSortingMode) ? "scale-110 border-[var(--primary-color)] shadow-[0_0_20px_rgba(109,93,252,0.4)] ring-4 ring-[var(--primary-color)]/20" :
           isPressing ? "scale-90 brightness-75 border-[#10b981]/50" : ""
           } ${isSortingMode && isDragging ? "shadow-2xl border-[var(--primary-color)] ring-2 ring-[var(--primary-color)]" : ""}`}
       >
-        <Icon size={22} color={income.color} />
+        <Icon size={26} color={income.color} />
       </div>
-      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center leading-none truncate w-16 pointer-events-none">
+      <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider text-center leading-none truncate w-16 pointer-events-none mb-0.5">
         {income.name}
       </span>
       {monthlyAmount > 0 && (
-        <span className="text-[11px] font-bold text-[#10b981] mt-0.5 pointer-events-none">
+        <span className="text-[11px] font-bold text-[#10b981] pointer-events-none">
           +${Math.round(monthlyAmount).toLocaleString()}
         </span>
       )}

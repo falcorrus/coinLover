@@ -1,11 +1,13 @@
 import * as React from "react";
-import { Sun, Moon, Plus, Menu, RefreshCcw, List, Calendar, PieChart, Sparkles, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import { Sun, Moon, Plus, Menu, RefreshCcw, List, Calendar, PieChart, Sparkles, TrendingDown, TrendingUp, Wallet, X } from "lucide-react";
 import { APP_SETTINGS } from "../../constants/settings";
 import { HistoryModalState } from "../../types";
 
 interface AppHeaderProps {
   isIncomeCollapsed: boolean;
   toggleIncome: () => void;
+  isStoriesCollapsed: boolean;
+  toggleStories: () => void;
   settingsLongPress: any;
   handleMenuClick: (e: React.MouseEvent) => void;
   isSettingsMenuOpen: boolean;
@@ -28,7 +30,7 @@ interface AppHeaderProps {
 
 // ... (props update)
 export function AppHeader({
-  isIncomeCollapsed, toggleIncome, settingsLongPress, handleMenuClick, isSettingsMenuOpen,
+  isIncomeCollapsed, toggleIncome, isStoriesCollapsed, toggleStories, settingsLongPress, handleMenuClick, isSettingsMenuOpen,
   setIsSettingsMenuOpen, pullSettings, setHistoryModal, setCalendarAnalyticsModal, setAnalyticsModal,
   theme, setTheme, syncStatus, pillMode, setPillMode, currentSymbol, displaySpent, displayEarned, displayBalance,
   categoriesCount
@@ -36,7 +38,7 @@ export function AppHeader({
   const isCompact = categoriesCount > 8;
 
   const PillButton = (
-    <button onClick={() => setPillMode(p => p === "expense" ? "income" : p === "income" ? "balance" : "expense")} className={`mx-auto px-5 py-2 rounded-full bg-[var(--glass-item-bg)] border border-[var(--glass-border)] flex items-center gap-2 hover:bg-[var(--glass-item-active)] active:scale-95 transition-all shadow-sm ${isCompact ? '' : 'mt-2'}`}>
+    <button onClick={() => setPillMode(p => p === "expense" ? "income" : p === "income" ? "balance" : "expense")} className={`mx-auto px-5 py-2 rounded-full bg-[var(--glass-item-bg)] border border-[var(--glass-border)] flex items-center gap-2 hover:bg-[var(--glass-item-active)] active:scale-95 transition-all shadow-sm ${isCompact ? '' : '-mt-0.5'}`}>
       {pillMode === "expense" ? (<><TrendingDown size={14} className="text-[#cda434]" /><span className="text-xs font-serif font-bold text-[#cda434]">-{currentSymbol} {displaySpent.toLocaleString()} в этом месяце</span></>) : pillMode === "income" ? (<><TrendingUp size={14} className="text-[#10b981]" /><span className="text-xs font-serif font-bold text-[#10b981]">+{currentSymbol} {displayEarned.toLocaleString()} в этом месяце</span></>) : (<><Wallet size={14} className="text-[var(--primary-color)]" /><span className="text-xs font-serif font-bold text-[var(--primary-color)]">Общий баланс: {currentSymbol} {displayBalance.toLocaleString()}</span></>)}
     </button>
   );
@@ -44,11 +46,23 @@ export function AppHeader({
   return (
     <header className="px-6 flex flex-col gap-2 text-center shrink-0 safe-pt-header pb-2">
       <div className="flex justify-between items-center mb-2">
-        <button onClick={toggleIncome} className="glass-icon-btn w-10 h-10 relative">
-          <Plus size={APP_SETTINGS.UI.ICON_SIZE_LARGE} className={`text-[#10b981] transition-transform duration-300 ${!isIncomeCollapsed ? "rotate-45" : ""}`} />
+        <button onClick={toggleIncome} className="glass-icon-btn w-10 h-10 relative shrink-0">
+          <Plus 
+            size={APP_SETTINGS.UI.ICON_SIZE_LARGE} 
+            strokeWidth={1.5}
+            className={`text-[var(--primary-color)] transition-transform duration-300 ${!isIncomeCollapsed ? "rotate-45" : ""}`} 
+          />
         </button>
-        {PillButton}
-        <div className="w-10 h-10" /> {/* Пустая заглушка для идеальной симметрии хедера */}
+        <div className="flex-1 flex justify-center items-center">
+          {PillButton}
+        </div>
+        <button onClick={toggleStories} className="glass-icon-btn w-10 h-10 relative shrink-0">
+          <Sparkles 
+            size={APP_SETTINGS.UI.ICON_SIZE_LARGE} 
+            strokeWidth={1.5}
+            className={`text-[var(--primary-color)] transition-transform duration-700 ease-in-out ${!isStoriesCollapsed ? "rotate-180" : ""}`} 
+          />
+        </button>
       </div>
 
       {/* Floating Action Button (FAB) Menu in Right Bottom */}

@@ -18,11 +18,12 @@ interface Props {
   theme?: string;
   currencyMode?: "usd" | "local";
   currencySymbol?: string;
+  iconSize?: number;
 }
 
 export const CategoryItem: React.FC<Props> = ({
   category, spent, isDragging, isSortingMode, onSortingMode, onLongPress, onClick, activeDragType, isOver, theme,
-  currencyMode = "usd", currencySymbol = "USD"
+  currencyMode = "usd", currencySymbol = "USD", iconSize
 }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isOver: isSortableOver } = useSortable({
     id: category.id,
@@ -128,7 +129,7 @@ export const CategoryItem: React.FC<Props> = ({
         } ${isTarget ? "scale-125" : ""}`}
       >
         <Icon 
-          size={44} 
+          size={iconSize || 50} 
           className="transition-all duration-300" 
           style={{ 
             color: isTarget ? "var(--primary-color)" : category.color,

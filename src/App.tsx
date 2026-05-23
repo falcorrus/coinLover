@@ -129,6 +129,7 @@ const isNativeApp = React.useMemo(() => {
   const [mode, setMode] = React.useState<"expense" | "income">("expense");
   const [pillMode, setPillMode] = React.useState<"expense" | "income" | "balance">(() => (localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.PILL_MODE) as any) || "expense");
   const [isIncomeCollapsed, setIsIncomeCollapsed] = React.useState(true);
+  const [isStoriesCollapsed, setIsStoriesCollapsed] = React.useState(false);
   const [isSettingsMenuOpen, setIsSettingsMenuOpen] = React.useState(false);
   const [theme, setTheme] = React.useState<"white" | "mint" | "black">(() => {
     const cached = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.THEME);
@@ -364,6 +365,7 @@ SplashScreen.hide().catch(() => {});
   }, [activeTableId, checkConflicts]);
 
   const toggleIncome = () => { const next = !isIncomeCollapsed; setIsIncomeCollapsed(next); setMode(next ? "expense" : "income"); };
+  const toggleStories = () => { setIsStoriesCollapsed(!isStoriesCollapsed); };
   const isFullModalOpen = accountModal.isOpen || incomeModal.isOpen || categoryModal.isOpen || historyModal.isOpen || analyticsModal.isOpen || calendarAnalyticsModal.isOpen || numpad.isOpen || confirmDelete.isOpen || isTagModalOpen;
   const anyModalOpen = isFullModalOpen || isSettingsMenuOpen;
 
@@ -406,11 +408,12 @@ SplashScreen.hide().catch(() => {});
       <div className={`h-full flex flex-col max-w-md mx-auto relative shadow-2xl overflow-hidden bg-[var(--bg-color)] text-[var(--text-main)] font-sans select-none transition-colors duration-300 ${theme} ${theme === 'mint' ? 'paper-grain' : ''}`}>
         <style>{`body { background: var(--bg-color); } * { -webkit-tap-highlight-color: transparent; }`}</style>
 
-        <div className="absolute top-4 right-4 z-50"><div className={`w-2 h-2 rounded-full ${syncStatus === "loading" ? "bg-amber-400 animate-pulse" : syncStatus === "success" ? "bg-emerald-500/50" : syncStatus === "error" ? "bg-rose-500" : "bg-white/10"}`} /></div>
+        <div className="absolute top-[15px] right-[15px] z-50"><div className={`w-2 h-2 rounded-full ${syncStatus === "loading" ? "bg-amber-400 animate-pulse" : syncStatus === "success" ? "bg-emerald-500/50" : syncStatus === "error" ? "bg-rose-500" : "bg-white/10"}`} /></div>
 
         <div className={`flex-1 flex flex-col overflow-hidden animate-in zoom-in-95 duration-300 transition-all duration-300 ease-out ${isFullModalOpen ? "scale-[0.96] blur-[3px] opacity-60" : "scale-100 blur-0 opacity-100"}`}>
           <AppHeader
             isIncomeCollapsed={isIncomeCollapsed} toggleIncome={toggleIncome}
+            isStoriesCollapsed={isStoriesCollapsed} toggleStories={toggleStories}
             settingsLongPress={settingsLongPress} handleMenuClick={handleMenuClick} isSettingsMenuOpen={isSettingsMenuOpen} setIsSettingsMenuOpen={setIsSettingsMenuOpen}
 
             pullSettings={pullSettings} setHistoryModal={setHistoryModal} setCalendarAnalyticsModal={setCalendarAnalyticsModal} setAnalyticsModal={setAnalyticsModal}
@@ -428,6 +431,11 @@ SplashScreen.hide().catch(() => {});
             setCalendarAnalyticsModal={setCalendarAnalyticsModal}
             setAnalyticsModal={setAnalyticsModal}
             categories={categories}
+            categoryCurrencyMode={categoryCurrencyMode}
+            setCategoryCurrencyMode={setCategoryCurrencyMode}
+            baseCurrency={calculations.baseCurrency}
+            localCurrencyCode={calculations.localCurrencyCode}
+            isStoriesCollapsed={isStoriesCollapsed}
           />
 
           <IncomeSection 

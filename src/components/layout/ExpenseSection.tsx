@@ -34,33 +34,16 @@ export function ExpenseSection({
   overId, isSortingMode, setIsSortingMode, setAnalyticsModal, setCategoryModal, setHistoryModal,
   setCalendarAnalyticsModal, theme
 }: ExpenseSectionProps) {
+  const totalItems = categories.length + 1;
+  const rowsCount = Math.ceil(totalItems / 4);
+  const isCompact = rowsCount > 2;
+  const catIconSize = isCompact ? 44 : 50;
+
   return (
-    <section className={`px-0 flex-1 pt-1 pb-4 overflow-y-auto hide-scrollbar z-10 relative transition-all duration-300 ${mode === "income" ? "opacity-30 pointer-events-none grayscale" : "opacity-100"}`}>
-      <div className="px-6 py-1">
-        <div className="flex justify-between items-center mb-3">
+    <section className={`px-0 flex-1 pt-6 pb-8 overflow-y-auto hide-scrollbar z-10 relative transition-all duration-300 ${mode === "income" ? "opacity-30 pointer-events-none grayscale" : "opacity-100"}`}>
+      <div className="px-6 py-3">
+        <div className="flex justify-between items-center mb-6">
           <h2 className="text-[9px] font-black tracking-[0.2em] text-[var(--text-muted)] uppercase opacity-80">Расходы</h2>
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={() => setCategoryCurrencyMode(categoryCurrencyMode === 'base' ? 'local' : 'base')}
-              className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-all shadow-sm ${
-                categoryCurrencyMode === 'local' 
-                  ? 'bg-[var(--primary-color)]/20 border-[var(--primary-color)]/30 text-[var(--primary-color)] shadow-[0_0_15px_rgba(109,93,252,0.2)]' 
-                  : 'bg-[var(--glass-item-bg)] border-[var(--glass-border)] text-[var(--text-main)] hover:bg-[var(--glass-item-active)]'
-              }`}
-              title={categoryCurrencyMode === 'base' ? "Переключить на локальную валюту" : "Переключить на базовую валюту"}
-            >
-              <span className={`text-[10px] font-black uppercase tracking-tighter ${categoryCurrencyMode === 'base' ? 'opacity-60' : ''}`}>
-                {categoryCurrencyMode === 'base' ? baseCurrency : localCurrencyCode}
-              </span>
-            </button>
-            <button 
-              onClick={() => setCategoryModal({ isOpen: true, category: null })} 
-              className="w-10 h-10 rounded-xl bg-[var(--danger-color)]/10 border border-[var(--danger-color)]/20 text-[var(--danger-color)] flex items-center justify-center hover:bg-[var(--danger-color)]/20 transition-all shadow-sm"
-              title="Добавить категорию"
-            >
-              <Plus size={16} />
-            </button>
-          </div>
         </div>
 
         <SortableContext items={categories.map(c => c.id)} strategy={rectSortingStrategy}>
@@ -93,9 +76,30 @@ export function ExpenseSection({
                   onClick={() => setHistoryModal({ isOpen: true, entity: cat, type: "category" })}
                   currencyMode={categoryCurrencyMode}
                   currencySymbol={categoryCurrencyMode === 'base' ? baseSymbol : localSymbol}
+                  iconSize={catIconSize}
                 />
               );
             })}
+            
+            {/* Инлайновая кнопка создания новой категории */}
+            <div
+              onClick={() => setCategoryModal({ isOpen: true, category: null })}
+              className="relative flex flex-col items-center gap-1 justify-start transition-all duration-300 cursor-pointer opacity-60 hover:opacity-100 hover:scale-105 active:scale-95 group w-full"
+            >
+              <div className="flex items-center justify-center transition-all duration-300 relative">
+                <div 
+                  style={{ width: `${catIconSize}px`, height: `${catIconSize}px` }} 
+                  className="rounded-full border border-dashed border-[var(--glass-border-highlight)] flex items-center justify-center bg-[rgba(255,255,255,0.01)] transition-colors group-hover:bg-[rgba(255,255,255,0.04)] shadow-inner"
+                >
+                  <Plus size={isCompact ? 16 : 20} className="text-[var(--text-muted)] group-hover:text-[var(--text-main)] transition-colors" />
+                </div>
+              </div>
+              <div className="flex flex-col items-center pointer-events-none select-none w-full pt-1">
+                <span className="font-label text-[9px] uppercase tracking-[0.12em] text-center leading-tight break-words line-clamp-2 w-full px-0.5 font-black text-[var(--on-surface-variant)] group-hover:text-[var(--text-main)] transition-colors">
+                  Создать
+                </span>
+              </div>
+            </div>
           </div>
         </SortableContext>
       </div>

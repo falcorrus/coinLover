@@ -14,6 +14,11 @@ interface StoriesSectionProps {
   setCalendarAnalyticsModal: (val: any) => void;
   setAnalyticsModal: (val: any) => void;
   categories: { id: string; name: string; color: string; icon: string }[];
+  categoryCurrencyMode: 'base' | 'local';
+  setCategoryCurrencyMode: (mode: 'base' | 'local') => void;
+  baseCurrency: string;
+  localCurrencyCode: string;
+  isStoriesCollapsed?: boolean;
 }
 
 interface Story {
@@ -34,7 +39,16 @@ export function StoriesSection({
   setCalendarAnalyticsModal,
   setAnalyticsModal,
   categories,
+  categoryCurrencyMode,
+  setCategoryCurrencyMode,
+  baseCurrency,
+  localCurrencyCode,
+  isStoriesCollapsed = false,
 }: StoriesSectionProps) {
+  const totalCategoryItems = categories.length + 1;
+  const rowsCount = Math.ceil(totalCategoryItems / 4);
+  const useCompactStories = rowsCount > 2;
+
   const [viewedStories, setViewedStories] = React.useState<string[]>(() => {
     try {
       const saved = localStorage.getItem("coinlover_viewed_stories");
@@ -245,8 +259,8 @@ export function StoriesSection({
   };
 
   // --- Real financial calculations using RatesService for multi-currency safety ---
-  const baseCurrency = RatesService.getBaseCurrency();
   
+
   const getSymbol = (code: string) => {
     if (!code || !isNaN(Number(code))) return "$";
     const symbols: Record<string, string> = { "USD": "$", "EUR": "€", "GBP": "£", "RUB": "₽", "RSD": "din", "BRL": "R$", "ARS": "ARS" };
@@ -875,18 +889,29 @@ export function StoriesSection({
                   <ChevronRight size={16} className="text-[var(--text-muted)]" />
                 </button>
 
-                {/* Reset viewed stories */}
+                {/* Currency Mode Switch */}
                 <button
-                  onClick={resetStoriesState}
-                  className="w-full p-3.5 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)] flex items-center justify-between text-left transition-all shadow-sm"
+                  onClick={() => setCategoryCurrencyMode(categoryCurrencyMode === 'base' ? 'local' : 'base')}
+                  className={`w-full p-3.5 rounded-2xl border flex items-center justify-between text-left transition-all shadow-sm ${
+                    categoryCurrencyMode === 'local' 
+                      ? 'bg-[var(--primary-color)]/10 border-[var(--primary-color)]/30' 
+                      : 'bg-[var(--glass-card-bg)] border-[var(--glass-border)] hover:bg-[var(--glass-item-active)]'
+                  }`}
+                  title={categoryCurrencyMode === 'base' ? "Переключить на локальную валюту" : "Переключить на базовую валюту"}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500">
-                      <RefreshCcw size={16} />
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black uppercase text-sm ${
+                      categoryCurrencyMode === 'local'
+                        ? 'bg-[var(--primary-color)]/20 text-[var(--primary-color)]'
+                        : 'bg-[var(--glass-item-bg)] border border-[var(--glass-border)] text-[var(--text-main)]'
+                    }`}>
+                      {categoryCurrencyMode === 'base' ? baseCurrency : localCurrencyCode}
                     </div>
                     <div>
-                      <span className="font-bold text-xs text-[var(--text-main)] block">Сбросить просмотры</span>
-                      <span className="text-[10px] text-[var(--text-muted)] uppercase font-black">Обнулить кэш сторис</span>
+                      <span className="font-bold text-xs text-[var(--text-main)] block">Валюта Категорий</span>
+                      <span className="text-[10px] text-[var(--text-muted)] uppercase font-black">
+                        {categoryCurrencyMode === 'base' ? 'Базовая валюта' : 'Локальная валюта'}
+                      </span>
                     </div>
                   </div>
                   <ChevronRight size={16} className="text-[var(--text-muted)]" />
@@ -913,42 +938,46 @@ export function StoriesSection({
   return (
     <>
       {/* 1. Horizontal Stories Bar */}
-      <section className="px-6 pt-1 pb-2 shrink-0 relative z-20 border-b border-[var(--glass-border)]/30">
-        <div className="flex gap-3 overflow-x-auto hide-scrollbar py-0.5">
+      <section className={`px-6 shrink-0 relative z-20 border-[var(--glass-border)]/30 transition-all duration-500 ease-in-out overflow-hidden origin-top-right ${isStoriesCollapsed ? "max-h-0 opacity-0 scale-90 translate-x-10 -translate-y-4 border-b-0 py-0" : "max-h-[120px] opacity-100 scale-100 translate-x-0 translate-y-0 pt-1 pb-2 border-b"}`}>
+        <div className="flex gap-3 overflow-x-auto hide-scrollbar py-0.5 animate-in fade-in duration-300">
           {stories.map((story, index) => {
             const Icon = story.icon;
-            const isViewed = viewedStories.includes(story.id);
             return (
               <div
                 key={story.id}
                 onClick={() => handleStoryClick(index)}
-                className="flex flex-col items-center space-y-1 cursor-pointer shrink-0 group"
+                className={`cursor-pointer shrink-0 group ${useCompactStories ? "" : "flex flex-col items-center space-y-1"}`}
               >
                 {/* Story Card wrapper (vertical rounded rectangle) */}
                 <div
-                  className={`w-[52px] h-[68px] rounded-xl p-[1px] transition-all duration-300 border border-[var(--glass-border)] bg-[rgba(255,255,255,0.01)] ${
-                    isViewed
-                      ? "opacity-50"
-                      : "opacity-100 shadow-[0_2px_8px_rgba(0,0,0,0.2)] group-hover:scale-105"
-                  }`}
+                  className="w-[52px] h-[68px] rounded-xl p-[1px] transition-all duration-300 border border-[var(--glass-border)] bg-[rgba(255,255,255,0.01)] opacity-50 hover:opacity-90 hover:scale-105"
                 >
                   {/* Inner card (Glassmorphism Bento Container) */}
-                  <div className="w-full h-full rounded-[10px] bg-[rgba(255,255,255,0.02)] backdrop-blur-md flex items-center justify-center shadow-inner">
+                  <div className={`w-full h-full rounded-[10px] bg-[rgba(255,255,255,0.02)] backdrop-blur-md relative overflow-hidden shadow-inner flex ${
+                    useCompactStories 
+                      ? "flex-col items-center justify-start pt-3.5" 
+                      : "items-center justify-center"
+                  }`}>
                     <Icon
                       size={18}
-                      style={{ color: isViewed ? "var(--text-muted)" : story.color }}
-                      className="transition-all"
+                      className={`transition-all text-[var(--text-muted)] ${useCompactStories ? "transform -translate-y-0.5" : ""}`}
                     />
+                    
+                    {/* Текст внутри карточки (только в компактном режиме) */}
+                    {useCompactStories && (
+                      <span className="absolute bottom-1 w-full text-center text-[7.5px] font-black tracking-[0.15em] text-[var(--text-muted)] uppercase pointer-events-none select-none">
+                        {story.title}
+                      </span>
+                    )}
                   </div>
                 </div>
-                {/* Under-title */}
-                <span
-                  className={`text-[9px] font-semibold uppercase tracking-wider scale-90 ${
-                    isViewed ? "text-[var(--text-muted)] opacity-60" : "text-[var(--text-main)] opacity-85"
-                  } transition-colors`}
-                >
-                  {story.title}
-                </span>
+
+                {/* Текст под иконкой (только в классическом просторном режиме) */}
+                {!useCompactStories && (
+                  <span className="text-[9px] font-semibold uppercase tracking-wider scale-90 text-[var(--text-muted)] transition-colors mt-0.5">
+                    {story.title}
+                  </span>
+                )}
               </div>
             );
           })}

@@ -29,15 +29,13 @@ export function IncomeSection({
   setAnalyticsModal, setIncomeModal, setHistoryModal
 }: IncomeSectionProps) {
   return (
-    <section className={`px-0 overflow-hidden transition-all duration-300 shrink-0 ${isIncomeCollapsed ? "max-h-0 opacity-0" : "max-h-[160px] opacity-100 py-1"}`}>
+    <section className={`px-0 overflow-hidden transition-all duration-500 ease-in-out shrink-0 origin-top-left ${isIncomeCollapsed ? "max-h-0 opacity-0 scale-90 -translate-x-10 -translate-y-4" : "max-h-[160px] opacity-100 scale-100 translate-x-0 translate-y-0 py-1"}`}>
       <div className="px-6 py-2 flex justify-between items-center">
         <div onClick={toggleIncome} className="flex items-center gap-2 cursor-pointer group">
-          <ChevronRight size={APP_SETTINGS.UI.ICON_SIZE_SMALL} className="text-slate-500 rotate-90" />
-          <h2 className="text-[10px] font-black text-slate-500 uppercase group-hover:text-white">Доходы</h2>
+          <ChevronRight size={APP_SETTINGS.UI.ICON_SIZE_SMALL} className="text-[var(--text-muted)] opacity-60 rotate-90" />
+          <h2 className="text-[9px] font-black tracking-[0.2em] text-[var(--text-muted)] uppercase opacity-80 group-hover:text-[var(--text-main)]">Доходы</h2>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={() => setAnalyticsModal({ isOpen: true, type: "income" })} className="w-8 h-8 rounded-xl bg-[var(--success-color)]/10 border border-[var(--success-color)]/20 text-[var(--success-color)] flex items-center justify-center hover:bg-[var(--success-color)]/20 transition-all shadow-sm"><PieChart size={14} /></button>
-          <button onClick={() => setIncomeModal({ isOpen: true, income: null })} className="w-7 h-7 rounded-xl bg-[var(--success-color)]/10 text-[var(--success-color)] flex items-center justify-center hover:bg-[var(--success-color)]/20 transition-colors"><Plus size={14} /></button>
         </div>
       </div>
       <SortableContext items={incomes.map(i => i.id)} strategy={horizontalListSortingStrategy}>
@@ -57,6 +55,19 @@ export function IncomeSection({
               }, 0));
             return (<DraggableIncomeItem key={inc.id} income={inc} isDragging={activeDragId === inc.id} onSortingMode={() => setIsSortingMode(true)} isSortingMode={isSortingMode} onLongPress={(i) => { setIsSortingMode(false); setIncomeModal({ isOpen: true, income: i }); }} onClick={(income) => setHistoryModal({ isOpen: true, entity: income, type: "income" })} monthlyAmount={monthlyAmount} />);
           })}
+          
+          {/* Инлайновая кнопка создания нового дохода */}
+          <div
+            onClick={() => setIncomeModal({ isOpen: true, income: null })}
+            className="flex flex-col items-center justify-start transition-all duration-300 w-[64px] shrink-0 cursor-pointer opacity-50 hover:opacity-100 hover:scale-105 active:scale-95 group"
+          >
+            <div className="w-[64px] h-[64px] mb-2 rounded-full border border-dashed border-[var(--glass-border-highlight)] flex items-center justify-center bg-[rgba(255,255,255,0.01)] transition-colors group-hover:bg-[rgba(255,255,255,0.04)] shadow-inner">
+              <Plus size={22} className="text-[var(--text-muted)] group-hover:text-[var(--text-main)] transition-colors" />
+            </div>
+            <div className="flex flex-col items-center text-center leading-tight pointer-events-none select-none">
+              <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider group-hover:text-[var(--text-main)] transition-colors">Создать</span>
+            </div>
+          </div>
         </div>
       </SortableContext>
     </section>
