@@ -38,5 +38,5 @@
 - **Dev Flow:** Run `./deploy.sh` and choose option **1 (Dev)**. Code will be pushed from current HEAD to remote `preview` branch automatically.
 
 ## Reporting & Analytics
-- **Aggregation:** When requesting 'coinlover' or 'coin', merge data from `coin.reloto.ru` and `coinlover-dev.reloto.ru`.
+- **Aggregation:** When requesting 'coinlover' or 'coin', merge data from `coinlover.ru` (Production) and `coin.reloto.ru` (Dev).
 - **Financial Table (Google Sheets):** ID `1IQCs35RQlMMQsGB-CRczJeuRqa8WIxW4Sy_kjZyHP2M` (Income/Expenses).
