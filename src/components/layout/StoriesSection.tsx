@@ -1,6 +1,7 @@
 import * as React from "react";
-import { Sparkles, Flame, Coins, Zap, HelpCircle, X, Sun, Moon, Palette, BarChart3, ChevronRight, Award, RefreshCcw, Landmark, Compass, DollarSign, Wallet } from "lucide-react";
+import { Sparkles, Flame, Coins, Zap, HelpCircle, X, Sun, Moon, Palette, BarChart3, ChevronRight, Award, RefreshCcw, Landmark, Compass, DollarSign, Wallet, ShoppingBag } from "lucide-react";
 import { Account, Transaction } from "../../types";
+import { IconMap } from "../../constants";
 
 interface StoriesSectionProps {
   accounts: Account[];
@@ -9,6 +10,7 @@ interface StoriesSectionProps {
   setTheme: (theme: string) => void;
   setHistoryModal: (val: any) => void;
   setCalendarAnalyticsModal: (val: any) => void;
+  categories: { id: string; name: string; color: string; icon: string }[];
 }
 
 interface Story {
@@ -27,6 +29,7 @@ export function StoriesSection({
   setTheme,
   setHistoryModal,
   setCalendarAnalyticsModal,
+  categories,
 }: StoriesSectionProps) {
   const [viewedStories, setViewedStories] = React.useState<string[]>(() => {
     try {
@@ -67,7 +70,7 @@ export function StoriesSection({
     },
   ];
 
-  // Simulated live rates for Slide 0 (Fiat) and Slide 1 (Crypto)
+  // Simulated live rates
   const [rates] = React.useState(() => {
     const randomShift = (base: number) => base + (Math.random() - 0.5) * 0.4;
     return {
@@ -85,8 +88,8 @@ export function StoriesSection({
   });
 
   const stories: Story[] = [
-    { id: "overview", title: "Обзор", icon: BarChart3, color: "#a78bfa", gradient: "from-[#a78bfa] to-[#6d5dfc]", slideCount: 2 },
-    { id: "zen", title: "Дзен", icon: Flame, color: "#f43f5e", gradient: "from-[#f43f5e] to-[#ec4899]", slideCount: 2 },
+    { id: "overview", title: "Обзор", icon: BarChart3, color: "#a78bfa", gradient: "from-[#a78bfa] to-[#6d5dfc]", slideCount: 3 },
+    { id: "zen", title: "Дзен", icon: Flame, color: "#f43f5e", gradient: "from-[#f43f5e] to-[#ec4899]", slideCount: 3 },
     { id: "rates", title: "Курсы", icon: Coins, color: "#10b981", gradient: "from-[#10b981] to-[#059669]", slideCount: 2 },
     { id: "tips", title: "Фишки", icon: HelpCircle, color: "#3b82f6", gradient: "from-[#3b82f6] to-[#2563eb]", slideCount: 3 },
     { id: "actions", title: "Пульт", icon: Zap, color: "#eab308", gradient: "from-[#eab308] to-[#ca8a04]", slideCount: 1 },
@@ -116,11 +119,9 @@ export function StoriesSection({
     const currentStory = stories[activeStoryIndex];
 
     if (activeSlideIndex < currentStory.slideCount - 1) {
-      // Go to next slide in the current story
       setActiveSlideIndex((prev) => prev + 1);
       setProgress(0);
     } else {
-      // Story slides finished -> go to the next story
       if (activeStoryIndex < stories.length - 1) {
         const nextIndex = activeStoryIndex + 1;
         setActiveStoryIndex(nextIndex);
@@ -128,7 +129,6 @@ export function StoriesSection({
         setProgress(0);
         markAsViewed(stories[nextIndex].id);
       } else {
-        // No more stories -> close player
         setActiveStoryIndex(null);
       }
     }
@@ -139,11 +139,9 @@ export function StoriesSection({
     if (activeStoryIndex === null) return;
 
     if (activeSlideIndex > 0) {
-      // Go to previous slide in the current story
       setActiveSlideIndex((prev) => prev - 1);
       setProgress(0);
     } else {
-      // First slide -> go to the previous story's LAST slide
       if (activeStoryIndex > 0) {
         const prevIndex = activeStoryIndex - 1;
         const prevStory = stories[prevIndex];
@@ -152,7 +150,6 @@ export function StoriesSection({
         setProgress(0);
         markAsViewed(stories[prevIndex].id);
       } else {
-        // Very first slide of the very first story -> reset progress to 0
         setProgress(0);
       }
     }
@@ -178,7 +175,7 @@ export function StoriesSection({
     return () => clearInterval(timer);
   }, [activeStoryIndex, activeSlideIndex, isPaused]);
 
-  // Touch Gesture Handlers (iOS/Android swipes)
+  // Touch Gesture Handlers (swipes)
   const handleTouchStart = (e: React.TouchEvent) => {
     const touch = e.touches[0];
     touchStartX.current = touch.clientX;
@@ -193,7 +190,7 @@ export function StoriesSection({
     const diffY = touch.clientY - touchStartY.current;
     setIsPaused(false);
 
-    // Swipe down to close player
+    // Swipe down to close
     if (diffY > 80 && Math.abs(diffX) < 100) {
       setActiveStoryIndex(null);
       return;
@@ -247,10 +244,11 @@ export function StoriesSection({
     localStorage.removeItem("coinlover_viewed_stories");
   };
 
-  // Calculations for dynamic slides
+  // Real financial calculations
   const totalBalance = accounts.reduce((sum, a) => sum + a.balance, 0);
   const baseCurrency = accounts[0]?.currency || "RUB";
 
+  // Current month totals
   const expensesThisMonth = currentMonthTransactions
     .filter((t) => t.type === "expense")
     .reduce((sum, t) => sum + t.targetAmount, 0);
@@ -259,12 +257,61 @@ export function StoriesSection({
     .filter((t) => t.type === "income")
     .reduce((sum, t) => sum + t.targetAmount, 0);
 
+  // Today totals
   const todayStr = new Date().toISOString().split("T")[0];
   const spentToday = currentMonthTransactions
     .filter((t) => t.type === "expense" && t.date.startsWith(todayStr))
     .reduce((sum, t) => sum + t.targetAmount, 0);
 
   const hasSpendToday = spentToday > 0;
+
+  // Real data: Currency Capital Split
+  const totalUSD = accounts.reduce((sum, a) => sum + (a.balanceUSD || 0), 0);
+  const currencyMap: { [key: string]: number } = {};
+  const currencyUSDMap: { [key: string]: number } = {};
+  
+  accounts.forEach((a) => {
+    currencyMap[a.currency] = (currencyMap[a.currency] || 0) + a.balance;
+    currencyUSDMap[a.currency] = (currencyUSDMap[a.currency] || 0) + (a.balanceUSD || 0);
+  });
+
+  const currencySplit = Object.keys(currencyMap).map((cur) => {
+    const amt = currencyMap[cur];
+    const usdEquivalent = currencyUSDMap[cur];
+    const percentage = totalUSD > 0 ? Math.round((usdEquivalent / totalUSD) * 100) : 100 / Object.keys(currencyMap).length;
+    return {
+      currency: cur,
+      amount: amt,
+      percentage: Math.round(percentage),
+    };
+  }).sort((a, b) => b.percentage - a.percentage);
+
+  // Real data: TOP-3 Expenses Categories
+  const categoryExpensesMap: { [key: string]: number } = {};
+  currentMonthTransactions
+    .filter((t) => t.type === "expense")
+    .forEach((t) => {
+      categoryExpensesMap[t.targetId] = (categoryExpensesMap[t.targetId] || 0) + t.targetAmount;
+    });
+
+  const totalExpenses = Object.values(categoryExpensesMap).reduce((sum, amt) => sum + amt, 0);
+
+  const topCategories = Object.keys(categoryExpensesMap)
+    .map((catId) => {
+      const category = categories.find((c) => c.id === catId);
+      const amount = categoryExpensesMap[catId];
+      const percentage = totalExpenses > 0 ? Math.round((amount / totalExpenses) * 100) : 0;
+      return {
+        id: catId,
+        name: category?.name || "Другое",
+        color: category?.color || "#6b7280",
+        icon: category?.icon || "ShoppingBag",
+        amount,
+        percentage,
+      };
+    })
+    .sort((a, b) => b.amount - a.amount)
+    .slice(0, 3);
 
   // Render Multi-Slide Content
   const renderStoryContent = (id: string, slideIdx: number) => {
@@ -279,8 +326,8 @@ export function StoriesSection({
                     <BarChart3 size={24} />
                   </div>
                   <div>
-                    <h3 className="font-bold text-lg text-[var(--text-main)] font-sans tracking-wide">Твой баланс в мае</h3>
-                    <p className="text-xs text-[var(--text-muted)]">Сводка кошельков</p>
+                    <h3 className="font-bold text-lg text-[var(--text-main)] font-sans tracking-wide">Твой май в цифрах</h3>
+                    <p className="text-xs text-[var(--text-muted)]">Общая сводка активов</p>
                   </div>
                 </div>
 
@@ -311,7 +358,49 @@ export function StoriesSection({
               
               <div className="text-center p-3 bg-[var(--glass-item-bg)] border border-[var(--glass-border)] rounded-2xl">
                 <span className="text-[10px] text-[var(--text-muted)]">
-                  Листай вправо, чтобы увидеть подробную динамику использования доходов 👉
+                  Листай дальше, чтобы увидеть структуру капитала по валютам 👉
+                </span>
+              </div>
+            </div>
+          );
+        } else if (slideIdx === 1) {
+          return (
+            <div className="flex flex-col h-full justify-between py-6 px-4 animate-in fade-in duration-300">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-violet-500/10 border border-[#a78bfa]/20 flex items-center justify-center text-[#a78bfa] shadow-[0_0_20px_rgba(167,139,250,0.15)]">
+                    <Coins size={24} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg text-[var(--text-main)] font-sans tracking-wide">Валютный сплит</h3>
+                    <p className="text-xs text-[var(--text-muted)]">Распределение твоего капитала</p>
+                  </div>
+                </div>
+
+                <div className="mt-4 space-y-3.5">
+                  {currencySplit.map((split, idx) => (
+                    <div key={idx} className="p-4 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] space-y-2 backdrop-blur-md shadow-sm">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="font-bold text-sm text-[var(--text-main)]">{split.currency}</span>
+                        <div className="text-right">
+                          <span className="font-bold text-sm text-[var(--text-main)] block">{Math.round(split.amount).toLocaleString()} {split.currency}</span>
+                          <span className="text-[10px] font-bold text-[var(--text-muted)]">{split.percentage}% от всех средств</span>
+                        </div>
+                      </div>
+                      <div className="w-full h-2 rounded-full bg-[var(--text-muted)]/15 overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-violet-500 to-indigo-500"
+                          style={{ width: `${split.percentage}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="text-center p-3 bg-[var(--glass-item-bg)] border border-[var(--glass-border)] rounded-2xl">
+                <span className="text-[10px] text-[var(--text-muted)]">
+                  Листай дальше, чтобы оценить использование доходов 👉
                 </span>
               </div>
             </div>
@@ -325,15 +414,15 @@ export function StoriesSection({
                     <Compass size={24} />
                   </div>
                   <div>
-                    <h3 className="font-bold text-lg text-[var(--text-main)] font-sans tracking-wide">Динамика трат</h3>
-                    <p className="text-xs text-[var(--text-muted)]">Анализ доходов</p>
+                    <h3 className="font-bold text-lg text-[var(--text-main)] font-sans tracking-wide">Использование доходов</h3>
+                    <p className="text-xs text-[var(--text-muted)]">Анализ сбережений</p>
                   </div>
                 </div>
 
                 {incomeThisMonth > 0 ? (
                   <div className="p-5 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] space-y-4 backdrop-blur-md shadow-sm">
                     <div className="flex justify-between text-sm text-[var(--text-muted)]">
-                      <span>Использование доходов</span>
+                      <span>Потрачено от полученного</span>
                       <span className="font-bold text-[var(--text-main)]">{Math.round((expensesThisMonth / incomeThisMonth) * 100)}%</span>
                     </div>
                     <div className="w-full h-3 rounded-full bg-[var(--text-muted)]/15 overflow-hidden">
@@ -347,7 +436,7 @@ export function StoriesSection({
                     </p>
                   </div>
                 ) : (
-                  <div className="p-6 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] text-center text-xs text-[var(--text-muted)] leading-relaxed">
+                  <div className="p-6 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] text-center text-xs text-[var(--text-muted)] leading-relaxed shadow-sm">
                     🤷‍♂️ В этом месяце пока нет доходов. Запиши поступления, чтобы увидеть подробную динамику распределения бюджета!
                   </div>
                 )}
@@ -388,7 +477,7 @@ export function StoriesSection({
                     </p>
                   ) : (
                     <p className="text-sm text-[var(--text-main)] opacity-90 leading-relaxed">
-                      Сегодня у тебя <span className="font-bold text-emerald-500">No-Spend Day</span>. Твой кошелек говорит спасибо, а сэкономленные средства помогут быстрее достичь мечты!
+                      Сегодня у тебя <span className="font-bold text-emerald-500">No-Spend Day</span>. Твой кошелек говорит спасибо, а свободные ресурсы накапливаются!
                     </p>
                   )}
                 </div>
@@ -396,7 +485,60 @@ export function StoriesSection({
 
               <div className="text-center p-3 bg-[var(--glass-item-bg)] border border-[var(--glass-border)] rounded-2xl">
                 <span className="text-[10px] text-[var(--text-muted)]">
-                  Листай дальше, чтобы открыть календарь трат 👉
+                  Листай дальше, чтобы увидеть топ-категории расходов 👉
+                </span>
+              </div>
+            </div>
+          );
+        } else if (slideIdx === 1) {
+          return (
+            <div className="flex flex-col h-full justify-between py-6 px-4 animate-in fade-in duration-300">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.15)]">
+                    <ShoppingBag size={24} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg text-[var(--text-main)] font-sans tracking-wide">Топ расходов</h3>
+                    <p className="text-xs text-[var(--text-muted)]">Главные статьи расходов в мае</p>
+                  </div>
+                </div>
+
+                {topCategories.length > 0 ? (
+                  <div className="mt-4 space-y-3">
+                    {topCategories.map((cat, idx) => {
+                      const Icon = IconMap[cat.icon] || ShoppingBag;
+                      return (
+                        <div key={idx} className="flex justify-between items-center p-4 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] backdrop-blur-md shadow-sm">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className="w-10 h-10 rounded-xl flex items-center justify-center"
+                              style={{ backgroundColor: `${cat.color}15`, border: `1px solid ${cat.color}30` }}
+                            >
+                              <Icon size={18} style={{ color: cat.color }} />
+                            </div>
+                            <div>
+                              <span className="font-bold text-xs text-[var(--text-main)] block">{cat.name}</span>
+                              <span className="text-[10px] text-[var(--text-muted)]">{cat.percentage}% от всех трат</span>
+                            </div>
+                          </div>
+                          <span className="font-bold text-sm text-[var(--text-main)]">
+                            -{Math.round(cat.amount).toLocaleString()} {baseCurrency}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="p-6 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] text-center text-xs text-[var(--text-muted)] shadow-sm">
+                    🤷‍♂️ В этом месяце пока нет расходов. Твои главные категории появятся здесь сразу после добавления трат!
+                  </div>
+                )}
+              </div>
+
+              <div className="text-center p-3 bg-[var(--glass-item-bg)] border border-[var(--glass-border)] rounded-2xl">
+                <span className="text-[10px] text-[var(--text-muted)]">
+                  Листай дальше, чтобы спланировать вечер 👉
                 </span>
               </div>
             </div>
@@ -416,7 +558,7 @@ export function StoriesSection({
 
                 <div className="p-5 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] space-y-3 text-left shadow-sm backdrop-blur-md">
                   <p className="text-xs text-[var(--text-main)] opacity-80 leading-relaxed">
-                    Вечерний финансовый ритуал очищает мысли. Вспомни все сегодняшние покупки: кофе на ходу, такси или чаевые. Запиши их в пару кликов, чтобы поддерживать идеальную точность баланса.
+                    Вечерний финансовый ритуал очищает мысли. Вспомни все сегодняшние покупки: кофе на ходу, такси или мелкие траты. Запиши их в пару кликов, чтобы поддерживать идеальный баланс и учет.
                   </p>
                   <div className="text-xs p-2.5 rounded bg-[var(--glass-item-active)] border border-[var(--glass-border)] text-[var(--text-main)] text-center font-bold">
                     🧘‍♂️ Твоя карма — в твоем контроле!
@@ -458,7 +600,7 @@ export function StoriesSection({
                       <span className="font-bold text-sm text-[var(--text-main)] opacity-90">{rate.code}</span>
                       <div className="text-right">
                         <div className="font-bold text-sm text-[var(--text-main)]">{rate.value}</div>
-                        <span className={`text-[10px] font-bold ${rate.isUp ? "text-emerald-500" : "text-rose-500"}`}>
+                        <span className={`text-[10px] font-bold ${rate.isUp ? "text-emerald-400" : "text-rose-400"}`}>
                           {rate.change}
                         </span>
                       </div>
@@ -492,7 +634,7 @@ export function StoriesSection({
                       <span className="font-bold text-sm text-[var(--text-main)] opacity-90">{rate.code}</span>
                       <div className="text-right">
                         <div className="font-bold text-sm text-[var(--text-main)]">{rate.value}</div>
-                        <span className={`text-[10px] font-bold ${rate.isUp ? "text-emerald-500" : "text-rose-500"}`}>
+                        <span className={`text-[10px] font-bold ${rate.isUp ? "text-emerald-400" : "text-rose-400"}`}>
                           {rate.change}
                         </span>
                       </div>

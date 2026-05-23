@@ -450,6 +450,7 @@ SplashScreen.hide().catch(() => {});
             setTheme={setTheme}
             setHistoryModal={setHistoryModal}
             setCalendarAnalyticsModal={setCalendarAnalyticsModal}
+            categories={categories}
           />
 
           <AccountsSection 
