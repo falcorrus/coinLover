@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Sparkles, Flame, Coins, Zap, HelpCircle, X, Sun, Moon, Palette, BarChart3, ChevronRight, Award, RefreshCcw, Landmark, Compass, DollarSign, Wallet, ShoppingBag } from "lucide-react";
+import { Sparkles, Flame, Coins, Zap, HelpCircle, X, Sun, Moon, Palette, BarChart3, ChevronRight, Award, RefreshCcw, Landmark, Compass, DollarSign, Wallet, ShoppingBag, Calendar, PieChart } from "lucide-react";
 import { Account, Transaction } from "../../types";
 import { IconMap } from "../../constants";
 import { RatesService } from "../../services/RatesService";
@@ -12,6 +12,7 @@ interface StoriesSectionProps {
   setTheme: (theme: string) => void;
   setHistoryModal: (val: any) => void;
   setCalendarAnalyticsModal: (val: any) => void;
+  setAnalyticsModal: (val: any) => void;
   categories: { id: string; name: string; color: string; icon: string }[];
 }
 
@@ -31,6 +32,7 @@ export function StoriesSection({
   setTheme,
   setHistoryModal,
   setCalendarAnalyticsModal,
+  setAnalyticsModal,
   categories,
 }: StoriesSectionProps) {
   const [viewedStories, setViewedStories] = React.useState<string[]>(() => {
@@ -799,11 +801,11 @@ export function StoriesSection({
                 </div>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {/* Theme Action */}
                 <button
                   onClick={() => setTheme(theme === "dark" ? "white" : theme === "white" ? "mint" : "dark")}
-                  className="w-full p-4 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)] flex items-center justify-between text-left transition-all shadow-sm"
+                  className="w-full p-3.5 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)] flex items-center justify-between text-left transition-all shadow-sm"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500">
@@ -823,7 +825,7 @@ export function StoriesSection({
                     setActiveStoryIndex(null);
                     setHistoryModal({ isOpen: true, entity: { name: "Все транзакции", icon: "feed" }, type: "feed" });
                   }}
-                  className="w-full p-4 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)] flex items-center justify-between text-left transition-all shadow-sm"
+                  className="w-full p-3.5 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)] flex items-center justify-between text-left transition-all shadow-sm"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-500">
@@ -837,10 +839,50 @@ export function StoriesSection({
                   <ChevronRight size={16} className="text-[var(--text-muted)]" />
                 </button>
 
+                {/* Calendar Action */}
+                <button
+                  onClick={() => {
+                    setActiveStoryIndex(null);
+                    setCalendarAnalyticsModal({ isOpen: true });
+                  }}
+                  className="w-full p-3.5 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)] flex items-center justify-between text-left transition-all shadow-sm"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500">
+                      <Calendar size={16} />
+                    </div>
+                    <div>
+                      <span className="font-bold text-xs text-[var(--text-main)] block">Календарь трат</span>
+                      <span className="text-[10px] text-[var(--text-muted)] uppercase font-black">Сетка расходов</span>
+                    </div>
+                  </div>
+                  <ChevronRight size={16} className="text-[var(--text-muted)]" />
+                </button>
+
+                {/* Analytics Action */}
+                <button
+                  onClick={() => {
+                    setActiveStoryIndex(null);
+                    setAnalyticsModal({ isOpen: true, type: "expense" });
+                  }}
+                  className="w-full p-3.5 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)] flex items-center justify-between text-left transition-all shadow-sm"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-500">
+                      <PieChart size={16} />
+                    </div>
+                    <div>
+                      <span className="font-bold text-xs text-[var(--text-main)] block">Аналитика трат</span>
+                      <span className="text-[10px] text-[var(--text-muted)] uppercase font-black">Диаграмма расходов</span>
+                    </div>
+                  </div>
+                  <ChevronRight size={16} className="text-[var(--text-muted)]" />
+                </button>
+
                 {/* Reset viewed stories */}
                 <button
                   onClick={resetStoriesState}
-                  className="w-full p-4 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)] flex items-center justify-between text-left transition-all shadow-sm"
+                  className="w-full p-3.5 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)] flex items-center justify-between text-left transition-all shadow-sm"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500">

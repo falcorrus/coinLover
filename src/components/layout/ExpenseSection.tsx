@@ -53,9 +53,13 @@ export function ExpenseSection({
                 {categoryCurrencyMode === 'base' ? baseCurrency : localCurrencyCode}
               </span>
             </button>
-            <button onClick={() => setCalendarAnalyticsModal({ isOpen: true })} className="w-10 h-10 rounded-xl bg-[var(--primary-color)]/10 border border-[var(--primary-color)]/20 text-[var(--primary-color)] flex items-center justify-center hover:bg-[var(--primary-color)]/20 transition-all shadow-sm"><Calendar size={16} /></button>
-            <button onClick={() => setAnalyticsModal({ isOpen: true, type: "expense" })} className="w-10 h-10 rounded-xl bg-[var(--danger-color)]/10 border border-[var(--danger-color)]/20 text-[var(--danger-color)] flex items-center justify-center hover:bg-[var(--danger-color)]/20 transition-all shadow-sm"><PieChart size={16} /></button>
-            <button onClick={() => setCategoryModal({ isOpen: true, category: null })} className="w-9 h-9 rounded-xl bg-[var(--danger-color)]/10 text-[var(--danger-color)] flex items-center justify-center hover:bg-[var(--danger-color)]/20 transition-colors"><Plus size={18} /></button>
+            <button 
+              onClick={() => setCategoryModal({ isOpen: true, category: null })} 
+              className="w-10 h-10 rounded-xl bg-[var(--danger-color)]/10 border border-[var(--danger-color)]/20 text-[var(--danger-color)] flex items-center justify-center hover:bg-[var(--danger-color)]/20 transition-all shadow-sm"
+              title="Добавить категорию"
+            >
+              <Plus size={16} />
+            </button>
           </div>
         </div>
 
