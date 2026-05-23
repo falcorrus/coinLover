@@ -102,11 +102,11 @@ ssh root@server.reloto.ru "docker logs -f coinlover"
 - **Source Code:** [GitHub Repository](https://github.com/falcorrus/coinLover.git)
 - **Admin Email:** `coinlover-service-acc@baonlineru.iam.gserviceaccount.com`
 
-**Related Documents:**
-- [[02_TECHNICAL_GUIDE|Technical Implementation Details]]
-- [[01_PRODUCT_STRATEGY|Market Analysis & Strategy]]
-- [[03_ROADMAP_AND_PLANS|Current Roadmap & Tasks]]
-- [[!docs/Design/THEMES_SPECIFICATION|Visual Language & Tech Stack Details]]
+**Project Documentation & History:**
+- [[!SOLUTIONS|Technical Solutions Log]]
+- [[Archive/|Archive (Legacy Docs)]]
+- [[Design/|Design System & Concepts]]
+- [[images/|Asset Library]]
 
 ---
 ## 🗒 Заметки по обслуживанию

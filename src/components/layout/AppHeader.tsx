@@ -42,48 +42,86 @@ export function AppHeader({
   );
 
   return (
-    <header className={`px-6 flex flex-col gap-2 text-center shrink-0 safe-pt-header ${isCompact ? 'pb-2' : 'pb-4'}`}>
+    <header className="px-6 flex flex-col gap-2 text-center shrink-0 safe-pt-header pb-2">
       <div className="flex justify-between items-center mb-2">
         <button onClick={toggleIncome} className="glass-icon-btn w-10 h-10 relative">
           <Plus size={APP_SETTINGS.UI.ICON_SIZE_LARGE} className={`text-[#10b981] transition-transform duration-300 ${!isIncomeCollapsed ? "rotate-45" : ""}`} />
         </button>
-        {isCompact ? PillButton : <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] font-serif">Total Balance</p>}
-        <div className="relative">
-          <button {...settingsLongPress} onClick={handleMenuClick} className="glass-icon-btn w-10 h-10 text-slate-500"><Menu size={APP_SETTINGS.UI.ICON_SIZE_LARGE} className={`transition-transform duration-300 ${isSettingsMenuOpen ? "rotate-90" : ""}`} /></button>
-          {isSettingsMenuOpen && (
-            <>
-              <div className="fixed inset-0 z-[200] bg-black/40 backdrop-blur-[2px]" onClick={() => setIsSettingsMenuOpen(false)} />
-              <div className="absolute top-12 right-0 w-48 bg-[var(--bg-color)] border border-[var(--glass-border)] rounded-2xl shadow-2xl flex flex-col z-[201] p-2 animate-in fade-in zoom-in-95 origin-top-right">
-                <div className="flex items-center justify-around p-3 border-b border-[var(--glass-border)]/50 mb-1">
-                  <button 
-                    onClick={() => { setTheme("white"); setIsSettingsMenuOpen(false); }}
-                    className={`p-2 rounded-xl transition-all ${theme === 'white' || theme === 'zen' ? 'bg-amber-100 text-amber-600 scale-110' : 'text-slate-400 hover:bg-slate-100'}`}
-                  >
-                    <Sun size={20} />
-                  </button>
-                  <button 
-                    onClick={() => { setTheme("mint"); setIsSettingsMenuOpen(false); }}
-                    className={`p-2 rounded-xl transition-all ${theme === 'mint' ? 'bg-emerald-500/20 text-emerald-600 scale-110' : 'text-slate-400 hover:bg-emerald-50'}`}
-                  >
-                    <Sparkles size={20} />
-                  </button>
-                  <button 
-                    onClick={() => { setTheme("black"); setIsSettingsMenuOpen(false); }}
-                    className={`p-2 rounded-xl transition-all ${theme === 'black' || theme === 'modern' ? 'bg-purple-500/20 text-purple-400 scale-110' : 'text-slate-400 hover:bg-white/5'}`}
-                  >
-                    <Moon size={20} />
-                  </button>
-                </div>
-                <button onClick={() => { setIsSettingsMenuOpen(false); pullSettings(); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><RefreshCcw size={16} className={`text-amber-500 ${syncStatus === 'loading' ? 'animate-spin' : ''}`} /><span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Обновить</span></button>
-                <button onClick={() => { setIsSettingsMenuOpen(false); setHistoryModal({ isOpen: true, entity: { name: "Лента", icon: "list" }, type: "feed" }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><List size={16} className="text-[var(--primary-color)]" /><span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Лента</span></button>
-                <button onClick={() => { setIsSettingsMenuOpen(false); setCalendarAnalyticsModal({ isOpen: true }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><Calendar size={16} className="text-emerald-500" /><span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Календарь</span></button>
-                <button onClick={() => { setIsSettingsMenuOpen(false); setAnalyticsModal({ isOpen: true, type: "expense" }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><PieChart size={16} className="text-amber-500" /><span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Аналитика</span></button>
-              </div>
-            </>
-          )}
-        </div>
+        {PillButton}
+        <div className="w-10 h-10" /> {/* Пустая заглушка для идеальной симметрии хедера */}
       </div>
-      {!isCompact && PillButton}
+
+      {/* Floating Action Button (FAB) Menu in Right Bottom */}
+      <div className="fixed right-6 bottom-[calc(env(safe-area-inset-bottom,0px)+24px)] z-[150] flex flex-col items-end">
+        <button 
+          {...settingsLongPress} 
+          onClick={handleMenuClick} 
+          className="w-14 h-14 rounded-full bg-[var(--glass-item-active)] border border-[var(--glass-border)] backdrop-blur-xl flex items-center justify-center shadow-[0_4px_14px_rgba(0,0,0,0.35),0_0_20px_rgba(109,93,252,0.15)] hover:scale-105 active:scale-95 transition-all text-slate-500 relative group overflow-hidden"
+        >
+          {/* Ховер подсветка */}
+          <div className="absolute -inset-1 bg-gradient-to-tr from-[#FFD700]/10 to-[#6d5dfc]/10 opacity-0 group-hover:opacity-100 transition-opacity blur-sm" />
+          
+          {/* Инлайн-SVG favicon.svg монетки */}
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            viewBox="0 0 32 32" 
+            fill="none"
+            className={`w-9 h-9 transition-transform duration-500 ease-out ${isSettingsMenuOpen ? "rotate-[360deg] scale-90" : ""}`}
+          >
+            <defs>
+              <linearGradient id="rim_grad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+                <stop offset="0" stop-color="#FFD700"/>
+                <stop offset="0.5" stop-color="#B8860B"/>
+                <stop offset="1" stop-color="#8B6508"/>
+              </linearGradient>
+              <linearGradient id="face_grad" x1="32" y1="32" x2="0" y2="0" gradientUnits="userSpaceOnUse">
+                <stop offset="0" stop-color="#F0B429"/>
+                <stop offset="1" stop-color="#D49A17"/>
+              </linearGradient>
+              <filter id="depth" x="-10%" y="-10%" width="120%" height="120%">
+                <feInnerShadow stdDeviation="1.5" />
+              </filter>
+            </defs>
+            <circle cx="16" cy="16" r="15.5" fill="url(#rim_grad)" />
+            <circle cx="16" cy="16" r="13.5" fill="#8B6508" opacity="0.4" />
+            <circle cx="16" cy="16" r="12" fill="url(#face_grad)" />
+            <path d="M16 21.5S11 19 11 15C11 12.8 12.5 11.5 14 11.5C15.2 11.5 16 12.5 16 14C16 12.5 16.8 11.5 18 11.5C19.5 11.5 21 12.8 21 15C21 19 16 21.5 16 21.5Z" fill="white" />
+            <path d="M5 10C8 5 20 4 27 12" stroke="white" stroke-width="1" stroke-linecap="round" opacity="0.3" />
+          </svg>
+        </button>
+
+        {isSettingsMenuOpen && (
+          <>
+            <div className="fixed inset-0 z-[140] bg-black/45 backdrop-blur-[2px]" onClick={() => setIsSettingsMenuOpen(false)} />
+            <div className="absolute bottom-[72px] right-0 w-48 bg-[var(--bg-color)] border border-[var(--glass-border)] rounded-[24px] shadow-[0_10px_30px_rgba(0,0,0,0.5)] flex flex-col z-[145] p-2.5 animate-in fade-in slide-in-from-bottom-5 zoom-in-95 origin-bottom-right backdrop-blur-xl">
+              <div className="flex items-center justify-around p-2 border-b border-[var(--glass-border)]/50 mb-1.5">
+                <button 
+                  onClick={() => { setTheme("white"); setIsSettingsMenuOpen(false); }}
+                  className={`p-2 rounded-xl transition-all ${theme === 'white' || theme === 'zen' ? 'bg-amber-100 text-amber-600 scale-110 shadow-sm' : 'text-slate-400 hover:bg-slate-100'}`}
+                >
+                  <Sun size={18} />
+                </button>
+                <button 
+                  onClick={() => { setTheme("mint"); setIsSettingsMenuOpen(false); }}
+                  className={`p-2 rounded-xl transition-all ${theme === 'mint' ? 'bg-emerald-500/20 text-emerald-600 scale-110 shadow-sm' : 'text-slate-400 hover:bg-emerald-50'}`}
+                >
+                  <Sparkles size={18} />
+                </button>
+                <button 
+                  onClick={() => { setTheme("black"); setIsSettingsMenuOpen(false); }}
+                  className={`p-2 rounded-xl transition-all ${theme === 'black' || theme === 'modern' ? 'bg-purple-500/20 text-purple-400 scale-110 shadow-sm' : 'text-slate-400 hover:bg-white/5'}`}
+                >
+                  <Moon size={18} />
+                </button>
+              </div>
+              <button onClick={() => { setIsSettingsMenuOpen(false); pullSettings(); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><RefreshCcw size={15} className={`text-amber-500 ${syncStatus === 'loading' ? 'animate-spin' : ''}`} /><span className="text-xs font-black text-[var(--text-main)] uppercase tracking-wider">Обновить</span></button>
+              <button onClick={() => { setIsSettingsMenuOpen(false); setHistoryModal({ isOpen: true, entity: { name: "Лента", icon: "list" }, type: "feed" }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><List size={15} className="text-[var(--primary-color)]" /><span className="text-xs font-black text-[var(--text-main)] uppercase tracking-wider">Лента</span></button>
+              <button onClick={() => { setIsSettingsMenuOpen(false); setCalendarAnalyticsModal({ isOpen: true }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><Calendar size={15} className="text-emerald-500" /><span className="text-xs font-black text-[var(--text-main)] uppercase tracking-wider">Календарь</span></button>
+              <button onClick={() => { setIsSettingsMenuOpen(false); setAnalyticsModal({ isOpen: true, type: "expense" }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><PieChart size={15} className="text-amber-500" /><span className="text-xs font-black text-[var(--text-main)] uppercase tracking-wider">Аналитика</span></button>
+            </div>
+          </>
+        )}
+      </div>
     </header>
   );
 }
