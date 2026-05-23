@@ -126,7 +126,7 @@ export const CategoryItem: React.FC<Props> = ({
           isDragging ? "scale-110" :
           (isPressing && isSortingMode) ? "scale-110 rotate-3" :
           isPressing ? "scale-90" : "group-active:scale-90"
-        } ${isTarget ? "scale-110" : ""}`}
+        } ${isTarget ? "scale-120" : ""}`}
       >
         <Icon 
           size={iconSize || 50} 
