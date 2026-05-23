@@ -20,9 +20,9 @@ export function AccountsSection({
   setAccountModal, setHistoryModal
 }: AccountsSectionProps) {
   return (
-    <section className="px-0 pt-0 pb-2 relative z-20 shrink-0">
+    <section className="px-0 pt-3 pb-2 relative z-20 shrink-0">
       <div className="px-6 mb-2 flex justify-between items-center">
-        <h2 className="text-[10px] font-black text-slate-500 uppercase">Кошельки</h2>
+        <h2 className="text-[9px] font-black tracking-[0.2em] text-[var(--text-muted)] uppercase opacity-80">Кошельки</h2>
         <button onClick={() => setAccountModal({ isOpen: true, account: null })} className="w-8 h-8 rounded-xl bg-[var(--glass-item-bg)] border border-[var(--glass-border)] text-[var(--text-main)] flex items-center justify-center hover:bg-[var(--glass-item-active)] transition-all shadow-sm"><Plus size={16} /></button>
       </div>
       <SortableContext items={accounts.map(a => a.id)} strategy={horizontalListSortingStrategy}>

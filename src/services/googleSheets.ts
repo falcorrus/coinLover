@@ -14,16 +14,23 @@ const getGoogleScriptUrl = () => {
 // Universal fetch that uses native HTTP on mobile to bypass CORS
 const universalFetch = async (url: string, options?: any) => {
   const isNative = Capacitor.getPlatform() !== "web";
+  const adminToken = localStorage.getItem("cl_admin_token");
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...options?.headers
+  };
+
+  if (adminToken) {
+    headers['X-Admin-Token'] = adminToken;
+  }
   
   if (isNative) {
     try {
       const response = await CapacitorHttp.request({
         url,
         method: options?.method || 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          ...options?.headers
-        },
+        headers,
         data: options?.body ? (typeof options.body === 'string' ? JSON.parse(options.body) : options.body) : undefined,
         connectTimeout: 10000,
         readTimeout: 10000
@@ -40,7 +47,10 @@ const universalFetch = async (url: string, options?: any) => {
     }
   }
   
-  return fetch(url, options);
+  return fetch(url, {
+    ...options,
+    headers
+  });
 };
 
 /**

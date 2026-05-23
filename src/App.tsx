@@ -294,6 +294,7 @@ const isNativeApp = React.useMemo(() => {
 
   const [isAdminModalOpen, setIsAdminModalOpen] = React.useState(false);
   const [adminEmail, setAdminEmail] = React.useState("");
+  const [adminToken, setAdminToken] = React.useState("");
 
   const settingsLongPress = useLongPress(() => { 
     setIsSettingsMenuOpen(false); 
@@ -310,7 +311,8 @@ const isNativeApp = React.useMemo(() => {
     e.preventDefault();
     if (adminEmail === "ekirshin@gmail.com") {
       setIsAdminModalOpen(false);
-      handleSwitchTable("1IQCs35RQlMMQsGB-CRczJeuRqa8WIxW4Sy_kjZyHP2M"); // Master ID
+      localStorage.setItem("cl_admin_token", adminToken);
+      handleSwitchTable("master"); // Master ID pseudonym
     } else {
       alert("Доступ запрещен");
     }
@@ -514,6 +516,14 @@ SplashScreen.hide().catch(() => {});
                   placeholder="email@example.com"
                   value={adminEmail}
                   onChange={(e) => setAdminEmail(e.target.value)}
+                  className="w-full bg-[var(--glass-item-bg)] border border-[var(--glass-border)] rounded-xl px-4 py-3 text-[var(--text-main)] placeholder:text-[var(--text-muted)]/50 focus:border-amber-500/50 transition-all outline-none text-sm"
+                />
+                <input
+                  required
+                  type="password"
+                  placeholder="Токен администратора"
+                  value={adminToken}
+                  onChange={(e) => setAdminToken(e.target.value)}
                   className="w-full bg-[var(--glass-item-bg)] border border-[var(--glass-border)] rounded-xl px-4 py-3 text-[var(--text-main)] placeholder:text-[var(--text-muted)]/50 focus:border-amber-500/50 transition-all outline-none text-sm"
                 />
                 <button

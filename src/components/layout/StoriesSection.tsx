@@ -913,8 +913,11 @@ export function StoriesSection({
   return (
     <>
       {/* 1. Horizontal Stories Bar */}
-      <section className="px-6 py-2 shrink-0 relative z-20">
-        <div className="flex gap-4 overflow-x-auto hide-scrollbar py-2">
+      <section className="px-6 py-2 shrink-0 relative z-20 border-b border-[var(--glass-border)]/50 pb-3">
+        <h3 className="text-[9px] font-black tracking-[0.2em] text-[var(--text-muted)] uppercase mb-2.5 opacity-80">
+          Истории
+        </h3>
+        <div className="flex gap-4 overflow-x-auto hide-scrollbar py-1">
           {stories.map((story, index) => {
             const Icon = story.icon;
             const isViewed = viewedStories.includes(story.id);
@@ -924,16 +927,16 @@ export function StoriesSection({
                 onClick={() => handleStoryClick(index)}
                 className="flex flex-col items-center space-y-1.5 cursor-pointer shrink-0 group"
               >
-                {/* Story Circle wrapper */}
+                {/* Story Card wrapper (vertical rounded rectangle) */}
                 <div
-                  className={`w-[54px] h-[54px] rounded-full p-[2.5px] transition-all duration-300 ${
+                  className={`w-[58px] h-[78px] rounded-2xl p-[2px] transition-all duration-300 ${
                     isViewed
-                      ? "border border-[var(--glass-border)] bg-transparent"
-                      : `bg-gradient-to-tr ${story.gradient} p-[2px] shadow-[0_0_12px_rgba(109,93,252,0.15)] group-hover:scale-105`
+                      ? "border border-[var(--glass-border)] bg-transparent opacity-60"
+                      : `bg-gradient-to-b ${story.gradient} shadow-[0_0_15px_rgba(109,93,252,0.1)] group-hover:scale-105`
                   }`}
                 >
-                  {/* Inner circle */}
-                  <div className="w-full h-full rounded-full bg-[var(--bg-color)] flex items-center justify-center border border-[var(--glass-border)] shadow-inner">
+                  {/* Inner card (Glassmorphism Bento Container) */}
+                  <div className="w-full h-full rounded-[14px] bg-[rgba(255,255,255,0.02)] backdrop-blur-md flex items-center justify-center border border-[var(--glass-border)] shadow-inner">
                     <Icon
                       size={20}
                       style={{ color: isViewed ? "var(--text-muted)" : story.color }}
@@ -943,7 +946,7 @@ export function StoriesSection({
                 </div>
                 {/* Under-title */}
                 <span
-                  className={`text-[9px] font-bold uppercase tracking-wider ${
+                  className={`text-[9px] font-semibold uppercase tracking-widest scale-90 ${
                     isViewed ? "text-[var(--text-muted)] opacity-60" : "text-[var(--text-main)] opacity-85"
                   } transition-colors`}
                 >

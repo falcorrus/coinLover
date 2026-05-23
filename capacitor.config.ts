@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'CoinLover',
   webDir: 'dist',
   /* server: {
-    url: 'https://coinlover.ru/s/1IQCs35RQlMMQsGB-CRczJeuRqa8WIxW4Sy_kjZyHP2M',
+    url: 'https://coinlover.ru/s/master',
     cleartext: true
   } */
 };
