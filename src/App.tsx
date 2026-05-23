@@ -436,13 +436,6 @@ SplashScreen.hide().catch(() => {});
             categoriesCount={categories.length}
           />
 
-          <IncomeSection 
-            isIncomeCollapsed={isIncomeCollapsed} toggleIncome={toggleIncome} incomes={incomes} accounts={accounts} currentMonthTransactions={currentMonthTransactions}
-            categoryCurrencyMode={categoryCurrencyMode} baseCurrency={calculations.baseCurrency} localCurrencyCode={calculations.localCurrencyCode}
-            activeDragId={activeDragId} isSortingMode={isSortingMode} setIsSortingMode={setIsSortingMode}
-            setAnalyticsModal={setAnalyticsModal} setIncomeModal={setIncomeModal} setHistoryModal={setHistoryModal}
-          />
-
           <StoriesSection
             accounts={accounts}
             currentMonthTransactions={currentMonthTransactions}
@@ -452,6 +445,13 @@ SplashScreen.hide().catch(() => {});
             setCalendarAnalyticsModal={setCalendarAnalyticsModal}
             setAnalyticsModal={setAnalyticsModal}
             categories={categories}
+          />
+
+          <IncomeSection 
+            isIncomeCollapsed={isIncomeCollapsed} toggleIncome={toggleIncome} incomes={incomes} accounts={accounts} currentMonthTransactions={currentMonthTransactions}
+            categoryCurrencyMode={categoryCurrencyMode} baseCurrency={calculations.baseCurrency} localCurrencyCode={calculations.localCurrencyCode}
+            activeDragId={activeDragId} isSortingMode={isSortingMode} setIsSortingMode={setIsSortingMode}
+            setAnalyticsModal={setAnalyticsModal} setIncomeModal={setIncomeModal} setHistoryModal={setHistoryModal}
           />
 
           <AccountsSection 
