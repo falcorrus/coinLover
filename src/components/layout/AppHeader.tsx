@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Sun, Moon, Plus, Menu, RefreshCcw, List, Calendar, PieChart, Sparkles, TrendingDown, TrendingUp, Wallet, X } from "lucide-react";
+import { Sun, Moon, Plus, Menu, RefreshCcw, List, Calendar, PieChart, Sparkles, TrendingDown, TrendingUp, Wallet, X, Smartphone, QrCode } from "lucide-react";
 import { APP_SETTINGS } from "../../constants/settings";
 import { HistoryModalState } from "../../types";
 
@@ -36,6 +36,7 @@ export function AppHeader({
   categoriesCount
 }: AppHeaderProps) {
   const isCompact = categoriesCount > 8;
+  const [isDownloadModalOpen, setIsDownloadModalOpen] = React.useState(false);
 
   const PillButton = (
     <button onClick={() => setPillMode(p => p === "expense" ? "income" : p === "income" ? "balance" : "expense")} className={`mx-auto px-5 py-2 rounded-full bg-[var(--glass-item-bg)] border border-[var(--glass-border)] flex items-center gap-2 hover:bg-[var(--glass-item-active)] active:scale-95 transition-all shadow-sm ${isCompact ? '' : '-mt-0.5'}`}>
@@ -132,10 +133,40 @@ export function AppHeader({
               <button onClick={() => { setIsSettingsMenuOpen(false); setHistoryModal({ isOpen: true, entity: { name: "Лента", icon: "list" }, type: "feed" }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><List size={15} className="text-[var(--primary-color)]" /><span className="text-xs font-black text-[var(--text-main)] uppercase tracking-wider">Лента</span></button>
               <button onClick={() => { setIsSettingsMenuOpen(false); setCalendarAnalyticsModal({ isOpen: true }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><Calendar size={15} className="text-emerald-500" /><span className="text-xs font-black text-[var(--text-main)] uppercase tracking-wider">Календарь</span></button>
               <button onClick={() => { setIsSettingsMenuOpen(false); setAnalyticsModal({ isOpen: true, type: "expense" }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><PieChart size={15} className="text-amber-500" /><span className="text-xs font-black text-[var(--text-main)] uppercase tracking-wider">Аналитика</span></button>
+              <button onClick={() => { setIsSettingsMenuOpen(false); setIsDownloadModalOpen(true); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><Smartphone size={15} className="text-[#6d5dfc]" /><span className="text-xs font-black text-[var(--text-main)] uppercase tracking-wider">Приложение</span></button>
             </div>
           </>
         )}
       </div>
+
+      {isDownloadModalOpen && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/60 backdrop-blur-md">
+          <div className="w-full max-w-sm glass-panel p-8 relative border-white/10 shadow-2xl rounded-[32px] bg-[var(--bg-color)]">
+            <button onClick={() => setIsDownloadModalOpen(false)} className="absolute top-4 right-4 text-white/40 hover:text-white transition-colors outline-none"><X size={24} /></button>
+            <div className="text-center mb-6">
+              <h3 className="text-xl font-bold text-[var(--text-main)] mb-2">Установить CoinLover</h3>
+              <p className="text-xs text-[var(--text-main)] opacity-50">Отсканируйте QR-код для скачивания приложения на ваш смартфон</p>
+            </div>
+            <div className="bg-white p-3 rounded-2xl flex justify-center mb-6">
+              <img 
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent("https://coinlover.ru/download/coinlover.apk")}`} 
+                alt="Download QR"
+                className="w-[180px] h-[180px] block"
+              />
+            </div>
+            <div className="flex flex-col gap-3">
+              <a 
+                href="/download/coinlover.apk" 
+                download
+                className="w-full py-4 bg-[#6d5dfc] text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-[#5b4ce3] transition-all text-xs uppercase tracking-widest"
+              >
+                <Smartphone size={16} />
+                Скачать APK (Android)
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

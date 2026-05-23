@@ -5,7 +5,7 @@ import {
   Database, MousePointer2, Layout, Lock, Coins, X, Send, 
   Wallet, Banknote, TrendingUp, Coffee, ShoppingBag, Car, Utensils, Film,
   FileSpreadsheet, Languages, Search, History, Smartphone, Tablet, Laptop, RefreshCw,
-  Fingerprint, Move, Copy, Check
+  Fingerprint, Move, Copy, Check, QrCode
 } from "lucide-react";
 import { googleSheetsService } from "../services/googleSheets";
 import { trackEvent, trackScreen } from "../services/analytics";
@@ -81,6 +81,13 @@ const translations = {
     loginTabLabel: "Уже зарегистрированы?",
     signupTabLabel: "Новый пользователь?",
     loginBtn: "Войти",
+    downloadTag: "Мобильное приложение",
+    downloadTitle: "CoinLover всегда под рукой.",
+    downloadText: "Установите приложение на свой смартфон для мгновенного доступа к финансам. Сканируйте QR-код или переходите по ссылкам.",
+    downloadAppStore: "App Store",
+    downloadGooglePlay: "Google Play",
+    downloadBtn: "Скачать",
+    downloadModalTitle: "Установить CoinLover",
   },
   en: {
     demo: "Demo",
@@ -150,6 +157,13 @@ const translations = {
     loginTabLabel: "Already registered?",
     signupTabLabel: "New user?",
     loginBtn: "Log In",
+    downloadTag: "Mobile App",
+    downloadTitle: "CoinLover always at hand.",
+    downloadText: "Install the app on your smartphone for instant access to your finances. Scan the QR code or follow the links.",
+    downloadAppStore: "App Store",
+    downloadGooglePlay: "Google Play",
+    downloadBtn: "Download",
+    downloadModalTitle: "Install CoinLover",
   }
 };
 
@@ -488,6 +502,44 @@ export const LandingPage: React.FC = () => {
                <RefreshCw className="w-6 h-6 text-white/40 mb-6" />
                <h3 className="text-2xl font-bold mb-4">{t.familyTitle}</h3>
                <p className="text-white/60 leading-relaxed">{t.familyText}</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="download" className="flex flex-col md:flex-row items-center gap-16 md:gap-20 py-10">
+          <div className="flex-1 text-center md:text-left">
+            <span className="text-[#6d5dfc] font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">{t.downloadTag}</span>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">{t.downloadTitle}</h2>
+            <p className="text-lg text-white/50 mb-10 leading-relaxed">{t.downloadText}</p>
+            
+            <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+              <a 
+                href="/download/coinlover.apk" 
+                download
+                className="flex items-center gap-4 px-8 py-4 bg-[#6d5dfc] hover:bg-[#5b4ce3] text-white font-bold rounded-2xl transition-all shadow-xl shadow-[#6d5dfc]/20 group"
+              >
+                <Smartphone size={24} />
+                <div className="text-left">
+                  <div className="text-[10px] opacity-70 uppercase tracking-widest font-black">Direct Download</div>
+                  <div className="text-base uppercase tracking-wider">Android APK</div>
+                </div>
+              </a>
+            </div>
+          </div>
+          
+          <div className="flex-1 flex justify-center md:justify-end">
+            <div className="relative group">
+              <div className="absolute -inset-8 bg-[#6d5dfc]/20 blur-3xl opacity-50 group-hover:opacity-100 transition-opacity duration-1000 rounded-full" />
+              <div className="glass-panel p-6 border-white/10 shadow-2xl relative z-10 flex flex-col items-center gap-4 bg-[#050505]/60">
+                <div className="bg-white p-3 rounded-2xl shadow-inner">
+                  <img 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent("https://coinlover.ru/download/coinlover.apk")}`} 
+                    alt="Download QR"
+                    className="w-[180px] h-[180px] block"
+                  />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Scan to download APK</span>
+              </div>
             </div>
           </div>
         </section>
