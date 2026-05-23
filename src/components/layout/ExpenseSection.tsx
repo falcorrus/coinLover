@@ -40,9 +40,9 @@ export function ExpenseSection({
   const catIconSize = isCompact ? 44 : 50;
 
   return (
-    <section className={`px-0 flex-1 pt-6 pb-8 overflow-y-auto hide-scrollbar z-10 relative transition-all duration-300 ${mode === "income" ? "opacity-30 pointer-events-none grayscale" : "opacity-100"}`}>
+    <section className={`px-0 flex-1 pt-3 pb-8 overflow-y-auto hide-scrollbar z-10 relative transition-all duration-300 ${mode === "income" ? "opacity-30 pointer-events-none grayscale" : "opacity-100"}`}>
       <div className="px-6 py-3">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-center mb-3">
           <h2 className="text-[9px] font-black tracking-[0.2em] text-[var(--text-muted)] uppercase opacity-80">Расходы</h2>
         </div>
 
