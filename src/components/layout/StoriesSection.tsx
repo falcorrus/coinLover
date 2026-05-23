@@ -2,6 +2,7 @@ import * as React from "react";
 import { Sparkles, Flame, Coins, Zap, HelpCircle, X, Sun, Moon, Palette, BarChart3, ChevronRight, Award, RefreshCcw, Landmark, Compass, DollarSign, Wallet, ShoppingBag } from "lucide-react";
 import { Account, Transaction } from "../../types";
 import { IconMap } from "../../constants";
+import { RatesService } from "../../services/RatesService";
 
 interface StoriesSectionProps {
   accounts: Account[];
@@ -244,54 +245,87 @@ export function StoriesSection({
     localStorage.removeItem("coinlover_viewed_stories");
   };
 
-  // Real financial calculations
-  const totalBalance = accounts.reduce((sum, a) => sum + a.balance, 0);
-  const baseCurrency = accounts[0]?.currency || "RUB";
+  // --- Real financial calculations using RatesService for multi-currency safety ---
+  const baseCurrency = RatesService.getBaseCurrency();
+  
+  const getSymbol = (code: string) => {
+    if (!code || !isNaN(Number(code))) return "$";
+    const symbols: Record<string, string> = { "USD": "$", "EUR": "€", "GBP": "£", "RUB": "₽", "RSD": "din", "BRL": "R$", "ARS": "ARS" };
+    return symbols[code.toUpperCase()] || code;
+  };
+  const baseSymbol = getSymbol(baseCurrency);
 
-  // Current month totals
-  const expensesThisMonth = currentMonthTransactions
+  // Total balance base (precise cross-rate converted)
+  const totalBalanceBase = Math.round(accounts.reduce((s, a) => {
+    const aCurr = a.currency || baseCurrency;
+    const balance = isNaN(Number(a.balance)) ? 0 : a.balance;
+    return s + RatesService.convert(balance, aCurr, baseCurrency);
+  }, 0));
+
+  // Current month totals (precise cross-rate converted)
+  const expensesThisMonth = Math.round(currentMonthTransactions
     .filter((t) => t.type === "expense")
-    .reduce((sum, t) => sum + t.targetAmount, 0);
+    .reduce((s, t) => {
+      const account = accounts.find((a) => a.id === t.accountId);
+      const sCurr = t.sourceCurrency || account?.currency || baseCurrency;
+      const amount = isNaN(Number(t.sourceAmount)) ? 0 : t.sourceAmount;
+      return s + RatesService.convert(amount, sCurr, baseCurrency);
+    }, 0));
 
-  const incomeThisMonth = currentMonthTransactions
+  const incomeThisMonth = Math.round(currentMonthTransactions
     .filter((t) => t.type === "income")
-    .reduce((sum, t) => sum + t.targetAmount, 0);
+    .reduce((s, t) => {
+      const account = accounts.find((a) => a.id === t.accountId);
+      const tCurr = t.targetCurrency || account?.currency || baseCurrency;
+      const amount = isNaN(Number(t.targetAmount)) ? 0 : t.targetAmount;
+      return s + RatesService.convert(amount, tCurr, baseCurrency);
+    }, 0));
 
   // Today totals
   const todayStr = new Date().toISOString().split("T")[0];
-  const spentToday = currentMonthTransactions
+  const spentToday = Math.round(currentMonthTransactions
     .filter((t) => t.type === "expense" && t.date.startsWith(todayStr))
-    .reduce((sum, t) => sum + t.targetAmount, 0);
+    .reduce((s, t) => {
+      const account = accounts.find((a) => a.id === t.accountId);
+      const sCurr = t.sourceCurrency || account?.currency || baseCurrency;
+      const amount = isNaN(Number(t.sourceAmount)) ? 0 : t.sourceAmount;
+      return s + RatesService.convert(amount, sCurr, baseCurrency);
+    }, 0));
 
   const hasSpendToday = spentToday > 0;
 
-  // Real data: Currency Capital Split
-  const totalUSD = accounts.reduce((sum, a) => sum + (a.balanceUSD || 0), 0);
-  const currencyMap: { [key: string]: number } = {};
-  const currencyUSDMap: { [key: string]: number } = {};
-  
+  // Real data: Precise Currency Capital Split
+  const totalInBase = accounts.reduce((sum, a) => {
+    return sum + RatesService.convert(a.balance, a.currency, baseCurrency);
+  }, 0);
+
+  const currencyBaseMap: { [key: string]: number } = {};
   accounts.forEach((a) => {
-    currencyMap[a.currency] = (currencyMap[a.currency] || 0) + a.balance;
-    currencyUSDMap[a.currency] = (currencyUSDMap[a.currency] || 0) + (a.balanceUSD || 0);
+    currencyBaseMap[a.currency] = (currencyBaseMap[a.currency] || 0) + RatesService.convert(a.balance, a.currency, baseCurrency);
   });
 
-  const currencySplit = Object.keys(currencyMap).map((cur) => {
-    const amt = currencyMap[cur];
-    const usdEquivalent = currencyUSDMap[cur];
-    const percentage = totalUSD > 0 ? Math.round((usdEquivalent / totalUSD) * 100) : 100 / Object.keys(currencyMap).length;
+  const currencySplit = Object.keys(currencyBaseMap).map((cur) => {
+    // Show total original balance for this currency
+    const totalOriginalAmt = accounts.filter(a => a.currency === cur).reduce((sum, a) => sum + a.balance, 0);
+    const inBase = currencyBaseMap[cur];
+    const percentage = totalInBase > 0 ? Math.round((inBase / totalInBase) * 100) : 0;
     return {
       currency: cur,
-      amount: amt,
+      amount: totalOriginalAmt,
       percentage: Math.round(percentage),
     };
   }).sort((a, b) => b.percentage - a.percentage);
 
-  // Real data: TOP-3 Expenses Categories
+  // Real data: TOP-3 Expenses Categories (Precise cross-rate converted to baseCurrency)
   const categoryExpensesMap: { [key: string]: number } = {};
   currentMonthTransactions
     .filter((t) => t.type === "expense")
     .forEach((t) => {
-      categoryExpensesMap[t.targetId] = (categoryExpensesMap[t.targetId] || 0) + t.targetAmount;
+      const account = accounts.find((a) => a.id === t.accountId);
+      const sCurr = t.sourceCurrency || account?.currency || baseCurrency;
+      const amount = isNaN(Number(t.sourceAmount)) ? 0 : t.sourceAmount;
+      const amountBase = RatesService.convert(amount, sCurr, baseCurrency);
+      categoryExpensesMap[t.targetId] = (categoryExpensesMap[t.targetId] || 0) + amountBase;
     });
 
   const totalExpenses = Object.values(categoryExpensesMap).reduce((sum, amt) => sum + amt, 0);
@@ -299,14 +333,14 @@ export function StoriesSection({
   const topCategories = Object.keys(categoryExpensesMap)
     .map((catId) => {
       const category = categories.find((c) => c.id === catId);
-      const amount = categoryExpensesMap[catId];
-      const percentage = totalExpenses > 0 ? Math.round((amount / totalExpenses) * 100) : 0;
+      const amountBase = categoryExpensesMap[catId];
+      const percentage = totalExpenses > 0 ? Math.round((amountBase / totalExpenses) * 100) : 0;
       return {
         id: catId,
         name: category?.name || "Другое",
         color: category?.color || "#6b7280",
         icon: category?.icon || "ShoppingBag",
-        amount,
+        amount: amountBase,
         percentage,
       };
     })
@@ -335,7 +369,7 @@ export function StoriesSection({
                   <div>
                     <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] tracking-wider">Общий баланс</span>
                     <div className="text-3xl font-black text-[var(--text-main)] font-sans mt-0.5">
-                      {Math.round(totalBalance).toLocaleString()} <span className="text-sm font-normal text-[var(--text-muted)]">{baseCurrency}</span>
+                      {totalBalanceBase.toLocaleString()} <span className="text-sm font-normal text-[var(--text-muted)]">{baseSymbol}</span>
                     </div>
                   </div>
 
@@ -343,13 +377,13 @@ export function StoriesSection({
                     <div>
                       <span className="text-[9px] uppercase font-bold text-emerald-500/70 tracking-wider">Получено</span>
                       <div className="text-lg font-bold text-emerald-500 mt-0.5">
-                        +{Math.round(incomeThisMonth).toLocaleString()} <span className="text-xs font-normal text-emerald-500/60">{baseCurrency}</span>
+                        +{incomeThisMonth.toLocaleString()} <span className="text-xs font-normal text-emerald-500/60">{baseSymbol}</span>
                       </div>
                     </div>
                     <div>
                       <span className="text-[9px] uppercase font-bold text-rose-500/70 tracking-wider">Потрачено</span>
                       <div className="text-lg font-bold text-rose-500 mt-0.5">
-                        -{Math.round(expensesThisMonth).toLocaleString()} <span className="text-xs font-normal text-rose-500/60">{baseCurrency}</span>
+                        -{expensesThisMonth.toLocaleString()} <span className="text-xs font-normal text-rose-500/60">{baseSymbol}</span>
                       </div>
                     </div>
                   </div>
@@ -432,7 +466,7 @@ export function StoriesSection({
                       />
                     </div>
                     <p className="text-xs text-[var(--text-muted)] leading-relaxed pt-2">
-                      Из каждых полученных 100 {baseCurrency} ты откладываешь <span className="font-bold text-[var(--text-main)]">{Math.max(0, Math.round(100 - (expensesThisMonth / incomeThisMonth) * 100))} {baseCurrency}</span>.
+                      Из каждых полученных 100 {baseSymbol} ты откладываешь <span className="font-bold text-[var(--text-main)]">{Math.max(0, Math.round(100 - (expensesThisMonth / incomeThisMonth) * 100))} {baseSymbol}</span>.
                     </p>
                   </div>
                 ) : (
@@ -462,7 +496,7 @@ export function StoriesSection({
 
                 <div className="space-y-2">
                   <h3 className="font-bold text-xl text-[var(--text-main)]">
-                    {hasSpendToday ? "Финансовая карма" : "День без лишних трат! 🔥"}
+                    {hasSpendToday ? "Финансовая карма" : "День без трат! 🔥"}
                   </h3>
                   <p className="text-xs text-[var(--text-muted)] tracking-wide">
                     {hasSpendToday ? "Все сегодняшние расходы под полным контролем" : "Твой кошелек сегодня полностью отдыхает"}
@@ -472,7 +506,7 @@ export function StoriesSection({
                 <div className="p-5 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] space-y-4 backdrop-blur-md text-left shadow-sm">
                   {hasSpendToday ? (
                     <p className="text-sm text-[var(--text-main)] opacity-90 leading-relaxed">
-                      Сегодня записано трат на сумму <span className="font-bold text-rose-500">{Math.round(spentToday).toLocaleString()} {baseCurrency}</span>. 
+                      Сегодня записано трат на сумму <span className="font-bold text-rose-500">{spentToday.toLocaleString()} {baseSymbol}</span>. 
                       Каждая транзакция — это шаг к осознанному управлению капиталом.
                     </p>
                   ) : (
@@ -500,7 +534,7 @@ export function StoriesSection({
                   </div>
                   <div>
                     <h3 className="font-bold text-lg text-[var(--text-main)] font-sans tracking-wide">Топ расходов</h3>
-                    <p className="text-xs text-[var(--text-muted)]">Главные статьи расходов в мае</p>
+                    <p className="text-xs text-[var(--text-muted)]">Главные статьи расходов в мае (в {baseSymbol})</p>
                   </div>
                 </div>
 
@@ -523,7 +557,7 @@ export function StoriesSection({
                             </div>
                           </div>
                           <span className="font-bold text-sm text-[var(--text-main)]">
-                            -{Math.round(cat.amount).toLocaleString()} {baseCurrency}
+                            -{Math.round(cat.amount).toLocaleString()} {baseSymbol}
                           </span>
                         </div>
                       );
