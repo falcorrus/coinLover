@@ -289,7 +289,7 @@ export function StoriesSection({
   const currentDay = now.getDate();
   const todayPrefix = `${String(currentDay).padStart(2, '0')}.${String(currentMonth + 1).padStart(2, '0')}.${currentYear}`;
 
-  const spentToday = Math.round(currentMonthTransactions
+  const todayTransactions = currentMonthTransactions
     .filter((t) => {
       if (t.type !== "expense") return false;
       const dateStr = String(t.date || "").trim();
@@ -305,13 +305,19 @@ export function StoriesSection({
         d.getMonth() === currentMonth &&
         d.getFullYear() === currentYear
       );
-    })
+    });
+
+  const spentToday = Math.round(todayTransactions
     .reduce((s, t) => {
       const account = accounts.find((a) => a.id === t.accountId);
       const sCurr = t.sourceCurrency || account?.currency || baseCurrency;
       const amount = isNaN(Number(t.sourceAmount)) ? 0 : t.sourceAmount;
       return s + RatesService.convert(amount, sCurr, baseCurrency);
     }, 0));
+
+  const latestTodayTransactions = [...todayTransactions]
+    .sort((a, b) => safeParseDate(b.date).getTime() - safeParseDate(a.date).getTime())
+    .slice(0, 3);
 
   const hasSpendToday = spentToday > 0;
 
@@ -509,30 +515,73 @@ export function StoriesSection({
         if (slideIdx === 0) {
           return (
             <div className="flex flex-col h-full justify-between py-6 px-4 animate-in fade-in duration-300">
-              <div className="space-y-6 text-center">
-                <div className="mx-auto w-20 h-20 rounded-full bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-500 shadow-[0_0_30px_rgba(244,63,94,0.2)] animate-bounce duration-1000">
-                  <Flame size={40} className="fill-rose-500/10" />
+              <div className="space-y-4 text-center">
+                <div className={`mx-auto rounded-full bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-500 shadow-[0_0_30px_rgba(244,63,94,0.2)] animate-bounce duration-1000 ${hasSpendToday ? 'w-14 h-14' : 'w-20 h-20'}`}>
+                  <Flame size={hasSpendToday ? 28 : 40} className="fill-rose-500/10" />
                 </div>
 
-                <div className="space-y-2">
-                  <h3 className="font-bold text-xl text-[var(--text-main)]">
+                <div className="space-y-1">
+                  <h3 className="font-bold text-lg text-[var(--text-main)]">
                     {hasSpendToday ? "Финансовая карма" : "День без трат! 🔥"}
                   </h3>
-                  <p className="text-xs text-[var(--text-muted)] tracking-wide">
+                  <p className="text-[10px] text-[var(--text-muted)] tracking-wide">
                     {hasSpendToday ? "Все сегодняшние расходы под полным контролем" : "Твой кошелек сегодня полностью отдыхает"}
                   </p>
                 </div>
 
-                <div className="p-5 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] space-y-4 backdrop-blur-md text-left shadow-sm">
+                <div className="p-4 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] space-y-3.5 backdrop-blur-md text-left shadow-sm">
                   {hasSpendToday ? (
-                    <p className="text-sm text-[var(--text-main)] opacity-90 leading-relaxed">
+                    <p className="text-xs text-[var(--text-main)] opacity-90 leading-relaxed">
                       Сегодня записано трат на сумму <span className="font-bold text-rose-500">{spentToday.toLocaleString()} {baseSymbol}</span>. 
                       Каждая транзакция — это шаг к осознанному управлению капиталом.
                     </p>
                   ) : (
-                    <p className="text-sm text-[var(--text-main)] opacity-90 leading-relaxed">
+                    <p className="text-xs text-[var(--text-main)] opacity-90 leading-relaxed">
                       Сегодня у тебя <span className="font-bold text-emerald-500">No-Spend Day</span>. Твой кошелек говорит спасибо, а свободные ресурсы накапливаются!
                     </p>
+                  )}
+
+                  {hasSpendToday && latestTodayTransactions.length > 0 && (
+                    <div className="space-y-2 pt-2 border-t border-[var(--glass-border)]/50">
+                      <span className="text-[9px] uppercase font-bold text-[var(--text-muted)] tracking-wider block">Детализация за день:</span>
+                      <div className="space-y-1.5 max-h-[145px] overflow-y-auto hide-scrollbar">
+                        {latestTodayTransactions.map((tx, idx) => {
+                          const category = categories.find((c) => c.id === tx.targetId);
+                          const Icon = IconMap[category?.icon || "ShoppingBag"] || ShoppingBag;
+                          const catColor = category?.color || "#f43f5e";
+                          return (
+                            <div key={tx.id || idx} className="flex justify-between items-center p-2 rounded-xl bg-[var(--glass-item-bg)] border border-[var(--glass-border)]/40 backdrop-blur-sm">
+                              <div className="flex items-center gap-2 max-w-[70%]">
+                                <div
+                                  className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                                  style={{ backgroundColor: `${catColor}12`, border: `1px solid ${catColor}20` }}
+                                >
+                                  <Icon size={13} style={{ color: catColor }} />
+                                </div>
+                                <div className="truncate">
+                                  <span className="font-bold text-[11px] text-[var(--text-main)] block truncate leading-snug">
+                                    {category?.name || "Другое"}
+                                  </span>
+                                  {tx.comment && (
+                                    <span className="text-[9px] text-[var(--text-muted)] block truncate leading-none mt-0.5 opacity-80">
+                                      {tx.comment}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <span className="font-mono font-bold text-xs text-rose-500/90 whitespace-nowrap">
+                                -{Math.round(tx.sourceAmount).toLocaleString()} {getSymbol(tx.sourceCurrency)}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {todayTransactions.length > 3 && (
+                        <span className="text-[9px] text-[var(--text-muted)] font-bold block text-center pt-0.5 opacity-85">
+                          + еще {todayTransactions.length - 3} трат за сегодня
+                        </span>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
