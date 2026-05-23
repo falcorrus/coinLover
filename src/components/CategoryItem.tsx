@@ -126,14 +126,14 @@ export const CategoryItem: React.FC<Props> = ({
           isDragging ? "scale-110" :
           (isPressing && isSortingMode) ? "scale-110 rotate-3" :
           isPressing ? "scale-90" : "group-active:scale-90"
-        } ${isTarget ? "scale-125" : ""}`}
+        } ${isTarget ? "scale-110" : ""}`}
       >
         <Icon 
           size={iconSize || 50} 
           className="transition-all duration-300" 
           style={{ 
             color: isTarget ? "var(--primary-color)" : category.color,
-            fill: theme === 'modern' ? 'transparent' : (isTarget ? "transparent" : `${category.color}20`) 
+            fill: theme === 'modern' ? 'transparent' : (isTarget ? "var(--primary-color)20" : `${category.color}20`) 
           }} 
           strokeWidth={theme === 'modern' ? 2 : 1.5}
         />

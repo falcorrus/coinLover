@@ -29,8 +29,8 @@ export function IncomeSection({
   setAnalyticsModal, setIncomeModal, setHistoryModal
 }: IncomeSectionProps) {
   return (
-    <section className={`px-0 overflow-hidden transition-all duration-500 ease-in-out shrink-0 origin-top-left ${isIncomeCollapsed ? "max-h-0 opacity-0 scale-90 -translate-x-10 -translate-y-4" : "max-h-[160px] opacity-100 scale-100 translate-x-0 translate-y-0 py-1"}`}>
-      <div className="px-6 py-2 flex justify-between items-center">
+    <section className={`px-0 overflow-hidden transition-all duration-500 ease-in-out shrink-0 origin-top-left ${isIncomeCollapsed ? "max-h-0 opacity-0 scale-90 -translate-x-10 -translate-y-4" : "max-h-[160px] opacity-100 scale-100 translate-x-0 translate-y-0 pb-1"}`}>
+      <div className="px-6 pt-2 mb-1 flex justify-between items-center">
         <div onClick={toggleIncome} className="flex items-center gap-2 cursor-pointer group">
           <ChevronRight size={APP_SETTINGS.UI.ICON_SIZE_SMALL} className="text-[var(--text-muted)] opacity-60 rotate-90" />
           <h2 className="text-[9px] font-black tracking-[0.2em] text-[var(--text-muted)] uppercase opacity-80 group-hover:text-[var(--text-main)]">Доходы</h2>
@@ -39,7 +39,7 @@ export function IncomeSection({
         </div>
       </div>
       <SortableContext items={incomes.map(i => i.id)} strategy={horizontalListSortingStrategy}>
-        <div className="flex gap-4 overflow-x-auto hide-scrollbar px-6 pb-4 pt-2">
+        <div className="flex gap-4 overflow-x-auto hide-scrollbar px-6 pb-4 pt-4">
           {incomes.map(inc => {
             const monthlyAmount = Math.round(currentMonthTransactions
               .filter(t => String(t.type).toLowerCase() === "income" && t.targetId === inc.id)
@@ -59,7 +59,7 @@ export function IncomeSection({
           {/* Инлайновая кнопка создания нового дохода */}
           <div
             onClick={() => setIncomeModal({ isOpen: true, income: null })}
-            className="flex flex-col items-center justify-start transition-all duration-300 w-[64px] shrink-0 cursor-pointer opacity-50 hover:opacity-100 hover:scale-105 active:scale-95 group"
+            className="flex flex-col items-center justify-start transition-all duration-300 w-[84px] shrink-0 cursor-pointer opacity-50 hover:opacity-100 hover:scale-105 active:scale-95 group"
           >
             <div className="w-[64px] h-[64px] mb-2 rounded-full border border-dashed border-[var(--glass-border-highlight)] flex items-center justify-center bg-[rgba(255,255,255,0.01)] transition-colors group-hover:bg-[rgba(255,255,255,0.04)] shadow-inner">
               <Plus size={22} className="text-[var(--text-muted)] group-hover:text-[var(--text-main)] transition-colors" />
