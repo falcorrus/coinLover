@@ -10,7 +10,7 @@
 ## Architecture & Resources
 - **Source Code:** `/Users/eugene/MyProjects/CoinLover`
 - **Obsidian Docs:** `3. РЕСУРСЫ/00! Мои приложения/coinLover/`
-- **Link:** Folder `/Users/eugene/MyProjects/CoinLover/Obsidian_Docs` points to the project notes in Obsidian.
+- **Link:** Folder `/Users/eugene/MyProjects/CoinLover/!Docs` points to the project notes in Obsidian.
 - **File Storage:** Все новые `.md` файлы (дизайны, планы, логи) сохраняй только в `/Users/eugene/MyProjects/CoinLover/Obsidian_Docs`.
 
 ## Behavioral Overrides

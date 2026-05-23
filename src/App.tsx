@@ -23,6 +23,7 @@ import { AppHeader } from "./components/layout/AppHeader";
 import { IncomeSection } from "./components/layout/IncomeSection";
 import { AccountsSection } from "./components/layout/AccountsSection";
 import { ExpenseSection } from "./components/layout/ExpenseSection";
+import { StoriesSection } from "./components/layout/StoriesSection";
 
 import { googleSheetsService } from "./services/googleSheets";
 import { setGAUser, trackScreen, trackEvent } from "./services/analytics";
@@ -440,6 +441,15 @@ SplashScreen.hide().catch(() => {});
             categoryCurrencyMode={categoryCurrencyMode} baseCurrency={calculations.baseCurrency} localCurrencyCode={calculations.localCurrencyCode}
             activeDragId={activeDragId} isSortingMode={isSortingMode} setIsSortingMode={setIsSortingMode}
             setAnalyticsModal={setAnalyticsModal} setIncomeModal={setIncomeModal} setHistoryModal={setHistoryModal}
+          />
+
+          <StoriesSection
+            accounts={accounts}
+            currentMonthTransactions={currentMonthTransactions}
+            theme={theme}
+            setTheme={setTheme}
+            setHistoryModal={setHistoryModal}
+            setCalendarAnalyticsModal={setCalendarAnalyticsModal}
           />
 
           <AccountsSection 
