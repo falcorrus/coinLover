@@ -375,29 +375,7 @@ export default async function handler(req, res) {
   const action = query.action || parsedBody.action;
   const isDemo = query.demo === 'true' || parsedBody.demo === true;
 
-  let ssId = query.ssId || parsedBody.ssId;
-
-  // Early validation & interception for MASTER_SS_ID or 'master' alias
-  const isMasterRequested = ssId === 'master' || ssId === MASTER_SS_ID;
-  if (isMasterRequested) {
-    const adminTokenHeader = req.headers['x-admin-token'] || parsedBody.adminToken || query.adminToken;
-    const serverAdminToken = process.env.ADMIN_TOKEN || 'coinlover-default-admin-token-2026';
-
-    if (!adminTokenHeader || adminTokenHeader !== serverAdminToken) {
-      console.warn(`[API] Unauthorized access attempt to Master Spreadsheet: ssId=${ssId}`);
-      return res.status(403).json({
-        status: "error",
-        error: "unauthorized_admin",
-        message: "Доступ к мастер-таблице запрещен: неверный или отсутствующий токен администратора."
-      });
-    }
-
-    // Map 'master' to the real ID and inject it back into request variables
-    ssId = MASTER_SS_ID;
-    if (query.ssId) query.ssId = MASTER_SS_ID;
-    if (parsedBody.ssId) parsedBody.ssId = MASTER_SS_ID;
-    if (req.body && typeof req.body === 'object') req.body.ssId = MASTER_SS_ID;
-  }
+  const ssId = query.ssId || parsedBody.ssId;
 
   const isAllowedWithoutSsId = 
     isDemo || 

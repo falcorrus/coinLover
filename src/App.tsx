@@ -292,31 +292,12 @@ const isNativeApp = React.useMemo(() => {
 
   const calculations = useCurrencyCalculations(accounts, currentMonthTransactions, categories, incomes, categoryCurrencyMode);
 
-  const [isAdminModalOpen, setIsAdminModalOpen] = React.useState(false);
-  const [adminEmail, setAdminEmail] = React.useState("");
-  const [adminToken, setAdminToken] = React.useState("");
-
   const settingsLongPress = useLongPress(() => { 
     setIsSettingsMenuOpen(false); 
-    const isDemoMode = false;
-    if (isDemoMode) {
-      setIsAdminModalOpen(true);
-    } else {
-      setIsUsersModalOpen(true); 
-    }
+    setIsUsersModalOpen(true); 
     if (navigator.vibrate) navigator.vibrate(APP_SETTINGS.HAPTIC_FEEDBACK_DURATION_MEDIUM); 
   }, 5000);
 
-  const handleAdminSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (adminEmail === "ekirshin@gmail.com") {
-      setIsAdminModalOpen(false);
-      localStorage.setItem("cl_admin_token", adminToken);
-      handleSwitchTable("master"); // Master ID pseudonym
-    } else {
-      alert("Доступ запрещен");
-    }
-  };
   const handleMenuClick = () => setIsSettingsMenuOpen(!isSettingsMenuOpen);
 
   const { activeDragId, activeDragType, isSortingMode, setIsSortingMode, overId, handleDragStart, handleDragMove, handleDragOver, handleDragEnd } = useAppDnD({
@@ -489,53 +470,7 @@ SplashScreen.hide().catch(() => {});
           saveIncome={saveIncome} deleteIncome={deleteIncome} updateLocalFromRemote={updateLocalFromRemote} onSwitchTable={handleSwitchTable}
         />
 
-        {isAdminModalOpen && (
-          <div className="fixed inset-0 z-[3000] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="w-full max-w-sm glass-panel p-8 border border-[var(--glass-border)] shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-200">
-              <button
-                onClick={() => setIsAdminModalOpen(false)}
-                className="absolute top-4 right-4 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
-              >
-                <X size={24} />
-              </button>
 
-              <div className="w-12 h-12 bg-amber-500/10 rounded-xl flex items-center justify-center mb-6">
-                <Lock className="w-6 h-6 text-amber-500" />
-              </div>
-
-              <h2 className="text-xl font-bold text-[var(--text-main)] mb-2">Вход администратора</h2>
-              <p className="text-[var(--text-muted)] text-sm mb-8 leading-relaxed">
-                Введите ваш email для доступа к мастер-таблице
-              </p>
-
-              <form onSubmit={handleAdminSubmit} className="flex flex-col gap-4">
-                <input
-                  autoFocus
-                  required
-                  type="email"
-                  placeholder="email@example.com"
-                  value={adminEmail}
-                  onChange={(e) => setAdminEmail(e.target.value)}
-                  className="w-full bg-[var(--glass-item-bg)] border border-[var(--glass-border)] rounded-xl px-4 py-3 text-[var(--text-main)] placeholder:text-[var(--text-muted)]/50 focus:border-amber-500/50 transition-all outline-none text-sm"
-                />
-                <input
-                  required
-                  type="password"
-                  placeholder="Токен администратора"
-                  value={adminToken}
-                  onChange={(e) => setAdminToken(e.target.value)}
-                  className="w-full bg-[var(--glass-item-bg)] border border-[var(--glass-border)] rounded-xl px-4 py-3 text-[var(--text-main)] placeholder:text-[var(--text-muted)]/50 focus:border-amber-500/50 transition-all outline-none text-sm"
-                />
-                <button
-                  type="submit"
-                  className="w-full py-4 bg-amber-500 hover:bg-amber-400 text-[#050505] font-black rounded-xl transition-all text-sm uppercase tracking-widest shadow-xl shadow-amber-500/20"
-                >
-                  Войти
-                </button>
-              </form>
-            </div>
-          </div>
-        )}
         <OnboardingModal isOpen={isOnboarding} onComplete={handleOnboardingComplete} />
       </div>
 
