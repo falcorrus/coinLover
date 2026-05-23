@@ -143,7 +143,7 @@ export const useTransactions = ({
     await RatesService.ensureRates();
 
     const oldTx = transactions.find(t => t.id === txId); if (!oldTx) return;
-    const date = customDate ? formatDateTime(customDate) : oldTx.date;
+    const date = customDate ? formatDateTime(customDate) : formatDateTime(oldTx.date);
     const finalTargetAmount = targetAmount ?? sourceAmount;
     let sCurr: string, tCurr: string;
     
