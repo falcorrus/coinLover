@@ -128,7 +128,7 @@ export const CategoryItem: React.FC<Props> = ({
         } ${isTarget ? "scale-125" : ""}`}
       >
         <Icon 
-          size={52} 
+          size={44} 
           className="transition-all duration-300" 
           style={{ 
             color: isTarget ? "var(--primary-color)" : category.color,
