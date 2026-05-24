@@ -18,7 +18,7 @@ const translations = {
     subtitle: "Управляйте финансами через Google Таблицы",
     sheetUrlLabel: "Ссылка на Google Таблицу",
     sheetUrlPlaceholder: "https://docs.google.com/spreadsheets/d/...",
-    sheetUrlHint: "Найти свои таблицы можно здесь:",
+    sheetUrlHint: "Ссылку на вашу таблицу можете найти здесь:",
     btnSubmit: "Войти",
     demoBtn: "Попробовать Demo-режим",
     errorInvalidUrl: "Некорректная ссылка на Google Таблицу. Не удалось извлечь Spreadsheet ID.",

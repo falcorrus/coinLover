@@ -74,7 +74,7 @@ const translations = {
     categories: { food: "Еда", transport: "Транспорт", coffee: "Кофе", shopping: "Покупки", fun: "Отдых" },
     modalTitleLogin: "Вход в CoinLover",
     modalLoginPlaceholder: "https://docs.google.com/spreadsheets/d/...",
-    modalLoginHint: "Найти свои таблицы можно здесь:",
+    modalLoginHint: "Ссылку на вашу таблицу можете найти здесь:",
     modalLoginBtn: "Войти",
     modalLoginSuccess: "Успешный вход!",
     modalLoginSuccessSub: "Мы нашли вашу таблицу. Запускаем сессию...",
