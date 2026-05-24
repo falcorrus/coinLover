@@ -167,7 +167,11 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
         const dayTx = filteredTx.filter(t => {
             const txDate = safeParseDate(t.date);
             return txDate.getDate() === day;
-        }).sort((a, b) => safeParseDate(b.date).getTime() - safeParseDate(a.date).getTime());
+        }).sort((a, b) => {
+            const timeDiff = safeParseDate(b.date).getTime() - safeParseDate(a.date).getTime();
+            if (timeDiff !== 0) return timeDiff;
+            return filteredTx.indexOf(b) - filteredTx.indexOf(a);
+        });
 
         const calcSum = (type: string, useBase: boolean) => Math.round(dayTx.filter(t => t.type === type).reduce((s, t) => {
             const valBase = (t.targetAmountUSD && t.targetAmountUSD !== 0 && baseCurrency === 'USD')

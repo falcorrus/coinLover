@@ -84,22 +84,169 @@ export function StoriesSection({
     },
   ];
 
-  // Simulated live rates
-  const [rates] = React.useState(() => {
-    const randomShift = (base: number) => base + (Math.random() - 0.5) * 0.4;
+  // Dynamic exchange rates logic based on user settings and wallets
+  const getActualRates = React.useCallback(() => {
+    const cached = RatesService.getCachedRates();
+    const base = baseCurrency || "USD";
+
+    // 1. Determine target currencies to compare with base
+    const walletCurrencies = Array.from(new Set(accounts.map(a => a.currency).filter(Boolean)));
+    const targets = new Set<string>();
+
+    if (base !== "RUB") {
+      targets.add("RUB");
+    } else {
+      targets.add("USD");
+    }
+
+    walletCurrencies.forEach(curr => {
+      if (curr !== base) {
+        targets.add(curr);
+      }
+    });
+
+    const targetList = Array.from(targets);
+
+    // 2. Build fiat rates list
+    const fiatRates = targetList.map(target => {
+      const displayCode = `${base}/${target}`;
+      let rateValue = 0;
+
+      if (cached) {
+        rateValue = cached[target] || 0;
+      }
+
+      // Fallback values if API is loading or unavailable
+      if (!rateValue) {
+        const fallbacks: Record<string, number> = {
+          "USD/RUB": 91.45,
+          "USD/EUR": 0.92,
+          "USD/USD": 1.00,
+          "RUB/USD": 0.011,
+          "EUR/USD": 1.08,
+          "EUR/RUB": 98.60,
+          "RUB/EUR": 0.010,
+        };
+        
+        rateValue = fallbacks[displayCode] || 1.00;
+        if (!fallbacks[displayCode]) {
+          if (target === "ARS") rateValue = 900.0;
+          else if (target === "BRL") rateValue = 5.0;
+          else if (target === "TRY") rateValue = 32.0;
+          else if (target === "CNY") rateValue = 7.2;
+          else if (target === "EUR") rateValue = 0.92;
+          else if (target === "USD") rateValue = 1.0;
+          else if (target === "RUB") rateValue = 91.45;
+        }
+        rateValue += (Math.random() - 0.5) * (rateValue * 0.005);
+      }
+
+      // Deterministic but realistic trends (+/- change and isUp)
+      const seed = displayCode.charCodeAt(0) + displayCode.charCodeAt(displayCode.length - 1);
+      const isUp = (seed % 2 === 0);
+      const percentChange = ((seed % 10) / 10 + 0.05).toFixed(2);
+      const changeStr = `${isUp ? "+" : "-"}${percentChange}%`;
+
+      // For currencies with very small rates (like RUB/USD = 0.011), let's show 4 decimals, otherwise 2
+      const decimals = rateValue < 0.1 ? 4 : 2;
+
+      return {
+        code: displayCode,
+        value: rateValue.toFixed(decimals),
+        change: changeStr,
+        isUp,
+      };
+    });
+
+    // 3. Simulated cryptocurrency rates
+    const randomShift = (val: number, amp = 0.4) => val + (Math.random() - 0.5) * amp;
+    const cryptoRates = [
+      { code: "BTC/USD", value: Math.round(randomShift(77000, 300)).toLocaleString(), change: "+2.40%", isUp: true },
+      { code: "SOL/USD", value: randomShift(85.50, 1.5).toFixed(2), change: "-0.85%", isUp: false },
+      { code: "TON/USD", value: randomShift(1.80, 0.05).toFixed(2), change: "+3.12%", isUp: true },
+    ];
+
     return {
-      fiat: [
-        { code: "USD/RUB", value: randomShift(91.45).toFixed(2), change: "+0.32%", isUp: true },
-        { code: "EUR/RUB", value: randomShift(98.60).toFixed(2), change: "-0.15%", isUp: false },
-        { code: "USDT/RUB", value: randomShift(91.80).toFixed(2), change: "+0.08%", isUp: true },
-      ],
-      crypto: [
-        { code: "BTC/USD", value: Math.round(67420 + (Math.random() - 0.5) * 300).toLocaleString(), change: "+2.40%", isUp: true },
-        { code: "ETH/USD", value: Math.round(3480 + (Math.random() - 0.5) * 20).toLocaleString(), change: "+1.15%", isUp: true },
-        { code: "SOL/USD", value: (168.45 + (Math.random() - 0.5) * 3).toFixed(2), change: "-0.85%", isUp: false },
-      ]
+      fiat: fiatRates,
+      crypto: cryptoRates
     };
-  });
+  }, [baseCurrency, accounts]);
+
+  const [rates, setRates] = React.useState(() => getActualRates());
+
+  React.useEffect(() => {
+    setRates(getActualRates());
+
+    let mounted = true;
+    const loadRates = async () => {
+      try {
+        // Fetch fiat in background
+        await RatesService.ensureRates();
+        
+        // Fetch crypto in background
+        let freshCrypto = null;
+        try {
+          const cryptoRes = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,solana,the-open-network&vs_currencies=usd");
+          if (cryptoRes.ok) {
+            const cryptoData = await cryptoRes.json();
+            if (cryptoData) {
+              const btcVal = cryptoData.bitcoin?.usd;
+              const solVal = cryptoData.solana?.usd;
+              const tonVal = cryptoData["the-open-network"]?.usd;
+              
+              if (btcVal && solVal && tonVal) {
+                const cacheKey = "cl_crypto_rates_prev";
+                const prevStr = localStorage.getItem(cacheKey);
+                let prevData: any = {};
+                try {
+                  prevData = prevStr ? JSON.parse(prevStr) : {};
+                } catch {}
+
+                const getChangeInfo = (current: number, prev: number | undefined, defaultChange: string, defaultUp: boolean) => {
+                  if (!prev) return { change: defaultChange, isUp: defaultUp };
+                  const diff = current - prev;
+                  if (diff === 0) return { change: "0.00%", isUp: true };
+                  const pct = ((diff / prev) * 100).toFixed(2);
+                  const isUp = diff > 0;
+                  return { change: `${isUp ? "+" : ""}${pct}%`, isUp };
+                };
+
+                const btcInfo = getChangeInfo(btcVal, prevData.btc, "+2.40%", true);
+                const solInfo = getChangeInfo(solVal, prevData.sol, "-0.85%", false);
+                const tonInfo = getChangeInfo(tonVal, prevData.ton, "+3.12%", true);
+
+                localStorage.setItem(cacheKey, JSON.stringify({ btc: btcVal, sol: solVal, ton: tonVal }));
+
+                freshCrypto = [
+                  { code: "BTC/USD", value: Math.round(btcVal).toLocaleString(), change: btcInfo.change, isUp: btcInfo.isUp },
+                  { code: "SOL/USD", value: solVal.toFixed(2), change: solInfo.change, isUp: solInfo.isUp },
+                  { code: "TON/USD", value: tonVal.toFixed(2), change: tonInfo.change, isUp: tonInfo.isUp },
+                ];
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Failed to fetch live crypto rates", err);
+        }
+
+        if (mounted) {
+          const freshFiatAndCrypto = getActualRates();
+          if (freshCrypto) {
+            freshFiatAndCrypto.crypto = freshCrypto;
+          }
+          setRates(freshFiatAndCrypto);
+        }
+      } catch (e) {
+        console.error("Failed to ensure rates in StoriesSection", e);
+      }
+    };
+
+    loadRates();
+
+    return () => {
+      mounted = false;
+    };
+  }, [baseCurrency, accounts, getActualRates]);
 
   const stories: Story[] = [
     { id: "overview", title: "Обзор", icon: BarChart3, color: "#a78bfa", gradient: "from-[#a78bfa] to-[#6d5dfc]", slideCount: 3 },
@@ -328,8 +475,7 @@ export function StoriesSection({
     }, 0));
 
   const latestTodayTransactions = [...todayTransactions]
-    .sort((a, b) => safeParseDate(b.date).getTime() - safeParseDate(a.date).getTime())
-    .slice(0, 3);
+    .sort((a, b) => safeParseDate(b.date).getTime() - safeParseDate(a.date).getTime());
 
   const hasSpendToday = spentToday > 0;
 
@@ -430,176 +576,6 @@ export function StoriesSection({
               
               <div className="text-center p-3 bg-[var(--glass-item-bg)] border border-[var(--glass-border)] rounded-2xl">
                 <span className="text-[10px] text-[var(--text-muted)]">
-                  Листай дальше, чтобы увидеть структуру капитала по валютам 👉
-                </span>
-              </div>
-            </div>
-          );
-        } else if (slideIdx === 1) {
-          return (
-            <div className="flex flex-col h-full justify-between py-6 px-4 animate-in fade-in duration-300">
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-violet-500/10 border border-[#a78bfa]/20 flex items-center justify-center text-[#a78bfa] shadow-[0_0_20px_rgba(167,139,250,0.15)]">
-                    <Coins size={24} />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-lg text-[var(--text-main)] font-sans tracking-wide">Валютный сплит</h3>
-                    <p className="text-xs text-[var(--text-muted)]">Распределение твоего капитала</p>
-                  </div>
-                </div>
-
-                <div className="mt-4 space-y-3.5">
-                  {currencySplit.map((split, idx) => (
-                    <div key={idx} className="p-4 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] space-y-2 backdrop-blur-md shadow-sm">
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="font-bold text-sm text-[var(--text-main)]">{split.currency}</span>
-                        <div className="text-right">
-                          <span className="font-bold text-sm text-[var(--text-main)] block">{Math.round(split.amount).toLocaleString()} {split.currency}</span>
-                          <span className="text-[10px] font-bold text-[var(--text-muted)]">{split.percentage}% от всех средств</span>
-                        </div>
-                      </div>
-                      <div className="w-full h-2 rounded-full bg-[var(--text-muted)]/15 overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-r from-violet-500 to-indigo-500"
-                          style={{ width: `${split.percentage}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="text-center p-3 bg-[var(--glass-item-bg)] border border-[var(--glass-border)] rounded-2xl">
-                <span className="text-[10px] text-[var(--text-muted)]">
-                  Листай дальше, чтобы оценить использование доходов 👉
-                </span>
-              </div>
-            </div>
-          );
-        } else {
-          return (
-            <div className="flex flex-col h-full justify-between py-6 px-4 animate-in fade-in duration-300">
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-violet-500/10 border border-[#a78bfa]/20 flex items-center justify-center text-[#a78bfa] shadow-[0_0_20px_rgba(167,139,250,0.15)]">
-                    <Compass size={24} />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-lg text-[var(--text-main)] font-sans tracking-wide">Использование доходов</h3>
-                    <p className="text-xs text-[var(--text-muted)]">Анализ сбережений</p>
-                  </div>
-                </div>
-
-                {incomeThisMonth > 0 ? (
-                  <div className="p-5 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] space-y-4 backdrop-blur-md shadow-sm">
-                    <div className="flex justify-between text-sm text-[var(--text-muted)]">
-                      <span>Потрачено от полученного</span>
-                      <span className="font-bold text-[var(--text-main)]">{Math.round((expensesThisMonth / incomeThisMonth) * 100)}%</span>
-                    </div>
-                    <div className="w-full h-3 rounded-full bg-[var(--text-muted)]/15 overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-violet-500 to-fuchsia-500 transition-all duration-500"
-                        style={{ width: `${Math.min((expensesThisMonth / incomeThisMonth) * 100, 100)}%` }}
-                      />
-                    </div>
-                    <p className="text-xs text-[var(--text-muted)] leading-relaxed pt-2">
-                      Из каждых полученных 100 {baseSymbol} ты откладываешь <span className="font-bold text-[var(--text-main)]">{Math.max(0, Math.round(100 - (expensesThisMonth / incomeThisMonth) * 100))} {baseSymbol}</span>.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="p-6 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] text-center text-xs text-[var(--text-muted)] leading-relaxed shadow-sm">
-                    🤷‍♂️ В этом месяце пока нет доходов. Запиши поступления, чтобы увидеть подробную динамику распределения бюджета!
-                  </div>
-                )}
-              </div>
-
-              <div className="text-center p-3 bg-[var(--primary-color)]/10 border border-[var(--primary-color)]/20 rounded-2xl animate-pulse">
-                <span className="text-xs font-semibold text-[var(--primary-color)]">
-                  {incomeThisMonth > expensesThisMonth ? "💰 Отличная работа! Твой доход превышает расходы." : "⚠️ Будь осторожен, траты превысили доходы."}
-                </span>
-              </div>
-            </div>
-          );
-        }
-
-      case "zen":
-        if (slideIdx === 0) {
-          return (
-            <div className="flex flex-col h-full justify-between py-6 px-4 animate-in fade-in duration-300">
-              <div className="space-y-4 text-center">
-                <div className={`mx-auto rounded-full bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-500 shadow-[0_0_30px_rgba(244,63,94,0.2)] animate-bounce duration-1000 ${hasSpendToday ? 'w-14 h-14' : 'w-20 h-20'}`}>
-                  <Flame size={hasSpendToday ? 28 : 40} className="fill-rose-500/10" />
-                </div>
-
-                <div className="space-y-1">
-                  <h3 className="font-bold text-lg text-[var(--text-main)]">
-                    {hasSpendToday ? "Финансовая карма" : "День без трат! 🔥"}
-                  </h3>
-                  <p className="text-[10px] text-[var(--text-muted)] tracking-wide">
-                    {hasSpendToday ? "Все сегодняшние расходы под полным контролем" : "Твой кошелек сегодня полностью отдыхает"}
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] space-y-3.5 backdrop-blur-md text-left shadow-sm">
-                  {hasSpendToday ? (
-                    <p className="text-xs text-[var(--text-main)] opacity-90 leading-relaxed">
-                      Сегодня записано трат на сумму <span className="font-bold text-rose-500">{spentToday.toLocaleString()} {baseSymbol}</span>. 
-                      Каждая транзакция — это шаг к осознанному управлению капиталом.
-                    </p>
-                  ) : (
-                    <p className="text-xs text-[var(--text-main)] opacity-90 leading-relaxed">
-                      Сегодня у тебя <span className="font-bold text-emerald-500">No-Spend Day</span>. Твой кошелек говорит спасибо, а свободные ресурсы накапливаются!
-                    </p>
-                  )}
-
-                  {hasSpendToday && latestTodayTransactions.length > 0 && (
-                    <div className="space-y-2 pt-2 border-t border-[var(--glass-border)]/50">
-                      <span className="text-[9px] uppercase font-bold text-[var(--text-muted)] tracking-wider block">Детализация за день:</span>
-                      <div className="space-y-1.5 max-h-[145px] overflow-y-auto hide-scrollbar">
-                        {latestTodayTransactions.map((tx, idx) => {
-                          const category = categories.find((c) => c.id === tx.targetId);
-                          const Icon = IconMap[category?.icon || "ShoppingBag"] || ShoppingBag;
-                          const catColor = category?.color || "#f43f5e";
-                          return (
-                            <div key={tx.id || idx} className="flex justify-between items-center p-2 rounded-xl bg-[var(--glass-item-bg)] border border-[var(--glass-border)]/40 backdrop-blur-sm">
-                              <div className="flex items-center gap-2 max-w-[70%]">
-                                <div
-                                  className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                                  style={{ backgroundColor: `${catColor}12`, border: `1px solid ${catColor}20` }}
-                                >
-                                  <Icon size={13} style={{ color: catColor }} />
-                                </div>
-                                <div className="truncate">
-                                  <span className="font-bold text-[11px] text-[var(--text-main)] block truncate leading-snug">
-                                    {category?.name || "Другое"}
-                                  </span>
-                                  {tx.comment && (
-                                    <span className="text-[9px] text-[var(--text-muted)] block truncate leading-none mt-0.5 opacity-80">
-                                      {tx.comment}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                              <span className="font-mono font-bold text-xs text-rose-500/90 whitespace-nowrap">
-                                -{Math.round(tx.sourceAmount).toLocaleString()} {getSymbol(tx.sourceCurrency)}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      {todayTransactions.length > 3 && (
-                        <span className="text-[9px] text-[var(--text-muted)] font-bold block text-center pt-0.5 opacity-85">
-                          + еще {todayTransactions.length - 3} трат за сегодня
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="text-center p-3 bg-[var(--glass-item-bg)] border border-[var(--glass-border)] rounded-2xl">
-                <span className="text-[10px] text-[var(--text-muted)]">
                   Листай дальше, чтобы увидеть топ-категории расходов 👉
                 </span>
               </div>
@@ -610,7 +586,7 @@ export function StoriesSection({
             <div className="flex flex-col h-full justify-between py-6 px-4 animate-in fade-in duration-300">
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.15)]">
+                  <div className="w-12 h-12 rounded-2xl bg-violet-500/10 border border-[#a78bfa]/20 flex items-center justify-center text-[#a78bfa] shadow-[0_0_20px_rgba(167,139,250,0.15)]">
                     <ShoppingBag size={24} />
                   </div>
                   <div>
@@ -653,7 +629,177 @@ export function StoriesSection({
 
               <div className="text-center p-3 bg-[var(--glass-item-bg)] border border-[var(--glass-border)] rounded-2xl">
                 <span className="text-[10px] text-[var(--text-muted)]">
-                  Листай дальше, чтобы спланировать вечер 👉
+                  Листай дальше, чтобы увидеть валютный сплит 👉
+                </span>
+              </div>
+            </div>
+          );
+        } else {
+          return (
+            <div className="flex flex-col h-full justify-between py-6 px-4 animate-in fade-in duration-300">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-violet-500/10 border border-[#a78bfa]/20 flex items-center justify-center text-[#a78bfa] shadow-[0_0_20px_rgba(167,139,250,0.15)]">
+                    <Coins size={24} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg text-[var(--text-main)] font-sans tracking-wide">Валютный сплит</h3>
+                    <p className="text-xs text-[var(--text-muted)]">Распределение твоего капитала</p>
+                  </div>
+                </div>
+
+                <div className="mt-4 space-y-3.5">
+                  {currencySplit.map((split, idx) => (
+                    <div key={idx} className="p-4 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] space-y-2 backdrop-blur-md shadow-sm">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="font-bold text-sm text-[var(--text-main)]">{split.currency}</span>
+                        <div className="text-right">
+                          <span className="font-bold text-sm text-[var(--text-main)] block">{Math.round(split.amount).toLocaleString()} {split.currency}</span>
+                          <span className="text-[10px] font-bold text-[var(--text-muted)]">{split.percentage}% от всех средств</span>
+                        </div>
+                      </div>
+                      <div className="w-full h-2 rounded-full bg-[var(--text-muted)]/15 overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-violet-500 to-indigo-500"
+                          style={{ width: `${split.percentage}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="text-center p-3 bg-[var(--glass-item-bg)] border border-[var(--glass-border)] rounded-2xl">
+                <span className="text-[10px] text-[var(--text-muted)]">
+                  Листай дальше, чтобы завершить обзор 👉
+                </span>
+              </div>
+            </div>
+          );
+        }
+
+      case "zen":
+        if (slideIdx === 0) {
+          return (
+            <div className="flex flex-col h-full justify-between py-6 px-4 animate-in fade-in duration-300">
+              <div className="space-y-4 text-center">
+                <div className={`mx-auto rounded-full bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-500 shadow-[0_0_30px_rgba(244,63,94,0.2)] animate-bounce duration-1000 ${hasSpendToday ? 'w-14 h-14' : 'w-20 h-20'}`}>
+                  <Flame size={hasSpendToday ? 28 : 40} className="fill-rose-500/10" />
+                </div>
+
+                <div className="space-y-1">
+                  <h3 className="font-bold text-lg text-[var(--text-main)]">
+                    {hasSpendToday ? "Финансовая карма" : "День без трат! 🔥"}
+                  </h3>
+                  <p className="text-[10px] text-[var(--text-muted)] tracking-wide">
+                    {hasSpendToday ? "Все сегодняшние расходы под полным контролем" : "Твой кошелек сегодня полностью отдыхает"}
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] space-y-3.5 backdrop-blur-md text-left shadow-sm">
+                  {hasSpendToday ? (
+                    <p className="text-xs text-[var(--text-main)] opacity-90 leading-relaxed">
+                      Сегодня записано трат на сумму <span className="font-bold text-rose-500">{spentToday.toLocaleString()} {baseSymbol}</span>. 
+                      Каждая транзакция — это шаг к осознанному управлению капиталом.
+                    </p>
+                  ) : (
+                    <p className="text-xs text-[var(--text-main)] opacity-90 leading-relaxed">
+                      Сегодня у тебя <span className="font-bold text-emerald-500">No-Spend Day</span>. Твой кошелек говорит спасибо, а свободные ресурсы накапливаются!
+                    </p>
+                  )}
+
+                  {hasSpendToday && latestTodayTransactions.length > 0 && (
+                    <div className="space-y-2 pt-2 border-t border-[var(--glass-border)]/50">
+                      <span className="text-[9px] uppercase font-bold text-[var(--text-muted)] tracking-wider block">Детализация за день:</span>
+                      <div className="space-y-1.5 max-h-[178px] overflow-y-auto hide-scrollbar">
+                        {latestTodayTransactions.map((tx, idx) => {
+                          const category = categories.find((c) => c.id === tx.targetId);
+                          const Icon = IconMap[category?.icon || "ShoppingBag"] || ShoppingBag;
+                          const catColor = category?.color || "#f43f5e";
+                          return (
+                            <div key={tx.id || idx} className="flex justify-between items-center p-2 rounded-xl bg-[var(--glass-item-bg)] border border-[var(--glass-border)]/40 backdrop-blur-sm">
+                              <div className="flex items-center gap-2 max-w-[70%]">
+                                <div
+                                  className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                                  style={{ backgroundColor: `${catColor}12`, border: `1px solid ${catColor}20` }}
+                                >
+                                  <Icon size={13} style={{ color: catColor }} />
+                                </div>
+                                <div className="truncate">
+                                  <span className="font-bold text-[11px] text-[var(--text-main)] block truncate leading-snug">
+                                    {category?.name || "Другое"}
+                                  </span>
+                                  {tx.comment && (
+                                    <span className="text-[9px] text-[var(--text-muted)] block truncate leading-none mt-0.5 opacity-80">
+                                      {tx.comment}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <span className="font-mono font-bold text-xs text-rose-500/90 whitespace-nowrap">
+                                -{Math.round(tx.sourceAmount).toLocaleString()} {getSymbol(tx.sourceCurrency)}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {todayTransactions.length > 4 && (
+                        <span className="text-[9px] text-[var(--text-muted)] font-bold block text-center pt-0.5 opacity-85 animate-pulse">
+                          Листай список, чтобы увидеть еще {todayTransactions.length - 4} трат ↕️
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="text-center p-3 bg-[var(--glass-item-bg)] border border-[var(--glass-border)] rounded-2xl">
+                <span className="text-[10px] text-[var(--text-muted)]">
+                  Листай дальше, чтобы увидеть использование доходов 👉
+                </span>
+              </div>
+            </div>
+          );
+        } else if (slideIdx === 1) {
+          return (
+            <div className="flex flex-col h-full justify-between py-6 px-4 animate-in fade-in duration-300">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.15)]">
+                    <Compass size={24} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg text-[var(--text-main)] font-sans tracking-wide">Использование доходов</h3>
+                    <p className="text-xs text-[var(--text-muted)]">Анализ сбережений</p>
+                  </div>
+                </div>
+
+                {incomeThisMonth > 0 ? (
+                  <div className="p-5 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] space-y-4 backdrop-blur-md shadow-sm">
+                    <div className="flex justify-between text-sm text-[var(--text-muted)]">
+                      <span>Потрачено от полученного</span>
+                      <span className="font-bold text-[var(--text-main)]">{Math.round((expensesThisMonth / incomeThisMonth) * 100)}%</span>
+                    </div>
+                    <div className="w-full h-3 rounded-full bg-[var(--text-muted)]/15 overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-rose-500 to-pink-500 transition-all duration-500"
+                        style={{ width: `${Math.min((expensesThisMonth / incomeThisMonth) * 100, 100)}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-[var(--text-muted)] leading-relaxed pt-2">
+                      Из каждых полученных 100 {baseSymbol} ты откладываешь <span className="font-bold text-[var(--text-main)]">{Math.max(0, Math.round(100 - (expensesThisMonth / incomeThisMonth) * 100))} {baseSymbol}</span>.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="p-6 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] text-center text-xs text-[var(--text-muted)] leading-relaxed shadow-sm">
+                    🤷‍♂️ В этом месяце пока нет доходов. Запиши поступления, чтобы увидеть подробную динамику распределения бюджета!
+                  </div>
+                )}
+              </div>
+
+              <div className="text-center p-3 bg-[var(--primary-color)]/10 border border-[var(--primary-color)]/20 rounded-2xl animate-pulse">
+                <span className="text-xs font-semibold text-[var(--primary-color)]">
+                  {incomeThisMonth > expensesThisMonth ? "💰 Отличная работа! Твой доход превышает расходы." : "⚠️ Будь осторожен, траты превысили доходы."}
                 </span>
               </div>
             </div>
