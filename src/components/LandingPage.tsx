@@ -74,6 +74,7 @@ const translations = {
     categories: { food: "Еда", transport: "Транспорт", coffee: "Кофе", shopping: "Покупки", fun: "Отдых" },
     modalTitleLogin: "Вход в CoinLover",
     modalLoginPlaceholder: "https://docs.google.com/spreadsheets/d/...",
+    modalLoginHint: "Найти свои таблицы можно здесь:",
     modalLoginBtn: "Войти",
     modalLoginSuccess: "Успешный вход!",
     modalLoginSuccessSub: "Мы нашли вашу таблицу. Запускаем сессию...",
@@ -150,6 +151,7 @@ const translations = {
     categories: { food: "Food", transport: "Transport", coffee: "Coffee", shopping: "Shopping", fun: "Fun" },
     modalTitleLogin: "Log In to CoinLover",
     modalLoginPlaceholder: "https://docs.google.com/spreadsheets/d/...",
+    modalLoginHint: "Find your spreadsheets here:",
     modalLoginBtn: "Log In",
     modalLoginSuccess: "Logged in!",
     modalLoginSuccessSub: "We found your sheet. Starting session...",
@@ -690,6 +692,17 @@ export const LandingPage: React.FC = () => {
                       <div>
                         <label className="text-[9px] font-black uppercase tracking-widest text-white/40 ml-1 mb-1 block">{t.sheetLabel}</label>
                         <input required type="text" placeholder={t.modalLoginPlaceholder} value={sheetUrl} onChange={(e) => setSheetUrl(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:border-[#6d5dfc]/50 transition-all outline-none text-sm" />
+                        <div className="mt-2 ml-1 flex items-center gap-1.5">
+                          <span className="text-[10px] text-white/30">{(t as any).modalLoginHint}</span>
+                          <a 
+                            href="https://docs.google.com/spreadsheets/u/0/" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-[10px] text-[#6d5dfc] hover:underline opacity-80"
+                          >
+                            docs.google.com
+                          </a>
+                        </div>
                       </div>
 
                       {errorMsg && (

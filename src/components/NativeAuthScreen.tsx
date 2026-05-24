@@ -18,6 +18,7 @@ const translations = {
     subtitle: "Управляйте финансами через Google Таблицы",
     sheetUrlLabel: "Ссылка на Google Таблицу",
     sheetUrlPlaceholder: "https://docs.google.com/spreadsheets/d/...",
+    sheetUrlHint: "Найти свои таблицы можно здесь:",
     btnSubmit: "Войти",
     demoBtn: "Попробовать Demo-режим",
     errorInvalidUrl: "Некорректная ссылка на Google Таблицу. Не удалось извлечь Spreadsheet ID.",
@@ -29,6 +30,7 @@ const translations = {
     subtitle: "Manage your finances via Google Sheets",
     sheetUrlLabel: "Google Sheet Link",
     sheetUrlPlaceholder: "https://docs.google.com/spreadsheets/d/...",
+    sheetUrlHint: "Find your spreadsheets here:",
     btnSubmit: "Sign In",
     demoBtn: "Try Demo Mode",
     errorInvalidUrl: "Invalid Google Sheet link. Failed to extract Spreadsheet ID.",
@@ -181,6 +183,17 @@ export const NativeAuthScreen: React.FC = () => {
                       onChange={(e) => setSheetUrl(e.target.value)} 
                       className="w-full bg-white/5 border border-white/10 rounded-[14px] py-3 text-white placeholder:text-white/20 focus:border-[#6d5dfc]/50 transition-all outline-none text-sm pl-11 pr-4"
                     />
+                  </div>
+                  <div className="mt-2 ml-1 flex items-center gap-1.5">
+                    <span className="text-[10px] text-white/30">{t.sheetUrlHint}</span>
+                    <a 
+                      href="https://docs.google.com/spreadsheets/u/0/" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-[10px] text-[#6d5dfc] hover:underline opacity-80"
+                    >
+                      docs.google.com
+                    </a>
                   </div>
                 </div>
 
