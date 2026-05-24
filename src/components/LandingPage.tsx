@@ -47,8 +47,9 @@ const translations = {
     finalCta: "Верни себе контроль.",
     modalTitle: "Давайте знакомиться",
     modalTitleStep2: "Подключаем таблицу",
-    modalPricingOld: "Подписка 10$ в год",
+    modalPricingOld: "Подписка 20$ в год",
     modalPricingNew: "На период тестирования бесплатно + среди тестеров будет разыграно 10 пожизненных подписок",
+    openInChrome: "Открыть в Chrome",
     nameLabel: "Ваше имя",
     contactLabel: "Email или Telegram",
     sheetLabel: "Вставьте ссылку на вашу Google Таблицу сюда, это будет ваш логин и пароль",
@@ -125,8 +126,9 @@ const translations = {
     finalCta: "Take back control.",
     modalTitle: "Let's get introduced",
     modalTitleStep2: "Connecting your sheet",
-    modalPricingOld: "Subscription $10 per year",
+    modalPricingOld: "Subscription $20 per year",
     modalPricingNew: "Free during testing period + 10 lifetime subscriptions will be raffled among testers",
+    openInChrome: "Open in Chrome",
     nameLabel: "Your name",
     contactLabel: "Email or Telegram",
     sheetLabel: "Paste the link to your Google Sheet here, this will be your login and password",
@@ -541,6 +543,16 @@ export const LandingPage: React.FC = () => {
             <p className="text-lg text-white/50 mb-10 leading-relaxed">{t.downloadText}</p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+              <button
+                onClick={() => handleOpenModal("login")}
+                className="flex items-center gap-4 px-8 py-4 bg-white/5 hover:bg-white/10 text-white font-bold rounded-2xl transition-all border border-white/10 group"
+              >
+                <Globe size={24} className="text-[#6d5dfc]" />
+                <div className="text-left">
+                  <div className="text-[10px] opacity-70 uppercase tracking-widest font-black">PWA / Browser</div>
+                  <div className="text-base uppercase tracking-wider">{t.openInChrome}</div>
+                </div>
+              </button>
               <a 
                 href="/download/coinlover.apk" 
                 download
