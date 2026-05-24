@@ -44,11 +44,11 @@ export default function App() {
   } = useFinance(activeTableId);
 
   const isStandalone = typeof window !== "undefined" && (!!(window as any).__IS_PWA__ || window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone);
-  // Updated native app detection using Capacitor.isNativePlatform
+  // Updated native app detection using Capacitor.isNativePlatform()
 const isNativeApp = React.useMemo(() => {
   const params = new URLSearchParams(window.location.search);
   if (params.get("force_native") === "true") return true;
-  return Capacitor.isNativePlatform;
+  return Capacitor.isNativePlatform();
 }, []);
 
   const [isSplashVisible, setIsSplashVisible] = React.useState(!isStandalone);
