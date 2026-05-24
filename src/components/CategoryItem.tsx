@@ -105,7 +105,7 @@ export const CategoryItem: React.FC<Props> = ({
       style={style}
       {...attributes}
       onContextMenu={e => e.preventDefault()}
-      className={`relative flex flex-col items-center gap-1 justify-start transition-all duration-300 cursor-pointer group ${isDragging ? "opacity-30" : "opacity-100"} ${(isSortingMode && (isDragging || isPressing)) ? 'animate-wiggle' : ''}`}
+      className={`relative flex flex-col items-center gap-1 justify-start transition-all duration-300 cursor-pointer group w-full ${isDragging ? "opacity-30" : "opacity-100"} ${(isSortingMode && (isDragging || isPressing)) ? 'animate-wiggle' : ''}`}
       onClick={() => {
         if (!didMoveRef.current && !isSortingMode) {
           onClick?.(category);

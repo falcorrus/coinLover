@@ -119,7 +119,7 @@ export const DraggableIncomeItem: React.FC<Props> = ({
       {...attributes}
       onContextMenu={e => e.preventDefault()}
       onClick={handleContainerClick}
-      className={`flex flex-col items-center justify-start transition-opacity w-[80px] shrink-0 cursor-pointer ${isDragging ? "opacity-30" : "opacity-100"} ${(isSortingMode && (isDragging || isPressing)) ? 'animate-wiggle' : ''}`}
+      className={`flex flex-col items-center justify-start transition-opacity w-[var(--col-width)] shrink-0 cursor-pointer ${isDragging ? "opacity-30" : "opacity-100"} ${(isSortingMode && (isDragging || isPressing)) ? 'animate-wiggle' : ''}`}
     >
       <div
         {...listeners}

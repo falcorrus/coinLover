@@ -107,7 +107,7 @@ export const AccountItem: React.FC<Props> = ({
       style={style}
       {...attributes}
       onContextMenu={e => e.preventDefault()}
-      className={`flex flex-col items-center gap-2 justify-start transition-all duration-300 w-[80px] shrink-0 cursor-pointer ${isDragging ? "opacity-30" : "opacity-100"} ${(isSortingMode && (isDragging || isPressing)) ? 'animate-wiggle' : ''}`}
+      className={`flex flex-col items-center gap-2 justify-start transition-all duration-300 w-[var(--col-width)] shrink-0 cursor-pointer ${isDragging ? "opacity-30" : "opacity-100"} ${(isSortingMode && (isDragging || isPressing)) ? 'animate-wiggle' : ''}`}
       onClick={() => {
         if (!didMoveRef.current && !isSortingMode) {
           onClick?.(account);

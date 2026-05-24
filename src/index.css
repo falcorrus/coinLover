@@ -28,6 +28,11 @@ html.landing-mode #root {
 }
 
 :root {
+  --app-max-width: 448px;
+  --grid-gap: 8px;
+  /* Calculate column width based on container width (max 448px) minus side padding (48px for px-6) and gaps */
+  --col-width: calc((min(100vw, var(--app-max-width)) - 48px - (var(--grid-gap) * 3)) / 4);
+
   /* Black Glow (Default) - "Borderless Style" */
   --bg-color: #0D1117;
   --primary-color: #a78bfa;

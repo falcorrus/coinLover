@@ -47,7 +47,13 @@ export function ExpenseSection({
         </div>
 
         <SortableContext items={categories.map(c => c.id)} strategy={rectSortingStrategy}>
-          <div className="grid grid-cols-4 gap-y-3.5 gap-x-2 pb-2">
+          <div 
+            className="grid grid-cols-4 pb-2"
+            style={{ 
+              gap: 'var(--grid-gap)',
+              gridAutoRows: 'auto'
+            }}
+          >
             {categories.map(cat => {
               const catTx = currentMonthTransactions.filter(t => String(t.type).toLowerCase() === "expense" && t.targetId === cat.id);
               const spent = Math.round(catTx.reduce((s, t) => {
