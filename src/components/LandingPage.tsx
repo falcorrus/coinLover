@@ -52,9 +52,10 @@ const translations = {
     nameLabel: "Ваше имя",
     contactLabel: "Email или Telegram",
     sheetLabel: "Адрес вашей Google Таблицы",
-    shareInstruction: "Создайте ",
-    shareInstructionLink: "гугл таблицу",
-    shareInstructionSuffix: " и добавьте (share) как Editor:",
+    step1: "Создайте ",
+    step1Link: "Google Таблицу",
+    step2: "Переименуйте её в Coinlover или как удобней запомнить",
+    step3: "Сверху (в меню Share / Поделиться) добавьте этот email как Editor (Редактор):",
     serviceEmail: "coinlover-service-acc@baonlineru.iam.gserviceaccount.com",
     studioTitle: "Мы на связи для любых проектов",
     studioSub: "Оставьте свой Email или Telegram. Мы свяжемся с вами в течение дня.",
@@ -129,9 +130,10 @@ const translations = {
     nameLabel: "Your name",
     contactLabel: "Email or Telegram",
     sheetLabel: "Your Google Sheet URL",
-    shareInstruction: "Create a ",
-    shareInstructionLink: "google sheet",
-    shareInstructionSuffix: " and add (share) as Editor:",
+    step1: "Create a ",
+    step1Link: "Google Sheet",
+    step2: "Rename it to Coinlover or whatever is convenient to remember",
+    step3: "At the top (Share menu) add this email as Editor:",
     serviceEmail: "coinlover-service-acc@baonlineru.iam.gserviceaccount.com",
     studioTitle: "Available for any projects",
     studioSub: "Leave your Email or Telegram. We will contact you within 24 hours.",
@@ -645,15 +647,34 @@ export const LandingPage: React.FC = () => {
                         </>
                       ) : (
                         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-                          <div className="p-3 bg-black/20 border border-white/5 rounded-xl group/copy relative">
-                            <p className="text-[10px] text-white/40 leading-relaxed mb-2 uppercase font-black tracking-tighter">
-                              {t.shareInstruction}
-                              <a href="https://sheets.new" target="_blank" rel="noopener noreferrer" className="text-[#6d5dfc] underline decoration-[#6d5dfc]/30 hover:decoration-[#6d5dfc] transition-all">
-                                {t.shareInstructionLink}
-                              </a>
-                              {t.shareInstructionSuffix}
-                            </p>
-                            <div className="flex items-center gap-2 bg-[#6d5dfc]/5 p-2 rounded border border-[#6d5dfc]/10">
+                          <div className="p-4 bg-black/30 border border-white/5 rounded-2xl flex flex-col gap-3 group/copy relative">
+                            <div className="flex flex-col gap-2.5 text-xs text-white/60">
+                              <div className="flex items-start gap-2.5">
+                                <span className="w-5 h-5 rounded-full bg-[#6d5dfc]/15 text-[#6d5dfc] flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5">1</span>
+                                <p className="leading-relaxed">
+                                  {(t as any).step1}
+                                  <a href="https://sheets.new" target="_blank" rel="noopener noreferrer" className="text-[#6d5dfc] underline hover:text-[#5b4ce3] font-bold">
+                                    {(t as any).step1Link}
+                                  </a>
+                                </p>
+                              </div>
+                              
+                              <div className="flex items-start gap-2.5">
+                                <span className="w-5 h-5 rounded-full bg-[#6d5dfc]/15 text-[#6d5dfc] flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5">2</span>
+                                <p className="leading-relaxed">
+                                  {(t as any).step2}
+                                </p>
+                              </div>
+
+                              <div className="flex items-start gap-2.5">
+                                <span className="w-5 h-5 rounded-full bg-[#6d5dfc]/15 text-[#6d5dfc] flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5">3</span>
+                                <p className="leading-relaxed">
+                                  {(t as any).step3}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 bg-[#6d5dfc]/5 p-2.5 rounded-xl border border-[#6d5dfc]/10">
                               <code className="text-[10px] text-[#6d5dfc] break-all font-mono select-all flex-1">{t.serviceEmail}</code>
                               <button 
                                 id="btn_copy_email"
