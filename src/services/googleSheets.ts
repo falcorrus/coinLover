@@ -3,7 +3,7 @@ import { SyncPayload } from "../types";
 import { CapacitorHttp, Capacitor } from "@capacitor/core";
 
 const getGoogleScriptUrl = () => {
-  const isNative = Capacitor.getPlatform() !== "web";
+  const isNative = Capacitor.isNativePlatform;
   if (isNative) {
     const isProd = (import.meta as any).env.PROD;
     return isProd ? "https://coinlover.ru/api/sheets" : "https://coin.reloto.ru/api/sheets";
@@ -13,7 +13,7 @@ const getGoogleScriptUrl = () => {
 
 // Universal fetch that uses native HTTP on mobile to bypass CORS
 const universalFetch = async (url: string, options?: any) => {
-  const isNative = Capacitor.getPlatform() !== "web";
+  const isNative = Capacitor.isNativePlatform;
   
   if (isNative) {
     try {
