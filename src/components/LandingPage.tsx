@@ -51,7 +51,7 @@ const translations = {
     modalPricingNew: "На период тестирования бесплатно + среди тестеров будет разыграно 10 пожизненных подписок",
     nameLabel: "Ваше имя",
     contactLabel: "Email или Telegram",
-    sheetLabel: "Адрес вашей Google Таблицы",
+    sheetLabel: "Вставьте ссылку на вашу Google Таблицу сюда, это будет ваш логин и пароль",
     step1: "Создайте ",
     step1Link: "Google Таблицу",
     step2: "Переименуйте её в Coinlover или как удобней запомнить",
@@ -129,7 +129,7 @@ const translations = {
     modalPricingNew: "Free during testing period + 10 lifetime subscriptions will be raffled among testers",
     nameLabel: "Your name",
     contactLabel: "Email or Telegram",
-    sheetLabel: "Your Google Sheet URL",
+    sheetLabel: "Paste the link to your Google Sheet here, this will be your login and password",
     step1: "Create a ",
     step1Link: "Google Sheet",
     step2: "Rename it to Coinlover or whatever is convenient to remember",
@@ -199,6 +199,30 @@ export const LandingPage: React.FC = () => {
   const [isLoading, setIsLoading] = React.useState(false);
   const [errorMsg, setErrorMsg] = React.useState("");
   const [analyticsImageIndex, setAnalyticsImageIndex] = React.useState(0);
+  const [copiedEmail, setCopiedEmail] = React.useState(false);
+
+  const copyEmailToClipboard = async (text: string) => {
+    try {
+      if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+        await navigator.clipboard.writeText(text);
+      } else {
+        throw new Error("Clipboard API not available");
+      }
+    } catch (err) {
+      // Fallback for custom webviews and non-secure contexts
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+    }
+    setCopiedEmail(true);
+    if (navigator.vibrate) navigator.vibrate(40);
+    setTimeout(() => setCopiedEmail(false), 2000);
+  };
 
   const t = translations[lang];
 
@@ -679,14 +703,19 @@ export const LandingPage: React.FC = () => {
                               <button 
                                 id="btn_copy_email"
                                 type="button"
-                                onClick={() => {
-                                  navigator.clipboard.writeText(t.serviceEmail);
-                                  if (navigator.vibrate) navigator.vibrate(40);
-                                }}
-                                className="p-1.5 hover:bg-[#6d5dfc]/10 rounded-md transition-colors text-[#6d5dfc]"
+                                onClick={() => copyEmailToClipboard(t.serviceEmail)}
+                                className={`p-1.5 rounded-md transition-all duration-200 outline-none flex items-center justify-center ${
+                                  copiedEmail 
+                                    ? "bg-[#10b981]/10 text-[#10b981]" 
+                                    : "hover:bg-[#6d5dfc]/10 text-[#6d5dfc]"
+                                }`}
                                 title="Copy email"
                               >
-                                <Copy size={14} />
+                                {copiedEmail ? (
+                                  <Check size={14} className="animate-in zoom-in duration-200" />
+                                ) : (
+                                  <Copy size={14} className="animate-in fade-in duration-200" />
+                                )}
                               </button>
                             </div>
                           </div>
