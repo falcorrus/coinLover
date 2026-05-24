@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Allow: /landing
+Disallow: /app
+Disallow: /api/
+
+Sitemap: https://coinlover.ru/sitemap.xml
