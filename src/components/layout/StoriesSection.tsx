@@ -72,16 +72,35 @@ export function StoriesSection({
   const mouseStartY = React.useRef(0);
   const mouseStartTime = React.useRef(0);
 
-  // Tips Content (2 slides)
+  // Video player Ref for Tips Slides
+  const videoRef = React.useRef<HTMLVideoElement | null>(null);
+
+  // Tips Content (4 slides)
   const tips = [
-    {
-      title: "Сортировка жестом ⚙️",
-      text: "Зажми и удерживай кошелек или категорию 1.5 секунды, чтобы войти в режим перетаскивания. Наведи порядок легким движением пальца!",
-    },
     {
       title: "Быстрый ввод ✍️",
       text: "Перетащи иконку дохода на кошелек или кошелек на категорию расходов для моментальной записи транзакции. Drag-and-drop жесты делают учет приятным!",
     },
+    {
+      title: "Сортировка жестом ⚙️",
+      text: "Удерживай 1 секунду и тащи иконку кошелька или категории расходов для изменения их порядка на экране. Наведи идеальный порядок легким движением пальца!",
+    },
+    {
+      title: "Редактирование ✏️",
+      text: "Удерживай транзакцию в истории 2 секунды, чтобы открыть быстрое меню редактирования или удаления. Полный контроль над операциями в одно касание!",
+    },
+    {
+      title: "Аналитика 📊",
+      text: "В Пульте много Аналитики! Изучай свои доходы и расходы через интерактивные графики и календарь. Управляй бюджетом и отслеживай привычки в деталях!",
+    },
+  ];
+
+  // Video properties for each tips slide (proportions & scaling)
+  const tipsMedia = [
+    { src: "/quick-input.mp4", width: "126px", scale: "scale(1.06)" },
+    { src: "/tip-sort.mp4", width: "156px", scale: "scale(1.06)" },
+    { src: "/tip-edit.mp4", width: "126px", scale: "scale(1.06)" },
+    { src: "/tip-analytics.mp4", width: "119px", scale: "scale(1.06)" },
   ];
 
   // Dynamic exchange rates logic based on user settings and wallets
@@ -252,7 +271,7 @@ export function StoriesSection({
     { id: "overview", title: "Обзор", icon: BarChart3, color: "#a78bfa", gradient: "from-[#a78bfa] to-[#6d5dfc]", slideCount: 3 },
     { id: "zen", title: "Дзен", icon: Flame, color: "#f43f5e", gradient: "from-[#f43f5e] to-[#ec4899]", slideCount: 3 },
     { id: "rates", title: "Курсы", icon: Coins, color: "#10b981", gradient: "from-[#10b981] to-[#059669]", slideCount: 2 },
-    { id: "tips", title: "Фишки", icon: HelpCircle, color: "#3b82f6", gradient: "from-[#3b82f6] to-[#2563eb]", slideCount: 2 },
+    { id: "tips", title: "Фишки", icon: HelpCircle, color: "#3b82f6", gradient: "from-[#3b82f6] to-[#2563eb]", slideCount: 4 },
     { id: "actions", title: "Пульт", icon: Zap, color: "#eab308", gradient: "from-[#eab308] to-[#ca8a04]", slideCount: 1 },
   ];
 
@@ -335,6 +354,26 @@ export function StoriesSection({
 
     return () => clearInterval(timer);
   }, [activeStoryIndex, activeSlideIndex, isPaused]);
+
+  // Control tips slides video elements playback based on active state (continues loop on pause)
+  React.useEffect(() => {
+    const isTipsStoryActive =
+      activeStoryIndex !== null &&
+      stories[activeStoryIndex]?.id === "tips" &&
+      activeSlideIndex >= 0 &&
+      activeSlideIndex <= 3;
+
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (isTipsStoryActive) {
+      video.play().catch((err) => {
+        console.warn("Failed to autoplay story video:", err);
+      });
+    } else {
+      video.pause();
+    }
+  }, [activeStoryIndex, activeSlideIndex]);
 
   // Touch Gesture Handlers (swipes)
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -925,13 +964,35 @@ export function StoriesSection({
                 </div>
               </div>
 
-              <div className="p-6 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] space-y-4 shadow-sm backdrop-blur-md min-h-[180px] flex flex-col justify-center">
-                <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-500">
-                  <Award size={18} />
+              {slideIdx >= 0 && slideIdx <= 3 ? (
+                <div className="flex flex-col gap-4 animate-in fade-in duration-200">
+                  <div 
+                    className="relative rounded-2xl overflow-hidden border border-[var(--glass-border)] h-[260px] flex items-center justify-center mx-auto shadow-[0_4px_30px_rgba(0,0,0,0.3)] bg-transparent"
+                    style={{ width: tipsMedia[slideIdx].width }}
+                  >
+                    <video
+                      key={slideIdx}
+                      ref={videoRef}
+                      src={tipsMedia[slideIdx].src}
+                      className="w-full h-full object-cover"
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        transform: tipsMedia[slideIdx].scale,
+                      }}
+                      playsInline
+                      muted
+                      loop
+                      autoPlay
+                    />
+                  </div>
+                  <div className="p-4 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] space-y-2 backdrop-blur-md shadow-sm">
+                    <h4 className="font-bold text-base text-[var(--text-main)]">{tips[slideIdx].title}</h4>
+                    <p className="text-xs text-[var(--text-main)] opacity-80 leading-relaxed">{tips[slideIdx].text}</p>
+                  </div>
                 </div>
-                <h4 className="font-bold text-base text-[var(--text-main)]">{tips[slideIdx].title}</h4>
-                <p className="text-xs text-[var(--text-main)] opacity-80 leading-relaxed">{tips[slideIdx].text}</p>
-              </div>
+              ) : null}
             </div>
 
             <button
