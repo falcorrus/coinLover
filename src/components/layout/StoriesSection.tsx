@@ -87,20 +87,20 @@ export function StoriesSection({
     },
     {
       title: "Редактирование ✏️",
-      text: "Удерживай транзакцию в истории 2 секунды, чтобы открыть быстрое меню редактирования или удаления. Полный контроль над операциями в одно касание!",
+      text: "Удерживай иконку 2 секунды, чтобы открыть быстрое меню редактирования или удаления. Полный контроль в одно касание!",
     },
     {
       title: "Аналитика 📊",
-      text: "В Пульте много Аналитики! Изучай свои доходы и расходы через интерактивные графики и календарь. Управляй бюджетом и отслеживай привычки в деталях!",
+      text: "В Пульте много Аналитики! Изучай свои доходы и расходы через интерактивные графики и календарь. Управляй расходами и отслеживай привычки в деталях!",
     },
   ];
 
   // Video properties for each tips slide (proportions & scaling)
   const tipsMedia = [
-    { src: "/quick-input.mp4", width: "126px", scale: "scale(1.06)" },
-    { src: "/tip-sort.mp4", width: "156px", scale: "scale(1.06)" },
-    { src: "/tip-edit.mp4", width: "126px", scale: "scale(1.06)" },
-    { src: "/tip-analytics.mp4", width: "119px", scale: "scale(1.06)" },
+    { src: "/quick-input.mp4", width: "155px", scale: "scale(1.06)" },
+    { src: "/tip-sort.mp4", width: "157px", scale: "scale(1.06)" },
+    { src: "/tip-edit.mp4", width: "155px", scale: "scale(1.06)" },
+    { src: "/tip-analytics.mp4", width: "147px", scale: "scale(1.06)" },
   ];
 
   // Dynamic exchange rates logic based on user settings and wallets
@@ -953,7 +953,7 @@ export function StoriesSection({
       case "tips":
         return (
           <div className="flex flex-col h-full justify-between py-6 px-4 animate-in fade-in duration-300">
-            <div className="space-y-6">
+            <div className="space-y-6 flex-1 flex flex-col justify-start">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.15)]">
                   <HelpCircle size={24} />
@@ -965,42 +965,36 @@ export function StoriesSection({
               </div>
 
               {slideIdx >= 0 && slideIdx <= 3 ? (
-                <div className="flex flex-col gap-4 animate-in fade-in duration-200">
-                  <div 
-                    className="relative rounded-2xl overflow-hidden border border-[var(--glass-border)] h-[260px] flex items-center justify-center mx-auto shadow-[0_4px_30px_rgba(0,0,0,0.3)] bg-transparent"
-                    style={{ width: tipsMedia[slideIdx].width }}
-                  >
-                    <video
-                      key={slideIdx}
-                      ref={videoRef}
-                      src={tipsMedia[slideIdx].src}
-                      className="w-full h-full object-cover"
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                        transform: tipsMedia[slideIdx].scale,
-                      }}
-                      playsInline
-                      muted
-                      loop
-                      autoPlay
-                    />
-                  </div>
-                  <div className="p-4 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] space-y-2 backdrop-blur-md shadow-sm">
-                    <h4 className="font-bold text-base text-[var(--text-main)]">{tips[slideIdx].title}</h4>
-                    <p className="text-xs text-[var(--text-main)] opacity-80 leading-relaxed">{tips[slideIdx].text}</p>
-                  </div>
+                <div 
+                  className="relative rounded-2xl overflow-hidden border border-[var(--glass-border)] h-[320px] flex items-center justify-center mx-auto shadow-[0_4px_30px_rgba(0,0,0,0.3)] bg-transparent animate-in fade-in duration-200"
+                  style={{ width: tipsMedia[slideIdx].width }}
+                >
+                  <video
+                    key={slideIdx}
+                    ref={videoRef}
+                    src={tipsMedia[slideIdx].src}
+                    className="w-full h-full object-cover"
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                      transform: tipsMedia[slideIdx].scale,
+                    }}
+                    playsInline
+                    muted
+                    loop
+                    autoPlay
+                  />
                 </div>
               ) : null}
             </div>
 
-            <button
-              onClick={handleNext}
-              className="w-full py-3.5 rounded-2xl bg-[var(--glass-item-bg)] hover:bg-[var(--glass-item-active)] border border-[var(--glass-border)] font-bold text-xs uppercase tracking-wider text-[var(--text-main)] flex items-center justify-center gap-2 transition-all"
-            >
-              {slideIdx === stories[3].slideCount - 1 ? "Закрыть советы" : "Далее"} <ChevronRight size={14} />
-            </button>
+            {slideIdx >= 0 && slideIdx <= 3 ? (
+              <div className="mt-4 p-4 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] space-y-2 backdrop-blur-md shadow-sm animate-in fade-in duration-200">
+                <h4 className="font-bold text-base text-[var(--text-main)]">{tips[slideIdx].title}</h4>
+                <p className="text-xs text-[var(--text-main)] opacity-80 leading-relaxed">{tips[slideIdx].text}</p>
+              </div>
+            ) : null}
           </div>
         );
 
