@@ -1,9 +1,10 @@
 import * as React from "react";
-import { Sparkles, Flame, Coins, Zap, HelpCircle, X, Sun, Moon, Palette, BarChart3, ChevronRight, Award, RefreshCcw, Landmark, Compass, DollarSign, Wallet, ShoppingBag, Calendar, PieChart } from "lucide-react";
+import { Sparkles, Flame, Coins, Zap, HelpCircle, X, Sun, Moon, Palette, BarChart3, ChevronRight, Award, RefreshCcw, Landmark, Compass, DollarSign, Wallet, ShoppingBag, Calendar, PieChart, Settings, Languages, ChevronLeft } from "lucide-react";
 import { Account, Transaction } from "../../types";
 import { IconMap } from "../../constants";
 import { RatesService } from "../../services/RatesService";
 import { safeParseDate } from "../../hooks/utils";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 interface StoriesSectionProps {
   accounts: Account[];
