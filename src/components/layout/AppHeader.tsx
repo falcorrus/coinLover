@@ -45,6 +45,7 @@ export function AppHeader({
   const [passkeyLoading, setPasskeyLoading] = React.useState(false);
   const [justRegistered, setJustRegistered] = React.useState(false);
   const [prefetchedRegisterOptions, setPrefetchedRegisterOptions] = React.useState<any>(null);
+  const [passkeyPending, setPasskeyPending] = React.useState(false); // biometrics in progress, modal hidden
 
   React.useEffect(() => {
     if (isPasskeyModalOpen && activeTableId) {
@@ -112,6 +113,12 @@ export function AppHeader({
         }
       }
 
+      // CRITICAL: Close the modal BEFORE calling startRegistration.
+      // Chrome on Android shows credential manager as a bottom sheet.
+      // Our fixed inset-0 z-[200] modal can block the native Chrome UI.
+      setIsPasskeyModalOpen(false);
+      setPasskeyPending(true);
+
       // 60-second timeout to prevent infinite spin in non-supportive WebViews (like Telegram app)
       const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(() => reject(new Error("TIMEOUT")), 60000);
@@ -137,20 +144,27 @@ export function AppHeader({
         setPasskeyStatus("enabled");
         setJustRegistered(true);
         pullSettings();
+        // Reopen modal to show success state
+        setIsPasskeyModalOpen(true);
       } else {
         throw new Error(verifyData.message || "Verification failed");
       }
     } catch (err: any) {
       console.error("Passkey registration failed:", err);
+      // Reopen modal to show error
+      setIsPasskeyModalOpen(true);
       if (err.message === "TIMEOUT") {
         alert("Ошибка привязки биометрии: Превышено время ожидания. Если вы настраиваете Face ID из встроенного браузера (например, Telegram), откройте CoinLover во внешнем браузере (Safari / Chrome).");
-      } else {
+      } else if (err.name !== "NotAllowedError") {
+        // NotAllowedError = user cancelled, don't show alert
         alert("Ошибка привязки биометрии: " + (err.message || String(err)));
       }
     } finally {
       setPasskeyLoading(false);
+      setPasskeyPending(false);
     }
   };
+
 
   const PillButton = (
     <button onClick={() => setPillMode(p => p === "expense" ? "income" : p === "income" ? "balance" : "expense")} className={`mx-auto px-5 py-2 rounded-full bg-[var(--glass-item-bg)] border border-[var(--glass-border)] flex items-center gap-2 hover:bg-[var(--glass-item-active)] active:scale-95 transition-all shadow-sm ${isCompact ? '' : '-mt-0.5'}`}>
@@ -159,6 +173,16 @@ export function AppHeader({
   );
 
   return (
+    <>
+    {/* Passkey pending banner — shown while modal is closed and Chrome credential manager is active */}
+    {passkeyPending && (
+      <div className="fixed inset-x-0 bottom-0 z-[300] flex justify-center pb-8 pointer-events-none">
+        <div className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-[#0d0d0d]/90 border border-white/10 backdrop-blur-xl shadow-2xl">
+          <div className="w-5 h-5 rounded-full border-2 border-[#6d5dfc] border-t-transparent animate-spin" />
+          <span className="text-sm text-white/80">Подтвердите биометрию…</span>
+        </div>
+      </div>
+    )}
     <header className="px-6 flex flex-col gap-2 text-center shrink-0 safe-pt-header pb-2">
       <div className="flex justify-between items-center mb-2">
         <button onClick={toggleIncome} className="glass-icon-btn w-10 h-10 relative shrink-0">
@@ -355,5 +379,6 @@ export function AppHeader({
         </div>
       )}
     </header>
+    </>
   );
 }

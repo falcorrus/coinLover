@@ -4,7 +4,7 @@
 > Готовый материал для публикации на vc.ru / Habr, раскрывающий философию
 > осознанного ручного ввода и безопасности данных.
 
-
+update: опубликована на VC - https://vc.ru/life/2933682-pochemu-ya-ubral-bankovskuyu-sinhronizaciyu-iz-svoego-finteh-prilozheniya
 
 ---
 
