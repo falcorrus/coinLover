@@ -75,7 +75,15 @@ export function AppHeader({
         throw new Error(data.message || "Failed to fetch options");
       }
 
-      const credential = await startRegistration(data.options);
+      // 15-second timeout to prevent infinite spin in non-supportive WebViews (like Telegram app)
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error("TIMEOUT")), 15000);
+      });
+
+      const credential = await Promise.race([
+        startRegistration(data.options),
+        timeoutPromise
+      ]);
 
       const verifyRes = await fetch("/api/auth/register-verify", {
         method: "POST",
@@ -97,7 +105,11 @@ export function AppHeader({
       }
     } catch (err: any) {
       console.error("Passkey registration failed:", err);
-      alert("Ошибка привязки биометрии: " + (err.message || String(err)));
+      if (err.message === "TIMEOUT") {
+        alert("Ошибка привязки биометрии: Превышено время ожидания. Если вы настраиваете Face ID из встроенного браузера (например, Telegram), откройте CoinLover во внешнем браузере (Safari / Chrome).");
+      } else {
+        alert("Ошибка привязки биометрии: " + (err.message || String(err)));
+      }
     } finally {
       setPasskeyLoading(false);
     }

@@ -250,7 +250,15 @@ export const LandingPage: React.FC = () => {
         throw new Error(data.message || "Failed to fetch options");
       }
 
-      const credential = await startAuthentication(data.options);
+      // 15-second timeout to prevent infinite spin in non-supportive WebViews (like Telegram app)
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error("TIMEOUT")), 15000);
+      });
+
+      const credential = await Promise.race([
+        startAuthentication(data.options),
+        timeoutPromise
+      ]);
 
       const userHandle = credential.response.userHandle;
       if (!userHandle) {
@@ -292,7 +300,13 @@ export const LandingPage: React.FC = () => {
       }
     } catch (err: any) {
       console.error("Passkey login failed:", err);
-      if (err.name === "NotFoundError" || err.message?.includes("No credential") || err.message?.includes("not found")) {
+      if (err.message === "TIMEOUT") {
+        setErrorMsg(
+          lang === "ru"
+            ? "Превышено время ожидания. Если вы вошли из встроенного браузера (например, Telegram), откройте CoinLover во внешнем браузере (Safari / Chrome) для работы Face ID."
+            : "Timeout exceeded. If you are inside an in-app browser (like Telegram), please open CoinLover in an external browser (Safari / Chrome) to use biometrics."
+        );
+      } else if (err.name === "NotFoundError" || err.message?.includes("No credential") || err.message?.includes("not found")) {
         setErrorMsg(
           lang === "ru" 
             ? "Passkey не найден. Войдите сначала по ссылке на таблицу и привяжите это устройство («Шестеренка» -> «Безопасность»)." 
