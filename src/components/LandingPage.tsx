@@ -292,7 +292,21 @@ export const LandingPage: React.FC = () => {
       }
     } catch (err: any) {
       console.error("Passkey login failed:", err);
-      setErrorMsg(lang === "ru" ? "Ошибка биометрии: " + (err.message || String(err)) : "Passkey error: " + (err.message || String(err)));
+      if (err.name === "NotFoundError" || err.message?.includes("No credential") || err.message?.includes("not found")) {
+        setErrorMsg(
+          lang === "ru" 
+            ? "Passkey не найден. Войдите сначала по ссылке на таблицу и привяжите это устройство («Шестеренка» -> «Безопасность»)." 
+            : "Passkey not found. Log in via your Google Sheet link first and bind this device under Settings -> Security."
+        );
+      } else if (err.name === "NotAllowedError") {
+        setErrorMsg(
+          lang === "ru"
+            ? "Вход отменен пользователем или биометрия заблокирована устройством."
+            : "Biometric login cancelled or blocked by the device."
+        );
+      } else {
+        setErrorMsg(lang === "ru" ? "Ошибка биометрии: " + (err.message || String(err)) : "Passkey error: " + (err.message || String(err)));
+      }
     } finally {
       setIsLoading(false);
     }
