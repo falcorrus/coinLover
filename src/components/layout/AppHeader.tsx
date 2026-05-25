@@ -97,12 +97,18 @@ export function AppHeader({
   const handleRegisterPasskey = async () => {
     if (!activeTableId) return;
     setPasskeyLoading(true);
+    console.log("[Auth UI] Starting Passkey registration process");
     try {
+      if (!window.PublicKeyCredential) {
+        throw new Error("WebAuthn (PublicKeyCredential) is NOT supported by this browser/device.");
+      }
+      console.log("[Auth UI] Secure Context:", window.isSecureContext);
+
       let data = prefetchedRegisterOptions;
 
       // Fallback if prefetch hasn't finished loading yet (unlikely but safe)
       if (!data) {
-        console.log("No prefetched options found, fetching dynamically...");
+        console.log("[Auth UI] No prefetched options found, fetching dynamically...");
         const optionsRes = await fetch(`/api/auth/register-options?ssId=${encodeURIComponent(activeTableId)}`);
         if (!optionsRes.ok) {
           throw new Error(await optionsRes.text() || "Failed to fetch registration options");
@@ -113,25 +119,35 @@ export function AppHeader({
         }
       }
 
+      console.log("[Auth UI] Registration Options received:", JSON.stringify(data.options));
+
       // CRITICAL: Close the modal BEFORE calling startRegistration.
-      // Chrome on Android shows credential manager as a bottom sheet.
-      // Our fixed inset-0 z-[200] modal can block the native Chrome UI.
       setIsPasskeyModalOpen(false);
       setPasskeyPending(true);
 
       // Wait 250ms for React to commit DOM changes and clear the viewport
       await new Promise(resolve => setTimeout(resolve, 250));
 
+      console.log("[Auth UI] Invoking startRegistration now...");
+      
       // 60-second timeout to prevent infinite spin in non-supportive WebViews (like Telegram app)
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error("TIMEOUT")), 60000);
+        setTimeout(() => reject(new Error("TIMEOUT_60S")), 60000);
       });
 
-      const credential = await Promise.race([
-        startRegistration(data.options),
-        timeoutPromise
-      ]);
+      let credential;
+      try {
+        credential = await Promise.race([
+          startRegistration(data.options),
+          timeoutPromise
+        ]);
+        console.log("[Auth UI] startRegistration success:", JSON.stringify(credential));
+      } catch (regErr: any) {
+        console.error("[Auth UI] startRegistration inner error:", regErr);
+        throw regErr;
+      }
 
+      console.log("[Auth UI] Verifying credentials on backend...");
       const verifyRes = await fetch("/api/auth/register-verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -156,11 +172,10 @@ export function AppHeader({
       console.error("Passkey registration failed:", err);
       // Reopen modal to show error
       setIsPasskeyModalOpen(true);
-      if (err.message === "TIMEOUT") {
-        alert("Ошибка привязки биометрии: Превышено время ожидания. Если вы настраиваете Face ID из встроенного браузера (например, Telegram), откройте CoinLover во внешнем браузере (Safari / Chrome).");
-      } else if (err.name !== "NotAllowedError") {
-        // NotAllowedError = user cancelled, don't show alert
-        alert("Ошибка привязки биометрии: " + (err.message || String(err)));
+      if (err.message === "TIMEOUT" || err.message === "TIMEOUT_60S") {
+        alert("Ошибка привязки биометрии: Превышено время ожидания (60 сек). Если вы настраиваете Face ID из встроенного браузера (например, Telegram), откройте CoinLover во внешнем браузере (Chrome).");
+      } else {
+        alert(`Ошибка привязки биометрии [${err.name || "Error"}]: ${err.message || String(err)}\n\n${err.stack || ""}`);
       }
     } finally {
       setPasskeyLoading(false);
