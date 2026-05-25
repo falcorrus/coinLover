@@ -125,9 +125,6 @@ export function AppHeader({
       setIsPasskeyModalOpen(false);
       setPasskeyPending(true);
 
-      // Wait 250ms for React to commit DOM changes and clear the viewport
-      await new Promise(resolve => setTimeout(resolve, 250));
-
       console.log("[Auth UI] Invoking startRegistration now...");
       
       // 60-second timeout to prevent infinite spin in non-supportive WebViews (like Telegram app)
