@@ -81,6 +81,30 @@ async function getSheetsClient() {
 
 async function updateConfigs(sheets, spreadsheetId, sheetName, payload) {
   try {
+    // Read current configs first to preserve Passkey values
+    let passkeyEnabled = payload.passkeyEnabled;
+    let passkeyCredId = payload.passkeyCredId;
+    let passkeyPubKey = payload.passkeyPubKey;
+    let passkeyCounter = payload.passkeyCounter;
+
+    try {
+      const existing = await sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range: `${sheetName}!A:M`
+      });
+      const extRows = existing.data.values || [];
+      for (const row of extRows) {
+        if (!row || !row[0]) continue;
+        const k = String(row[0]).trim();
+        if (k === "Passkey_Enabled" && passkeyEnabled === undefined) passkeyEnabled = row[1];
+        if (k === "Passkey_Credential_ID" && passkeyCredId === undefined) passkeyCredId = row[1];
+        if (k === "Passkey_Public_Key" && passkeyPubKey === undefined) passkeyPubKey = row[1];
+        if (k === "Passkey_Counter" && passkeyCounter === undefined) passkeyCounter = row[1];
+      }
+    } catch (err) {
+      // Config sheet might be new or not found
+    }
+
     // Recreate the managed parts
     const ts = payload.timestamp || new Date().toISOString();
     const baseCurrency = payload.baseCurrency || "USD";
@@ -126,6 +150,10 @@ async function updateConfigs(sheets, spreadsheetId, sheetName, payload) {
 
     pushRow(["", ""]);
     pushRow([" === SYSTEM ===", ""]);
+    if (passkeyEnabled !== undefined) pushRow(["Passkey_Enabled", passkeyEnabled]);
+    if (passkeyCredId !== undefined) pushRow(["Passkey_Credential_ID", passkeyCredId]);
+    if (passkeyPubKey !== undefined) pushRow(["Passkey_Public_Key", passkeyPubKey]);
+    if (passkeyCounter !== undefined) pushRow(["Passkey_Counter", passkeyCounter]);
 
     // Clear and update
     await sheets.spreadsheets.values.clear({
@@ -518,6 +546,10 @@ export default async function handler(req, res) {
         const key = String(row[0] || "").toLowerCase().trim();
         if (key.includes("updated") || key.includes("обновлено")) { data.timestamp = row[1]; continue; }
         if (key.includes("base_currency") || key.includes("базовая валюта") || key.includes("base_curr")) { data.baseCurrency = String(row[1] || "").trim() || "USD"; continue; }
+        if (key === "passkey_enabled") { data.passkeyEnabled = String(row[1] || "").trim() === "TRUE"; continue; }
+        if (key === "passkey_credential_id") { data.passkeyCredId = String(row[1] || "").trim(); continue; }
+        if (key === "passkey_public_key") { data.passkeyPubKey = String(row[1] || "").trim(); continue; }
+        if (key === "passkey_counter") { data.passkeyCounter = parseInt(row[1], 10) || 0; continue; }
         if (key.includes("wallets") || key.includes("accounts") || key.includes("кошельки") || key.includes("счета")) { section = "acc"; sectionHeaderIdx = i + 1; continue; }
         if (key.includes("categories") || key.includes("категории")) { section = "cat"; sectionHeaderIdx = i + 1; continue; }
         if (key.includes("incomes") || key.includes("доходы")) { section = "inc"; sectionHeaderIdx = i + 1; continue; }

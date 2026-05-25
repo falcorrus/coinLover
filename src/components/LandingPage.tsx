@@ -8,6 +8,7 @@ import {
   Fingerprint, Move, Copy, Check, QrCode
 } from "lucide-react";
 import { googleSheetsService } from "../services/googleSheets";
+import { startAuthentication } from "@simplewebauthn/browser";
 import { trackEvent, trackScreen } from "../services/analytics";
 
 type Language = "ru" | "en";
@@ -234,6 +235,67 @@ export const LandingPage: React.FC = () => {
     setStep(1);
     setErrorMsg("");
     setIsConnectOpen(true);
+  };
+
+  const handlePasskeyLogin = async () => {
+    setIsLoading(true);
+    setErrorMsg("");
+    try {
+      const optionsRes = await fetch("/api/auth/login-options");
+      if (!optionsRes.ok) {
+        throw new Error(await optionsRes.text() || "Failed to fetch login options");
+      }
+      const data = await optionsRes.json();
+      if (data.status !== "success") {
+        throw new Error(data.message || "Failed to fetch options");
+      }
+
+      const credential = await startAuthentication(data.options);
+
+      const userHandle = credential.response.userHandle;
+      if (!userHandle) {
+        throw new Error("No userHandle returned. Passkey must be discoverable.");
+      }
+      
+      let ssId = "";
+      if (typeof userHandle === "string") {
+        const base64 = userHandle.replace(/-/g, '+').replace(/_/g, '/');
+        const binString = atob(base64);
+        const bytes = new Uint8Array(binString.length);
+        for (let i = 0; i < binString.length; i++) {
+          bytes[i] = binString.charCodeAt(i);
+        }
+        ssId = new TextDecoder().decode(bytes);
+      } else {
+        ssId = new TextDecoder().decode(new Uint8Array(userHandle));
+      }
+
+      if (!ssId) {
+        throw new Error("Failed to decode ssId from credential");
+      }
+
+      const verifyRes = await fetch("/api/auth/login-verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ssId,
+          loginResponse: credential,
+          challengeToken: data.challengeToken
+        })
+      });
+
+      const verifyData = await verifyRes.json();
+      if (verifyData.status === "success" && verifyData.verified) {
+        window.location.href = `/?ssId=${ssId}`;
+      } else {
+        throw new Error(verifyData.message || "Verification failed");
+      }
+    } catch (err: any) {
+      console.error("Passkey login failed:", err);
+      setErrorMsg(lang === "ru" ? "Ошибка биометрии: " + (err.message || String(err)) : "Passkey error: " + (err.message || String(err)));
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleLanguageChange = (newLang: Language) => {
@@ -780,6 +842,26 @@ export const LandingPage: React.FC = () => {
                       >
                         {isLoading ? <RefreshCw className="animate-spin w-5 h-5" /> : <>{t.modalLoginBtn} <ArrowRight size={18} /></>}
                       </button>
+
+                      {window.PublicKeyCredential && (
+                        <>
+                          <div className="flex items-center justify-center gap-3 my-1">
+                            <div className="h-[1px] bg-white/10 flex-1" />
+                            <span className="text-[9px] text-white/30 font-black uppercase tracking-wider">или</span>
+                            <div className="h-[1px] bg-white/10 flex-1" />
+                          </div>
+
+                          <button 
+                            type="button"
+                            onClick={handlePasskeyLogin}
+                            disabled={isLoading}
+                            className="w-full py-4 bg-white/5 border border-white/10 hover:bg-white/10 text-white font-bold rounded-xl flex items-center justify-center gap-2.5 transition-all text-xs uppercase tracking-widest outline-none active:scale-98"
+                          >
+                            <Fingerprint size={16} className="text-[#6d5dfc]" />
+                            Войти через Face ID / Passkey
+                          </button>
+                        </>
+                      )}
                     </form>
                   )}
 

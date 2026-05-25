@@ -3,6 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import sheetsHandler from './api/sheets.ts';
+import { authHandler } from './api/auth.ts';
 
 dotenv.config();
 
@@ -29,6 +30,15 @@ app.use((req, res, next) => {
 });
 
 // API Routes
+app.all('/api/auth/*', async (req, res) => {
+  try {
+    await authHandler(req, res);
+  } catch (err) {
+    console.error('Auth API Error:', err);
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+});
+
 app.all('/api/sheets', async (req, res) => {
   try {
     await sheetsHandler(req, res);

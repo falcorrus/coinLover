@@ -419,6 +419,7 @@ SplashScreen.hide().catch(() => {});
             theme={theme} setTheme={setTheme} syncStatus={syncStatus} pillMode={pillMode} setPillMode={setPillMode}
             currentSymbol={calculations.currentSymbol} displaySpent={calculations.displaySpent} displayEarned={calculations.displayEarned} displayBalance={calculations.displayBalance}
             categoriesCount={categories.length}
+            activeTableId={activeTableId}
           />
 
           <StoriesSection

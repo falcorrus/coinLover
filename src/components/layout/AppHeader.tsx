@@ -1,7 +1,9 @@
 import * as React from "react";
-import { Sun, Moon, Plus, Menu, RefreshCcw, List, Calendar, PieChart, Sparkles, TrendingDown, TrendingUp, Wallet, X, Smartphone, QrCode } from "lucide-react";
+import { Sun, Moon, Plus, Menu, RefreshCcw, List, Calendar, PieChart, Sparkles, TrendingDown, TrendingUp, Wallet, X, Smartphone, QrCode, Key, Fingerprint, ShieldCheck, ShieldAlert } from "lucide-react";
 import { APP_SETTINGS } from "../../constants/settings";
 import { HistoryModalState } from "../../types";
+import { startRegistration } from "@simplewebauthn/browser";
+import { googleSheetsService } from "../../services/googleSheets";
 
 interface AppHeaderProps {
   isIncomeCollapsed: boolean;
@@ -26,6 +28,7 @@ interface AppHeaderProps {
   displayEarned: number;
   displayBalance: number;
   categoriesCount: number;
+  activeTableId: string | null;
 }
 
 // ... (props update)
@@ -33,10 +36,69 @@ export function AppHeader({
   isIncomeCollapsed, toggleIncome, isStoriesCollapsed, toggleStories, settingsLongPress, handleMenuClick, isSettingsMenuOpen,
   setIsSettingsMenuOpen, pullSettings, setHistoryModal, setCalendarAnalyticsModal, setAnalyticsModal,
   theme, setTheme, syncStatus, pillMode, setPillMode, currentSymbol, displaySpent, displayEarned, displayBalance,
-  categoriesCount
+  categoriesCount, activeTableId
 }: AppHeaderProps) {
   const isCompact = categoriesCount > 8;
   const [isDownloadModalOpen, setIsDownloadModalOpen] = React.useState(false);
+  const [isPasskeyModalOpen, setIsPasskeyModalOpen] = React.useState(false);
+  const [passkeyStatus, setPasskeyStatus] = React.useState<"idle" | "loading" | "enabled" | "disabled">("idle");
+  const [passkeyLoading, setPasskeyLoading] = React.useState(false);
+
+  React.useEffect(() => {
+    if (isPasskeyModalOpen && activeTableId) {
+      setPasskeyLoading(true);
+      googleSheetsService.fetchSettings(activeTableId)
+        .then(settings => {
+          if (settings && settings.passkeyEnabled) {
+            setPasskeyStatus("enabled");
+          } else {
+            setPasskeyStatus("disabled");
+          }
+        })
+        .catch(err => console.error("Error fetching passkey status:", err))
+        .finally(() => setPasskeyLoading(false));
+    }
+  }, [isPasskeyModalOpen, activeTableId]);
+
+  const handleRegisterPasskey = async () => {
+    if (!activeTableId) return;
+    setPasskeyLoading(true);
+    try {
+      const optionsRes = await fetch(`/api/auth/register-options?ssId=${encodeURIComponent(activeTableId)}`);
+      if (!optionsRes.ok) {
+        throw new Error(await optionsRes.text() || "Failed to fetch registration options");
+      }
+      const data = await optionsRes.json();
+      if (data.status !== "success") {
+        throw new Error(data.message || "Failed to fetch options");
+      }
+
+      const credential = await startRegistration(data.options);
+
+      const verifyRes = await fetch("/api/auth/register-verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ssId: activeTableId,
+          registrationResponse: credential,
+          challengeToken: data.challengeToken
+        })
+      });
+
+      const verifyData = await verifyRes.json();
+      if (verifyData.status === "success" && verifyData.verified) {
+        setPasskeyStatus("enabled");
+        pullSettings();
+      } else {
+        throw new Error(verifyData.message || "Verification failed");
+      }
+    } catch (err: any) {
+      console.error("Passkey registration failed:", err);
+      alert("Ошибка привязки биометрии: " + (err.message || String(err)));
+    } finally {
+      setPasskeyLoading(false);
+    }
+  };
 
   const PillButton = (
     <button onClick={() => setPillMode(p => p === "expense" ? "income" : p === "income" ? "balance" : "expense")} className={`mx-auto px-5 py-2 rounded-full bg-[var(--glass-item-bg)] border border-[var(--glass-border)] flex items-center gap-2 hover:bg-[var(--glass-item-active)] active:scale-95 transition-all shadow-sm ${isCompact ? '' : '-mt-0.5'}`}>
@@ -133,6 +195,9 @@ export function AppHeader({
               <button onClick={() => { setIsSettingsMenuOpen(false); setHistoryModal({ isOpen: true, entity: { name: "Лента", icon: "list" }, type: "feed" }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><List size={15} className="text-[var(--primary-color)]" /><span className="text-xs font-black text-[var(--text-main)] uppercase tracking-wider">Лента</span></button>
               <button onClick={() => { setIsSettingsMenuOpen(false); setCalendarAnalyticsModal({ isOpen: true }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><Calendar size={15} className="text-emerald-500" /><span className="text-xs font-black text-[var(--text-main)] uppercase tracking-wider">Календарь</span></button>
               <button onClick={() => { setIsSettingsMenuOpen(false); setAnalyticsModal({ isOpen: true, type: "expense" }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><PieChart size={15} className="text-amber-500" /><span className="text-xs font-black text-[var(--text-main)] uppercase tracking-wider">Аналитика</span></button>
+              {activeTableId && (
+                <button onClick={() => { setIsSettingsMenuOpen(false); setIsPasskeyModalOpen(true); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><Key size={15} className="text-indigo-400" /><span className="text-xs font-black text-[var(--text-main)] uppercase tracking-wider">Безопасность</span></button>
+              )}
               <button onClick={() => { setIsSettingsMenuOpen(false); setIsDownloadModalOpen(true); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><Smartphone size={15} className="text-[#6d5dfc]" /><span className="text-xs font-black text-[var(--text-main)] uppercase tracking-wider">Приложение</span></button>
             </div>
           </>
@@ -163,6 +228,63 @@ export function AppHeader({
                 <Smartphone size={16} />
                 Скачать APK (Android)
               </a>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isPasskeyModalOpen && (
+        <div onClick={() => setIsPasskeyModalOpen(false)} className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/60 backdrop-blur-md">
+          <div onClick={e => e.stopPropagation()} className="w-full max-w-sm glass-panel p-8 relative border-white/10 shadow-2xl rounded-[32px] bg-[var(--bg-color)] animate-in zoom-in-95 duration-200">
+            <button onClick={() => setIsPasskeyModalOpen(false)} className="absolute top-4 right-4 text-white/40 hover:text-white transition-colors outline-none"><X size={24} /></button>
+            <div className="text-center mb-6">
+              <h3 className="text-xl font-bold text-[var(--text-main)] mb-2 flex items-center justify-center gap-2">
+                <Fingerprint size={24} className="text-[#6d5dfc]" />
+                Биометрия и Вход
+              </h3>
+              <p className="text-xs text-[var(--text-main)] opacity-60 leading-relaxed mt-3">
+                Вы можете привязать это устройство к вашему кошельку. Это позволит вам мгновенно входить в приложение с помощью Face ID или Touch ID на любом из ваших устройств.
+              </p>
+            </div>
+
+            <div className="glass-panel p-5 rounded-2xl border-white/5 bg-white/5 flex flex-col items-center justify-center text-center mb-6">
+              {passkeyLoading ? (
+                <div className="flex flex-col items-center gap-2 py-4">
+                  <RefreshCcw size={32} className="text-[#6d5dfc] animate-spin" />
+                  <span className="text-xs text-[var(--text-main)] opacity-55">Загрузка данных...</span>
+                </div>
+              ) : passkeyStatus === "enabled" ? (
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-500">
+                    <ShieldCheck size={28} />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-[var(--text-main)]">Биометрия активна</h4>
+                    <p className="text-[10px] text-emerald-500 font-medium uppercase mt-0.5 tracking-wider">Устройство связано с кошельком</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500">
+                    <ShieldAlert size={28} />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-[var(--text-main)]">Биометрия не настроена</h4>
+                    <p className="text-[10px] text-amber-500 font-medium uppercase mt-0.5 tracking-wider">Вход только по ссылке</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <button
+                disabled={passkeyLoading || !activeTableId}
+                onClick={handleRegisterPasskey}
+                className="w-full py-4 bg-[#6d5dfc] text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-[#5b4ce3] active:scale-95 transition-all text-xs uppercase tracking-widest disabled:opacity-40 disabled:scale-100 shadow-md shadow-[#6d5dfc]/15"
+              >
+                <Fingerprint size={16} />
+                {passkeyStatus === "enabled" ? "Перепривязать устройство" : "Настроить Face ID / Touch ID"}
+              </button>
             </div>
           </div>
         </div>
