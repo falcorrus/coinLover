@@ -234,10 +234,10 @@ export function AppHeader({
       )}
 
       {isPasskeyModalOpen && (
-        <div onClick={() => setIsPasskeyModalOpen(false)} className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/60 backdrop-blur-md">
-          <div onClick={e => e.stopPropagation()} className="w-full max-w-sm glass-panel p-8 relative border-white/10 shadow-2xl rounded-[32px] bg-[var(--bg-color)] animate-in zoom-in-95 duration-200">
-            <button onClick={() => setIsPasskeyModalOpen(false)} className="absolute top-4 right-4 text-white/40 hover:text-white transition-colors outline-none"><X size={24} /></button>
-            <div className="text-center mb-6">
+        <div onClick={() => setIsPasskeyModalOpen(false)} className="fixed inset-0 bg-black/60 backdrop-blur-md z-[200] flex items-center justify-center p-6 animate-in fade-in duration-300">
+          <div onClick={e => e.stopPropagation()} className="glass-panel w-full max-w-sm p-8 flex flex-col gap-6 shadow-2xl shadow-[var(--shadow-color)] animate-in zoom-in-95 duration-300 text-[var(--text-main)] text-left relative">
+            <button onClick={() => setIsPasskeyModalOpen(false)} className="absolute top-6 right-6 text-white/40 hover:text-white transition-colors outline-none"><X size={24} /></button>
+            <div className="text-center mb-2">
               <h3 className="text-xl font-bold text-[var(--text-main)] mb-2 flex items-center justify-center gap-2">
                 <Fingerprint size={24} className="text-[#6d5dfc]" />
                 Биометрия и Вход
@@ -247,7 +247,7 @@ export function AppHeader({
               </p>
             </div>
 
-            <div className="glass-panel p-5 rounded-2xl border-white/5 bg-white/5 flex flex-col items-center justify-center text-center mb-6">
+            <div className="p-5 rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-item-bg)] flex flex-col items-center justify-center text-center mb-2">
               {passkeyLoading ? (
                 <div className="flex flex-col items-center gap-2 py-4">
                   <RefreshCcw size={32} className="text-[#6d5dfc] animate-spin" />
