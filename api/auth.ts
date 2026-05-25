@@ -115,7 +115,6 @@ export async function authHandler(req: Request, res: Response) {
         userDisplayName: 'CoinLover Wallet Holder',
         attestationType: 'none',
         authenticatorSelection: {
-          authenticatorAttachment: 'platform',
           residentKey: 'required',
           requireResidentKey: true,
           userVerification: 'preferred'
