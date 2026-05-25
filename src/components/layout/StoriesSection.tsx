@@ -999,133 +999,88 @@ export function StoriesSection({
         );
 
       case "actions":
+        const { language, setLanguage, t } = useLanguage();
         return (
           <div className="flex flex-col h-full justify-between py-6 px-4 animate-in fade-in duration-300">
-            <div className="space-y-6">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shadow-[0_0_20px_rgba(234,179,8,0.15)]">
-                  <Zap size={24} />
+            {activeSlideIndex === 0 ? (
+              <div className="space-y-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shadow-[0_0_20px_rgba(234,179,8,0.15)]">
+                    <Zap size={24} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg text-[var(--text-main)]">{t('Fast Control')}</h3>
+                    <p className="text-xs text-[var(--text-muted)]">{t('Interactive Control')}</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-bold text-lg text-[var(--text-main)]">Быстрый пульт</h3>
-                  <p className="text-xs text-[var(--text-muted)]">Интерактивное управление</p>
+
+                <div className="space-y-2">
+                  <button onClick={() => { setActiveStoryIndex(null); setHistoryModal({ isOpen: true, entity: { name: t('Transactions History'), icon: "feed" }, type: "feed" }); }} className="w-full p-3.5 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)] flex items-center justify-between text-left transition-all shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-500"><BarChart3 size={16} /></div>
+                      <div>
+                        <span className="font-bold text-xs text-[var(--text-main)] block">{t('Transactions History')}</span>
+                        <span className="text-[10px] text-[var(--text-muted)] uppercase font-black">{t('Financial Feed')}</span>
+                      </div>
+                    </div>
+                    <ChevronRight size={16} className="text-[var(--text-muted)]" />
+                  </button>
+
+                  <button onClick={() => { setActiveStoryIndex(null); setCalendarAnalyticsModal({ isOpen: true }); }} className="w-full p-3.5 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)] flex items-center justify-between text-left transition-all shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500"><Calendar size={16} /></div>
+                      <div>
+                        <span className="font-bold text-xs text-[var(--text-main)] block">{t('Expense Calendar')}</span>
+                        <span className="text-[10px] text-[var(--text-muted)] uppercase font-black">{t('Spending Grid')}</span>
+                      </div>
+                    </div>
+                    <ChevronRight size={16} className="text-[var(--text-muted)]" />
+                  </button>
+
+                  <button onClick={() => { setActiveStoryIndex(null); setAnalyticsModal({ isOpen: true, type: "expense" }); }} className="w-full p-3.5 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)] flex items-center justify-between text-left transition-all shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-500"><PieChart size={16} /></div>
+                      <div>
+                        <span className="font-bold text-xs text-[var(--text-main)] block">{t('Spending Analytics')}</span>
+                        <span className="text-[10px] text-[var(--text-muted)] uppercase font-black">{t('Expense Chart')}</span>
+                      </div>
+                    </div>
+                    <ChevronRight size={16} className="text-[var(--text-muted)]" />
+                  </button>
                 </div>
               </div>
-
-              <div className="space-y-2">
-                {/* Theme Action */}
-                <button
-                  onClick={() => setTheme(theme === "dark" ? "white" : theme === "white" ? "mint" : "dark")}
-                  className="w-full p-3.5 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)] flex items-center justify-between text-left transition-all shadow-sm"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500">
-                      {theme === "dark" ? <Sun size={16} /> : theme === "white" ? <Palette size={16} /> : <Moon size={16} />}
-                    </div>
-                    <div>
-                      <span className="font-bold text-xs text-[var(--text-main)] block">Сменить тему</span>
-                      <span className="text-[10px] text-[var(--text-muted)] uppercase font-black">{theme} theme</span>
-                    </div>
+            ) : (
+              <div className="space-y-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                    <Settings size={24} />
                   </div>
-                  <ChevronRight size={16} className="text-[var(--text-muted)]" />
-                </button>
-
-                {/* Analytical Report Action */}
-                <button
-                  onClick={() => {
-                    setActiveStoryIndex(null);
-                    setHistoryModal({ isOpen: true, entity: { name: "Все транзакции", icon: "feed" }, type: "feed" });
-                  }}
-                  className="w-full p-3.5 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)] flex items-center justify-between text-left transition-all shadow-sm"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-500">
-                      <BarChart3 size={16} />
-                    </div>
-                    <div>
-                      <span className="font-bold text-xs text-[var(--text-main)] block">История операций</span>
-                      <span className="text-[10px] text-[var(--text-muted)] uppercase font-black">Финансовая лента</span>
-                    </div>
+                  <div>
+                    <h3 className="font-bold text-lg text-[var(--text-main)]">{t('Settings')}</h3>
+                    <p className="text-xs text-[var(--text-muted)]">{t('App Configuration')}</p>
                   </div>
-                  <ChevronRight size={16} className="text-[var(--text-muted)]" />
-                </button>
+                </div>
 
-                {/* Calendar Action */}
-                <button
-                  onClick={() => {
-                    setActiveStoryIndex(null);
-                    setCalendarAnalyticsModal({ isOpen: true });
-                  }}
-                  className="w-full p-3.5 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)] flex items-center justify-between text-left transition-all shadow-sm"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500">
-                      <Calendar size={16} />
-                    </div>
-                    <div>
-                      <span className="font-bold text-xs text-[var(--text-main)] block">Календарь трат</span>
-                      <span className="text-[10px] text-[var(--text-muted)] uppercase font-black">Сетка расходов</span>
-                    </div>
-                  </div>
-                  <ChevronRight size={16} className="text-[var(--text-muted)]" />
-                </button>
-
-                {/* Analytics Action */}
-                <button
-                  onClick={() => {
-                    setActiveStoryIndex(null);
-                    setAnalyticsModal({ isOpen: true, type: "expense" });
-                  }}
-                  className="w-full p-3.5 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)] flex items-center justify-between text-left transition-all shadow-sm"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-500">
-                      <PieChart size={16} />
-                    </div>
-                    <div>
-                      <span className="font-bold text-xs text-[var(--text-main)] block">Аналитика трат</span>
-                      <span className="text-[10px] text-[var(--text-muted)] uppercase font-black">Диаграмма расходов</span>
-                    </div>
-                  </div>
-                  <ChevronRight size={16} className="text-[var(--text-muted)]" />
-                </button>
-
-                {/* Currency Mode Switch */}
-                <button
-                  onClick={() => setCategoryCurrencyMode(categoryCurrencyMode === 'base' ? 'local' : 'base')}
-                  className={`w-full p-3.5 rounded-2xl border flex items-center justify-between text-left transition-all shadow-sm ${
-                    categoryCurrencyMode === 'local' 
-                      ? 'bg-[var(--primary-color)]/10 border-[var(--primary-color)]/30' 
-                      : 'bg-[var(--glass-card-bg)] border-[var(--glass-border)] hover:bg-[var(--glass-item-active)]'
-                  }`}
-                  title={categoryCurrencyMode === 'base' ? "Переключить на локальную валюту" : "Переключить на базовую валюту"}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black uppercase text-sm ${
-                      categoryCurrencyMode === 'local'
-                        ? 'bg-[var(--primary-color)]/20 text-[var(--primary-color)]'
-                        : 'bg-[var(--glass-item-bg)] border border-[var(--glass-border)] text-[var(--text-main)]'
-                    }`}>
-                      {categoryCurrencyMode === 'base' ? baseCurrency : localCurrencyCode}
-                    </div>
-                    <div>
-                      <span className="font-bold text-xs text-[var(--text-main)] block">Валюта Категорий</span>
-                      <span className="text-[10px] text-[var(--text-muted)] uppercase font-black">
-                        {categoryCurrencyMode === 'base' ? 'Базовая валюта' : 'Локальная валюта'}
-                      </span>
-                    </div>
-                  </div>
-                  <ChevronRight size={16} className="text-[var(--text-muted)]" />
-                </button>
+                <div className="grid grid-cols-2 gap-4">
+                  <button onClick={() => setLanguage(language === 'en' ? 'ru' : 'en')} className="p-4 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] text-left space-y-2">
+                    <Languages className="text-indigo-500" />
+                    <span className="font-bold text-xs text-[var(--text-main)] block">{t('Language')}</span>
+                    <span className="text-[10px] text-[var(--text-muted)] uppercase font-black">{language === 'en' ? 'English' : 'Русский'}</span>
+                  </button>
+                  <button onClick={() => setTheme(theme === "dark" ? "white" : theme === "white" ? "mint" : "dark")} className="p-4 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] text-left space-y-2">
+                    <Palette className="text-amber-500" />
+                    <span className="font-bold text-xs text-[var(--text-main)] block">{t('Theme')}</span>
+                    <span className="text-[10px] text-[var(--text-muted)] uppercase font-black">{theme}</span>
+                  </button>
+                  <button onClick={() => setCategoryCurrencyMode(categoryCurrencyMode === 'base' ? 'local' : 'base')} className="col-span-2 p-4 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] text-left space-y-2">
+                    <DollarSign className="text-emerald-500" />
+                    <span className="font-bold text-xs text-[var(--text-main)] block">{t('Currency of Categories')}</span>
+                    <span className="text-[10px] text-[var(--text-muted)] uppercase font-black">{categoryCurrencyMode === 'base' ? t('Base Currency') : t('Local Currency')}</span>
+                  </button>
+                </div>
               </div>
-            </div>
-
-            <button
-              onClick={() => setActiveStoryIndex(null)}
-              className="w-full py-3.5 rounded-2xl bg-[var(--glass-item-bg)] hover:bg-[var(--glass-item-active)] border border-[var(--glass-border)] font-bold text-xs uppercase tracking-wider text-[var(--text-main)] transition-all"
-            >
-              Готово
-            </button>
+            )}
+            <button onClick={() => setActiveStoryIndex(null)} className="w-full py-3.5 rounded-2xl bg-[var(--glass-item-bg)] hover:bg-[var(--glass-item-active)] border border-[var(--glass-border)] font-bold text-xs uppercase tracking-wider text-[var(--text-main)] transition-all">{t('Done')}</button>
           </div>
         );
 
