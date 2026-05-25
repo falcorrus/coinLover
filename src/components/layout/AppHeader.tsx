@@ -49,16 +49,31 @@ export function AppHeader({
     if (isPasskeyModalOpen && activeTableId) {
       setJustRegistered(false);
       setPasskeyLoading(true);
+
+      // 5-second fallback timeout to prevent infinite spinner if network/GAS is slow or blocked
+      const timeoutId = setTimeout(() => {
+        setPasskeyLoading(false);
+        setPasskeyStatus("disabled");
+        console.warn("Passkey status check timed out, falling back to disabled");
+      }, 5000);
+
       googleSheetsService.fetchSettings(activeTableId)
         .then(settings => {
+          clearTimeout(timeoutId);
           if (settings && settings.passkeyEnabled) {
             setPasskeyStatus("enabled");
           } else {
             setPasskeyStatus("disabled");
           }
         })
-        .catch(err => console.error("Error fetching passkey status:", err))
-        .finally(() => setPasskeyLoading(false));
+        .catch(err => {
+          clearTimeout(timeoutId);
+          console.error("Error fetching passkey status:", err);
+          setPasskeyStatus("disabled");
+        })
+        .finally(() => {
+          setPasskeyLoading(false);
+        });
     }
   }, [isPasskeyModalOpen, activeTableId]);
 
