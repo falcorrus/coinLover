@@ -43,9 +43,11 @@ export function AppHeader({
   const [isPasskeyModalOpen, setIsPasskeyModalOpen] = React.useState(false);
   const [passkeyStatus, setPasskeyStatus] = React.useState<"idle" | "loading" | "enabled" | "disabled">("idle");
   const [passkeyLoading, setPasskeyLoading] = React.useState(false);
+  const [justRegistered, setJustRegistered] = React.useState(false);
 
   React.useEffect(() => {
     if (isPasskeyModalOpen && activeTableId) {
+      setJustRegistered(false);
       setPasskeyLoading(true);
       googleSheetsService.fetchSettings(activeTableId)
         .then(settings => {
@@ -88,6 +90,7 @@ export function AppHeader({
       const verifyData = await verifyRes.json();
       if (verifyData.status === "success" && verifyData.verified) {
         setPasskeyStatus("enabled");
+        setJustRegistered(true);
         pullSettings();
       } else {
         throw new Error(verifyData.message || "Verification failed");
@@ -235,7 +238,7 @@ export function AppHeader({
 
       {isPasskeyModalOpen && (
         <div onClick={() => setIsPasskeyModalOpen(false)} className="fixed inset-0 bg-black/60 backdrop-blur-md z-[200] flex items-center justify-center p-6 animate-in fade-in duration-300">
-          <div onClick={e => e.stopPropagation()} className="glass-panel w-full max-w-sm p-8 flex flex-col gap-6 shadow-2xl shadow-[var(--shadow-color)] animate-in zoom-in-95 duration-300 text-[var(--text-main)] text-left relative">
+          <div onClick={e => e.stopPropagation()} className="glass-panel bg-[var(--panel-bg)] w-full max-w-sm p-8 flex flex-col gap-6 shadow-2xl shadow-[var(--shadow-color)] animate-in zoom-in-95 duration-300 text-[var(--text-main)] text-left relative">
             <button onClick={() => setIsPasskeyModalOpen(false)} className="absolute top-6 right-6 text-white/40 hover:text-white transition-colors outline-none"><X size={24} /></button>
             <div className="text-center mb-2">
               <h3 className="text-xl font-bold text-[var(--text-main)] mb-2 flex items-center justify-center gap-2">
@@ -243,7 +246,7 @@ export function AppHeader({
                 Биометрия и Вход
               </h3>
               <p className="text-xs text-[var(--text-main)] opacity-60 leading-relaxed mt-3">
-                Вы можете привязать это устройство к вашему кошельку. Это позволит вам мгновенно входить в приложение с помощью Face ID или Touch ID на любом из ваших устройств.
+                Вы можете привязать это устройство к данным. Это позволит вам мгновенно входить в приложение с помощью Face ID или Touch ID на любом из ваших устройств.
               </p>
             </div>
 
@@ -260,7 +263,7 @@ export function AppHeader({
                   </div>
                   <div>
                     <h4 className="text-sm font-bold text-[var(--text-main)]">Биометрия активна</h4>
-                    <p className="text-[10px] text-emerald-500 font-medium uppercase mt-0.5 tracking-wider">Устройство связано с кошельком</p>
+                    <p className="text-[10px] text-emerald-500 font-medium uppercase mt-0.5 tracking-wider">Устройство связано с данными</p>
                   </div>
                 </div>
               ) : (
@@ -278,12 +281,25 @@ export function AppHeader({
 
             <div className="flex flex-col gap-3">
               <button
-                disabled={passkeyLoading || !activeTableId}
+                disabled={passkeyLoading || !activeTableId || justRegistered}
                 onClick={handleRegisterPasskey}
-                className="w-full py-4 bg-[#6d5dfc] text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-[#5b4ce3] active:scale-95 transition-all text-xs uppercase tracking-widest disabled:opacity-40 disabled:scale-100 shadow-md shadow-[#6d5dfc]/15"
+                className={`w-full py-4 font-bold rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all text-xs uppercase tracking-widest disabled:opacity-40 disabled:scale-100 shadow-md ${
+                  justRegistered 
+                    ? "bg-emerald-500 text-white shadow-emerald-500/15 cursor-default scale-100" 
+                    : "bg-[#6d5dfc] text-white hover:bg-[#5b4ce3] shadow-[#6d5dfc]/15"
+                }`}
               >
-                <Fingerprint size={16} />
-                {passkeyStatus === "enabled" ? "Перепривязать устройство" : "Настроить Face ID / Touch ID"}
+                {justRegistered ? (
+                  <>
+                    <ShieldCheck size={16} />
+                    Готово
+                  </>
+                ) : (
+                  <>
+                    <Fingerprint size={16} />
+                    {passkeyStatus === "enabled" ? "Перепривязать устройство" : "Настроить Face ID / Touch ID"}
+                  </>
+                )}
               </button>
             </div>
           </div>
