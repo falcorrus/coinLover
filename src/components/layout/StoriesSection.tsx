@@ -1000,9 +1000,12 @@ export function StoriesSection({
 
       case "actions":
         const { language, setLanguage, t } = useLanguage();
+        // Fallback for slide index if it was missing or undefined
+        const currentSlide = typeof activeSlideIndex !== 'undefined' ? activeSlideIndex : 0;
+        
         return (
           <div className="flex flex-col h-full justify-between py-6 px-4 animate-in fade-in duration-300">
-            {activeSlideIndex === 0 ? (
+            {currentSlide === 0 ? (
               <div className="space-y-6">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shadow-[0_0_20px_rgba(234,179,8,0.15)]">
@@ -1047,14 +1050,26 @@ export function StoriesSection({
                     </div>
                     <ChevronRight size={16} className="text-[var(--text-muted)]" />
                   </button>
+                  
+                  {/* Button to navigate to slide 1 */}
+                  <button onClick={() => setActiveSlideIndex(1)} className="w-full p-3.5 rounded-2xl bg-[var(--glass-item-bg)] border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)] flex items-center justify-between text-left transition-all shadow-sm mt-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-500"><Settings size={16} /></div>
+                      <div>
+                        <span className="font-bold text-xs text-[var(--text-main)] block">{t('Settings')}</span>
+                        <span className="text-[10px] text-[var(--text-muted)] uppercase font-black">{t('App Configuration')}</span>
+                      </div>
+                    </div>
+                    <ChevronRight size={16} className="text-[var(--text-muted)]" />
+                  </button>
                 </div>
               </div>
             ) : (
               <div className="space-y-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
-                    <Settings size={24} />
-                  </div>
+                  <button onClick={() => setActiveSlideIndex(0)} className="w-12 h-12 rounded-2xl bg-[var(--glass-item-bg)] border border-[var(--glass-border)] flex items-center justify-center text-[var(--text-main)]">
+                    <ChevronLeft size={24} />
+                  </button>
                   <div>
                     <h3 className="font-bold text-lg text-[var(--text-main)]">{t('Settings')}</h3>
                     <p className="text-xs text-[var(--text-muted)]">{t('App Configuration')}</p>
