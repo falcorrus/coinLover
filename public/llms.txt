@@ -1,0 +1,40 @@
+# CoinLover
+
+> CoinLover — современное, геймифицированное приложение для осознанного учета личных финансов. Фокус на интуитивном Drag-and-Drop интерфейсе, полной приватности данных через личные Google Sheets и продвинутой мультивалютной аналитике. Разработано в стиле Linear (Glassmorphism + Bento Grid).
+
+## CANONICAL RESOURCES
+
+* Landing Page [https://coinlover.ru/landing]: Описание продукта, регистрация и быстрый старт.
+* Web App [https://coinlover.ru]: Основной интерфейс приложения.
+* Technical Guide [https://github.com/falcorrus/coinLover/blob/main/!Docs/Technical_Guide.md]: Полная архитектура, описание стека и логика синхронизации.
+* Knowledge Base [https://github.com/falcorrus/coinLover/blob/main/!Docs/KnowledgeBase.md]: Инструкции по настройке, секретные жесты и FAQ.
+* GitHub Repository [https://github.com/falcorrus/coinLover]: Исходный код, инструкции по деплою и скрипты автоматизации.
+* Design System [https://github.com/falcorrus/coinLover/blob/main/!Docs/Design/DESIGN.md]: Визуальный язык, токены и концепция Linear Style.
+
+## FEATURES & ARCHITECTURE
+
+* **Mindful Entry:** Отказ от автоматической синхронизации с банками в пользу осознанного ручного ввода через Drag-and-Drop («монетка» на категорию).
+* **Data Ownership:** Все данные хранятся в Google Sheets пользователя. Приложение работает как прокси, обеспечивая приватность.
+* **Hybrid Sync:** Система Snapshot-based разрешения конфликтов между устройствами и облаком.
+* **Tiers:** $20/год (для ранних и активных пользователей бесплатно).
+* **Tactile UX:** Три уровня взаимодействия (Click, Swipe, Long Press) с тактильным откликом.
+* **Multi-currency:** Поддержка Source и Target валют с мгновенным пересчетом по курсам.
+
+## OPTIONAL RESOURCES
+
+* Dev Environment [https://coin.reloto.ru]: Тестовая площадка для новых функций.
+* Solutions Log [https://github.com/falcorrus/coinLover/blob/main/!Docs/!SOLUTIONS.md]: Журнал технических решений и исправленных багов.
+* Marketing Strategy [https://github.com/falcorrus/coinLover/blob/main/!Docs/Marketing_Strategy.md]: Планы развития и позиционирование.
+
+## CONTACTS
+
+* Developer: broz.agency [https://broz.agency]
+* Admin Email: coinlover-service-acc@baonlineru.iam.gserviceaccount.com
+* Telegram Support: @kirshin_pro
+
+## METADATA
+
+* Languages: ru, en
+* Stack: React 19, TypeScript, Node.js, Google Sheets API v4, Docker, Nginx, Tailwind CSS v4.
+* Style: Linear Style, Glassmorphism, Bento Grid.
+* Updated: 2026-05-25

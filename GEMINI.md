@@ -9,6 +9,7 @@
 
 ## Architecture & Resources
 - **Source Code:** `/Users/eugene/MyProjects/CoinLover`
+- **AI Docs (llms.txt):** В папке `public/` находятся файлы `llms.txt` и `llms-full.txt` для улучшения понимания проекта LLM-агентами (согласно стандарту llmstxt.org).
 - **Obsidian Docs:** `3. РЕСУРСЫ/00! Мои приложения/coinLover/`
 - **Link:** Folder `/Users/eugene/MyProjects/CoinLover/!Docs` points to the project notes in Obsidian.
 - **File Storage:** Все новые `.md` файлы (дизайны, планы, логи) сохраняй только в `/Users/eugene/MyProjects/CoinLover/Obsidian_Docs`.
