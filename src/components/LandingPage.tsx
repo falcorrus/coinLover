@@ -203,6 +203,7 @@ export const LandingPage: React.FC = () => {
   const [errorMsg, setErrorMsg] = React.useState("");
   const [analyticsImageIndex, setAnalyticsImageIndex] = React.useState(0);
   const [copiedEmail, setCopiedEmail] = React.useState(false);
+  const [prefetchedLoginOptions, setPrefetchedLoginOptions] = React.useState<any>(null);
 
   const copyEmailToClipboard = async (text: string) => {
     try {
@@ -241,13 +242,19 @@ export const LandingPage: React.FC = () => {
     setIsLoading(true);
     setErrorMsg("");
     try {
-      const optionsRes = await fetch("/api/auth/login-options");
-      if (!optionsRes.ok) {
-        throw new Error(await optionsRes.text() || "Failed to fetch login options");
-      }
-      const data = await optionsRes.json();
-      if (data.status !== "success") {
-        throw new Error(data.message || "Failed to fetch options");
+      let data = prefetchedLoginOptions;
+
+      // Fallback if prefetch hasn't finished loading yet (unlikely but safe)
+      if (!data) {
+        console.log("No prefetched login options found, fetching dynamically...");
+        const optionsRes = await fetch("/api/auth/login-options");
+        if (!optionsRes.ok) {
+          throw new Error(await optionsRes.text() || "Failed to fetch login options");
+        }
+        data = await optionsRes.json();
+        if (data.status !== "success") {
+          throw new Error(data.message || "Failed to fetch options");
+        }
       }
 
       // 15-second timeout to prevent infinite spin in non-supportive WebViews (like Telegram app)
@@ -339,6 +346,19 @@ export const LandingPage: React.FC = () => {
     trackScreen("Landing Page");
     // Track initial language
     trackEvent("change_language", { language_code: lang, initial: true });
+
+    // Prefetch login options to preserve User Gesture on mobile browsers
+    fetch("/api/auth/login-options")
+      .then(res => {
+        if (res.ok) return res.json();
+        throw new Error("Failed to prefetch login options");
+      })
+      .then(data => {
+        if (data.status === "success") {
+          setPrefetchedLoginOptions(data);
+        }
+      })
+      .catch(err => console.warn("Prefetch login options failed:", err));
   }, []);
 
   const { scrollYProgress } = useScroll();
