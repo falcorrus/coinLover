@@ -257,9 +257,9 @@ export const LandingPage: React.FC = () => {
         }
       }
 
-      // 15-second timeout to prevent infinite spin in non-supportive WebViews (like Telegram app)
+      // 60-second timeout to prevent infinite spin in non-supportive WebViews (like Telegram app)
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error("TIMEOUT")), 15000);
+        setTimeout(() => reject(new Error("TIMEOUT")), 60000);
       });
 
       const credential = await Promise.race([
