@@ -103,7 +103,7 @@ export async function authHandler(req: Request, res: Response) {
       const options = await generateRegistrationOptions({
         rpName: 'CoinLover',
         rpID: rpId,
-        userID: crypto.randomBytes(16), // SimpleWebAuthn expects unique user ID as Buffer
+        userID: Buffer.from(ssId, 'utf8'),
         userName: `user-${ssId.substring(0, 8)}@coinlover.ru`,
         userDisplayName: 'CoinLover Wallet Holder',
         attestationType: 'none',
