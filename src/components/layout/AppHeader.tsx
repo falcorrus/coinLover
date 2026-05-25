@@ -44,11 +44,13 @@ export function AppHeader({
   const [passkeyStatus, setPasskeyStatus] = React.useState<"idle" | "loading" | "enabled" | "disabled">("idle");
   const [passkeyLoading, setPasskeyLoading] = React.useState(false);
   const [justRegistered, setJustRegistered] = React.useState(false);
+  const [prefetchedRegisterOptions, setPrefetchedRegisterOptions] = React.useState<any>(null);
 
   React.useEffect(() => {
     if (isPasskeyModalOpen && activeTableId) {
       setJustRegistered(false);
       setPasskeyLoading(true);
+      setPrefetchedRegisterOptions(null);
 
       // 5-second fallback timeout to prevent infinite spinner if network/GAS is slow or blocked
       const timeoutId = setTimeout(() => {
@@ -57,6 +59,7 @@ export function AppHeader({
         console.warn("Passkey status check timed out, falling back to disabled");
       }, 5000);
 
+      // 1. Fetch current settings status
       googleSheetsService.fetchSettings(activeTableId)
         .then(settings => {
           clearTimeout(timeoutId);
@@ -74,6 +77,19 @@ export function AppHeader({
         .finally(() => {
           setPasskeyLoading(false);
         });
+
+      // 2. Prefetch registration options to preserve User Gesture on mobile browsers
+      fetch(`/api/auth/register-options?ssId=${encodeURIComponent(activeTableId)}`)
+        .then(res => {
+          if (res.ok) return res.json();
+          throw new Error("Failed to prefetch registration options");
+        })
+        .then(data => {
+          if (data.status === "success") {
+            setPrefetchedRegisterOptions(data);
+          }
+        })
+        .catch(err => console.warn("Prefetch registration options failed:", err));
     }
   }, [isPasskeyModalOpen, activeTableId]);
 
@@ -81,13 +97,19 @@ export function AppHeader({
     if (!activeTableId) return;
     setPasskeyLoading(true);
     try {
-      const optionsRes = await fetch(`/api/auth/register-options?ssId=${encodeURIComponent(activeTableId)}`);
-      if (!optionsRes.ok) {
-        throw new Error(await optionsRes.text() || "Failed to fetch registration options");
-      }
-      const data = await optionsRes.json();
-      if (data.status !== "success") {
-        throw new Error(data.message || "Failed to fetch options");
+      let data = prefetchedRegisterOptions;
+
+      // Fallback if prefetch hasn't finished loading yet (unlikely but safe)
+      if (!data) {
+        console.log("No prefetched options found, fetching dynamically...");
+        const optionsRes = await fetch(`/api/auth/register-options?ssId=${encodeURIComponent(activeTableId)}`);
+        if (!optionsRes.ok) {
+          throw new Error(await optionsRes.text() || "Failed to fetch registration options");
+        }
+        data = await optionsRes.json();
+        if (data.status !== "success") {
+          throw new Error(data.message || "Failed to fetch options");
+        }
       }
 
       // 15-second timeout to prevent infinite spin in non-supportive WebViews (like Telegram app)
@@ -265,7 +287,7 @@ export function AppHeader({
 
       {isPasskeyModalOpen && (
         <div onClick={() => setIsPasskeyModalOpen(false)} className="fixed inset-0 bg-black/60 backdrop-blur-md z-[200] flex items-center justify-center p-6 animate-in fade-in duration-300">
-          <div onClick={e => e.stopPropagation()} className="glass-panel bg-[var(--panel-bg)] w-full max-w-sm p-8 flex flex-col gap-6 shadow-2xl shadow-[var(--shadow-color)] animate-in zoom-in-95 duration-300 text-[var(--text-main)] text-left relative">
+          <div onClick={e => e.stopPropagation()} className="glass-panel w-full max-w-sm p-8 flex flex-col gap-6 shadow-2xl shadow-[var(--shadow-color)] animate-in zoom-in-95 duration-300 text-[var(--text-main)] text-left relative" style={{ backgroundColor: "var(--panel-bg)" }}>
             <button onClick={() => setIsPasskeyModalOpen(false)} className="absolute top-6 right-6 text-white/40 hover:text-white transition-colors outline-none"><X size={24} /></button>
             <div className="text-center mb-2">
               <h3 className="text-xl font-bold text-[var(--text-main)] mb-2 flex items-center justify-center gap-2">
