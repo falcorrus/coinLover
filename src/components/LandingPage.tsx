@@ -891,7 +891,7 @@ export const LandingPage: React.FC = () => {
                         {isLoading ? <RefreshCw className="animate-spin w-5 h-5" /> : <>{t.modalLoginBtn} <ArrowRight size={18} /></>}
                       </button>
 
-                      {window.PublicKeyCredential && (
+                      {window.PublicKeyCredential && !/Android/i.test(navigator.userAgent) && (
                         <>
                           <div className="flex items-center justify-center gap-3 my-1">
                             <div className="h-[1px] bg-white/10 flex-1" />
