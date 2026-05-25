@@ -92,6 +92,8 @@ export async function authHandler(req: Request, res: Response) {
   const hostHeader = req.headers.host || 'coinlover.ru';
   const rpId = hostHeader.split(':')[0]; // strip port
 
+  console.log(`[Auth] ${method} /api/auth/${action} | host=${hostHeader} rpId=${rpId}`);
+
   try {
     if (action === 'register-options') {
       const ssId = String(req.query.ssId || "").trim();
@@ -99,7 +101,12 @@ export async function authHandler(req: Request, res: Response) {
         return res.status(400).json({ status: 'error', message: 'Missing ssId' });
       }
 
+      console.log(`[Auth] register-options ssId=${ssId.substring(0, 12)}...`);
+
       // Generate credentials creation options
+      // userVerification: 'preferred' instead of 'required' to avoid Android/Xiaomi MIUI hang.
+      // 'required' forces device-level biometrics which MIUI often silently blocks via Play Services.
+      // 'preferred' allows Google Password Manager to use its own secure PIN flow.
       const options = await generateRegistrationOptions({
         rpName: 'CoinLover',
         rpID: rpId,
@@ -110,13 +117,14 @@ export async function authHandler(req: Request, res: Response) {
         authenticatorSelection: {
           residentKey: 'required',
           requireResidentKey: true,
-          userVerification: 'required'
+          userVerification: 'preferred'
         }
       });
 
       // Stateless signed challenge containing ssId
       const challengeToken = generateChallengeToken(options.challenge, ssId);
       
+      console.log(`[Auth] register-options OK challenge=${options.challenge.substring(0, 12)}...`);
       return res.status(200).json({
         status: 'success',
         options,
@@ -147,7 +155,7 @@ export async function authHandler(req: Request, res: Response) {
         expectedChallenge,
         expectedOrigin: [`https://${rpId}`, `http://${rpId}`, `https://coinlover.ru`, `https://coin.reloto.ru`],
         expectedRPID: rpId,
-        requireUserVerification: true
+        requireUserVerification: false  // relaxed to match 'preferred' in register-options
       });
 
       if (!verification.verified || !verification.registrationInfo) {
@@ -213,13 +221,16 @@ export async function authHandler(req: Request, res: Response) {
     }
 
     if (action === 'login-options') {
+      console.log(`[Auth] login-options rpId=${rpId}`);
+      // 'preferred' to avoid Android/Xiaomi hang - see register-options comment
       const options = await generateAuthenticationOptions({
         rpID: rpId,
-        userVerification: 'required'
+        userVerification: 'preferred'
       });
 
       const challengeToken = generateChallengeToken(options.challenge);
       
+      console.log(`[Auth] login-options OK challenge=${options.challenge.substring(0, 12)}...`);
       return res.status(200).json({
         status: 'success',
         options,
@@ -285,7 +296,7 @@ export async function authHandler(req: Request, res: Response) {
         expectedChallenge: clientChallenge,
         expectedOrigin: [`https://${rpId}`, `http://${rpId}`, `https://coinlover.ru`, `https://coin.reloto.ru`],
         expectedRPID: rpId,
-        requireUserVerification: true,
+        requireUserVerification: false,  // relaxed to match 'preferred' in login-options
         credential: {
           id: passkeyCredId,
           publicKey: base64urlToBuffer(passkeyPubKey),
