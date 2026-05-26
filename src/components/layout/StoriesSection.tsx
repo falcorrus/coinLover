@@ -46,6 +46,7 @@ export function StoriesSection({
   localCurrencyCode,
   isStoriesCollapsed = false,
 }: StoriesSectionProps) {
+  const { t, language, setLanguage } = useLanguage();
   const totalCategoryItems = categories.length + 1;
   const rowsCount = Math.ceil(totalCategoryItems / 4);
   const useCompactStories = rowsCount > 2;
@@ -1000,10 +1001,7 @@ export function StoriesSection({
         );
 
       case "actions":
-        const { language, setLanguage, t } = useLanguage();
-        // Fallback for slide index if it was missing or undefined
-        const currentSlide = typeof activeSlideIndex !== 'undefined' ? activeSlideIndex : 0;
-        
+        // Settings slide is index 1
         return (
           <div className="flex flex-col h-full justify-between py-6 px-4 animate-in fade-in duration-300">
             {currentSlide === 0 ? (
