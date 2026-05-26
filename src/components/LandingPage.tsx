@@ -448,8 +448,8 @@ export const LandingPage: React.FC = () => {
           : "Registration cancelled or timed out.";
       } else if (err.name === "NotReadableError") {
         errMsg = lang === "ru"
-          ? "Ошибка Credential Manager. На устройстве не настроена блокировка экрана (PIN/Face ID) или заблокирован доступ."
-          : "Device screen lock is not configured or Credential Manager error occurred.";
+          ? "Ошибка Credential Manager. Откройте CoinLover во внешнем браузере (Chrome / Safari), а не во встроенном (например, Telegram), и убедитесь, что настроен PIN/отпечаток."
+          : "Credential Manager error. Open CoinLover in an external browser (Chrome / Safari) instead of an in-app browser (like Telegram), and ensure screen lock is set.";
       } else if (err.name === "NotSupportedError" || err.name === "SecurityError") {
         errMsg = lang === "ru"
           ? "Ваш браузер не поддерживает биометрию или сайт запущен без защищенного протокола HTTPS."
@@ -945,7 +945,7 @@ export const LandingPage: React.FC = () => {
                               </div>
                               {lang === 'ru' && (
                                 <p className="text-white/40 text-[10px] pl-5 leading-normal">
-                                  <strong>Совет для Xiaomi:</strong> На прошивках MIUI/HyperOS часто требуется переключить службу автозаполнения на Google в настройках телефона (Настройки → Язык и ввод → Автозаполнение → выбрать Google).
+                                  <strong>Совет для Xiaomi:</strong> 1) Откройте сайт в обычном **Google Chrome** (встроенный браузер Telegram блокирует биометрию). 2) Убедитесь, что служба автозаполнения переключена на Google (Настройки → Язык и ввод → Автозаполнение → выбрать Google).
                                 </p>
                               )}
                               <button
