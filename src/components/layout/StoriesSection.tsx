@@ -158,15 +158,29 @@ export function StoriesSection({
     }
   };
 
-  const handlePrev = () => {
+  const handlePrev = (isSwipe: boolean = false) => {
     if (activeStoryIndex === null) return;
 
     if (activeSlideIndex > 0) {
       setActiveSlideIndex((prev) => prev - 1);
       setProgress(0);
     } else {
-      // На первом слайде любой истории жест/клик назад возвращает на Главную
-      setActiveStoryIndex(null);
+      if (isSwipe) {
+        // Только при жесте свайпа (isSwipe === true) на первом слайде любой сторис возвращаем на Главную
+        setActiveStoryIndex(null);
+      } else {
+        // При обычном клике/тапе в левую зону переходим на предыдущую сторис (если есть)
+        if (activeStoryIndex > 0) {
+          const prevIndex = activeStoryIndex - 1;
+          const prevStory = stories[prevIndex];
+          setActiveStoryIndex(prevIndex);
+          setActiveSlideIndex(prevStory.slideCount - 1);
+          setProgress(0);
+        } else {
+          // Если это первая сторис и первый слайд, то обычный тап назад просто сбрасывает прогресс, а не закрывает
+          setProgress(0);
+        }
+      }
     }
   };
 
@@ -204,7 +218,7 @@ export function StoriesSection({
     const diffY = e.changedTouches[0].clientY - touchStartY.current;
     setIsPaused(false);
     if (diffY > 80 && Math.abs(diffX) < 100) { setActiveStoryIndex(null); return; }
-    if (diffX > 80 && Math.abs(diffY) < 100) { handlePrev(); return; }
+    if (diffX > 80 && Math.abs(diffY) < 100) { handlePrev(true); return; }
     if (diffX < -80 && Math.abs(diffY) < 100) { handleNext(); return; }
   };
 
@@ -219,7 +233,7 @@ export function StoriesSection({
     const diffY = e.clientY - mouseStartY.current;
     setIsPaused(false);
     if (diffY > 80 && Math.abs(diffX) < 100) { setActiveStoryIndex(null); return; }
-    if (diffX > 80 && Math.abs(diffY) < 100) { handlePrev(); return; }
+    if (diffX > 80 && Math.abs(diffY) < 100) { handlePrev(true); return; }
     if (diffX < -80 && Math.abs(diffY) < 100) { handleNext(); return; }
   };
 
