@@ -606,40 +606,6 @@ export function StoriesSection({
           {stories.map((story, index) => {
             const Icon = story.icon;
             
-            // Only Black Theme gets the external floating ring with glow
-            if (theme === 'black') {
-              return (
-                <div
-                  key={story.id}
-                  onClick={() => handleStoryClick(index)}
-                  className="cursor-pointer shrink-0 group flex flex-col items-center"
-                >
-                  <div className="relative p-[1.5px] rounded-[14px] transition-all duration-300 hover:scale-105 active:scale-95 bg-gradient-to-tr from-[#6d5dfc] to-[#f472b6] shadow-[0_0_12px_rgba(109,93,252,0.2)]">
-                    <div className="p-[2.5px] rounded-[12px] bg-[var(--bg-color)]">
-                      <div className="w-[52px] h-[68px] rounded-[10px] bg-white/5 backdrop-blur-xl relative overflow-hidden flex flex-col items-center justify-center border border-[var(--glass-border)]">
-                        <Icon
-                          size={18}
-                          className={`transition-all ${useCompactStories ? "transform -translate-y-0.5" : ""}`}
-                          style={{ color: story.color }}
-                        />
-                        {useCompactStories && (
-                          <span className="absolute bottom-1 w-full text-center text-[7px] font-black tracking-[0.1em] uppercase pointer-events-none select-none text-[var(--text-main)]">
-                            {story.title}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  {!useCompactStories && (
-                    <span className="text-[9px] font-semibold uppercase tracking-wider scale-90 transition-colors mt-2 text-[var(--text-main)]">
-                      {story.title}
-                    </span>
-                  )}
-                </div>
-              );
-            }
-
-            // Simple Bento design for White and Mint themes (no external border)
             return (
               <div
                 key={story.id}
