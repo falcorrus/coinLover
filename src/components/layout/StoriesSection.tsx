@@ -66,6 +66,7 @@ export function StoriesSection({
 
   // Video player Ref for Tips Slides
   const videoRef = React.useRef<HTMLVideoElement | null>(null);
+  const modalRef = React.useRef<HTMLDivElement>(null);
 
   // Tips Content (4 slides)
   const tips = [
@@ -214,12 +215,28 @@ export function StoriesSection({
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    const diffX = e.changedTouches[0].clientX - touchStartX.current;
-    const diffY = e.changedTouches[0].clientY - touchStartY.current;
+    const endX = e.changedTouches[0].clientX;
+    const endY = e.changedTouches[0].clientY;
+    const diffX = endX - touchStartX.current;
+    const diffY = endY - touchStartY.current;
     setIsPaused(false);
+
     if (diffY > 80 && Math.abs(diffX) < 100) { setActiveStoryIndex(null); return; }
     if (diffX > 80 && Math.abs(diffY) < 100) { handlePrev(true); return; }
     if (diffX < -80 && Math.abs(diffY) < 100) { handleNext(); return; }
+
+    // Tap detection inside the modal boundaries
+    if (Math.abs(diffX) < 15 && Math.abs(diffY) < 15) {
+      if (modalRef.current) {
+        const rect = modalRef.current.getBoundingClientRect();
+        const clickX = endX - rect.left;
+        if (clickX < rect.width * 0.25) {
+          handlePrev(false);
+        } else if (clickX > rect.width * 0.25) {
+          handleNext();
+        }
+      }
+    }
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -229,12 +246,28 @@ export function StoriesSection({
   };
 
   const handleMouseUp = (e: React.MouseEvent) => {
-    const diffX = e.clientX - mouseStartX.current;
-    const diffY = e.clientY - mouseStartY.current;
+    const endX = e.clientX;
+    const endY = e.clientY;
+    const diffX = endX - mouseStartX.current;
+    const diffY = endY - mouseStartY.current;
     setIsPaused(false);
+
     if (diffY > 80 && Math.abs(diffX) < 100) { setActiveStoryIndex(null); return; }
     if (diffX > 80 && Math.abs(diffY) < 100) { handlePrev(true); return; }
     if (diffX < -80 && Math.abs(diffY) < 100) { handleNext(); return; }
+
+    // Tap detection inside the modal boundaries
+    if (Math.abs(diffX) < 15 && Math.abs(diffY) < 15) {
+      if (modalRef.current) {
+        const rect = modalRef.current.getBoundingClientRect();
+        const clickX = endX - rect.left;
+        if (clickX < rect.width * 0.25) {
+          handlePrev(false);
+        } else if (clickX > rect.width * 0.25) {
+          handleNext();
+        }
+      }
+    }
   };
 
   const baseSymbol = RatesService.getSymbol(baseCurrency);
@@ -647,9 +680,9 @@ export function StoriesSection({
 
       {activeStoryIndex !== null && activeStory && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center backdrop-blur-2xl animate-in fade-in duration-200 select-none bg-[var(--bg-color)]/95" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} onMouseDown={handleMouseDown} onMouseUp={handleMouseUp}>
-          <div className="w-full max-w-md h-full flex flex-col justify-between relative overflow-hidden bg-[var(--bg-color)] border-x border-[var(--glass-border)] shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="absolute left-0 top-0 bottom-0 w-[25%] z-[999] cursor-pointer" onMouseDown={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); handlePrev(false); }} />
-            <div className="absolute right-0 top-0 bottom-0 w-[25%] z-[999] cursor-pointer" onMouseDown={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); handleNext(); }} />
+          <div ref={modalRef} className="w-full max-w-md h-full flex flex-col justify-between relative overflow-hidden bg-[var(--bg-color)] border-x border-[var(--glass-border)] shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="absolute left-0 top-0 bottom-0 w-[25%] z-[999] cursor-pointer" />
+            <div className="absolute right-0 top-0 bottom-0 w-[25%] z-[999] cursor-pointer" />
             <div className="absolute -top-40 -left-40 w-96 h-96 rounded-full opacity-[0.08] blur-[100px] pointer-events-none transition-all duration-500" style={{ backgroundColor: activeStory.color }} />
             <div className="absolute -bottom-40 -right-40 w-96 h-96 rounded-full opacity-[0.06] blur-[100px] pointer-events-none transition-all duration-500" style={{ backgroundColor: activeStory.color }} />
             <div className="px-4 pt-4 pb-2 z-50 space-y-3">
@@ -670,10 +703,26 @@ export function StoriesSection({
                   </div>
                   <span className="text-xs font-bold text-[var(--text-main)] tracking-wide uppercase font-sans">{activeStory.title}</span>
                 </div>
-                <button onClick={(e) => { e.stopPropagation(); setActiveStoryIndex(null); }} className="w-8 h-8 rounded-full bg-[var(--glass-item-bg)] border border-[var(--glass-border)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-main)] transition-all hover:scale-105 active:scale-95"><X size={16} /></button>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); setActiveStoryIndex(null); }} 
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onMouseUp={(e) => e.stopPropagation()}
+                  onTouchStart={(e) => e.stopPropagation()}
+                  onTouchEnd={(e) => e.stopPropagation()}
+                  className="w-8 h-8 rounded-full bg-[var(--glass-item-bg)] border border-[var(--glass-border)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-main)] transition-all hover:scale-105 active:scale-95"
+                >
+                  <X size={16} />
+                </button>
               </div>
             </div>
-            <div className="flex-1 px-4 py-2 relative z-50 pointer-events-auto overflow-y-auto hide-scrollbar">
+            <div 
+              className="flex-1 px-4 py-2 relative z-50 pointer-events-auto overflow-y-auto hide-scrollbar"
+              onTouchStart={(e) => e.stopPropagation()}
+              onTouchEnd={(e) => e.stopPropagation()}
+              onTouchMove={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
+              onMouseUp={(e) => e.stopPropagation()}
+            >
               {renderStoryContent(activeStory.id, activeSlideIndex)}
             </div>
             <div className="pb-6 pt-2 text-center pointer-events-none opacity-40">
