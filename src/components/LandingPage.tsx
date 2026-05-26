@@ -210,6 +210,7 @@ export const LandingPage: React.FC = () => {
   const [passkeyRegisterError, setPasskeyRegisterError] = React.useState("");
   const [pendingPasskeyCredential, setPendingPasskeyCredential] = React.useState<any>(null);
   const [pendingChallengeToken, setPendingChallengeToken] = React.useState<string>("");
+  const [pendingRegisterOptions, setPendingRegisterOptions] = React.useState<any>(null);
 
   const copyEmailToClipboard = async (text: string) => {
     try {
@@ -346,6 +347,30 @@ export const LandingPage: React.FC = () => {
   }, [lang]);
 
   React.useEffect(() => {
+    if (modalType === "onboarding" && contact.trim().length > 3 && usePasskeyForOnboarding && window.PublicKeyCredential) {
+      const controller = new AbortController();
+      fetch(`/api/auth/register-options?contact=${encodeURIComponent(contact.trim())}`, { signal: controller.signal })
+        .then(res => {
+          if (res.ok) return res.json();
+          throw new Error("Failed to prefetch register options");
+        })
+        .then(data => {
+          if (data.status === "success") {
+            setPendingRegisterOptions(data);
+          }
+        })
+        .catch(err => {
+          if (err.name !== "AbortError") {
+            console.warn("Prefetch register options failed:", err);
+          }
+        });
+      return () => controller.abort();
+    } else {
+      setPendingRegisterOptions(null);
+    }
+  }, [contact, modalType, usePasskeyForOnboarding]);
+
+  React.useEffect(() => {
     trackScreen("Landing Page");
     trackEvent("change_language", { language_code: lang, initial: true });
 
@@ -389,11 +414,16 @@ export const LandingPage: React.FC = () => {
     setPasskeyRegisterSuccess(false);
 
     try {
-      const optionsRes = await fetch(`/api/auth/register-options?contact=${encodeURIComponent(contact)}`);
-      if (!optionsRes.ok) {
-        throw new Error(await optionsRes.text() || "Failed to fetch registration options");
+      let data = pendingRegisterOptions;
+      if (!data) {
+        console.log("No prefetched register options found, fetching dynamically...");
+        const optionsRes = await fetch(`/api/auth/register-options?contact=${encodeURIComponent(contact)}`);
+        if (!optionsRes.ok) {
+          throw new Error(await optionsRes.text() || "Failed to fetch registration options");
+        }
+        data = await optionsRes.json();
       }
-      const data = await optionsRes.json();
+
       if (data.status !== "success") {
         throw new Error(data.message || "Failed to fetch options");
       }
