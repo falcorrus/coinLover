@@ -209,12 +209,14 @@ export function StoriesSection({
   }, [activeStoryIndex, activeSlideIndex]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartTime.current = Date.now();
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
     setIsPaused(true);
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
+    touchStartTime.current = Date.now();
     const endX = e.changedTouches[0].clientX;
     const endY = e.changedTouches[0].clientY;
     const diffX = endX - touchStartX.current;
@@ -240,12 +242,14 @@ export function StoriesSection({
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    if (Date.now() - touchStartTime.current < 800) return;
     mouseStartX.current = e.clientX;
     mouseStartY.current = e.clientY;
     setIsPaused(true);
   };
 
   const handleMouseUp = (e: React.MouseEvent) => {
+    if (Date.now() - touchStartTime.current < 800) return;
     const endX = e.clientX;
     const endY = e.clientY;
     const diffX = endX - mouseStartX.current;
