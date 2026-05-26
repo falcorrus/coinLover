@@ -50,15 +50,6 @@ export function StoriesSection({
   const rowsCount = Math.ceil(totalCategoryItems / 4);
   const useCompactStories = rowsCount > 2;
 
-  const [viewedStories, setViewedStories] = React.useState<string[]>(() => {
-    try {
-      const saved = localStorage.getItem("coinlover_viewed_stories");
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
-
   const [activeStoryIndex, setActiveStoryIndex] = React.useState<number | null>(null);
   const [activeSlideIndex, setActiveSlideIndex] = React.useState<number>(0);
   const [progress, setProgress] = React.useState(0);
@@ -104,26 +95,45 @@ export function StoriesSection({
   ];
 
   const stories: Story[] = [
-    { id: "overview", title: t('Overview'), icon: BarChart3, color: "#a78bfa", gradient: "from-[#a78bfa] to-[#6d5dfc]", slideCount: 3 },
-    { id: "zen", title: t('Zen'), icon: Flame, color: "#f43f5e", gradient: "from-[#f43f5e] to-[#ec4899]", slideCount: 3 },
-    { id: "tips", title: t('Tips'), icon: HelpCircle, color: "#3b82f6", gradient: "from-[#3b82f6] to-[#2563eb]", slideCount: 4 },
-    { id: "actions", title: t('Pult'), icon: Zap, color: "#eab308", gradient: "from-[#eab308] to-[#ca8a04]", slideCount: 1 },
+    { 
+      id: "overview", 
+      title: t('Overview'), 
+      icon: BarChart3, 
+      color: theme === 'black' ? "#6d5dfc" : "#a78bfa", 
+      gradient: theme === 'black' ? "from-[#6d5dfc] to-[#f472b6]" : "from-[#a78bfa] to-[#6d5dfc]", 
+      slideCount: 3 
+    },
+    { 
+      id: "zen", 
+      title: t('Zen'), 
+      icon: Flame, 
+      color: theme === 'black' ? "#6d5dfc" : "#f43f5e", 
+      gradient: theme === 'black' ? "from-[#6d5dfc] to-[#f472b6]" : "from-[#f43f5e] to-[#ec4899]", 
+      slideCount: 3 
+    },
+    { 
+      id: "tips", 
+      title: t('Tips'), 
+      icon: HelpCircle, 
+      color: theme === 'black' ? "#6d5dfc" : "#3b82f6", 
+      gradient: theme === 'black' ? "from-[#6d5dfc] to-[#f472b6]" : "from-[#3b82f6] to-[#2563eb]", 
+      slideCount: 4 
+    },
+    { 
+      id: "actions", 
+      title: t('Pult'), 
+      icon: Zap, 
+      color: theme === 'black' ? "#6d5dfc" : "#eab308", 
+      gradient: theme === 'black' ? "from-[#6d5dfc] to-[#f472b6]" : "from-[#eab308] to-[#ca8a04]", 
+      slideCount: 1 
+    },
   ];
-
-  const markAsViewed = (id: string) => {
-    if (!viewedStories.includes(id)) {
-      const updated = [...viewedStories, id];
-      setViewedStories(updated);
-      localStorage.setItem("coinlover_viewed_stories", JSON.stringify(updated));
-    }
-  };
 
   const handleStoryClick = (index: number) => {
     setActiveStoryIndex(index);
     setActiveSlideIndex(0);
     setProgress(0);
     setIsPaused(false);
-    markAsViewed(stories[index].id);
   };
 
   React.useEffect(() => {
@@ -161,7 +171,6 @@ export function StoriesSection({
         setActiveStoryIndex(prevIndex);
         setActiveSlideIndex(prevStory.slideCount - 1);
         setProgress(0);
-        markAsViewed(stories[prevIndex].id);
       } else {
         setProgress(0);
       }
@@ -399,7 +408,34 @@ export function StoriesSection({
                 </div>
                 <div className="p-4 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] space-y-3.5 backdrop-blur-md text-left shadow-sm">
                   {hasSpendToday ? (
-                    <p className="text-xs text-[var(--text-main)] opacity-90 leading-relaxed">{t('Spent today')}: <span className="font-bold text-rose-500">{spentToday.toLocaleString()} {baseSymbol}</span>.</p>
+                    <div className="space-y-3">
+                      <p className="text-xs text-[var(--text-main)] opacity-90 leading-relaxed">{t('Spent today')}: <span className="font-bold text-rose-500">{spentToday.toLocaleString()} {baseSymbol}</span>.</p>
+                      <div className="space-y-2 pt-1">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">{t('Day Detail')}</p>
+                        {todayTransactions.slice(0, 5).map((tx, i) => {
+                          const category = categories.find(c => c.id === tx.targetId);
+                          const account = accounts.find(a => a.id === tx.accountId);
+                          const currency = tx.sourceCurrency || account?.currency || baseCurrency;
+                          return (
+                            <div key={i} className="flex items-center justify-between group">
+                              <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 rounded-lg flex items-center justify-center text-[10px]" style={{ backgroundColor: `${category?.color || '#666'}15`, color: category?.color || '#666' }}>
+                                  {React.createElement(IconMap[category?.icon || 'shopping-bag'] || ShoppingBag, { size: 12 })}
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="text-[11px] font-bold text-[var(--text-main)] leading-none">{category?.name || t('Other')}</span>
+                                  {tx.comment && <span className="text-[9px] text-[var(--text-muted)] truncate max-w-[120px] leading-tight">{tx.comment}</span>}
+                                </div>
+                              </div>
+                              <span className="text-[11px] font-black text-[var(--text-main)]">-{Math.round(tx.sourceAmount).toLocaleString()} {RatesService.getSymbol(currency)}</span>
+                            </div>
+                          );
+                        })}
+                        {todayTransactions.length > 5 && (
+                          <p className="text-[9px] text-center text-[var(--text-muted)] pt-1 italic opacity-60">+ {t('and')} {todayTransactions.length - 5} {t('more today')}</p>
+                        )}
+                      </div>
+                    </div>
                   ) : (
                     <p className="text-xs text-[var(--text-main)] opacity-90 leading-relaxed">{t('Today is a No-Spend Day. Good job!')}</p>
                   )}
@@ -565,21 +601,70 @@ export function StoriesSection({
 
   return (
     <>
-      <section className={`px-6 shrink-0 relative z-20 border-[var(--glass-border)]/30 transition-all duration-500 ease-in-out overflow-hidden origin-top-right ${isStoriesCollapsed ? "max-h-0 opacity-0 scale-90 translate-x-10 -translate-y-4 border-b-0 py-0" : "max-h-[120px] opacity-100 scale-100 translate-x-0 translate-y-0 pt-1 pb-2 border-b"}`}>
+      <section className={`px-6 shrink-0 relative z-20 border-[var(--glass-border)]/30 transition-all duration-500 ease-in-out overflow-hidden origin-top-right ${isStoriesCollapsed ? "max-h-0 opacity-0 scale-90 translate-x-10 -translate-y-4 border-b-0 py-0" : "max-h-[125px] opacity-100 scale-100 translate-x-0 translate-y-0 pt-1 pb-3 border-b"}`}>
         <div className="flex gap-3 overflow-x-auto hide-scrollbar py-0.5 animate-in fade-in duration-300">
           {stories.map((story, index) => {
             const Icon = story.icon;
-            const isViewed = viewedStories.includes(story.id);
-            return (
-              <div key={story.id} className="flex flex-col items-center gap-1.5 shrink-0 group">
-                <button onClick={() => handleStoryClick(index)} className="relative">
-                  <div className={`w-[66px] h-[66px] rounded-full p-[2.5px] transition-all duration-500 group-hover:scale-105 active:scale-95 ${isViewed ? "bg-[var(--glass-border)]" : `bg-gradient-to-tr ${story.gradient} p-[3px] shadow-[0_0_15px_${story.color}40]`}`}>
-                    <div className="w-full h-full rounded-full bg-[var(--bg-color)] flex items-center justify-center border border-[var(--glass-border)]">
-                      <Icon size={24} style={{ color: isViewed ? "var(--text-muted)" : story.color }} />
+            
+            // Only Black Theme gets the external floating ring with glow
+            if (theme === 'black') {
+              return (
+                <div
+                  key={story.id}
+                  onClick={() => handleStoryClick(index)}
+                  className="cursor-pointer shrink-0 group flex flex-col items-center"
+                >
+                  <div className="relative p-[1.5px] rounded-[14px] transition-all duration-300 hover:scale-105 active:scale-95 bg-gradient-to-tr from-[#6d5dfc] to-[#f472b6] shadow-[0_0_12px_rgba(109,93,252,0.2)]">
+                    <div className="p-[2.5px] rounded-[12px] bg-[var(--bg-color)]">
+                      <div className="w-[52px] h-[68px] rounded-[10px] bg-white/5 backdrop-blur-xl relative overflow-hidden flex flex-col items-center justify-center border border-[var(--glass-border)]">
+                        <Icon
+                          size={18}
+                          className={`transition-all ${useCompactStories ? "transform -translate-y-0.5" : ""}`}
+                          style={{ color: story.color }}
+                        />
+                        {useCompactStories && (
+                          <span className="absolute bottom-1 w-full text-center text-[7px] font-black tracking-[0.1em] uppercase pointer-events-none select-none text-[var(--text-main)]">
+                            {story.title}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </button>
-                <span className={`text-[10px] font-bold uppercase tracking-wider ${isViewed ? "text-[var(--text-muted)]" : "text-[var(--text-main)]"}`}>{story.title}</span>
+                  {!useCompactStories && (
+                    <span className="text-[9px] font-semibold uppercase tracking-wider scale-90 transition-colors mt-2 text-[var(--text-main)]">
+                      {story.title}
+                    </span>
+                  )}
+                </div>
+              );
+            }
+
+            // Simple Bento design for White and Mint themes (no external border)
+            return (
+              <div
+                key={story.id}
+                onClick={() => handleStoryClick(index)}
+                className="cursor-pointer shrink-0 group flex flex-col items-center"
+              >
+                <div className="w-[52px] h-[68px] rounded-[12px] p-[1.5px] transition-all duration-300 border border-[var(--glass-border)] bg-[var(--glass-item-bg)] hover:scale-105 active:scale-95 shadow-sm">
+                  <div className="w-full h-full rounded-[10px] relative overflow-hidden flex flex-col items-center justify-center">
+                    <Icon
+                      size={18}
+                      className={`transition-all ${useCompactStories ? "transform -translate-y-0.5" : ""}`}
+                      style={{ color: story.color }}
+                    />
+                    {useCompactStories && (
+                      <span className="absolute bottom-1 w-full text-center text-[7px] font-black tracking-[0.1em] uppercase pointer-events-none select-none text-[var(--text-main)]">
+                        {story.title}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {!useCompactStories && (
+                  <span className="text-[9px] font-semibold uppercase tracking-wider scale-90 transition-colors mt-1.5 text-[var(--text-main)]">
+                    {story.title}
+                  </span>
+                )}
               </div>
             );
           })}

@@ -76,6 +76,25 @@ export class RatesService {
         }
     }
 
+    static getSymbol(currencyCode: string): string {
+        const symbols: Record<string, string> = {
+            "USD": "$",
+            "EUR": "€",
+            "RUB": "₽",
+            "THB": "฿",
+            "GEL": "₾",
+            "BRL": "R$",
+            "ARS": "$",
+            "TRY": "₺",
+            "KZT": "₸",
+            "AED": "د.إ",
+            "GBP": "£",
+            "JPY": "¥",
+            "CNY": "¥"
+        };
+        return symbols[currencyCode.toUpperCase()] || currencyCode;
+    }
+
     static convert(amount: number, fromCurrency: string, toCurrency: string): number {
         if (!amount || isNaN(amount)) return 0;
         

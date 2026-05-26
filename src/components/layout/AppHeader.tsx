@@ -238,13 +238,13 @@ export function AppHeader({
           >
             <defs>
               <linearGradient id="rim_grad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-                <stop offset="0" stop-color="#FFD700"/>
-                <stop offset="0.5" stop-color="#B8860B"/>
-                <stop offset="1" stop-color="#8B6508"/>
+                <stop offset="0" stopColor="#FFD700"/>
+                <stop offset="0.5" stopColor="#B8860B"/>
+                <stop offset="1" stopColor="#8B6508"/>
               </linearGradient>
               <linearGradient id="face_grad" x1="32" y1="32" x2="0" y2="0" gradientUnits="userSpaceOnUse">
-                <stop offset="0" stop-color="#F0B429"/>
-                <stop offset="1" stop-color="#D49A17"/>
+                <stop offset="0" stopColor="#F0B429"/>
+                <stop offset="1" stopColor="#D49A17"/>
               </linearGradient>
               <filter id="depth" x="-10%" y="-10%" width="120%" height="120%">
                 <feInnerShadow stdDeviation="1.5" />
@@ -254,7 +254,7 @@ export function AppHeader({
             <circle cx="16" cy="16" r="13.5" fill="#8B6508" opacity="0.4" />
             <circle cx="16" cy="16" r="12" fill="url(#face_grad)" />
             <path d="M16 21.5S11 19 11 15C11 12.8 12.5 11.5 14 11.5C15.2 11.5 16 12.5 16 14C16 12.5 16.8 11.5 18 11.5C19.5 11.5 21 12.8 21 15C21 19 16 21.5 16 21.5Z" fill="white" />
-            <path d="M5 10C8 5 20 4 27 12" stroke="white" stroke-width="1" stroke-linecap="round" opacity="0.3" />
+            <path d="M5 10C8 5 20 4 27 12" stroke="white" strokeWidth="1" strokeLinecap="round" opacity="0.3" />
           </svg>
         </button>
 
