@@ -223,6 +223,26 @@ export function StoriesSection({
     const diffY = endY - touchStartY.current;
     setIsPaused(false);
 
+    // Check if the event target is inside the scrollable content
+    const isInsideScrollable = (target: EventTarget | null): boolean => {
+      if (!target) return false;
+      let el = target as HTMLElement;
+      while (el && el !== document.body) {
+        if (el.classList && el.classList.contains('scrollable-content')) {
+          return true;
+        }
+        el = el.parentElement as HTMLElement;
+      }
+      return false;
+    };
+    
+    const insideScrollable = isInsideScrollable(e.target);
+
+    // If inside scrollable content, ignore swipes (to let native scroll work) and taps (to let content handle clicks)
+    if (insideScrollable) {
+      return;
+    }
+
     if (diffY > 80 && Math.abs(diffX) < 100) { setActiveStoryIndex(null); return; }
     if (diffX > 80 && Math.abs(diffY) < 100) { handlePrev(true); return; }
     if (diffX < -80 && Math.abs(diffY) < 100) { handleNext(); return; }
@@ -255,6 +275,26 @@ export function StoriesSection({
     const diffX = endX - mouseStartX.current;
     const diffY = endY - mouseStartY.current;
     setIsPaused(false);
+
+    // Check if the event target is inside the scrollable content
+    const isInsideScrollable = (target: EventTarget | null): boolean => {
+      if (!target) return false;
+      let el = target as HTMLElement;
+      while (el && el !== document.body) {
+        if (el.classList && el.classList.contains('scrollable-content')) {
+          return true;
+        }
+        el = el.parentElement as HTMLElement;
+      }
+      return false;
+    };
+    
+    const insideScrollable = isInsideScrollable(e.target);
+
+    // If inside scrollable content, ignore swipes (to let native scroll work) and taps (to let content handle clicks)
+    if (insideScrollable) {
+      return;
+    }
 
     if (diffY > 80 && Math.abs(diffX) < 100) { setActiveStoryIndex(null); return; }
     if (diffX > 80 && Math.abs(diffY) < 100) { handlePrev(true); return; }
@@ -719,14 +759,7 @@ export function StoriesSection({
                 </button>
               </div>
             </div>
-            <div 
-              className="flex-1 px-4 py-2 relative z-50 pointer-events-auto overflow-y-auto hide-scrollbar"
-              onTouchStart={(e) => e.stopPropagation()}
-              onTouchEnd={(e) => e.stopPropagation()}
-              onTouchMove={(e) => e.stopPropagation()}
-              onMouseDown={(e) => e.stopPropagation()}
-              onMouseUp={(e) => e.stopPropagation()}
-            >
+            <div className="scrollable-content flex-1 px-4 py-2 relative z-50 pointer-events-auto overflow-y-auto hide-scrollbar">
               {renderStoryContent(activeStory.id, activeSlideIndex)}
             </div>
             <div className="pb-6 pt-2 text-center pointer-events-none opacity-40">
