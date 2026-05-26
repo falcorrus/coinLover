@@ -695,7 +695,7 @@ export function StoriesSection({
                   <ChevronRight size={16} className="text-[var(--text-muted)]" />
                 </button>
 
-                <button onClick={(e) => { e.stopPropagation(); setActiveStoryIndex(null); setCalendarAnalyticsModal({ isOpen: true }); }} className="pointer-events-auto w-full p-3.5 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)] flex items-center justify-between text-left transition-all shadow-sm">
+                <button onClick={(e) => { e.stopPropagation(); setCalendarAnalyticsModal({ isOpen: true }); requestAnimationFrame(() => setActiveStoryIndex(null)); }} className="pointer-events-auto w-full p-3.5 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)] flex items-center justify-between text-left transition-all shadow-sm">
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500"><Calendar size={16} /></div>
                     <div>
@@ -706,7 +706,7 @@ export function StoriesSection({
                   <ChevronRight size={16} className="text-[var(--text-muted)]" />
                 </button>
 
-                <button onClick={(e) => { e.stopPropagation(); setActiveStoryIndex(null); setAnalyticsModal({ isOpen: true, type: "expense" }); }} className="pointer-events-auto w-full p-3.5 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)] flex items-center justify-between text-left transition-all shadow-sm">
+                <button onClick={(e) => { e.stopPropagation(); setAnalyticsModal({ isOpen: true, type: "expense" }); requestAnimationFrame(() => setActiveStoryIndex(null)); }} className="pointer-events-auto w-full p-3.5 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)] flex items-center justify-between text-left transition-all shadow-sm">
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-500"><PieChart size={16} /></div>
                     <div>

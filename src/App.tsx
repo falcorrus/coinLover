@@ -409,7 +409,7 @@ SplashScreen.hide().catch(() => {});
 
         <div className="absolute top-[15px] right-[15px] z-50"><div className={`w-2 h-2 rounded-full ${syncStatus === "loading" ? "bg-amber-400 animate-pulse" : syncStatus === "success" ? "bg-emerald-500/50" : syncStatus === "error" ? "bg-rose-500" : "bg-white/10"}`} /></div>
 
-        <div className={`flex-1 flex flex-col overflow-hidden animate-in zoom-in-95 duration-300 transition-all duration-300 ease-out ${isFullModalOpen ? "scale-[0.96] blur-[3px] opacity-60" : "scale-100 blur-0 opacity-100"}`}>
+        <div className={`flex-1 flex flex-col overflow-hidden animate-in zoom-in-95 duration-300 transition-all duration-300 ease-out ${anyModalOpen ? "scale-[0.96] blur-[3px] opacity-60" : "scale-100 blur-0 opacity-100"}`}>
           <AppHeader
             isIncomeCollapsed={isIncomeCollapsed} toggleIncome={toggleIncome}
             isStoriesCollapsed={isStoriesCollapsed} toggleStories={toggleStories}
