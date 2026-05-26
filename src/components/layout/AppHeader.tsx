@@ -41,17 +41,19 @@ export function AppHeader({
   const isCompact = categoriesCount > 8;
   const [isDownloadModalOpen, setIsDownloadModalOpen] = React.useState(false);
   const [isPasskeyModalOpen, setIsPasskeyModalOpen] = React.useState(false);
+  const [passkeyModalHidden, setPasskeyModalHidden] = React.useState(false); // hides modal visually without unmounting it
   const [passkeyStatus, setPasskeyStatus] = React.useState<"idle" | "loading" | "enabled" | "disabled">("idle");
   const [passkeyLoading, setPasskeyLoading] = React.useState(false);
   const [justRegistered, setJustRegistered] = React.useState(false);
   const [prefetchedRegisterOptions, setPrefetchedRegisterOptions] = React.useState<any>(null);
-  const [passkeyPending, setPasskeyPending] = React.useState(false); // biometrics in progress, modal hidden
+  const [passkeyPending, setPasskeyPending] = React.useState(false); // biometrics in progress
 
   React.useEffect(() => {
     if (isPasskeyModalOpen && activeTableId) {
       setJustRegistered(false);
       setPasskeyLoading(true);
       setPrefetchedRegisterOptions(null);
+      setPasskeyModalHidden(false); // reset visibility
 
       // 5-second fallback timeout to prevent infinite spinner if network/GAS is slow or blocked
       const timeoutId = setTimeout(() => {
@@ -121,23 +123,23 @@ export function AppHeader({
 
       console.log("[Auth UI] Registration Options received:", JSON.stringify(data.options));
 
-      // CRITICAL: Close the modal BEFORE calling startRegistration.
-      setIsPasskeyModalOpen(false);
+      // CRITICAL FOR USER GESTURE AND MIUI COMPATIBILITY:
+      // We DO NOT unmount the modal. We hide it visually (opacity-0 pointer-events-none) 
+      // so Chrome doesn't think the element that initiated the gesture has disappeared.
+      setPasskeyModalHidden(true);
       setPasskeyPending(true);
 
       console.log("[Auth UI] Invoking startRegistration now...");
       
-      // 60-second timeout to prevent infinite spin in non-supportive WebViews (like Telegram app)
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error("TIMEOUT_60S")), 60000);
-      });
+      // Ensure we have a timeout set in options (native timeout fallback)
+      if (data.options && data.options.publicKey) {
+        data.options.publicKey.timeout = 60000;
+      }
 
       let credential;
       try {
-        credential = await Promise.race([
-          startRegistration(data.options),
-          timeoutPromise
-        ]);
+        // Direct execution preserves synchronous call stack for User Gesture!
+        credential = await startRegistration(data.options);
         console.log("[Auth UI] startRegistration success:", JSON.stringify(credential));
       } catch (regErr: any) {
         console.error("[Auth UI] startRegistration inner error:", regErr);
@@ -160,16 +162,12 @@ export function AppHeader({
         setPasskeyStatus("enabled");
         setJustRegistered(true);
         pullSettings();
-        // Reopen modal to show success state
-        setIsPasskeyModalOpen(true);
       } else {
         throw new Error(verifyData.message || "Verification failed");
       }
     } catch (err: any) {
       console.error("Passkey registration failed:", err);
-      // Reopen modal to show error
-      setIsPasskeyModalOpen(true);
-      if (err.message === "TIMEOUT" || err.message === "TIMEOUT_60S") {
+      if (err.message === "TIMEOUT" || err.message === "TIMEOUT_60S" || err.name === "TimeoutError") {
         alert("Ошибка привязки биометрии: Превышено время ожидания (60 сек). Если вы настраиваете Face ID из встроенного браузера (например, Telegram), откройте CoinLover во внешнем браузере (Chrome).");
       } else {
         alert(`Ошибка привязки биометрии [${err.name || "Error"}]: ${err.message || String(err)}\n\n${err.stack || ""}`);
@@ -177,8 +175,10 @@ export function AppHeader({
     } finally {
       setPasskeyLoading(false);
       setPasskeyPending(false);
+      setPasskeyModalHidden(false); // Restore visual display of the modal
     }
   };
+
 
 
   const PillButton = (
@@ -325,9 +325,20 @@ export function AppHeader({
       )}
 
       {isPasskeyModalOpen && (
-        <div onClick={() => setIsPasskeyModalOpen(false)} className="fixed inset-0 bg-black/60 backdrop-blur-md z-[200] flex items-center justify-center p-6 animate-in fade-in duration-300">
+        <div 
+          onClick={() => !passkeyPending && setIsPasskeyModalOpen(false)} 
+          className={`fixed inset-0 bg-black/60 backdrop-blur-md z-[200] flex items-center justify-center p-6 transition-all duration-300 ${
+            passkeyModalHidden ? "opacity-0 pointer-events-none" : "opacity-100 animate-in fade-in"
+          }`}
+        >
           <div onClick={e => e.stopPropagation()} className="glass-panel w-full max-w-sm p-8 flex flex-col gap-6 shadow-2xl shadow-[var(--shadow-color)] animate-in zoom-in-95 duration-300 text-[var(--text-main)] text-left relative" style={{ backgroundColor: "var(--panel-bg)" }}>
-            <button onClick={() => setIsPasskeyModalOpen(false)} className="absolute top-6 right-6 text-white/40 hover:text-white transition-colors outline-none"><X size={24} /></button>
+            <button 
+              onClick={() => !passkeyPending && setIsPasskeyModalOpen(false)} 
+              disabled={passkeyPending}
+              className="absolute top-6 right-6 text-white/40 hover:text-white transition-colors outline-none disabled:opacity-0"
+            >
+              <X size={24} />
+            </button>
             <div className="text-center mb-2">
               <h3 className="text-xl font-bold text-[var(--text-main)] mb-2 flex items-center justify-center gap-2">
                 <Fingerprint size={24} className="text-[#6d5dfc]" />
