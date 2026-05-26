@@ -137,10 +137,18 @@ export function StoriesSection({
     setIsPaused(false);
   };
 
+  const closeStories = () => {
+    // To prevent tap-through on mobile devices where a click event fires on the underlying screen after closing,
+    // we transition closing to the next macro-task.
+    setTimeout(() => {
+      setActiveStoryIndex(null);
+    }, 150);
+  };
+
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && activeStoryIndex !== null) {
-        setActiveStoryIndex(null);
+        closeStories();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -155,7 +163,7 @@ export function StoriesSection({
       setActiveSlideIndex((prev) => prev + 1);
       setProgress(0);
     } else {
-      setActiveStoryIndex(null);
+      closeStories();
     }
   };
 
@@ -168,7 +176,7 @@ export function StoriesSection({
     } else {
       if (isSwipe) {
         // Только при жесте свайпа (isSwipe === true) на первом слайде любой сторис возвращаем на Главную
-        setActiveStoryIndex(null);
+        closeStories();
       } else {
         // При обычном клике/тапе в левую зону переходим на предыдущую сторис (если есть)
         if (activeStoryIndex > 0) {
@@ -243,7 +251,7 @@ export function StoriesSection({
       return;
     }
 
-    if (diffY > 80 && Math.abs(diffX) < 100) { setActiveStoryIndex(null); return; }
+    if (diffY > 80 && Math.abs(diffX) < 100) { closeStories(); return; }
     if (diffX > 80 && Math.abs(diffY) < 100) { handlePrev(true); return; }
     if (diffX < -80 && Math.abs(diffY) < 100) { handleNext(); return; }
 
@@ -296,7 +304,7 @@ export function StoriesSection({
       return;
     }
 
-    if (diffY > 80 && Math.abs(diffX) < 100) { setActiveStoryIndex(null); return; }
+    if (diffY > 80 && Math.abs(diffX) < 100) { closeStories(); return; }
     if (diffX > 80 && Math.abs(diffY) < 100) { handlePrev(true); return; }
     if (diffX < -80 && Math.abs(diffY) < 100) { handleNext(); return; }
 
