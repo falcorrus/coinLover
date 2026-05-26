@@ -172,7 +172,8 @@ export function StoriesSection({
         setActiveSlideIndex(prevStory.slideCount - 1);
         setProgress(0);
       } else {
-        setProgress(0);
+        // На первом слайде первой истории жест/клик назад возвращает на Главную
+        setActiveStoryIndex(null);
       }
     }
   };
