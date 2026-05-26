@@ -416,13 +416,14 @@ export function StoriesSection({
                 <div className="p-4 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] space-y-3.5 backdrop-blur-md text-left shadow-sm">
                   {hasSpendToday ? (
                     <div className="space-y-3">
-                      <p className="text-xs text-[var(--text-main)] opacity-90 leading-relaxed">{t('Spent today')}: <span className="font-bold text-rose-500">{spentToday.toLocaleString()} {baseSymbol}</span>.</p>
+                      <p className="text-xs text-[var(--text-main)] opacity-90 leading-relaxed">{t('Spent today')}: <span className="font-bold text-rose-500">${Math.round(RatesService.convert(spentToday, baseCurrency, "USD")).toLocaleString()}</span>.</p>
                       <div className="space-y-2 pt-1">
                         <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">{t('Day Detail')}</p>
                         {todayTransactions.slice(0, 5).map((tx, i) => {
                           const category = categories.find(c => c.id === tx.targetId);
                           const account = accounts.find(a => a.id === tx.accountId);
                           const currency = tx.sourceCurrency || account?.currency || baseCurrency;
+                          const amountUSD = Math.round(RatesService.convert(tx.sourceAmount, currency, "USD"));
                           return (
                             <div key={i} className="flex items-center justify-between group">
                               <div className="flex items-center gap-2">
@@ -434,7 +435,7 @@ export function StoriesSection({
                                   {tx.comment && <span className="text-[9px] text-[var(--text-muted)] truncate max-w-[120px] leading-tight">{tx.comment}</span>}
                                 </div>
                               </div>
-                              <span className="text-[11px] font-black text-[var(--text-main)]">-{Math.round(tx.sourceAmount).toLocaleString()} {RatesService.getSymbol(currency)}</span>
+                              <span className="text-[11px] font-black text-[var(--text-main)]">-${amountUSD.toLocaleString()}</span>
                             </div>
                           );
                         })}
