@@ -77,6 +77,17 @@ This document records major technical and visual decisions made during the evolu
 - **Target Logic:** Targets now scale to **1.2x** (consistent with Dark theme). Removed `translateY` and `inset` shadows during hover to avoid the "button being pressed" illusion, replacing it with a выпуклый (`outset`) volume and a soft copper glow.
 - **Translucency:** Target backgrounds now use a **15% opacity copper tint** instead of solid colors, preserving icon visibility.
 
+## 4. Эволюция дизайна Stories (Май 2026)
+
+### Решение: Плавающий внешний контур (Floating Ring)
+**Context:** Требовалось выделить Сторис как премиальный элемент интерфейса, соответствующий "Linear Style", и избавиться от лишнего визуального шума.
+**Реализация:**
+- **Итерации:** Пройден путь от классических Bento-карточек (52x68) до увеличенных (72x84 - rejected) и, наконец, к многослойному дизайну.
+- **Floating Effect (Black Theme):** Внедрена структура "Внешний градиентный контур -> Воздушный зазор -> Внутренняя стеклянная карточка". Это создало эффект парения и визуальной глубины.
+- **Тематическое разделение:** Премиальный дизайн с кольцом оставлен только в **Black** теме. В светлых темах (White/Mint) используются чистые Bento-карточки без внешних обводок для сохранения минимализма.
+- **UX без статусов:** Полностью удалено состояние "просмотрено". Сторис всегда выделены и активны, превращаясь из "ленты новостей" в постоянный элемент быстрой навигации.
+- **Подробности:** Полный лог всех итераций дизайна и параметров (радиусы, отступы, тени) зафиксирован в [[DESIGN_STORIES_LOG.md]].
+
 ---
 
 ## 📄 Раздел: База решений критических багов (iOS PWA / Capacitor)
