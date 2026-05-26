@@ -665,7 +665,7 @@ export function StoriesSection({
                 <button onClick={(e) => { e.stopPropagation(); setActiveStoryIndex(null); }} className="w-8 h-8 rounded-full bg-[var(--glass-item-bg)] border border-[var(--glass-border)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-main)] transition-all hover:scale-105 active:scale-95"><X size={16} /></button>
               </div>
             </div>
-            <div className="flex-1 px-4 py-2 relative z-50 pointer-events-none overflow-y-auto hide-scrollbar">
+            <div className="flex-1 px-4 py-2 relative z-50 pointer-events-auto overflow-y-auto hide-scrollbar">
               {renderStoryContent(activeStory.id, activeSlideIndex)}
             </div>
             <div className="pb-6 pt-2 text-center pointer-events-none opacity-40">
