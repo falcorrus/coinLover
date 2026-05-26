@@ -428,6 +428,11 @@ export const LandingPage: React.FC = () => {
         throw new Error(data.message || "Failed to fetch options");
       }
 
+      // Ensure timeout is configured
+      if (data.options && data.options.publicKey) {
+        data.options.publicKey.timeout = 60000;
+      }
+
       const credential = await startRegistration(data.options);
       
       setPendingPasskeyCredential(credential);
@@ -443,12 +448,15 @@ export const LandingPage: React.FC = () => {
           : "Registration cancelled or timed out.";
       } else if (err.name === "NotReadableError") {
         errMsg = lang === "ru"
-          ? "На устройстве не настроена блокировка экрана (PIN/Face ID) или возник сбой Credential Manager."
+          ? "Ошибка Credential Manager. На устройстве не настроена блокировка экрана (PIN/Face ID) или заблокирован доступ."
           : "Device screen lock is not configured or Credential Manager error occurred.";
+      } else if (err.name === "NotSupportedError" || err.name === "SecurityError") {
+        errMsg = lang === "ru"
+          ? "Ваш браузер не поддерживает биометрию или сайт запущен без защищенного протокола HTTPS."
+          : "Biometrics not supported or site is not running under secure HTTPS.";
       }
       
-      setUsePasskeyForOnboarding(false);
-      setStep(2);
+      setPasskeyRegisterError(errMsg);
     } finally {
       setIsPasskeyRegisterPending(false);
     }
@@ -927,18 +935,47 @@ export const LandingPage: React.FC = () => {
                               </label>
                             </div>
                           )}
-                          <button 
-                            id="btn_modal_next"
-                            onClick={handleStep1Next}
-                            disabled={!name || !contact || isPasskeyRegisterPending}
-                            className="w-full py-4 bg-[#6d5dfc] hover:bg-[#5b4ce3] disabled:opacity-50 disabled:grayscale text-white font-bold rounded-xl flex items-center justify-center gap-3 transition-all text-sm shadow-xl shadow-[#6d5dfc]/20 outline-none mt-2"
-                          >
-                            {isPasskeyRegisterPending ? (
-                              <RefreshCw className="animate-spin w-5 h-5" />
-                            ) : (
-                              <>{t.modalNext} <ArrowRight size={18} /></>
-                            )}
-                          </button>
+                          {passkeyRegisterError && (
+                            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3.5 text-left flex flex-col gap-2 mt-2">
+                              <div className="flex gap-2">
+                                <span className="text-red-400 mt-0.5 shrink-0">⚠️</span>
+                                <p className="text-red-400 text-xs font-semibold leading-relaxed">
+                                  {passkeyRegisterError}
+                                </p>
+                              </div>
+                              {lang === 'ru' && (
+                                <p className="text-white/40 text-[10px] pl-5 leading-normal">
+                                  <strong>Совет для Xiaomi:</strong> На прошивках MIUI/HyperOS часто требуется переключить службу автозаполнения на Google в настройках телефона (Настройки → Язык и ввод → Автозаполнение → выбрать Google).
+                                </p>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setUsePasskeyForOnboarding(false);
+                                  setPasskeyRegisterError("");
+                                  setStep(2);
+                                }}
+                                className="mt-1 text-center py-2 text-xs font-bold text-white/70 hover:text-white bg-white/5 rounded-lg border border-white/10 transition-all cursor-pointer"
+                              >
+                                {lang === 'ru' ? 'Продолжить без отпечатка пальца' : 'Continue without biometrics'}
+                              </button>
+                            </div>
+                          )}
+                          
+                          {!passkeyRegisterError && (
+                            <button 
+                              id="btn_modal_next"
+                              onClick={handleStep1Next}
+                              disabled={!name || !contact || isPasskeyRegisterPending}
+                              className="w-full py-4 bg-[#6d5dfc] hover:bg-[#5b4ce3] disabled:opacity-50 disabled:grayscale text-white font-bold rounded-xl flex items-center justify-center gap-3 transition-all text-sm shadow-xl shadow-[#6d5dfc]/20 outline-none mt-2 cursor-pointer"
+                            >
+                              {isPasskeyRegisterPending ? (
+                                <RefreshCw className="animate-spin w-5 h-5" />
+                              ) : (
+                                <>{t.modalNext} <ArrowRight size={18} /></>
+                              )}
+                            </button>
+                          )}
                         </>
                       ) : (
                         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
