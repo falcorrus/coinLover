@@ -67,6 +67,7 @@ export function StoriesSection({
   // Video player Ref for Tips Slides
   const videoRef = React.useRef<HTMLVideoElement | null>(null);
   const modalRef = React.useRef<HTMLDivElement>(null);
+  const hasPushedHistory = React.useRef(false);
 
   // Tips Content (4 slides)
   const tips = [
@@ -153,6 +154,33 @@ export function StoriesSection({
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeStoryIndex]);
+
+  // Browser history sync to prevent back-swipe from exiting the application
+  React.useEffect(() => {
+    if (activeStoryIndex !== null) {
+      // Stories modal opened - push a state
+      window.history.pushState({ isStoryOpen: true }, "");
+      hasPushedHistory.current = true;
+    } else {
+      // Stories modal closed - pop state if pushed
+      if (hasPushedHistory.current) {
+        window.history.back();
+        hasPushedHistory.current = false;
+      }
+    }
+  }, [activeStoryIndex]);
+
+  React.useEffect(() => {
+    const handlePopState = (e: PopStateEvent) => {
+      // If the back button/gesture was triggered
+      if (activeStoryIndex !== null) {
+        hasPushedHistory.current = false;
+        setActiveStoryIndex(null);
+      }
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
   }, [activeStoryIndex]);
 
   const handleNext = () => {
