@@ -1,14 +1,14 @@
 import * as React from "react";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { 
-  Shield, Zap, Globe, PieChart, Sparkles, ArrowRight, ArrowLeft,
+  Shield, ShieldCheck, ShieldAlert, Zap, Globe, PieChart, Sparkles, ArrowRight, ArrowLeft,
   Database, MousePointer2, Layout, Lock, Coins, X, Send, 
   Wallet, Banknote, TrendingUp, Coffee, ShoppingBag, Car, Utensils, Film,
   FileSpreadsheet, Languages, Search, History, Smartphone, Tablet, Laptop, RefreshCw,
   Fingerprint, Move, Copy, Check, QrCode
 } from "lucide-react";
 import { googleSheetsService } from "../services/googleSheets";
-import { startAuthentication } from "@simplewebauthn/browser";
+import { startAuthentication, startRegistration } from "@simplewebauthn/browser";
 import { trackEvent, trackScreen } from "../services/analytics";
 
 type Language = "ru" | "en";
@@ -204,6 +204,12 @@ export const LandingPage: React.FC = () => {
   const [analyticsImageIndex, setAnalyticsImageIndex] = React.useState(0);
   const [copiedEmail, setCopiedEmail] = React.useState(false);
   const [prefetchedLoginOptions, setPrefetchedLoginOptions] = React.useState<any>(null);
+  const [usePasskeyForOnboarding, setUsePasskeyForOnboarding] = React.useState(true);
+  const [isPasskeyRegisterPending, setIsPasskeyRegisterPending] = React.useState(false);
+  const [passkeyRegisterSuccess, setPasskeyRegisterSuccess] = React.useState(false);
+  const [passkeyRegisterError, setPasskeyRegisterError] = React.useState("");
+  const [pendingPasskeyCredential, setPendingPasskeyCredential] = React.useState<any>(null);
+  const [pendingChallengeToken, setPendingChallengeToken] = React.useState<string>("");
 
   const copyEmailToClipboard = async (text: string) => {
     try {
@@ -213,7 +219,6 @@ export const LandingPage: React.FC = () => {
         throw new Error("Clipboard API not available");
       }
     } catch (err) {
-      // Fallback for custom webviews and non-secure contexts
       const textarea = document.createElement("textarea");
       textarea.value = text;
       textarea.style.position = "fixed";
@@ -244,7 +249,6 @@ export const LandingPage: React.FC = () => {
     try {
       let data = prefetchedLoginOptions;
 
-      // Fallback if prefetch hasn't finished loading yet (unlikely but safe)
       if (!data) {
         console.log("No prefetched login options found, fetching dynamically...");
         const optionsRes = await fetch("/api/auth/login-options");
@@ -257,7 +261,6 @@ export const LandingPage: React.FC = () => {
         }
       }
 
-      // 60-second timeout to prevent infinite spin in non-supportive WebViews (like Telegram app)
       const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(() => reject(new Error("TIMEOUT")), 60000);
       });
@@ -344,10 +347,8 @@ export const LandingPage: React.FC = () => {
 
   React.useEffect(() => {
     trackScreen("Landing Page");
-    // Track initial language
     trackEvent("change_language", { language_code: lang, initial: true });
 
-    // Prefetch login options to preserve User Gesture on mobile browsers
     fetch("/api/auth/login-options")
       .then(res => {
         if (res.ok) return res.json();
@@ -374,6 +375,97 @@ export const LandingPage: React.FC = () => {
     const match = url.match(/[-\w]{25,}/);
     return match ? match[0] : null;
   };
+
+  const handleStep1Next = async () => {
+    if (!name || !contact) return;
+    
+    if (!usePasskeyForOnboarding || !window.PublicKeyCredential) {
+      setStep(2);
+      return;
+    }
+
+    setIsPasskeyRegisterPending(true);
+    setPasskeyRegisterError("");
+    setPasskeyRegisterSuccess(false);
+
+    try {
+      const optionsRes = await fetch(`/api/auth/register-options?contact=${encodeURIComponent(contact)}`);
+      if (!optionsRes.ok) {
+        throw new Error(await optionsRes.text() || "Failed to fetch registration options");
+      }
+      const data = await optionsRes.json();
+      if (data.status !== "success") {
+        throw new Error(data.message || "Failed to fetch options");
+      }
+
+      const credential = await startRegistration(data.options);
+      
+      setPendingPasskeyCredential(credential);
+      setPendingChallengeToken(data.challengeToken);
+      
+      setStep(2);
+    } catch (err: any) {
+      console.error("Passkey onboarding Step 1 failed:", err);
+      let errMsg = err.message || String(err);
+      if (err.name === "NotAllowedError") {
+        errMsg = lang === "ru" 
+          ? "Вход отменен пользователем или истекло время ожидания."
+          : "Registration cancelled or timed out.";
+      } else if (err.name === "NotReadableError") {
+        errMsg = lang === "ru"
+          ? "На устройстве не настроена блокировка экрана (PIN/Face ID) или возник сбой Credential Manager."
+          : "Device screen lock is not configured or Credential Manager error occurred.";
+      }
+      
+      setUsePasskeyForOnboarding(false);
+      setStep(2);
+    } finally {
+      setIsPasskeyRegisterPending(false);
+    }
+  };
+
+  const handleVerifyPendingPasskey = async (ssId: string) => {
+    setIsPasskeyRegisterPending(true);
+    setPasskeyRegisterError("");
+    setPasskeyRegisterSuccess(false);
+    try {
+      if (!pendingPasskeyCredential) {
+        throw new Error("No pending passkey credential found");
+      }
+      
+      const verifyRes = await fetch("/api/auth/register-verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ssId,
+          contact,
+          registrationResponse: pendingPasskeyCredential,
+          challengeToken: pendingChallengeToken
+        })
+      });
+
+      const verifyData = await verifyRes.json();
+      if (verifyData.status === "success" && verifyData.verified) {
+        setPasskeyRegisterSuccess(true);
+        localStorage.setItem("cl_active_table_id", ssId);
+        localStorage.setItem("cl_onboarding_completed", "true");
+        document.cookie = `cl_active_table_id=${ssId}; path=/; max-age=${60*60*24*365}; SameSite=Lax`;
+        
+        setTimeout(() => {
+          window.location.href = `/?ssId=${ssId}`;
+        }, 2000);
+      } else {
+        throw new Error(verifyData.message || "Verification failed");
+      }
+    } catch (err: any) {
+      console.error("Passkey binding failed:", err);
+      let errMsg = err.message || String(err);
+      setPasskeyRegisterError(errMsg);
+    } finally {
+      setIsPasskeyRegisterPending(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (modalType === "login" && !sheetUrl) return;
@@ -391,11 +483,9 @@ export const LandingPage: React.FC = () => {
           return;
         }
 
-        // Пытаемся получить настройки (GET). Это безопасно и не затирает данные.
         const remoteData = await googleSheetsService.fetchSettings(parsedSsId);
         if (remoteData) {
           localStorage.setItem("cl_active_table_id", parsedSsId);
-          // Пользователь уже имеет таблицу — онбординг не нужен
           localStorage.setItem("cl_onboarding_completed", "true");
           document.cookie = `cl_active_table_id=${parsedSsId}; path=/; max-age=${60*60*24*365}; SameSite=Lax`;
 
@@ -409,7 +499,6 @@ export const LandingPage: React.FC = () => {
           setErrorMsg(t.modalLoginError);
         }
       } else {
-
         const payload = {
           action: "registerLead",
           name: name || "Studio Lead",
@@ -421,13 +510,19 @@ export const LandingPage: React.FC = () => {
         const ok = await googleSheetsService.syncToSheets(payload as any);
         
         if (ok) {
-          setIsSent(true);
-          // Log lead event in GA4
           trackEvent("generate_lead", {
             category: "engagement",
             label: modalType === "onboarding" ? "Onboarding" : "Studio",
             value: modalType === "onboarding" ? 1 : 10
           });
+
+          const parsedSsId = extractSsId(sheetUrl);
+          if (parsedSsId && modalType === "onboarding" && usePasskeyForOnboarding && window.PublicKeyCredential && pendingPasskeyCredential) {
+            setIsSent(true);
+            handleVerifyPendingPasskey(parsedSsId);
+          } else {
+            setIsSent(true);
+          }
         }
       }
     } catch (err: any) {
@@ -448,6 +543,11 @@ export const LandingPage: React.FC = () => {
     setName(""); 
     setSheetUrl(""); 
     setErrorMsg("");
+    setIsPasskeyRegisterPending(false);
+    setPasskeyRegisterSuccess(false);
+    setPasskeyRegisterError("");
+    setPendingPasskeyCredential(null);
+    setPendingChallengeToken("");
   };
 
   const wallets = [
@@ -782,13 +882,32 @@ export const LandingPage: React.FC = () => {
                             <label className="text-[9px] font-black uppercase tracking-widest text-white/40 ml-1 mb-1 block">{t.contactLabel}</label>
                             <input required type="text" placeholder={t.modalPlaceholder} value={contact} onChange={(e) => setContact(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:border-[#6d5dfc]/50 transition-all outline-none text-sm" />
                           </div>
+                          {window.PublicKeyCredential && (
+                            <div className="flex items-center gap-3 bg-white/5 border border-white/10 p-3.5 rounded-xl hover:bg-white/10 transition-colors mt-1 select-none">
+                              <input 
+                                type="checkbox" 
+                                id="use_passkey_onboarding" 
+                                checked={usePasskeyForOnboarding} 
+                                onChange={(e) => setUsePasskeyForOnboarding(e.target.checked)}
+                                className="w-4 h-4 rounded border-white/10 text-[#6d5dfc] focus:ring-0 cursor-pointer"
+                              />
+                              <label htmlFor="use_passkey_onboarding" className="text-xs text-white/70 leading-snug cursor-pointer flex-1 text-left">
+                                🔑 <strong>{lang === 'ru' ? 'Вход по отпечатку (Face ID)' : 'Log in with Face ID / fingerprint'}</strong><br />
+                                <span className="text-[10px] text-white/40">{lang === 'ru' ? 'Связать устройство с таблицей для входа в 1 клик' : 'Bind device to spreadsheet for instant 1-click login'}</span>
+                              </label>
+                            </div>
+                          )}
                           <button 
                             id="btn_modal_next"
-                            onClick={() => { if (name && contact) setStep(2); }}
-                            disabled={!name || !contact}
+                            onClick={handleStep1Next}
+                            disabled={!name || !contact || isPasskeyRegisterPending}
                             className="w-full py-4 bg-[#6d5dfc] hover:bg-[#5b4ce3] disabled:opacity-50 disabled:grayscale text-white font-bold rounded-xl flex items-center justify-center gap-3 transition-all text-sm shadow-xl shadow-[#6d5dfc]/20 outline-none mt-2"
                           >
-                            {t.modalNext} <ArrowRight size={18} />
+                            {isPasskeyRegisterPending ? (
+                              <RefreshCw className="animate-spin w-5 h-5" />
+                            ) : (
+                              <>{t.modalNext} <ArrowRight size={18} /></>
+                            )}
                           </button>
                         </>
                       ) : (
@@ -931,26 +1050,79 @@ export const LandingPage: React.FC = () => {
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-[0_0_30px_rgba(34,197,94,0.2)]">
-                    <Sparkles className="w-10 h-10 text-green-500" />
-                  </div>
-                  <h2 className="text-3xl font-bold mb-3 text-white">
-                    {modalType === "login" ? t.modalLoginSuccess : t.modalSuccess}
-                  </h2>
-                  <p className="text-white/50 text-sm leading-relaxed mb-10 px-4">
-                    {modalType === "login" ? t.modalLoginSuccessSub : t.modalSuccessSub}
-                  </p>
-                  {modalType !== "login" && (
-                    <button 
-                      id="btn_modal_go_to_app"
-                      onClick={() => {
-                        const id = extractSsId(sheetUrl);
-                        window.location.href = `/?ssId=${id || ""}`;
-                      }}
-                      className="w-full py-4 bg-green-500 hover:bg-green-400 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all text-sm outline-none"
-                    >
-                      {t.modalToApp} <ArrowRight size={18} />
-                    </button>
+                  {isPasskeyRegisterPending ? (
+                    <div className="flex flex-col items-center justify-center py-6">
+                      <RefreshCw className="animate-spin w-12 h-12 text-[#6d5dfc] mb-6" />
+                      <h3 className="text-xl font-bold mb-2 text-white">
+                        {lang === "ru" ? "Привязка Face ID / Touch ID..." : "Binding Face ID / Touch ID..."}
+                      </h3>
+                      <p className="text-white/50 text-xs leading-relaxed max-w-xs">
+                        {lang === "ru" 
+                          ? "Привязываем созданный ключ доступа к вашей новой таблице..."
+                          : "Linking the created passkey credential to your new spreadsheet..."}
+                      </p>
+                    </div>
+                  ) : passkeyRegisterSuccess ? (
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(34,197,94,0.2)] animate-pulse">
+                        <Shield className="w-10 h-10 text-green-500" />
+                      </div>
+                      <h2 className="text-3xl font-bold mb-3 text-white">
+                        {lang === "ru" ? "Успешно!" : "Success!"}
+                      </h2>
+                      <p className="text-white/50 text-sm leading-relaxed mb-6 px-4">
+                        {lang === "ru"
+                          ? "Вход по биометрии успешно настроен. Перенаправляем вас в приложение..."
+                          : "Biometric login successfully configured. Redirecting you to the app..."}
+                      </p>
+                    </div>
+                  ) : passkeyRegisterError ? (
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(239,68,68,0.2)]">
+                        <ShieldAlert className="w-10 h-10 text-red-500" />
+                      </div>
+                      <h2 className="text-xl font-bold mb-3 text-white">
+                        {lang === "ru" ? "Ошибка привязки биометрии" : "Biometrics Binding Error"}
+                      </h2>
+                      <p className="text-red-400/80 text-xs leading-relaxed mb-8 px-4 max-w-xs break-words">
+                        {passkeyRegisterError}
+                      </p>
+                      <button 
+                        id="btn_modal_continue_no_passkey"
+                        type="button"
+                        onClick={() => {
+                          const id = extractSsId(sheetUrl);
+                          window.location.href = `/?ssId=${id || ""}`;
+                        }}
+                        className="w-full py-4 bg-white/10 hover:bg-white/15 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all text-sm outline-none"
+                      >
+                        {lang === "ru" ? "Продолжить без биометрии" : "Continue without biometrics"} <ArrowRight size={18} />
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-[0_0_30px_rgba(34,197,94,0.2)]">
+                        <Sparkles className="w-10 h-10 text-green-500" />
+                      </div>
+                      <h2 className="text-3xl font-bold mb-3 text-white">
+                        {modalType === "login" ? t.modalLoginSuccess : t.modalSuccess}
+                      </h2>
+                      <p className="text-white/50 text-sm leading-relaxed mb-10 px-4">
+                        {modalType === "login" ? t.modalLoginSuccessSub : t.modalSuccessSub}
+                      </p>
+                      {modalType !== "login" && (
+                        <button 
+                          id="btn_modal_go_to_app"
+                          onClick={() => {
+                            const id = extractSsId(sheetUrl);
+                            window.location.href = `/?ssId=${id || ""}`;
+                          }}
+                          className="w-full py-4 bg-green-500 hover:bg-green-400 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all text-sm outline-none"
+                        >
+                          {t.modalToApp} <ArrowRight size={18} />
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
               )}

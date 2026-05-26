@@ -82,6 +82,30 @@ function bufferToBase64url(buffer: Uint8Array): string {
   return Buffer.from(buffer).toString('base64url');
 }
 
+// Helper: Resolve ssId from contact in Master Sheet Users
+async function getSsIdByContact(contact: string): Promise<string | null> {
+  try {
+    const sheets = await getSheetsClient();
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId: MASTER_SS_ID,
+      range: 'Users!B:C' // Column B: Contact, Column C: ID (ssId)
+    });
+    const rows = res.data.values || [];
+    const searchContact = contact.trim().toLowerCase().replace(/^@/, '');
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row || row.length < 2) continue;
+      const rowContact = String(row[0]).trim().toLowerCase().replace(/^@/, '');
+      if (rowContact === searchContact) {
+        return String(row[1]).trim();
+      }
+    }
+  } catch (err) {
+    console.error('[Auth] Failed to lookup contact in Master Sheet:', err);
+  }
+  return null;
+}
+
 // Handler for all auth operations
 export async function authHandler(req: Request, res: Response) {
   const { path: routePath, method } = req;
@@ -97,22 +121,25 @@ export async function authHandler(req: Request, res: Response) {
   try {
     if (action === 'register-options') {
       const ssId = String(req.query.ssId || "").trim();
-      if (!ssId) {
-        return res.status(400).json({ status: 'error', message: 'Missing ssId' });
+      const contact = String(req.query.contact || "").trim();
+      if (!ssId && !contact) {
+        return res.status(400).json({ status: 'error', message: 'Missing ssId or contact' });
       }
 
-      console.log(`[Auth] register-options ssId=${ssId.substring(0, 12)}...`);
+      const identifier = ssId || contact;
+      const userName = ssId 
+        ? `user-${ssId.substring(0, 8)}@coinlover.ru` 
+        : `new-${contact.replace(/[^a-zA-Z0-9]/g, '')}@coinlover.ru`;
+
+      console.log(`[Auth] register-options: ssId=${ssId.substring(0, 12)}... contact=${contact}`);
 
       // Generate credentials creation options
-      // userVerification: 'preferred' instead of 'required' to avoid Android/Xiaomi MIUI hang.
-      // 'required' forces device-level biometrics which MIUI often silently blocks via Play Services.
-      // 'preferred' allows Google Password Manager to use its own secure PIN flow.
       const options = await generateRegistrationOptions({
         rpName: 'CoinLover',
         rpID: rpId,
-        userID: Buffer.from(ssId, 'utf8'),
-        userName: `user-${ssId.substring(0, 8)}@coinlover.ru`,
-        userDisplayName: 'CoinLover Wallet Holder',
+        userID: Buffer.from(identifier, 'utf8'),
+        userName: userName,
+        userDisplayName: ssId ? 'CoinLover Wallet Holder' : `CoinLover User (${contact})`,
         attestationType: 'none',
         authenticatorSelection: {
           authenticatorAttachment: 'platform',
@@ -122,8 +149,8 @@ export async function authHandler(req: Request, res: Response) {
         }
       });
 
-      // Stateless signed challenge containing ssId
-      const challengeToken = generateChallengeToken(options.challenge, ssId);
+      // Stateless signed challenge containing identifier
+      const challengeToken = generateChallengeToken(options.challenge, identifier);
       
       console.log(`[Auth] register-options OK challenge=${options.challenge.substring(0, 12)}...`);
       return res.status(200).json({
@@ -144,7 +171,15 @@ export async function authHandler(req: Request, res: Response) {
         ? JSON.parse(Buffer.from(registrationResponse.response.clientDataJSON, 'base64').toString('utf8')).challenge
         : '';
       
-      if (!verifyChallengeToken(challengeToken, clientChallenge, ssId)) {
+      let challengeVerified = verifyChallengeToken(challengeToken, clientChallenge, ssId);
+      if (!challengeVerified) {
+        const contact = String(req.body.contact || "").trim();
+        if (contact) {
+          challengeVerified = verifyChallengeToken(challengeToken, clientChallenge, contact);
+        }
+      }
+
+      if (!challengeVerified) {
         return res.status(400).json({ status: 'error', message: 'Invalid or expired challenge token' });
       }
 
@@ -156,7 +191,7 @@ export async function authHandler(req: Request, res: Response) {
         expectedChallenge,
         expectedOrigin: [`https://${rpId}`, `http://${rpId}`, `https://coinlover.ru`, `https://coin.reloto.ru`],
         expectedRPID: rpId,
-        requireUserVerification: false  // relaxed to match 'preferred' in register-options
+        requireUserVerification: false
       });
 
       if (!verification.verified || !verification.registrationInfo) {
@@ -195,7 +230,6 @@ export async function authHandler(req: Request, res: Response) {
         if (idx !== -1) {
           updatedRows[idx] = [key, val];
         } else {
-          // If SYSTEM section doesn't exist, we just append
           updatedRows.push([key, val]);
         }
       };
@@ -223,7 +257,6 @@ export async function authHandler(req: Request, res: Response) {
 
     if (action === 'login-options') {
       console.log(`[Auth] login-options rpId=${rpId}`);
-      // 'preferred' to avoid Android/Xiaomi hang - see register-options comment
       const options = await generateAuthenticationOptions({
         rpID: rpId,
         userVerification: 'preferred'
@@ -245,6 +278,23 @@ export async function authHandler(req: Request, res: Response) {
         return res.status(400).json({ status: 'error', message: 'Missing required parameters' });
       }
 
+      // Resolve ssId if it is a contact handle
+      let resolvedSsId = ssId;
+      const isGoogleSheetId = /^[a-zA-Z0-9-_]{25,}$/.test(ssId) && !ssId.includes('@');
+      
+      if (!isGoogleSheetId) {
+        console.log(`[Auth] login-verify: ssId is a contact handle (${ssId}), looking up in Master Sheet...`);
+        const found = await getSsIdByContact(ssId);
+        if (!found) {
+          return res.status(404).json({ 
+            status: 'error', 
+            message: `Пользователь с контактом "${ssId}" не найден в системе. Пожалуйста, зайдите по ссылке на таблицу.` 
+          });
+        }
+        resolvedSsId = found;
+        console.log(`[Auth] login-verify resolved ssId: ${resolvedSsId.substring(0, 12)}...`);
+      }
+
       // Verify challenge token
       const clientChallenge = loginResponse.response.clientDataJSON 
         ? JSON.parse(Buffer.from(loginResponse.response.clientDataJSON, 'base64').toString('utf8')).challenge
@@ -259,7 +309,7 @@ export async function authHandler(req: Request, res: Response) {
       let rows: any[][] = [];
       try {
         const confRes = await sheets.spreadsheets.values.get({
-          spreadsheetId: ssId,
+          spreadsheetId: resolvedSsId,
           range: 'Configs!A:M'
         });
         rows = confRes.data.values || [];
@@ -297,7 +347,7 @@ export async function authHandler(req: Request, res: Response) {
         expectedChallenge: clientChallenge,
         expectedOrigin: [`https://${rpId}`, `http://${rpId}`, `https://coinlover.ru`, `https://coin.reloto.ru`],
         expectedRPID: rpId,
-        requireUserVerification: false,  // relaxed to match 'preferred' in login-options
+        requireUserVerification: false,
         credential: {
           id: passkeyCredId,
           publicKey: base64urlToBuffer(passkeyPubKey),
@@ -321,12 +371,12 @@ export async function authHandler(req: Request, res: Response) {
 
       // Save back counter
       await sheets.spreadsheets.values.clear({
-        spreadsheetId: ssId,
+        spreadsheetId: resolvedSsId,
         range: 'Configs!A1:Z500'
       });
 
       await sheets.spreadsheets.values.update({
-        spreadsheetId: ssId,
+        spreadsheetId: resolvedSsId,
         range: 'Configs!A1',
         valueInputOption: 'USER_ENTERED',
         requestBody: { values: updatedRows }
@@ -335,7 +385,7 @@ export async function authHandler(req: Request, res: Response) {
       return res.status(200).json({ 
         status: 'success', 
         verified: true,
-        ssId 
+        ssId: resolvedSsId 
       });
     }
 
