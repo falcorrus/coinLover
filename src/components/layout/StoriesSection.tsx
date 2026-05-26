@@ -165,16 +165,8 @@ export function StoriesSection({
       setActiveSlideIndex((prev) => prev - 1);
       setProgress(0);
     } else {
-      if (activeStoryIndex > 0) {
-        const prevIndex = activeStoryIndex - 1;
-        const prevStory = stories[prevIndex];
-        setActiveStoryIndex(prevIndex);
-        setActiveSlideIndex(prevStory.slideCount - 1);
-        setProgress(0);
-      } else {
-        // На первом слайде первой истории жест/клик назад возвращает на Главную
-        setActiveStoryIndex(null);
-      }
+      // На первом слайде любой истории жест/клик назад возвращает на Главную
+      setActiveStoryIndex(null);
     }
   };
 
