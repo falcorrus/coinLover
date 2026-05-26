@@ -118,7 +118,7 @@ export async function authHandler(req: Request, res: Response) {
           authenticatorAttachment: 'platform',
           residentKey: 'required',
           requireResidentKey: true,
-          userVerification: 'preferred'
+          userVerification: 'required'
         }
       });
 
