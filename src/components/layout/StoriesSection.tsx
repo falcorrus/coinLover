@@ -246,7 +246,7 @@ export function StoriesSection({
     
     const insideScrollable = isInsideScrollable(e.target);
 
-    // If inside scrollable content, ignore swipes (to let native scroll work) and taps (to let content handle clicks)
+    // If inside scrollable content, ignore swipes (to let native scroll work)
     if (insideScrollable) {
       return;
     }
@@ -255,9 +255,21 @@ export function StoriesSection({
     if (diffX > 80 && Math.abs(diffY) < 100) { handlePrev(true); return; }
     if (diffX < -80 && Math.abs(diffY) < 100) { handleNext(); return; }
 
-    // Tap detection inside the modal boundaries
+    // Tap detection inside the modal boundaries ONLY if clicking designated story-tap-zone overlays
     if (Math.abs(diffX) < 15 && Math.abs(diffY) < 15) {
-      if (modalRef.current) {
+      const isTapZone = (target: EventTarget | null): boolean => {
+        if (!target) return false;
+        let el = target as HTMLElement;
+        while (el && el !== document.body) {
+          if (el.classList && el.classList.contains('story-tap-zone')) {
+            return true;
+          }
+          el = el.parentElement as HTMLElement;
+        }
+        return false;
+      };
+
+      if (isTapZone(e.target) && modalRef.current) {
         const rect = modalRef.current.getBoundingClientRect();
         const clickX = endX - rect.left;
         if (clickX < rect.width * 0.25) {
@@ -299,7 +311,7 @@ export function StoriesSection({
     
     const insideScrollable = isInsideScrollable(e.target);
 
-    // If inside scrollable content, ignore swipes (to let native scroll work) and taps (to let content handle clicks)
+    // If inside scrollable content, ignore swipes (to let native scroll work)
     if (insideScrollable) {
       return;
     }
@@ -308,9 +320,21 @@ export function StoriesSection({
     if (diffX > 80 && Math.abs(diffY) < 100) { handlePrev(true); return; }
     if (diffX < -80 && Math.abs(diffY) < 100) { handleNext(); return; }
 
-    // Tap detection inside the modal boundaries
+    // Tap detection inside the modal boundaries ONLY if clicking designated story-tap-zone overlays
     if (Math.abs(diffX) < 15 && Math.abs(diffY) < 15) {
-      if (modalRef.current) {
+      const isTapZone = (target: EventTarget | null): boolean => {
+        if (!target) return false;
+        let el = target as HTMLElement;
+        while (el && el !== document.body) {
+          if (el.classList && el.classList.contains('story-tap-zone')) {
+            return true;
+          }
+          el = el.parentElement as HTMLElement;
+        }
+        return false;
+      };
+
+      if (isTapZone(e.target) && modalRef.current) {
         const rect = modalRef.current.getBoundingClientRect();
         const clickX = endX - rect.left;
         if (clickX < rect.width * 0.25) {
@@ -733,8 +757,8 @@ export function StoriesSection({
       {activeStoryIndex !== null && activeStory && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center backdrop-blur-2xl animate-in fade-in duration-200 select-none bg-[var(--bg-color)]/95" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} onMouseDown={handleMouseDown} onMouseUp={handleMouseUp}>
           <div ref={modalRef} className="w-full max-w-md h-full flex flex-col justify-between relative overflow-hidden bg-[var(--bg-color)] border-x border-[var(--glass-border)] shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="absolute left-0 top-0 bottom-0 w-[25%] z-[999] cursor-pointer" />
-            <div className="absolute right-0 top-0 bottom-0 w-[25%] z-[999] cursor-pointer" />
+            <div className="story-tap-zone absolute left-0 top-20 bottom-0 w-[25%] z-[999] cursor-pointer" />
+            <div className="story-tap-zone absolute right-0 top-20 bottom-0 w-[25%] z-[999] cursor-pointer" />
             <div className="absolute -top-40 -left-40 w-96 h-96 rounded-full opacity-[0.08] blur-[100px] pointer-events-none transition-all duration-500" style={{ backgroundColor: activeStory.color }} />
             <div className="absolute -bottom-40 -right-40 w-96 h-96 rounded-full opacity-[0.06] blur-[100px] pointer-events-none transition-all duration-500" style={{ backgroundColor: activeStory.color }} />
             <div className="px-4 pt-4 pb-2 z-50 space-y-3">
@@ -756,7 +780,7 @@ export function StoriesSection({
                   <span className="text-xs font-bold text-[var(--text-main)] tracking-wide uppercase font-sans">{activeStory.title}</span>
                 </div>
                 <button 
-                  onClick={(e) => { e.stopPropagation(); setActiveStoryIndex(null); }} 
+                  onClick={(e) => { e.stopPropagation(); closeStories(); }} 
                   onMouseDown={(e) => e.stopPropagation()}
                   onMouseUp={(e) => e.stopPropagation()}
                   onTouchStart={(e) => e.stopPropagation()}
