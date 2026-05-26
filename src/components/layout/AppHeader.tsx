@@ -380,11 +380,11 @@ export function AppHeader({
 
             <div className="flex flex-col gap-3">
               <button
-                disabled={passkeyLoading || !activeTableId || justRegistered}
-                onClick={handleRegisterPasskey}
-                className={`w-full py-4 font-bold rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all text-xs uppercase tracking-widest disabled:opacity-40 disabled:scale-100 shadow-md ${
+                disabled={passkeyLoading || !activeTableId}
+                onClick={justRegistered ? () => setIsPasskeyModalOpen(false) : handleRegisterPasskey}
+                className={`w-full py-4 font-bold rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all text-xs uppercase tracking-widest disabled:opacity-40 disabled:scale-100 shadow-md cursor-pointer ${
                   justRegistered 
-                    ? "bg-emerald-500 text-white shadow-emerald-500/15 cursor-default scale-100" 
+                    ? "bg-emerald-500 text-white shadow-emerald-500/15" 
                     : "bg-[#6d5dfc] text-white hover:bg-[#5b4ce3] shadow-[#6d5dfc]/15"
                 }`}
               >
