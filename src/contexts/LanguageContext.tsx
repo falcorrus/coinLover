@@ -10,6 +10,15 @@ interface LanguageContextType {
 
 const translations: Record<Language, Record<string, string>> = {
   ru: {
+    // Stories UI
+    'Overview': 'Обзор',
+    'Zen': 'Дзен',
+    'Tips': 'Фишки',
+    'Pult': 'Пульт',
+    'Done': 'Готово',
+    'Other': 'Другое',
+    
+    // Actions / Pult
     'Fast Control': 'Быстрый пульт',
     'Interactive Control': 'Интерактивное управление',
     'Transactions History': 'История операций',
@@ -25,9 +34,67 @@ const translations: Record<Language, Record<string, string>> = {
     'Currency of Categories': 'Валюта категорий',
     'Base Currency': 'Базовая валюта',
     'Local Currency': 'Локальная валюта',
-    'Done': 'Готово'
+    'English': 'English',
+    'Russian': 'Русский',
+
+    // Overview Story
+    'Your May in Numbers': 'Твой май в цифрах',
+    'Total Assets Summary': 'Общая сводка активов',
+    'Total Balance': 'Общий баланс',
+    'Wallet Distribution': 'Распределение по кошелькам',
+    'Top Categories': 'Топ категорий',
+    'Main Expenses': 'Основные траты',
+    'Received': 'Получено',
+    'Spent': 'Потрачено',
+    'Swipe for top categories': 'Листай дальше, чтобы увидеть топ-категории расходов',
+    'Swipe for wallet split': 'Листай дальше, чтобы увидеть валютный сплит',
+    'of total spent': 'от всех трат',
+    'No expenses yet this month.': 'В этом месяце пока нет расходов.',
+    'Capital structure': 'Распределение твоего капитала',
+    'of total assets': 'от всех средств',
+
+    // Zen Story
+    'Zen Mode': 'Режим Дзен',
+    'Financial Balance': 'Финансовый баланс',
+    'No-Spend Days': 'Дней без трат',
+    'Great result!': 'Отличный результат!',
+    'Keep it up!': 'Так держать!',
+    'Daily Average': 'Среднее в день',
+    'Projected': 'Прогноз на месяц',
+    'Financial Karma': 'Финансовая карма',
+    'No-Spend Day! 🔥': 'День без трат! 🔥',
+    'Today expenses are under control': 'Все сегодняшние расходы под полным контролем',
+    'Your wallet is resting today': 'Твой кошелек сегодня полностью отдыхает',
+    'Spent today': 'Сегодня записано трат на сумму',
+    'Today is a No-Spend Day. Good job!': 'Сегодня у тебя No-Spend Day. Твой кошелек говорит спасибо!',
+    'Savings analysis': 'Анализ сбережений',
+    'Spent from income': 'Потрачено от полученного',
+    'No income recorded yet this month.': 'В этом месяце пока нет доходов.',
+    'Finish your day right': 'Заверши день правильно',
+    'Open Expense Calendar': 'Открыть календарь трат',
+
+    // Tips Story
+    'Useful Tips': 'Полезные фишки',
+    'App Secrets': 'Секреты приложения',
+    'Long Press': 'Долгое нажатие',
+    'Quick actions on accounts': 'Быстрые действия на счетах',
+    'Drag & Drop': 'Перетаскивание',
+    'Reorder your categories': 'Меняйте порядок категорий',
+    'Safe Mode': 'Безопасный режим',
+    'Hide balances in public': 'Скрывайте балансы в людных местах',
+    'Dark Theme': 'Темная тема',
+    'Easy on the eyes': 'Комфортно для глаз'
   },
   en: {
+    // Stories UI
+    'Overview': 'Overview',
+    'Zen': 'Zen',
+    'Tips': 'Tips',
+    'Pult': 'Pult',
+    'Done': 'Done',
+    'Other': 'Other',
+
+    // Actions / Pult
     'Fast Control': 'Fast Control',
     'Interactive Control': 'Interactive Control',
     'Transactions History': 'Transactions History',
@@ -37,13 +104,62 @@ const translations: Record<Language, Record<string, string>> = {
     'Spending Analytics': 'Analytics',
     'Expense Chart': 'Expense Chart',
     'Settings': 'Settings',
-    'App Configuration': 'App Configuration',
+    'App Configuration': 'Configuration',
     'Language': 'Language',
     'Theme': 'Theme',
-    'Currency of Categories': 'Currency of Categories',
+    'Currency of Categories': 'Category Currency',
     'Base Currency': 'Base Currency',
     'Local Currency': 'Local Currency',
-    'Done': 'Done'
+    'English': 'English',
+    'Russian': 'Russian',
+
+    // Overview Story
+    'Your May in Numbers': 'Your May in Numbers',
+    'Total Assets Summary': 'Total assets summary',
+    'Total Balance': 'Total Balance',
+    'Wallet Distribution': 'Wallet Distribution',
+    'Top Categories': 'Top Categories',
+    'Main Expenses': 'Main Expenses',
+    'Received': 'Received',
+    'Spent': 'Spent',
+    'Swipe for top categories': 'Swipe for top categories',
+    'Swipe for wallet split': 'Swipe for wallet split',
+    'of total spent': 'of total spent',
+    'No expenses yet this month.': 'No expenses yet this month.',
+    'Capital structure': 'Capital structure',
+    'of total assets': 'of total assets',
+
+    // Zen Story
+    'Zen Mode': 'Zen Mode',
+    'Financial Balance': 'Financial Balance',
+    'No-Spend Days': 'No-Spend Days',
+    'Great result!': 'Great result!',
+    'Keep it up!': 'Keep it up!',
+    'Daily Average': 'Daily Average',
+    'Projected': 'Projected',
+    'Financial Karma': 'Financial Karma',
+    'No-Spend Day! 🔥': 'No-Spend Day! 🔥',
+    'Today expenses are under control': 'Today expenses are under control',
+    'Your wallet is resting today': 'Your wallet is resting today',
+    'Spent today': 'Spent today',
+    'Today is a No-Spend Day. Good job!': 'Today is a No-Spend Day. Good job!',
+    'Savings analysis': 'Savings analysis',
+    'Spent from income': 'Spent from income',
+    'No income recorded yet this month.': 'No income recorded yet this month.',
+    'Finish your day right': 'Finish your day right',
+    'Open Expense Calendar': 'Open Expense Calendar',
+
+    // Tips Story
+    'Useful Tips': 'Useful Tips',
+    'App Secrets': 'App Secrets',
+    'Long Press': 'Long Press',
+    'Quick actions on accounts': 'Quick actions on accounts',
+    'Drag & Drop': 'Drag & Drop',
+    'Reorder your categories': 'Reorder your categories',
+    'Safe Mode': 'Safe Mode',
+    'Hide balances in public': 'Hide balances in public',
+    'Dark Theme': 'Dark Theme',
+    'Easy on the eyes': 'Easy on the eyes'
   }
 };
 
