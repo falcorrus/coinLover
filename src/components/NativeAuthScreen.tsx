@@ -5,11 +5,13 @@ import {
   Sparkles, 
   RefreshCw, 
   ArrowRight, 
-  AlertCircle
+  AlertCircle,
+  Fingerprint
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { googleSheetsService } from "../services/googleSheets";
 import { APP_SETTINGS } from "../constants/settings";
+import { startAuthentication } from "@simplewebauthn/browser";
 
 // Translations
 const translations = {
@@ -52,6 +54,7 @@ export const NativeAuthScreen: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
   const [safePt, setSafePt] = useState("16px");
+  const [prefetchedLoginOptions, setPrefetchedLoginOptions] = useState<any>(null);
 
   useEffect(() => {
     const isStandalone = 
@@ -64,6 +67,18 @@ export const NativeAuthScreen: React.FC = () => {
     } else {
       setSafePt("24px");
     }
+
+    fetch("/api/auth/login-options")
+      .then(res => {
+        if (res.ok) return res.json();
+        throw new Error("Failed to prefetch login options");
+      })
+      .then(data => {
+        if (data.status === "success") {
+          setPrefetchedLoginOptions(data);
+        }
+      })
+      .catch(err => console.warn("Prefetch login options failed:", err));
   }, []);
 
   const toggleLanguage = (selectedLang: "ru" | "en") => {
@@ -117,6 +132,108 @@ export const NativeAuthScreen: React.FC = () => {
     localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.ACTIVE_TABLE_ID);
     localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE, "true");
     window.location.href = "/?demo=true";
+  };
+
+  const handlePasskeyLogin = async () => {
+    setIsLoading(true);
+    setErrorMsg("");
+    try {
+      let data = prefetchedLoginOptions;
+
+      if (!data) {
+        console.log("No prefetched login options found, fetching dynamically...");
+        const optionsRes = await fetch("/api/auth/login-options");
+        if (!optionsRes.ok) {
+          throw new Error(await optionsRes.text() || "Failed to fetch login options");
+        }
+        data = await optionsRes.json();
+        if (data.status !== "success") {
+          throw new Error(data.message || "Failed to fetch options");
+        }
+      }
+
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error("TIMEOUT")), 60000);
+      });
+
+      const credential = await Promise.race([
+        startAuthentication(data.options),
+        timeoutPromise
+      ]);
+
+      const userHandle = credential.response.userHandle;
+      if (!userHandle) {
+        throw new Error("No userHandle returned. Passkey must be discoverable.");
+      }
+      
+      let ssId = "";
+      if (typeof userHandle === "string") {
+        const base64 = userHandle.replace(/-/g, '+').replace(/_/g, '/');
+        const binString = atob(base64);
+        const bytes = new Uint8Array(binString.length);
+        for (let i = 0; i < binString.length; i++) {
+          bytes[i] = binString.charCodeAt(i);
+        }
+        ssId = new TextDecoder().decode(bytes);
+      } else {
+        ssId = new TextDecoder().decode(new Uint8Array(userHandle));
+      }
+
+      if (!ssId) {
+        throw new Error("Failed to decode ssId from credential");
+      }
+
+      const verifyRes = await fetch("/api/auth/login-verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ssId,
+          loginResponse: credential,
+          challengeToken: data.challengeToken
+        })
+      });
+
+      const verifyData = await verifyRes.json();
+      if (verifyData.status === "success" && verifyData.verified) {
+        if (navigator.vibrate) navigator.vibrate(80);
+        
+        localStorage.setItem("cl_active_table_id", verifyData.ssId || ssId);
+        localStorage.setItem("cl_onboarding_completed", "true");
+        document.cookie = `cl_active_table_id=${verifyData.ssId || ssId}; path=/; max-age=${60*60*24*365}; SameSite=Lax`;
+
+        setIsSuccess(true);
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 1500);
+      } else {
+        throw new Error(verifyData.message || "Verification failed");
+      }
+    } catch (err: any) {
+      console.error("Passkey login failed:", err);
+      if (err.message === "TIMEOUT") {
+        setErrorMsg(
+          lang === "ru"
+            ? "Превышено время ожидания. Если вы вошли из встроенного браузера (например, Telegram), откройте CoinLover во внешнем браузере (Safari / Chrome) для работы Face ID."
+            : "Timeout exceeded. If you are inside an in-app browser (like Telegram), please open CoinLover in an external browser (Safari / Chrome) to use biometrics."
+        );
+      } else if (err.name === "NotFoundError" || err.message?.includes("No credential") || err.message?.includes("not found")) {
+        setErrorMsg(
+          lang === "ru" 
+            ? "Passkey не найден. Войдите сначала по ссылке на таблицу и привяжите это устройство («Шестеренка» -> «Безопасность»)." 
+            : "Passkey not found. Log in via your Google Sheet link first and bind this device under Settings -> Security."
+        );
+      } else if (err.name === "NotAllowedError") {
+        setErrorMsg(
+          lang === "ru"
+            ? "Вход отменен пользователем или биометрия заблокирована устройством."
+            : "Biometric login cancelled or blocked by the device."
+        );
+      } else {
+        setErrorMsg(lang === "ru" ? "Ошибка биометрии: " + (err.message || String(err)) : "Passkey error: " + (err.message || String(err)));
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -215,6 +332,28 @@ export const NativeAuthScreen: React.FC = () => {
                 >
                   {isLoading ? <RefreshCw className="animate-spin w-5 h-5" /> : <>{t.btnSubmit} <ArrowRight size={18} /></>}
                 </button>
+
+                {window.PublicKeyCredential && (
+                  <>
+                    <div className="flex items-center justify-center gap-3 my-2">
+                      <div className="h-[1px] bg-white/10 flex-1" />
+                      <span className="text-[9px] text-white/30 font-black uppercase tracking-wider">
+                        {lang === 'ru' ? 'или' : 'or'}
+                      </span>
+                      <div className="h-[1px] bg-white/10 flex-1" />
+                    </div>
+
+                    <button 
+                      type="button"
+                      onClick={handlePasskeyLogin}
+                      disabled={isLoading}
+                      className="w-full py-4 bg-white/5 border border-white/10 hover:bg-white/10 text-white font-bold rounded-[14px] flex items-center justify-center gap-2.5 transition-all text-xs uppercase tracking-widest outline-none active:scale-98"
+                    >
+                      <Fingerprint size={16} className="text-[#6d5dfc]" />
+                      {lang === 'ru' ? 'Войти через Face ID / Passkey' : 'Log In with Face ID / Passkey'}
+                    </button>
+                  </>
+                )}
               </form>
             </motion.div>
           ) : (
