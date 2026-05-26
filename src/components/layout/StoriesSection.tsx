@@ -99,32 +99,32 @@ export function StoriesSection({
       id: "overview", 
       title: t('Overview'), 
       icon: BarChart3, 
-      color: theme === 'black' ? "#6d5dfc" : "#a78bfa", 
-      gradient: theme === 'black' ? "from-[#6d5dfc] to-[#f472b6]" : "from-[#a78bfa] to-[#6d5dfc]", 
+      color: "#6d5dfc", 
+      gradient: "from-[#6d5dfc] to-[#f472b6]", 
       slideCount: 3 
     },
     { 
       id: "zen", 
       title: t('Zen'), 
       icon: Flame, 
-      color: theme === 'black' ? "#6d5dfc" : "#f43f5e", 
-      gradient: theme === 'black' ? "from-[#6d5dfc] to-[#f472b6]" : "from-[#f43f5e] to-[#ec4899]", 
+      color: "#6d5dfc", 
+      gradient: "from-[#6d5dfc] to-[#f472b6]", 
       slideCount: 3 
     },
     { 
       id: "tips", 
       title: t('Tips'), 
       icon: HelpCircle, 
-      color: theme === 'black' ? "#6d5dfc" : "#3b82f6", 
-      gradient: theme === 'black' ? "from-[#6d5dfc] to-[#f472b6]" : "from-[#3b82f6] to-[#2563eb]", 
+      color: "#6d5dfc", 
+      gradient: "from-[#6d5dfc] to-[#f472b6]", 
       slideCount: 4 
     },
     { 
       id: "actions", 
       title: t('Pult'), 
       icon: Zap, 
-      color: theme === 'black' ? "#6d5dfc" : "#eab308", 
-      gradient: theme === 'black' ? "from-[#6d5dfc] to-[#f472b6]" : "from-[#eab308] to-[#ca8a04]", 
+      color: "#6d5dfc", 
+      gradient: "from-[#6d5dfc] to-[#f472b6]", 
       slideCount: 1 
     },
   ];
