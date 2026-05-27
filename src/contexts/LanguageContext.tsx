@@ -124,7 +124,11 @@ const translations: Record<Language, Record<string, string>> = {
     'Safe Mode': 'Безопасный режим',
     'Hide balances in public': 'Скрывайте балансы в людных местах',
     'Dark Theme': 'Темная тема',
-    'Easy on the eyes': 'Комфортно для глаз'
+    'Easy on the eyes': 'Комфортно для глаз',
+    'Move icon between wallets or to expense': 'Перенесите иконку между кошельками или в расход',
+    'Reorder': 'Порядок',
+    'Quick edit wallet or category': 'Быстрое редактирование кошелька или категории',
+    'All frequent actions and settings': 'Все частые операции и настройки'
   },
   en: {
     // Stories UI
@@ -241,7 +245,11 @@ const translations: Record<Language, Record<string, string>> = {
     'Safe Mode': 'Safe Mode',
     'Hide balances in public': 'Hide balances in public',
     'Dark Theme': 'Dark Theme',
-    'Easy on the eyes': 'Easy on the eyes'
+    'Easy on the eyes': 'Easy on the eyes',
+    'Move icon between wallets or to expense': 'Move icon between wallets or to expense',
+    'Reorder': 'Reorder',
+    'Quick edit wallet or category': 'Quick edit wallet or category',
+    'All frequent actions and settings': 'All frequent actions and settings'
   }
 };
 
