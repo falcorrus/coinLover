@@ -69,6 +69,13 @@ const translations: Record<Language, Record<string, string>> = {
     'Add User Hint': 'Чтобы добавить пользователя, впишите его в раздел === USERS === на листе Configs вашей мастер-таблицы.',
 
     // Overview Story
+    'Monthly Stats': 'Итоги месяца',
+    'Quick summary': 'Краткая сводка',
+    'Top Category': 'Главная трата',
+    'Main spending': 'Основная категория расходов',
+    'Balance Overview': 'Сводка баланса',
+    'Total wealth': 'Все накопления',
+    'more accounts': 'других счетов',
     'Your May in Numbers': 'Твой май в цифрах',
     'Total Assets Summary': 'Общая сводка активов',
     'Total Balance': 'Общий баланс',
@@ -179,6 +186,13 @@ const translations: Record<Language, Record<string, string>> = {
     'Add User Hint': 'To add a user, enter them in the === USERS === section on the Configs sheet of your master spreadsheet.',
 
     // Overview Story
+    'Monthly Stats': 'Monthly Stats',
+    'Quick summary': 'Quick summary',
+    'Top Category': 'Top Category',
+    'Main spending': 'Main spending',
+    'Balance Overview': 'Balance Overview',
+    'Total wealth': 'Total wealth',
+    'more accounts': 'more accounts',
     'Your May in Numbers': 'Your May in Numbers',
     'Total Assets Summary': 'Total assets summary',
     'Total Balance': 'Total Balance',

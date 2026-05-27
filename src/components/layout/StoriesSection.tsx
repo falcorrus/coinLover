@@ -339,40 +339,50 @@ export function StoriesSection({
             </div>
           );
         } else if (slideIdx === 1) {
-          const topCategory = categories.map(c => {
+          const topCategories = categories.map(c => {
             const amount = currentMonthTransactions.filter(t => t.targetId === c.id).reduce((acc, t) => {
               const account = accounts.find(a => a.id === t.accountId);
               const currency = t.sourceCurrency || account?.currency || baseCurrency;
               return acc + RatesService.convert(t.sourceAmount, currency, baseCurrency);
             }, 0);
             return { ...c, amount };
-          }).sort((a, b) => b.amount - a.amount)[0];
+          }).sort((a, b) => b.amount - a.amount).filter(c => c.amount > 0).slice(0, 3);
 
           return (
             <div className="flex flex-col h-full justify-between py-6 px-4 animate-in fade-in duration-300">
               <div className="space-y-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.15)]">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.15)]">
                     <ShoppingBag size={24} />
                   </div>
                   <div>
-                    <h3 className="font-bold text-lg text-[var(--text-main)]">{t('Top Category')}</h3>
+                    <h3 className="font-bold text-lg text-[var(--text-main)]">{t('Top Categories')}</h3>
                     <p className="text-xs text-[var(--text-muted)]">{t('Main spending')}</p>
                   </div>
                 </div>
-                {topCategory && topCategory.amount > 0 ? (
-                  <div className="p-6 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] text-center shadow-sm">
-                    <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center text-white shadow-lg" style={{ backgroundColor: topCategory.color }}>
-                      {React.createElement(IconMap[topCategory.icon] || ShoppingBag, { size: 28 })}
+                
+                <div className="space-y-3">
+                  {topCategories.length > 0 ? (
+                    topCategories.map((cat, i) => (
+                      <div key={i} className="flex items-center justify-between p-3.5 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] shadow-sm animate-in slide-in-from-bottom-2 duration-300" style={{ animationDelay: `${i * 100}ms` }}>
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-sm" style={{ backgroundColor: cat.color }}>
+                            {React.createElement(IconMap[cat.icon] || ShoppingBag, { size: 18 })}
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-xs font-bold text-[var(--text-main)] leading-none mb-1">{cat.name}</span>
+                            <span className="text-[10px] text-[var(--text-muted)] font-black uppercase tracking-tighter">{t('of total spent')}</span>
+                          </div>
+                        </div>
+                        <p className="text-sm font-black text-rose-500">{Math.round(cat.amount).toLocaleString()} {baseSymbol}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-6 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] text-center text-xs text-[var(--text-muted)] shadow-sm">
+                      {t('No data available')}
                     </div>
-                    <h4 className="font-bold text-base text-[var(--text-main)] mb-1">{topCategory.name}</h4>
-                    <p className="text-lg font-black text-rose-500">{Math.round(topCategory.amount).toLocaleString()} {baseSymbol}</p>
-                  </div>
-                ) : (
-                  <div className="p-6 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] text-center text-xs text-[var(--text-muted)] shadow-sm">
-                    {t('No data available')}
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
           );
@@ -675,10 +685,11 @@ export function StoriesSection({
     }
   };
 
-  if (activeStoryIndex === null) {
-    const isBlackTheme = theme === "black" || theme === "dark";
-    
-    return (
+  const isBlackTheme = theme === "black" || theme === "dark";
+  const activeStory = activeStoryIndex !== null ? stories[activeStoryIndex] : null;
+
+  return (
+    <>
       <section className={`px-6 py-4 overflow-hidden transition-all duration-500 ease-in-out shrink-0 origin-top-right ${isStoriesCollapsed ? "max-h-0 py-0 opacity-0 scale-90 translate-x-10 -translate-y-4" : "max-h-[200px] opacity-100 scale-100 translate-x-0 translate-y-0"}`}>
         <div 
           className="grid grid-cols-4 pb-2"
@@ -709,13 +720,7 @@ export function StoriesSection({
           ))}
         </div>
       </section>
-    );
-  }
 
-  const activeStory = stories[activeStoryIndex];
-
-  return (
-    <>
       {activeStoryIndex !== null && activeStory && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center backdrop-blur-2xl animate-in fade-in duration-200 select-none bg-[var(--bg-color)]/95" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} onMouseDown={handleMouseDown} onMouseUp={handleMouseUp}>
           <div ref={modalRef} className="w-full max-w-md h-full flex flex-col justify-between relative overflow-hidden bg-[var(--bg-color)] border-x border-[var(--glass-border)] shadow-2xl" onClick={(e) => e.stopPropagation()}>
