@@ -591,12 +591,10 @@ export function StoriesSection({
   };
 
   if (activeStoryIndex === null) {
-    if (isStoriesCollapsed) return null;
-    
     const isBlackTheme = theme === "black" || theme === "dark";
     
     return (
-      <section className="px-6 py-4">
+      <section className={`px-6 py-4 overflow-hidden transition-all duration-500 ease-in-out shrink-0 origin-top-right ${isStoriesCollapsed ? "max-h-0 py-0 opacity-0 scale-90 translate-x-10 -translate-y-4" : "max-h-[200px] opacity-100 scale-100 translate-x-0 translate-y-0"}`}>
         <div 
           className="grid grid-cols-4 pb-2"
           style={{
