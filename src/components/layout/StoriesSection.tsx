@@ -20,6 +20,8 @@ interface StoriesSectionProps {
   baseCurrency: string;
   localCurrencyCode: string;
   isStoriesCollapsed?: boolean;
+  activeStoryIndex: number | null;
+  setActiveStoryIndex: (index: number | null) => void;
 }
 
 interface Story {
@@ -44,13 +46,14 @@ export function StoriesSection({
   setCategoryCurrencyMode,
   baseCurrency,
   isStoriesCollapsed = false,
+  activeStoryIndex,
+  setActiveStoryIndex,
 }: StoriesSectionProps) {
   const { t, language, setLanguage } = useLanguage();
   const totalCategoryItems = categories.length + 1;
   const rowsCount = Math.ceil(totalCategoryItems / 4);
   const useCompactStories = rowsCount > 2;
 
-  const [activeStoryIndex, setActiveStoryIndex] = React.useState<number | null>(null);
   const [activeSlideIndex, setActiveSlideIndex] = React.useState<number>(0);
   const [progress, setProgress] = React.useState(0);
   const [isPaused, setIsPaused] = React.useState(false);
@@ -67,7 +70,6 @@ export function StoriesSection({
   // Video player Ref for Tips Slides
   const videoRef = React.useRef<HTMLVideoElement | null>(null);
   const modalRef = React.useRef<HTMLDivElement>(null);
-  const hasPushedHistory = React.useRef(false);
 
   // Tips Content (4 slides)
   const tips = [
@@ -139,49 +141,11 @@ export function StoriesSection({
   };
 
   const closeStories = () => {
-    // To prevent tap-through on mobile devices where a click event fires on the underlying screen after closing,
-    // we transition closing to the next macro-task.
-    setTimeout(() => {
-      setActiveStoryIndex(null);
-    }, 150);
+    // We use history.back() if we want to support browser history,
+    // but here we let App.tsx handle history based on the modalStack.
+    // So we just call setActiveStoryIndex(null).
+    setActiveStoryIndex(null);
   };
-
-  React.useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && activeStoryIndex !== null) {
-        closeStories();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [activeStoryIndex]);
-
-  // Browser history sync to prevent back-swipe from exiting the application
-  React.useEffect(() => {
-    if (activeStoryIndex !== null) {
-      // Stories modal opened - push a state
-      window.history.pushState({ isStoryOpen: true }, "");
-      hasPushedHistory.current = true;
-    } else {
-      // Stories modal closed - pop state if pushed
-      if (hasPushedHistory.current) {
-        window.history.back();
-        hasPushedHistory.current = false;
-      }
-    }
-  }, [activeStoryIndex]);
-
-  React.useEffect(() => {
-    const handlePopState = (e: PopStateEvent) => {
-      // If the back button/gesture was triggered
-      if (activeStoryIndex !== null) {
-        hasPushedHistory.current = false;
-        setActiveStoryIndex(null);
-      }
-    };
-    window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
-  }, [activeStoryIndex]);
 
   const handleNext = () => {
     if (activeStoryIndex === null) return;
@@ -684,7 +648,7 @@ export function StoriesSection({
               </div>
 
               <div className="space-y-2">
-                <button onClick={(e) => { e.stopPropagation(); setHistoryModal({ isOpen: true, entity: { name: t('Transactions History'), icon: "feed" }, type: "feed" }); setTimeout(() => setActiveStoryIndex(null), 50); }} className="pointer-events-auto w-full p-3.5 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)] flex items-center justify-between text-left transition-all shadow-sm">
+                <button onClick={(e) => { e.stopPropagation(); setActiveStoryIndex(null); setHistoryModal({ isOpen: true, entity: { name: t('Transactions History'), icon: "feed" }, type: "feed" }); }} className="pointer-events-auto w-full p-3.5 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)] flex items-center justify-between text-left transition-all shadow-sm">
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-500"><BarChart3 size={16} /></div>
                     <div>
@@ -695,7 +659,7 @@ export function StoriesSection({
                   <ChevronRight size={16} className="text-[var(--text-muted)]" />
                 </button>
 
-                <button onClick={(e) => { e.stopPropagation(); setCalendarAnalyticsModal({ isOpen: true }); setTimeout(() => setActiveStoryIndex(null), 50); }} className="pointer-events-auto w-full p-3.5 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)] flex items-center justify-between text-left transition-all shadow-sm">
+                <button onClick={(e) => { e.stopPropagation(); setActiveStoryIndex(null); setCalendarAnalyticsModal({ isOpen: true }); }} className="pointer-events-auto w-full p-3.5 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)] flex items-center justify-between text-left transition-all shadow-sm">
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500"><Calendar size={16} /></div>
                     <div>
@@ -706,7 +670,7 @@ export function StoriesSection({
                   <ChevronRight size={16} className="text-[var(--text-muted)]" />
                 </button>
 
-                <button onClick={(e) => { e.stopPropagation(); setAnalyticsModal({ isOpen: true, type: "expense" }); setTimeout(() => setActiveStoryIndex(null), 50); }} className="pointer-events-auto w-full p-3.5 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)] flex items-center justify-between text-left transition-all shadow-sm">
+                <button onClick={(e) => { e.stopPropagation(); setActiveStoryIndex(null); setAnalyticsModal({ isOpen: true, type: "expense" }); }} className="pointer-events-auto w-full p-3.5 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)] flex items-center justify-between text-left transition-all shadow-sm">
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-500"><PieChart size={16} /></div>
                     <div>

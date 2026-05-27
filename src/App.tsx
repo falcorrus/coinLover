@@ -150,6 +150,8 @@ const isNativeApp = React.useMemo(() => {
   const [isTagModalOpen, setIsTagModalOpen] = React.useState(false);
   const [isUsersModalOpen, setIsUsersModalOpen] = React.useState(false);
   const [isThemeModalOpen, setIsThemeModalOpen] = React.useState(false);
+  const [activeStoryIndex, setActiveStoryIndex] = React.useState<number | null>(null);
+
   const [numpad, setNumpad] = React.useState<any>({ 
     isOpen: false, 
     type: "expense", 
@@ -189,6 +191,7 @@ const isNativeApp = React.useMemo(() => {
       case "theme": setIsThemeModalOpen(false); break;
       case "numpad": setNumpad((p: any) => ({ ...p, isOpen: false })); break;
       case "settings": setIsSettingsMenuOpen(false); break;
+      case "stories": setActiveStoryIndex(null); break;
     }
   };
 
@@ -206,7 +209,8 @@ const isNativeApp = React.useMemo(() => {
       { id: "users", open: isUsersModalOpen },
       { id: "theme", open: isThemeModalOpen },
       { id: "numpad", open: numpad.isOpen },
-      { id: "settings", open: isSettingsMenuOpen }
+      { id: "settings", open: isSettingsMenuOpen },
+      { id: "stories", open: activeStoryIndex !== null }
     ];
 
     const currentlyOpenIds = openModals.filter(m => m.open).map(m => m.id);
@@ -238,6 +242,9 @@ const isNativeApp = React.useMemo(() => {
     } else if (currentDepth < historyDepth) {
       // Окно закрылось через UI - откатываем историю
       window.history.back();
+    } else if (currentDepth === historyDepth && currentDepth > 0) {
+      // Глубина та же, но стек поменялся (замена модалки) - реплейсим стейт
+      window.history.replaceState({ modalDepth: currentDepth }, "");
     }
   }, [modalStack]);
 
@@ -436,6 +443,8 @@ SplashScreen.hide().catch(() => {});
             baseCurrency={calculations.baseCurrency}
             localCurrencyCode={calculations.localCurrencyCode}
             isStoriesCollapsed={isStoriesCollapsed}
+            activeStoryIndex={activeStoryIndex}
+            setActiveStoryIndex={setActiveStoryIndex}
           />
 
           <IncomeSection 
