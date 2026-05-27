@@ -189,6 +189,10 @@ export function StoriesSection({
   }, [activeStoryIndex, activeSlideIndex, isPaused]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
+    // Если нажатие на интерактивный элемент - игнорируем логику жестов истории
+    if ((e.target as HTMLElement).closest('.pointer-events-auto')) {
+      return;
+    }
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
     touchStartTime.current = Date.now();
@@ -196,10 +200,18 @@ export function StoriesSection({
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
+    // Если событие началось на кнопке (мы вышли из handleTouchStart), 
+    // или закончилось на кнопке - игнорируем
+    if ((e.target as HTMLElement).closest('.pointer-events-auto') || touchStartTime.current === 0) {
+      setIsPaused(false);
+      return;
+    }
+
     const diffX = e.changedTouches[0].clientX - touchStartX.current;
     const diffY = e.changedTouches[0].clientY - touchStartY.current;
     const duration = Date.now() - touchStartTime.current;
     setIsPaused(false);
+    touchStartTime.current = 0; // Сбрасываем
 
     if (Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY)) {
       if (diffX > 0) handlePrev(true);
@@ -218,6 +230,10 @@ export function StoriesSection({
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    // Игнорируем нажатия на интерактивные кнопки
+    if ((e.target as HTMLElement).closest('.pointer-events-auto')) {
+      return;
+    }
     mouseStartX.current = e.clientX;
     mouseStartY.current = e.clientY;
     mouseStartTime.current = Date.now();
@@ -226,7 +242,13 @@ export function StoriesSection({
 
   const handleMouseUp = (e: React.MouseEvent) => {
     // Filter synthesized mouse events on mobile
-    if (Date.now() - touchStartTime.current < 800) {
+    if (Date.now() - touchStartTime.current < 800 && touchStartTime.current !== 0) {
+      setIsPaused(false);
+      return;
+    }
+
+    // Если нажатие на кнопку - игнорируем
+    if ((e.target as HTMLElement).closest('.pointer-events-auto') || mouseStartTime.current === 0) {
       setIsPaused(false);
       return;
     }
@@ -235,6 +257,7 @@ export function StoriesSection({
     const diffY = e.clientY - mouseStartY.current;
     const duration = Date.now() - mouseStartTime.current;
     setIsPaused(false);
+    mouseStartTime.current = 0; // Сбрасываем
 
     if (Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY)) {
       if (diffX > 0) handlePrev(true);
