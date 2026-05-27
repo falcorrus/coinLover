@@ -50,7 +50,10 @@ export const useSync = ({
   };
 
   const updateLocalFromRemote = useCallback((data: SyncSettingsFields & { transactions?: Transaction[], users?: { name: string; id: string }[] }) => {
-    if (data.accounts) setAccounts(data.accounts);
+    if (data.accounts) {
+      const sanitized = data.accounts.map(a => ({ ...a, balance: Number(a.balance) || 0 }));
+      setAccounts(sanitized);
+    }
     if (data.categories) setCategories(data.categories);
     if (data.incomes) setIncomes(data.incomes);
     if (data.users) setUsers(data.users);
@@ -215,29 +218,6 @@ export const useSync = ({
     
     const performPush = async () => {
       setSyncStatus("loading");
-      try {
-        const remote = await googleSheetsService.fetchSettings(ssId);
-        if (remote && remote.timestamp) {
-          const remoteSnap = getSettingsSnapshot(remote);
-          const localLastSync = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC);
-          const localDate = localLastSync ? new Date(localLastSync) : new Date(0);
-          const remoteDate = new Date(remote.timestamp);
-          const isCloudNewer = localLastSync && (remoteDate.getTime() > localDate.getTime() + 15000);
-          const isCloudChangedSinceLastSync = lastRemoteSnapshot.current && remoteSnap !== lastRemoteSnapshot.current;
-
-          if (isCloudNewer || isCloudChangedSinceLastSync) {
-            updateLocalFromRemote(remote);
-            setSyncStatus("success");
-            return;
-          }
-        }
-      } catch (e: any) { 
-        if (e.statusCode === 403) {
-          setAccessError(e.message);
-          setSyncStatus("error");
-          return;
-        }
-      }
 
       const ts = getLocalTimeString();
       const baseCurrency = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY) || "USD";

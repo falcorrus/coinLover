@@ -96,7 +96,8 @@ export class RatesService {
     }
 
     static convert(amount: number, fromCurrency: string, toCurrency: string): number {
-        if (!amount || isNaN(amount)) return 0;
+        const numericAmount = Number(amount);
+        if (isNaN(numericAmount) || numericAmount === 0) return 0;
         
         const from = String(fromCurrency || "").trim().toUpperCase();
         const to = String(toCurrency || "").trim().toUpperCase();
@@ -106,7 +107,7 @@ export class RatesService {
             return 0;
         }
         
-        if (from === to) return amount;
+        if (from === to) return numericAmount;
 
         const base = this.getBaseCurrency();
         const rates = this.getCachedRates();
