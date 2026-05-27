@@ -9,7 +9,7 @@ import {
   Fingerprint
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { googleSheetsService } from "../services/googleSheets";
+import { googleSheetsService, getAbsoluteApiUrl } from "../services/googleSheets";
 import { APP_SETTINGS } from "../constants/settings";
 import { startAuthentication } from "@simplewebauthn/browser";
 
@@ -68,7 +68,7 @@ export const NativeAuthScreen: React.FC = () => {
       setSafePt("24px");
     }
 
-    fetch("/api/auth/login-options")
+    fetch(getAbsoluteApiUrl("/api/auth/login-options"))
       .then(res => {
         if (res.ok) return res.json();
         throw new Error("Failed to prefetch login options");
@@ -142,7 +142,7 @@ export const NativeAuthScreen: React.FC = () => {
 
       if (!data) {
         console.log("No prefetched login options found, fetching dynamically...");
-        const optionsRes = await fetch("/api/auth/login-options");
+        const optionsRes = await fetch(getAbsoluteApiUrl("/api/auth/login-options"));
         if (!optionsRes.ok) {
           throw new Error(await optionsRes.text() || "Failed to fetch login options");
         }
@@ -183,7 +183,7 @@ export const NativeAuthScreen: React.FC = () => {
         throw new Error("Failed to decode ssId from credential");
       }
 
-      const verifyRes = await fetch("/api/auth/login-verify", {
+      const verifyRes = await fetch(getAbsoluteApiUrl("/api/auth/login-verify"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

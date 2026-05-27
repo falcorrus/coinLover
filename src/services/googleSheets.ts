@@ -1,14 +1,20 @@
+/// <reference types="vite/client" />
 import { APP_SETTINGS } from "../constants/settings";
 import { SyncPayload } from "../types";
 import { CapacitorHttp, Capacitor } from "@capacitor/core";
 
-const getGoogleScriptUrl = () => {
+export const getAbsoluteApiUrl = (path: string) => {
   const isNative = Capacitor.isNativePlatform();
   if (isNative) {
-    const isProd = (import.meta as any).env.PROD;
-    return isProd ? "https://coinlover.ru/api/sheets" : "https://coin.reloto.ru/api/sheets";
+    const isProd = import.meta.env.PROD;
+    const base = isProd ? "https://coinlover.ru" : "https://coin.reloto.ru";
+    return `${base}${path}`;
   }
-  return "/api/sheets";
+  return path;
+};
+
+const getGoogleScriptUrl = () => {
+  return getAbsoluteApiUrl("/api/sheets");
 };
 
 // Universal fetch that uses native HTTP on mobile to bypass CORS
