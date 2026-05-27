@@ -474,6 +474,10 @@ export function StoriesSection({
                 </div>
               </div>
               <button 
+                onMouseDown={(e) => e.stopPropagation()}
+                onMouseUp={(e) => e.stopPropagation()}
+                onTouchStart={(e) => e.stopPropagation()}
+                onTouchEnd={(e) => e.stopPropagation()}
                 onClick={(e) => { e.stopPropagation(); setActiveStoryIndex(null); setCalendarAnalyticsModal({ isOpen: true }); }} 
                 className="pointer-events-auto relative z-50 w-full py-3.5 rounded-2xl bg-[var(--glass-item-bg)] hover:bg-[var(--glass-item-active)] border border-[var(--glass-border)] font-bold text-xs uppercase tracking-wider text-[var(--text-main)] transition-all"
               >
@@ -526,7 +530,14 @@ export function StoriesSection({
               </div>
 
               <div className="space-y-2">
-                <button onClick={(e) => { e.stopPropagation(); setActiveStoryIndex(null); setHistoryModal({ isOpen: true, entity: { name: t('Transactions History'), icon: "feed" }, type: "feed" }); }} className="pointer-events-auto w-full p-3.5 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)] flex items-center justify-between text-left transition-all shadow-sm">
+                <button 
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onMouseUp={(e) => e.stopPropagation()}
+                  onTouchStart={(e) => e.stopPropagation()}
+                  onTouchEnd={(e) => e.stopPropagation()}
+                  onClick={(e) => { e.stopPropagation(); setActiveStoryIndex(null); setHistoryModal({ isOpen: true, entity: { name: t('Transactions History'), icon: "feed" }, type: "feed" }); }} 
+                  className="pointer-events-auto w-full p-3.5 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)] flex items-center justify-between text-left transition-all shadow-sm"
+                >
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-500"><BarChart3 size={16} /></div>
                     <div>
@@ -537,7 +548,14 @@ export function StoriesSection({
                   <ChevronRight size={16} className="text-[var(--text-muted)]" />
                 </button>
 
-                <button onClick={(e) => { e.stopPropagation(); setActiveStoryIndex(null); setCalendarAnalyticsModal({ isOpen: true }); }} className="pointer-events-auto w-full p-3.5 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)] flex items-center justify-between text-left transition-all shadow-sm">
+                <button 
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onMouseUp={(e) => e.stopPropagation()}
+                  onTouchStart={(e) => e.stopPropagation()}
+                  onTouchEnd={(e) => e.stopPropagation()}
+                  onClick={(e) => { e.stopPropagation(); setActiveStoryIndex(null); setCalendarAnalyticsModal({ isOpen: true }); }} 
+                  className="pointer-events-auto w-full p-3.5 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)] flex items-center justify-between text-left transition-all shadow-sm"
+                >
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500"><Calendar size={16} /></div>
                     <div>
@@ -548,7 +566,14 @@ export function StoriesSection({
                   <ChevronRight size={16} className="text-[var(--text-muted)]" />
                 </button>
 
-                <button onClick={(e) => { e.stopPropagation(); setActiveStoryIndex(null); setAnalyticsModal({ isOpen: true, type: "expense" }); }} className="pointer-events-auto w-full p-3.5 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)] flex items-center justify-between text-left transition-all shadow-sm">
+                <button 
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onMouseUp={(e) => e.stopPropagation()}
+                  onTouchStart={(e) => e.stopPropagation()}
+                  onTouchEnd={(e) => e.stopPropagation()}
+                  onClick={(e) => { e.stopPropagation(); setActiveStoryIndex(null); setAnalyticsModal({ isOpen: true, type: "expense" }); }} 
+                  className="pointer-events-auto w-full p-3.5 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)] flex items-center justify-between text-left transition-all shadow-sm"
+                >
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-500"><PieChart size={16} /></div>
                     <div>
@@ -561,6 +586,10 @@ export function StoriesSection({
                 
                 <div className="grid grid-cols-3 gap-2 pt-2">
                   <button 
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onMouseUp={(e) => e.stopPropagation()}
+                    onTouchStart={(e) => e.stopPropagation()}
+                    onTouchEnd={(e) => e.stopPropagation()}
                     onClick={(e) => { 
                       e.stopPropagation(); 
                       setLanguage(language === 'en' ? 'ru' : 'en'); 
@@ -570,18 +599,41 @@ export function StoriesSection({
                     <Languages size={18} className="text-indigo-500" />
                     <span className="text-[10px] font-bold text-[var(--text-main)] uppercase">{language === 'en' ? 'English' : 'Русский'}</span>
                   </button>
-                  <button onClick={(e) => { e.stopPropagation(); setTheme(theme === "dark" ? "white" : theme === "white" ? "mint" : "dark"); }} className="pointer-events-auto p-3 rounded-2xl bg-[var(--glass-item-bg)] border border-[var(--glass-border)] flex flex-col items-center justify-center gap-1 hover:bg-[var(--glass-item-active)] transition-all">
+                  <button 
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onMouseUp={(e) => e.stopPropagation()}
+                    onTouchStart={(e) => e.stopPropagation()}
+                    onTouchEnd={(e) => e.stopPropagation()}
+                    onClick={(e) => { e.stopPropagation(); setTheme(theme === "dark" ? "white" : theme === "white" ? "mint" : "dark"); }} 
+                    className="pointer-events-auto p-3 rounded-2xl bg-[var(--glass-item-bg)] border border-[var(--glass-border)] flex flex-col items-center justify-center gap-1 hover:bg-[var(--glass-item-active)] transition-all"
+                  >
                     <Palette size={18} className="text-amber-500" />
                     <span className="text-[10px] font-bold text-[var(--text-main)] uppercase truncate w-full text-center">{theme}</span>
                   </button>
-                  <button onClick={(e) => { e.stopPropagation(); setCategoryCurrencyMode(categoryCurrencyMode === 'base' ? 'local' : 'base'); }} className="pointer-events-auto p-3 rounded-2xl bg-[var(--glass-item-bg)] border border-[var(--glass-border)] flex flex-col items-center justify-center gap-1 hover:bg-[var(--glass-item-active)] transition-all">
+                  <button 
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onMouseUp={(e) => e.stopPropagation()}
+                    onTouchStart={(e) => e.stopPropagation()}
+                    onTouchEnd={(e) => e.stopPropagation()}
+                    onClick={(e) => { e.stopPropagation(); setCategoryCurrencyMode(categoryCurrencyMode === 'base' ? 'local' : 'base'); }} 
+                    className="pointer-events-auto p-3 rounded-2xl bg-[var(--glass-item-bg)] border border-[var(--glass-border)] flex flex-col items-center justify-center gap-1 hover:bg-[var(--glass-item-active)] transition-all"
+                  >
                     <DollarSign size={18} className="text-emerald-500" />
                     <span className="text-[10px] font-bold text-[var(--text-main)] uppercase">{categoryCurrencyMode === 'base' ? 'base' : 'loc'}</span>
                   </button>
                 </div>
               </div>
             </div>
-            <button onClick={(e) => { e.stopPropagation(); closeStories(); }} className="pointer-events-auto w-full py-3.5 rounded-2xl bg-[var(--glass-item-bg)] hover:bg-[var(--glass-item-active)] border border-[var(--glass-border)] font-bold text-xs uppercase tracking-wider text-[var(--text-main)] transition-all">{t('Done')}</button>
+            <button 
+              onMouseDown={(e) => e.stopPropagation()}
+              onMouseUp={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+              onTouchEnd={(e) => e.stopPropagation()}
+              onClick={(e) => { e.stopPropagation(); closeStories(); }} 
+              className="pointer-events-auto w-full py-3.5 rounded-2xl bg-[var(--glass-item-bg)] hover:bg-[var(--glass-item-active)] border border-[var(--glass-border)] font-bold text-xs uppercase tracking-wider text-[var(--text-main)] transition-all"
+            >
+              {t('Done')}
+            </button>
           </div>
         );
 
