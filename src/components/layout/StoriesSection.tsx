@@ -141,10 +141,11 @@ export function StoriesSection({
   };
 
   const closeStories = () => {
-    // We use history.back() if we want to support browser history,
-    // but here we let App.tsx handle history based on the modalStack.
-    // So we just call setActiveStoryIndex(null).
-    setActiveStoryIndex(null);
+    // To prevent tap-through on mobile devices where a click event fires on the underlying screen after closing,
+    // we transition closing to the next macro-task.
+    setTimeout(() => {
+      setActiveStoryIndex(null);
+    }, 150);
   };
 
   const handleNext = () => {
@@ -514,13 +515,13 @@ export function StoriesSection({
                   <h3 className="font-bold text-lg text-[var(--text-main)]">{hasSpendToday ? t('Financial Karma') : t('No-Spend Day! 🔥')}</h3>
                   <p className="text-[10px] text-[var(--text-muted)] tracking-wide">{hasSpendToday ? t('Today expenses are under control') : t('Your wallet is resting today')}</p>
                 </div>
-                <div className="p-4 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] space-y-3.5 backdrop-blur-md text-left shadow-sm">
+                <div className="scrollable-content p-4 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] space-y-3.5 backdrop-blur-md text-left shadow-sm overflow-y-auto max-h-[350px]" onClick={(e) => e.stopPropagation()}>
                   {hasSpendToday ? (
                     <div className="space-y-3">
                       <p className="text-xs text-[var(--text-main)] opacity-90 leading-relaxed">{t('Spent today')}: <span className="font-bold text-rose-500">{spentToday.toLocaleString()} {baseSymbol}</span>.</p>
                       <div className="space-y-2 pt-1">
                         <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">{t('Day Detail')}</p>
-                        {todayTransactions.slice(0, 5).map((tx, i) => {
+                        {todayTransactions.slice(0, 10).map((tx, i) => {
                           const category = categories.find(c => c.id === tx.targetId);
                           const account = accounts.find(a => a.id === tx.accountId);
                           const currency = tx.sourceCurrency || account?.currency || baseCurrency;
@@ -540,8 +541,8 @@ export function StoriesSection({
                             </div>
                           );
                         })}
-                        {todayTransactions.length > 5 && (
-                          <p className="text-[9px] text-center text-[var(--text-muted)] pt-1 italic opacity-60">+ {t('and')} {todayTransactions.length - 5} {t('more today')}</p>
+                        {todayTransactions.length > 10 && (
+                          <p className="text-[9px] text-center text-[var(--text-muted)] pt-1 italic opacity-60">+ {t('and')} {todayTransactions.length - 10} {t('more today')}</p>
                         )}
                       </div>
                     </div>
