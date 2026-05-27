@@ -14,6 +14,9 @@ echo "Copying to android..."
 npx cap copy android || { echo "Capacitor copy failed"; exit 1; }
 
 cd android
+echo "Cleaning build cache..."
+./gradlew clean || { echo "Gradle clean failed"; exit 1; }
+
 echo "Assembling APK..."
 ./gradlew assembleDebug || { echo "Gradle build failed"; exit 1; }
 
