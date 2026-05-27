@@ -1,5 +1,5 @@
 # Stage 1: Build the React app
-FROM node:20-alpine as build
+FROM node:22-alpine as build
 WORKDIR /app
 COPY package*.json ./
 RUN apk add --no-cache python3 make g++ && \
@@ -9,7 +9,7 @@ COPY . .
 RUN npm run build
 
 # Stage 2: Serve the app with Node.js
-FROM node:20-alpine
+FROM node:22-alpine
 WORKDIR /app
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/api ./api
