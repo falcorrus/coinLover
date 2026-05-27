@@ -389,6 +389,11 @@ async function findUserByContactInMaster(sheets, contact: string) {
 }
 
 export default async function handler(req, res) {
+  // Prevent any browser/CDN caching for API requests
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+
   console.log(`[API] ${req.method} ${req.url}`);
   const sheets = await getSheetsClient();
 

@@ -56,6 +56,7 @@ export const googleSheetsService = {
       if (ssId) {
         url += (url.includes('?') ? '&' : '?') + `ssId=${ssId}`;
       }
+      url += (url.includes('?') ? '&' : '?') + `t=${Date.now()}`;
       
       const response = await universalFetch(url);
       if (response.status === 403) {
@@ -88,6 +89,7 @@ export const googleSheetsService = {
       if (ssId) {
         url += `&ssId=${ssId}`;
       }
+      url += `&t=${Date.now()}`;
       
       const response = await universalFetch(url);
       if (response.status === 403) {
