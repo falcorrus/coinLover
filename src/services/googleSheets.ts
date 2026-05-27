@@ -32,7 +32,16 @@ const universalFetch = async (url: string, options?: any) => {
       return {
         ok: response.status >= 200 && response.status < 300,
         status: response.status,
-        json: async () => response.data
+        json: async () => {
+          if (typeof response.data === 'string') {
+            try {
+              return JSON.parse(response.data);
+            } catch (err) {
+              return response.data;
+            }
+          }
+          return response.data;
+        }
       };
     } catch (e: any) {
       console.error("Native fetch failed:", e);
