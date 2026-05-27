@@ -88,18 +88,22 @@ export const useTransactions = ({
     setTransactions((prev) => [newTx, ...prev]);
     trackEvent("TransactionAdd", { category: "Transaction", label: type });
     const updatedAccounts = accounts.map((a) => {
+      const aid = String(a.id).trim().toLowerCase();
+      const sourceId = String(source.id).trim().toLowerCase();
+      const destId = String(destination.id).trim().toLowerCase();
+
       const balance = Number(a.balance) || 0;
-      if (type === "expense" && a.id === (source as Account).id) {
+      if (type === "expense" && aid === sourceId) {
         return { ...a, balance: balance - (Number(sourceAmount) || 0) };
       }
-      if (type === "income" && a.id === (destination as Account).id) {
+      if (type === "income" && aid === destId) {
         return { ...a, balance: balance + (Number(finalTargetAmount) || 0) };
       }
       if (type === "transfer") { 
-        if (a.id === (source as Account).id) {
+        if (aid === sourceId) {
           return { ...a, balance: balance - (Number(sourceAmount) || 0) }; 
         }
-        if (a.id === (destination as Account).id) {
+        if (aid === destId) {
           return { ...a, balance: balance + (Number(finalTargetAmount) || 0) }; 
         }
       }
@@ -202,19 +206,25 @@ export const useTransactions = ({
     setTransactions(prev => prev.map(t => t.id === txId ? updatedTx : t));
     trackEvent("TransactionUpdate", { category: "Transaction", label: type });
     const updatedAccounts = accounts.map(a => {
+      const aid = String(a.id).trim().toLowerCase();
+      const oldTxAccId = String(oldTx.accountId).trim().toLowerCase();
+      const oldTxTargetId = String(oldTx.targetId).trim().toLowerCase();
+      const sourceId = String(source.id).trim().toLowerCase();
+      const destId = String(destination.id).trim().toLowerCase();
+
       let balance = Number(a.balance) || 0;
-      if (oldTx.type === "expense" && a.id === oldTx.accountId) balance += (Number(oldTx.sourceAmount) || 0);
-      if (oldTx.type === "income" && a.id === oldTx.accountId) balance -= (Number(oldTx.targetAmount) || 0);
+      if (oldTx.type === "expense" && aid === oldTxAccId) balance += (Number(oldTx.sourceAmount) || 0);
+      if (oldTx.type === "income" && aid === oldTxAccId) balance -= (Number(oldTx.targetAmount) || 0);
       if (oldTx.type === "transfer") { 
-        if (a.id === oldTx.accountId) balance += (Number(oldTx.sourceAmount) || 0); 
-        if (a.id === oldTx.targetId) balance -= (Number(oldTx.targetAmount) || 0); 
+        if (aid === oldTxAccId) balance += (Number(oldTx.sourceAmount) || 0); 
+        if (aid === oldTxTargetId) balance -= (Number(oldTx.targetAmount) || 0); 
       }
       
-      if (type === "expense" && a.id === (source as Account).id) balance -= (Number(sourceAmount) || 0);
-      if (type === "income" && a.id === (destination as Account).id) balance += (Number(finalTargetAmount) || 0);
+      if (type === "expense" && aid === sourceId) balance -= (Number(sourceAmount) || 0);
+      if (type === "income" && aid === destId) balance += (Number(finalTargetAmount) || 0);
       if (type === "transfer") { 
-        if (a.id === (source as Account).id) balance -= (Number(sourceAmount) || 0); 
-        if (a.id === (destination as Account).id) balance += (Number(finalTargetAmount) || 0); 
+        if (aid === sourceId) balance -= (Number(sourceAmount) || 0); 
+        if (aid === destId) balance += (Number(finalTargetAmount) || 0); 
       }
       return a.balance !== balance ? { ...a, balance } : a;
     });
@@ -266,12 +276,16 @@ export const useTransactions = ({
     setTransactions((prev) => prev.filter((t) => t.id !== txId));
     trackEvent("TransactionDelete", { category: "Transaction", label: tx.type });
     const updatedAccounts = accounts.map((a) => {
+      const aid = String(a.id).trim().toLowerCase();
+      const txAccId = String(tx.accountId).trim().toLowerCase();
+      const txTargetId = String(tx.targetId).trim().toLowerCase();
+
       let balance = Number(a.balance) || 0;
-      if (tx.type === "expense" && a.id === tx.accountId) balance += (Number(tx.sourceAmount) || 0);
-      if (tx.type === "income" && a.id === tx.accountId) balance -= (Number(tx.targetAmount) || 0);
+      if (tx.type === "expense" && aid === txAccId) balance += (Number(tx.sourceAmount) || 0);
+      if (tx.type === "income" && aid === txAccId) balance -= (Number(tx.targetAmount) || 0);
       if (tx.type === "transfer") { 
-        if (a.id === tx.accountId) balance += (Number(tx.sourceAmount) || 0); 
-        if (a.id === tx.targetId) balance -= (Number(tx.targetAmount) || 0); 
+        if (aid === txAccId) balance += (Number(tx.sourceAmount) || 0); 
+        if (aid === txTargetId) balance -= (Number(tx.targetAmount) || 0); 
       }
       return a.balance !== balance ? { ...a, balance } : a;
     });
