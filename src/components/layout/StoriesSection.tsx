@@ -585,6 +585,8 @@ export function StoriesSection({
   };
 
   if (activeStoryIndex === null) {
+    if (isStoriesCollapsed) return null;
+    
     const isBlackTheme = theme === "black" || theme === "dark";
     
     return (
@@ -605,11 +607,9 @@ export function StoriesSection({
                   <story.icon size={28} className={isBlackTheme ? "text-[var(--text-main)]" : "text-[var(--primary-color)]"} />
                 </div>
               </div>
-              {!isStoriesCollapsed && (
-                <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest group-hover:text-[var(--text-main)] transition-colors">
-                  {story.title}
-                </span>
-              )}
+              <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest group-hover:text-[var(--text-main)] transition-colors">
+                {story.title}
+              </span>
             </div>
           ))}
         </div>
