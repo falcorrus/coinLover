@@ -591,23 +591,29 @@ export function StoriesSection({
     
     return (
       <section className="px-6 py-4">
-        <div className="flex gap-4 overflow-x-auto hide-scrollbar -mx-6 px-6">
+        <div 
+          className="grid grid-cols-4 pb-2"
+          style={{
+            gap: 'var(--grid-gap)',
+            gridAutoRows: 'auto'
+          }}
+        >
           {stories.map((story, index) => (
             <div
               key={story.id}
               onClick={() => handleStoryClick(index)}
-              className="flex-shrink-0 flex flex-col items-center gap-2 cursor-pointer group"
+              className="flex flex-col items-center gap-2 cursor-pointer group w-full"
             >
-              <div className={`w-16 h-16 rounded-3xl p-[2px] transition-all duration-300 group-hover:scale-105 active:scale-95 ${
+              <div className={`w-14 h-14 rounded-3xl p-[2px] transition-all duration-300 group-hover:scale-105 active:scale-95 ${
                 isBlackTheme 
                   ? `bg-gradient-to-br ${story.gradient} shadow-lg shadow-${story.color.replace('#', '')}/10` 
                   : 'bg-[var(--glass-border)]'
               }`}>
                 <div className="w-full h-full rounded-[22px] bg-[var(--bg-color)] flex items-center justify-center overflow-hidden">
-                  <story.icon size={28} className={isBlackTheme ? "text-[var(--text-main)]" : "text-[var(--primary-color)]"} />
+                  <story.icon size={26} className={isBlackTheme ? "text-[var(--text-main)]" : "text-[var(--primary-color)]"} />
                 </div>
               </div>
-              <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest group-hover:text-[var(--text-main)] transition-colors">
+              <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest group-hover:text-[var(--text-main)] transition-colors text-center truncate w-full px-1">
                 {story.title}
               </span>
             </div>
