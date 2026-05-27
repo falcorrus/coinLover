@@ -1,10 +1,10 @@
 import * as React from "react";
 import { Flame, Zap, HelpCircle, X, Palette, BarChart3, ChevronRight, Landmark, Compass, DollarSign, ShoppingBag, Calendar, PieChart, Languages, ChevronLeft, Coins } from "lucide-react";
 import { Account, Transaction } from "../../types";
+import { useLanguage } from "../../contexts/LanguageContext";
 import { IconMap } from "../../constants";
 import { RatesService } from "../../services/RatesService";
 import { safeParseDate } from "../../hooks/utils";
-import { useLanguage } from "../../contexts/LanguageContext";
 
 interface StoriesSectionProps {
   accounts: Account[];
@@ -167,22 +167,8 @@ export function StoriesSection({
       setActiveSlideIndex((prev) => prev - 1);
       setProgress(0);
     } else {
-      if (isSwipe) {
-        // Только при жесте свайпа (isSwipe === true) на первом слайде любой сторис возвращаем на Главную
-        closeStories();
-      } else {
-        // При обычном клике/тапе в левую зону переходим на предыдущую сторис (если есть)
-        if (activeStoryIndex > 0) {
-          const prevIndex = activeStoryIndex - 1;
-          const prevStory = stories[prevIndex];
-          setActiveStoryIndex(prevIndex);
-          setActiveSlideIndex(prevStory.slideCount - 1);
-          setProgress(0);
-        } else {
-          // Если это первая сторис и первый слайд, то обычный тап назад просто сбрасывает прогресс, а не закрывает
-          setProgress(0);
-        }
-      }
+      // На первом слайде любой истории (независимо от того, свайп это или тап) возвращаем на Главную
+      closeStories();
     }
   };
 
@@ -202,301 +188,192 @@ export function StoriesSection({
     return () => clearInterval(timer);
   }, [activeStoryIndex, activeSlideIndex, isPaused]);
 
-  React.useEffect(() => {
-    const isTipsStoryActive = activeStoryIndex !== null && stories[activeStoryIndex]?.id === "tips" && activeSlideIndex >= 0 && activeSlideIndex <= 3;
-    const video = videoRef.current;
-    if (!video) return;
-    if (isTipsStoryActive) { video.play().catch(() => {}); } else { video.pause(); }
-  }, [activeStoryIndex, activeSlideIndex]);
-
   const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartTime.current = Date.now();
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
+    touchStartTime.current = Date.now();
     setIsPaused(true);
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    touchStartTime.current = Date.now();
-    const endX = e.changedTouches[0].clientX;
-    const endY = e.changedTouches[0].clientY;
-    const diffX = endX - touchStartX.current;
-    const diffY = endY - touchStartY.current;
+    const diffX = e.changedTouches[0].clientX - touchStartX.current;
+    const diffY = e.changedTouches[0].clientY - touchStartY.current;
+    const duration = Date.now() - touchStartTime.current;
     setIsPaused(false);
 
-    // Check if the event target is inside the scrollable content
-    const isInsideScrollable = (target: EventTarget | null): boolean => {
-      if (!target) return false;
-      let el = target as HTMLElement;
-      while (el && el !== document.body) {
-        if (el.classList && el.classList.contains('scrollable-content')) {
-          return true;
-        }
-        el = el.parentElement as HTMLElement;
-      }
-      return false;
-    };
-    
-    const insideScrollable = isInsideScrollable(e.target);
-
-    // If inside scrollable content, ignore swipes (to let native scroll work)
-    if (insideScrollable) {
+    if (Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY)) {
+      if (diffX > 0) handlePrev(true);
+      else handleNext();
       return;
     }
 
     if (diffY > 80 && Math.abs(diffX) < 100) { closeStories(); return; }
-    if (diffX > 80 && Math.abs(diffY) < 100) { handlePrev(true); return; }
-    if (diffX < -80 && Math.abs(diffY) < 100) { handleNext(); return; }
 
-    // Tap detection inside the modal boundaries ONLY if clicking designated story-tap-zone overlays
-    if (Math.abs(diffX) < 15 && Math.abs(diffY) < 15) {
-      const isTapZone = (target: EventTarget | null): boolean => {
-        if (!target) return false;
-        let el = target as HTMLElement;
-        while (el && el !== document.body) {
-          if (el.classList && el.classList.contains('story-tap-zone')) {
-            return true;
-          }
-          el = el.parentElement as HTMLElement;
-        }
-        return false;
-      };
-
-      if (isTapZone(e.target) && modalRef.current) {
-        const rect = modalRef.current.getBoundingClientRect();
-        const clickX = endX - rect.left;
-        if (clickX < rect.width * 0.25) {
-          handlePrev(false);
-        } else if (clickX > rect.width * 0.25) {
-          handleNext();
-        }
-      }
+    if (duration < 250 && Math.abs(diffX) < 10 && Math.abs(diffY) < 10) {
+      const clickX = e.changedTouches[0].clientX;
+      const width = window.innerWidth;
+      if (clickX < width / 3) handlePrev();
+      else handleNext();
     }
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (Date.now() - touchStartTime.current < 800) return;
     mouseStartX.current = e.clientX;
     mouseStartY.current = e.clientY;
+    mouseStartTime.current = Date.now();
     setIsPaused(true);
   };
 
   const handleMouseUp = (e: React.MouseEvent) => {
-    if (Date.now() - touchStartTime.current < 800) return;
-    const endX = e.clientX;
-    const endY = e.clientY;
-    const diffX = endX - mouseStartX.current;
-    const diffY = endY - mouseStartY.current;
+    // Filter synthesized mouse events on mobile
+    if (Date.now() - touchStartTime.current < 800) {
+      setIsPaused(false);
+      return;
+    }
+
+    const diffX = e.clientX - mouseStartX.current;
+    const diffY = e.clientY - mouseStartY.current;
+    const duration = Date.now() - mouseStartTime.current;
     setIsPaused(false);
 
-    // Check if the event target is inside the scrollable content
-    const isInsideScrollable = (target: EventTarget | null): boolean => {
-      if (!target) return false;
-      let el = target as HTMLElement;
-      while (el && el !== document.body) {
-        if (el.classList && el.classList.contains('scrollable-content')) {
-          return true;
-        }
-        el = el.parentElement as HTMLElement;
-      }
-      return false;
-    };
-    
-    const insideScrollable = isInsideScrollable(e.target);
-
-    // If inside scrollable content, ignore swipes (to let native scroll work)
-    if (insideScrollable) {
+    if (Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY)) {
+      if (diffX > 0) handlePrev(true);
+      else handleNext();
       return;
     }
 
     if (diffY > 80 && Math.abs(diffX) < 100) { closeStories(); return; }
-    if (diffX > 80 && Math.abs(diffY) < 100) { handlePrev(true); return; }
-    if (diffX < -80 && Math.abs(diffY) < 100) { handleNext(); return; }
 
-    // Tap detection inside the modal boundaries ONLY if clicking designated story-tap-zone overlays
-    if (Math.abs(diffX) < 15 && Math.abs(diffY) < 15) {
-      const isTapZone = (target: EventTarget | null): boolean => {
-        if (!target) return false;
-        let el = target as HTMLElement;
-        while (el && el !== document.body) {
-          if (el.classList && el.classList.contains('story-tap-zone')) {
-            return true;
-          }
-          el = el.parentElement as HTMLElement;
-        }
-        return false;
-      };
-
-      if (isTapZone(e.target) && modalRef.current) {
-        const rect = modalRef.current.getBoundingClientRect();
-        const clickX = endX - rect.left;
-        if (clickX < rect.width * 0.25) {
-          handlePrev(false);
-        } else if (clickX > rect.width * 0.25) {
-          handleNext();
-        }
-      }
+    if (duration < 250 && Math.abs(diffX) < 10 && Math.abs(diffY) < 10) {
+      const modalRect = modalRef.current?.getBoundingClientRect();
+      if (!modalRect) return;
+      const relativeX = e.clientX - modalRect.left;
+      if (relativeX < modalRect.width / 3) handlePrev();
+      else handleNext();
     }
   };
 
-  const baseSymbol = RatesService.getSymbol(baseCurrency);
-  const totalBalanceBase = Math.round(accounts.reduce((s, a) => s + RatesService.convert(a.balance, a.currency, baseCurrency), 0));
-  const expensesThisMonth = Math.round(currentMonthTransactions.filter(t => t.type === "expense").reduce((s, t) => {
-    const account = accounts.find(a => a.id === t.accountId);
-    return s + RatesService.convert(t.sourceAmount, t.sourceCurrency || account?.currency || baseCurrency, baseCurrency);
-  }, 0));
-  const incomeThisMonth = Math.round(currentMonthTransactions.filter(t => t.type === "income").reduce((s, t) => {
-    const account = accounts.find(a => a.id === t.accountId);
-    return s + RatesService.convert(t.targetAmount, t.targetCurrency || account?.currency || baseCurrency, baseCurrency);
-  }, 0));
+  const renderStoryContent = (storyId: string, slideIdx: number) => {
+    const todayTransactions = currentMonthTransactions.filter(t => {
+      const d = safeParseDate(t.date);
+      const now = new Date();
+      return !isNaN(d.getTime()) && d.getDate() === now.getDate() && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    });
+    const spentToday = todayTransactions.reduce((acc, t) => {
+      const account = accounts.find(a => a.id === t.accountId);
+      const currency = t.sourceCurrency || account?.currency || baseCurrency;
+      return acc + RatesService.convert(t.sourceAmount, currency, baseCurrency);
+    }, 0);
+    const hasSpendToday = spentToday > 0;
+    const expensesThisMonth = currentMonthTransactions.filter(t => t.type === 'expense').reduce((acc, t) => {
+      const account = accounts.find(a => a.id === t.accountId);
+      const currency = t.sourceCurrency || account?.currency || baseCurrency;
+      return acc + RatesService.convert(t.sourceAmount, currency, baseCurrency);
+    }, 0);
+    const incomeThisMonth = currentMonthTransactions.filter(t => t.type === 'income').reduce((acc, t) => {
+      const account = accounts.find(a => a.id === t.accountId);
+      const currency = t.targetCurrency || account?.currency || baseCurrency;
+      return acc + RatesService.convert(t.targetAmount, currency, baseCurrency);
+    }, 0);
+    const baseSymbol = baseCurrency === 'RUB' ? '₽' : baseCurrency === 'RSD' ? 'din' : '$';
 
-  const now = new Date();
-  const todayTransactions = currentMonthTransactions.filter(t => {
-    if (t.type !== "expense") return false;
-    const d = safeParseDate(t.date);
-    return d.getDate() === now.getDate() && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-  });
-  const spentToday = Math.round(todayTransactions.reduce((s, t) => {
-    const account = accounts.find(a => a.id === t.accountId);
-    return s + RatesService.convert(t.sourceAmount, t.sourceCurrency || account?.currency || baseCurrency, baseCurrency);
-  }, 0));
-  const hasSpendToday = spentToday > 0;
-
-  const currencyBaseMap: Record<string, number> = {};
-  accounts.forEach(a => { currencyBaseMap[a.currency] = (currencyBaseMap[a.currency] || 0) + RatesService.convert(a.balance, a.currency, baseCurrency); });
-  const currencySplit = Object.keys(currencyBaseMap).map(cur => ({
-    currency: cur,
-    amount: accounts.filter(a => a.currency === cur).reduce((s, a) => s + a.balance, 0),
-    percentage: totalBalanceBase > 0 ? Math.round((currencyBaseMap[cur] / totalBalanceBase) * 100) : 0
-  })).sort((a, b) => b.percentage - a.percentage);
-
-  const categoryExpensesMap: Record<string, number> = {};
-  currentMonthTransactions.filter(t => t.type === "expense").forEach(t => {
-    const account = accounts.find(a => a.id === t.accountId);
-    categoryExpensesMap[t.targetId] = (categoryExpensesMap[t.targetId] || 0) + RatesService.convert(t.sourceAmount, t.sourceCurrency || account?.currency || baseCurrency, baseCurrency);
-  });
-  const topCategories = Object.keys(categoryExpensesMap).map(catId => {
-    const category = categories.find(c => c.id === catId);
-    return {
-      id: catId,
-      name: category?.name || t('Other'),
-      color: category?.color || "#6b7280",
-      icon: category?.icon || "ShoppingBag",
-      amount: categoryExpensesMap[catId],
-      percentage: expensesThisMonth > 0 ? Math.round((categoryExpensesMap[catId] / expensesThisMonth) * 100) : 0
-    };
-  }).sort((a, b) => b.amount - a.amount).slice(0, 3);
-
-  const renderStoryContent = (id: string, slideIdx: number) => {
-    switch (id) {
+    switch (storyId) {
       case "overview":
         if (slideIdx === 0) {
           return (
             <div className="flex flex-col h-full justify-between py-6 px-4 animate-in fade-in duration-300">
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-violet-500/10 border border-[#a78bfa]/20 flex items-center justify-center text-[#a78bfa] shadow-[0_0_20px_rgba(167,139,250,0.15)]">
+                  <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shadow-[0_0_20px_rgba(99,102,241,0.15)]">
                     <BarChart3 size={24} />
                   </div>
                   <div>
-                    <h3 className="font-bold text-lg text-[var(--text-main)]">{t('Your May in Numbers')}</h3>
-                    <p className="text-xs text-[var(--text-muted)]">{t('Total Assets Summary')}</p>
+                    <h3 className="font-bold text-lg text-[var(--text-main)]">{t('Monthly Stats')}</h3>
+                    <p className="text-xs text-[var(--text-muted)]">{t('Quick summary')}</p>
                   </div>
                 </div>
-                <div className="mt-8 p-5 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] space-y-4 backdrop-blur-md shadow-sm">
-                  <div>
-                    <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] tracking-wider">{t('Total Balance')}</span>
-                    <div className="text-3xl font-black text-[var(--text-main)] mt-0.5">{totalBalanceBase.toLocaleString()} <span className="text-sm font-normal text-[var(--text-muted)]">{baseSymbol}</span></div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-4 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] shadow-sm">
+                    <p className="text-[10px] text-[var(--text-muted)] uppercase font-black mb-1">{t('Expenses')}</p>
+                    <p className="text-sm font-bold text-rose-500">{Math.round(expensesThisMonth).toLocaleString()} {baseSymbol}</p>
                   </div>
-                  <div className="grid grid-cols-2 gap-4 pt-2 border-t border-[var(--glass-border)]">
-                    <div>
-                      <span className="text-[9px] uppercase font-bold text-emerald-500/70 tracking-wider">{t('Received')}</span>
-                      <div className="text-lg font-bold text-emerald-500 mt-0.5">+{incomeThisMonth.toLocaleString()} <span className="text-xs font-normal text-emerald-500/60">{baseSymbol}</span></div>
-                    </div>
-                    <div>
-                      <span className="text-[9px] uppercase font-bold text-rose-500/70 tracking-wider">{t('Spent')}</span>
-                      <div className="text-lg font-bold text-rose-500 mt-0.5">-{expensesThisMonth.toLocaleString()} <span className="text-xs font-normal text-rose-500/60">{baseSymbol}</span></div>
-                    </div>
+                  <div className="p-4 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] shadow-sm">
+                    <p className="text-[10px] text-[var(--text-muted)] uppercase font-black mb-1">{t('Income')}</p>
+                    <p className="text-sm font-bold text-[var(--success-color)]">{Math.round(incomeThisMonth).toLocaleString()} {baseSymbol}</p>
                   </div>
                 </div>
-              </div>
-              <div className="text-center p-3 bg-[var(--glass-item-bg)] border border-[var(--glass-border)] rounded-2xl">
-                <span className="text-[10px] text-[var(--text-muted)]">{t('Swipe for top categories')} 👉</span>
               </div>
             </div>
           );
         } else if (slideIdx === 1) {
+          const topCategory = categories.map(c => {
+            const amount = currentMonthTransactions.filter(t => t.targetId === c.id).reduce((acc, t) => {
+              const account = accounts.find(a => a.id === t.accountId);
+              const currency = t.sourceCurrency || account?.currency || baseCurrency;
+              return acc + RatesService.convert(t.sourceAmount, currency, baseCurrency);
+            }, 0);
+            return { ...c, amount };
+          }).sort((a, b) => b.amount - a.amount)[0];
+
           return (
             <div className="flex flex-col h-full justify-between py-6 px-4 animate-in fade-in duration-300">
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-violet-500/10 border border-[#a78bfa]/20 flex items-center justify-center text-[#a78bfa] shadow-[0_0_20px_rgba(167,139,250,0.15)]">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.15)]">
                     <ShoppingBag size={24} />
                   </div>
                   <div>
-                    <h3 className="font-bold text-lg text-[var(--text-main)]">{t('Top Categories')}</h3>
-                    <p className="text-xs text-[var(--text-muted)]">{t('Main Expenses')} ({baseSymbol})</p>
+                    <h3 className="font-bold text-lg text-[var(--text-main)]">{t('Top Category')}</h3>
+                    <p className="text-xs text-[var(--text-muted)]">{t('Main spending')}</p>
                   </div>
                 </div>
-                {topCategories.length > 0 ? (
-                  <div className="mt-4 space-y-3">
-                    {topCategories.map((cat, idx) => {
-                      const Icon = IconMap[cat.icon] || ShoppingBag;
-                      return (
-                        <div key={idx} className="flex justify-between items-center p-4 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] backdrop-blur-md shadow-sm">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${cat.color}15`, border: `1px solid ${cat.color}30` }}>
-                              <Icon size={18} style={{ color: cat.color }} />
-                            </div>
-                            <div>
-                              <span className="font-bold text-xs text-[var(--text-main)] block">{cat.name}</span>
-                              <span className="text-[10px] text-[var(--text-muted)]">{cat.percentage}% {t('of total spent')}</span>
-                            </div>
-                          </div>
-                          <span className="font-bold text-sm text-[var(--text-main)]">-{Math.round(cat.amount).toLocaleString()} {baseSymbol}</span>
-                        </div>
-                      );
-                    })}
+                {topCategory && topCategory.amount > 0 ? (
+                  <div className="p-6 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] text-center shadow-sm">
+                    <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center text-white shadow-lg" style={{ backgroundColor: topCategory.color }}>
+                      {React.createElement(IconMap[topCategory.icon] || ShoppingBag, { size: 28 })}
+                    </div>
+                    <h4 className="font-bold text-base text-[var(--text-main)] mb-1">{topCategory.name}</h4>
+                    <p className="text-lg font-black text-rose-500">{Math.round(topCategory.amount).toLocaleString()} {baseSymbol}</p>
                   </div>
                 ) : (
                   <div className="p-6 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] text-center text-xs text-[var(--text-muted)] shadow-sm">
-                    🤷‍♂️ {t('No expenses yet this month.')}
+                    {t('No data available')}
                   </div>
                 )}
-              </div>
-              <div className="text-center p-3 bg-[var(--glass-item-bg)] border border-[var(--glass-border)] rounded-2xl">
-                <span className="text-[10px] text-[var(--text-muted)]">{t('Swipe for wallet split')} 👉</span>
               </div>
             </div>
           );
         } else {
           return (
             <div className="flex flex-col h-full justify-between py-6 px-4 animate-in fade-in duration-300">
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-violet-500/10 border border-[#a78bfa]/20 flex items-center justify-center text-[#a78bfa] shadow-[0_0_20px_rgba(167,139,250,0.15)]">
-                    <Coins size={24} />
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.15)]">
+                    <DollarSign size={24} />
                   </div>
                   <div>
-                    <h3 className="font-bold text-lg text-[var(--text-main)]">{t('Wallet Distribution')}</h3>
-                    <p className="text-xs text-[var(--text-muted)]">{t('Capital structure')}</p>
+                    <h3 className="font-bold text-lg text-[var(--text-main)]">{t('Balance Overview')}</h3>
+                    <p className="text-xs text-[var(--text-muted)]">{t('Total wealth')}</p>
                   </div>
                 </div>
-                <div className="mt-4 space-y-3.5">
-                  {currencySplit.map((split, idx) => (
-                    <div key={idx} className="p-4 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] space-y-2 backdrop-blur-md shadow-sm">
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="font-bold text-sm text-[var(--text-main)]">{split.currency}</span>
-                        <div className="text-right">
-                          <span className="font-bold text-sm text-[var(--text-main)] block">{Math.round(split.amount).toLocaleString()} {split.currency}</span>
-                          <span className="text-[10px] font-bold text-[var(--text-muted)]">{split.percentage}% {t('of total assets')}</span>
+                <div className="space-y-3">
+                  {accounts.slice(0, 3).map((acc, i) => {
+                    const balanceBase = Math.round(RatesService.convert(acc.balance, acc.currency, baseCurrency));
+                    return (
+                      <div key={i} className="flex items-center justify-between p-3.5 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] shadow-sm">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-xl flex items-center justify-center text-white" style={{ backgroundColor: acc.color }}>
+                            {React.createElement(IconMap[acc.icon] || Landmark, { size: 16 })}
+                          </div>
+                          <span className="text-xs font-bold text-[var(--text-main)]">{acc.name}</span>
                         </div>
+                        <span className="text-xs font-black text-[var(--text-main)]">{balanceBase.toLocaleString()} {baseSymbol}</span>
                       </div>
-                      <div className="w-full h-2 rounded-full bg-[var(--text-muted)]/15 overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-violet-500 to-indigo-500" style={{ width: `${split.percentage}%` }} />
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
+                  {accounts.length > 3 && (
+                    <p className="text-[9px] text-center text-[var(--text-muted)] uppercase font-black pt-1 italic opacity-60">+ {t('and')} {accounts.length - 3} {t('more accounts')}</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -521,7 +398,7 @@ export function StoriesSection({
                       <p className="text-xs text-[var(--text-main)] opacity-90 leading-relaxed">{t('Spent today')}: <span className="font-bold text-rose-500">{spentToday.toLocaleString()} {baseSymbol}</span>.</p>
                       <div className="space-y-2 pt-1">
                         <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">{t('Day Detail')}</p>
-                        {todayTransactions.slice(0, 10).map((tx, i) => {
+                        {todayTransactions.slice(0, 6).map((tx, i) => {
                           const category = categories.find(c => c.id === tx.targetId);
                           const account = accounts.find(a => a.id === tx.accountId);
                           const currency = tx.sourceCurrency || account?.currency || baseCurrency;
@@ -541,8 +418,8 @@ export function StoriesSection({
                             </div>
                           );
                         })}
-                        {todayTransactions.length > 10 && (
-                          <p className="text-[9px] text-center text-[var(--text-muted)] pt-1 italic opacity-60">+ {t('and')} {todayTransactions.length - 10} {t('more today')}</p>
+                        {todayTransactions.length > 6 && (
+                          <p className="text-[9px] text-center text-[var(--text-muted)] pt-1 italic opacity-60">+ {t('and')} {todayTransactions.length - 6} {t('more today')}</p>
                         )}
                       </div>
                     </div>
@@ -698,7 +575,7 @@ export function StoriesSection({
                 </div>
               </div>
             </div>
-            <button onClick={(e) => { e.stopPropagation(); setActiveStoryIndex(null); }} className="pointer-events-auto w-full py-3.5 rounded-2xl bg-[var(--glass-item-bg)] hover:bg-[var(--glass-item-active)] border border-[var(--glass-border)] font-bold text-xs uppercase tracking-wider text-[var(--text-main)] transition-all">{t('Done')}</button>
+            <button onClick={(e) => { e.stopPropagation(); closeStories(); }} className="pointer-events-auto w-full py-3.5 rounded-2xl bg-[var(--glass-item-bg)] hover:bg-[var(--glass-item-active)] border border-[var(--glass-border)] font-bold text-xs uppercase tracking-wider text-[var(--text-main)] transition-all">{t('Done')}</button>
           </div>
         );
 
@@ -707,46 +584,37 @@ export function StoriesSection({
     }
   };
 
-  const activeStory = activeStoryIndex !== null ? stories[activeStoryIndex] : null;
+  if (activeStoryIndex === null) {
+    return (
+      <section className="px-6 py-4">
+        <div className="flex gap-4 overflow-x-auto hide-scrollbar -mx-6 px-6">
+          {stories.map((story, index) => (
+            <div
+              key={story.id}
+              onClick={() => handleStoryClick(index)}
+              className="flex-shrink-0 flex flex-col items-center gap-2 cursor-pointer group"
+            >
+              <div className={`w-16 h-16 rounded-3xl bg-gradient-to-br ${story.gradient} p-[2px] shadow-lg transition-transform group-hover:scale-105 active:scale-95`}>
+                <div className="w-full h-full rounded-[22px] bg-[var(--bg-color)] flex items-center justify-center overflow-hidden">
+                  <story.icon size={28} className="text-[var(--text-main)]" />
+                </div>
+              </div>
+              {!isStoriesCollapsed && (
+                <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest group-hover:text-[var(--text-main)] transition-colors">
+                  {story.title}
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  const activeStory = stories[activeStoryIndex];
 
   return (
     <>
-      <section className={`px-6 shrink-0 relative z-20 border-[var(--glass-border)]/30 transition-all duration-500 ease-in-out overflow-hidden origin-top-right ${isStoriesCollapsed ? "max-h-0 opacity-0 scale-90 translate-x-10 -translate-y-4 border-b-0 py-0" : "max-h-[125px] opacity-100 scale-100 translate-x-0 translate-y-0 pt-1 pb-3 border-b"}`}>
-        <div className="flex gap-3 overflow-x-auto hide-scrollbar py-0.5 animate-in fade-in duration-300">
-          {stories.map((story, index) => {
-            const Icon = story.icon;
-            
-            return (
-              <div
-                key={story.id}
-                onClick={() => handleStoryClick(index)}
-                className="cursor-pointer shrink-0 group flex flex-col items-center"
-              >
-                <div className="w-[52px] h-[68px] rounded-[12px] p-[1.5px] transition-all duration-300 border border-[var(--glass-border)] bg-[var(--glass-item-bg)] hover:scale-105 active:scale-95 shadow-sm">
-                  <div className="w-full h-full rounded-[10px] relative overflow-hidden flex flex-col items-center justify-center">
-                    <Icon
-                      size={18}
-                      className={`transition-all ${useCompactStories ? "transform -translate-y-0.5" : ""}`}
-                      style={{ color: story.color }}
-                    />
-                    {useCompactStories && (
-                      <span className="absolute bottom-1 w-full text-center text-[7px] font-black tracking-[0.1em] uppercase pointer-events-none select-none text-[var(--text-main)]">
-                        {story.title}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                {!useCompactStories && (
-                  <span className="text-[9px] font-semibold uppercase tracking-wider scale-90 transition-colors mt-1.5 text-[var(--text-main)]">
-                    {story.title}
-                  </span>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
       {activeStoryIndex !== null && activeStory && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center backdrop-blur-2xl animate-in fade-in duration-200 select-none bg-[var(--bg-color)]/95" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} onMouseDown={handleMouseDown} onMouseUp={handleMouseUp}>
           <div ref={modalRef} className="w-full max-w-md h-full flex flex-col justify-between relative overflow-hidden bg-[var(--bg-color)] border-x border-[var(--glass-border)] shadow-2xl" onClick={(e) => e.stopPropagation()}>
