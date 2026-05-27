@@ -4,6 +4,7 @@ import { PieChart, Plus, Calendar } from "lucide-react";
 import { Category, Transaction, HistoryModalState, Account } from "../../types";
 import { RatesService } from "../../services/RatesService";
 import { CategoryItem } from "../CategoryItem";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 interface ExpenseSectionProps {
   mode: "expense" | "income";
@@ -34,6 +35,7 @@ export function ExpenseSection({
   overId, isSortingMode, setIsSortingMode, setAnalyticsModal, setCategoryModal, setHistoryModal,
   setCalendarAnalyticsModal, theme
 }: ExpenseSectionProps) {
+  const { t } = useLanguage();
   const totalItems = categories.length + 1;
   const rowsCount = Math.ceil(totalItems / 4);
   const isCompact = rowsCount > 2;
@@ -43,7 +45,7 @@ export function ExpenseSection({
     <section className={`px-0 flex-1 pt-3 pb-8 overflow-y-auto hide-scrollbar z-10 relative transition-all duration-300 ${mode === "income" ? "opacity-30 pointer-events-none grayscale" : "opacity-100"}`}>
       <div className="px-6 py-3">
         <div className="flex justify-between items-center mb-3">
-          <h2 className="text-[9px] font-black tracking-[0.2em] text-[var(--text-muted)] uppercase opacity-80">Расходы</h2>
+          <h2 className="text-[9px] font-black tracking-[0.2em] text-[var(--text-muted)] uppercase opacity-80">{t('Expenses')}</h2>
         </div>
 
         <SortableContext items={categories.map(c => c.id)} strategy={rectSortingStrategy}>
@@ -102,7 +104,7 @@ export function ExpenseSection({
               </div>
               <div className="flex flex-col items-center pointer-events-none select-none w-full pt-1">
                 <span className="font-label text-[9px] uppercase tracking-[0.12em] text-center leading-tight break-words line-clamp-2 w-full px-0.5 font-black text-[var(--on-surface-variant)] group-hover:text-[var(--text-main)] transition-colors">
-                  Создать
+                  {t('Create')}
                 </span>
               </div>
             </div>

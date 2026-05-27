@@ -4,6 +4,7 @@ import { APP_SETTINGS } from "../../constants/settings";
 import { HistoryModalState } from "../../types";
 import { startRegistration } from "@simplewebauthn/browser";
 import { googleSheetsService } from "../../services/googleSheets";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 interface AppHeaderProps {
   isIncomeCollapsed: boolean;
@@ -38,6 +39,7 @@ export function AppHeader({
   theme, setTheme, syncStatus, pillMode, setPillMode, currentSymbol, displaySpent, displayEarned, displayBalance,
   categoriesCount, activeTableId
 }: AppHeaderProps) {
+  const { t } = useLanguage();
   const isCompact = categoriesCount > 8;
   const [isDownloadModalOpen, setIsDownloadModalOpen] = React.useState(false);
   const [isPasskeyModalOpen, setIsPasskeyModalOpen] = React.useState(false);
@@ -183,7 +185,7 @@ export function AppHeader({
 
   const PillButton = (
     <button onClick={() => setPillMode(p => p === "expense" ? "income" : p === "income" ? "balance" : "expense")} className={`mx-auto px-5 py-2 rounded-full bg-[var(--glass-item-bg)] border border-[var(--glass-border)] flex items-center gap-2 hover:bg-[var(--glass-item-active)] active:scale-95 transition-all shadow-sm ${isCompact ? '' : '-mt-0.5'}`}>
-      {pillMode === "expense" ? (<><TrendingDown size={14} className="text-[#cda434]" /><span className="text-xs font-serif font-bold text-[#cda434]">-{currentSymbol} {displaySpent.toLocaleString()} в этом месяце</span></>) : pillMode === "income" ? (<><TrendingUp size={14} className="text-[#10b981]" /><span className="text-xs font-serif font-bold text-[#10b981]">+{currentSymbol} {displayEarned.toLocaleString()} в этом месяце</span></>) : (<><Wallet size={14} className="text-[var(--primary-color)]" /><span className="text-xs font-serif font-bold text-[var(--primary-color)]">Общий баланс: {currentSymbol} {displayBalance.toLocaleString()}</span></>)}
+      {pillMode === "expense" ? (<><TrendingDown size={14} className="text-[#cda434]" /><span className="text-xs font-serif font-bold text-[#cda434]">-{currentSymbol} {displaySpent.toLocaleString()} {t('this month')}</span></>) : pillMode === "income" ? (<><TrendingUp size={14} className="text-[#10b981]" /><span className="text-xs font-serif font-bold text-[#10b981]">+{currentSymbol} {displayEarned.toLocaleString()} {t('this month')}</span></>) : (<><Wallet size={14} className="text-[var(--primary-color)]" /><span className="text-xs font-serif font-bold text-[var(--primary-color)]">{t('Total Balance')}: {currentSymbol} {displayBalance.toLocaleString()}</span></>)}
     </button>
   );
 
@@ -194,7 +196,7 @@ export function AppHeader({
       <div className="fixed inset-x-0 bottom-0 z-[300] flex justify-center pb-8 pointer-events-none">
         <div className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-[#0d0d0d]/90 border border-white/10 backdrop-blur-xl shadow-2xl">
           <div className="w-5 h-5 rounded-full border-2 border-[#6d5dfc] border-t-transparent animate-spin" />
-          <span className="text-sm text-white/80">Подтвердите биометрию…</span>
+          <span className="text-sm text-white/80">{t('Confirm biometrics')}</span>
         </div>
       </div>
     )}
@@ -282,14 +284,14 @@ export function AppHeader({
                   <Moon size={18} />
                 </button>
               </div>
-              <button onClick={() => { setIsSettingsMenuOpen(false); pullSettings(); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><RefreshCcw size={15} className={`text-amber-500 ${syncStatus === 'loading' ? 'animate-spin' : ''}`} /><span className="text-xs font-black text-[var(--text-main)] uppercase tracking-wider">Обновить</span></button>
-              <button onClick={() => { setIsSettingsMenuOpen(false); setHistoryModal({ isOpen: true, entity: { name: "Лента", icon: "list" }, type: "feed" }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><List size={15} className="text-[var(--primary-color)]" /><span className="text-xs font-black text-[var(--text-main)] uppercase tracking-wider">Лента</span></button>
-              <button onClick={() => { setIsSettingsMenuOpen(false); setCalendarAnalyticsModal({ isOpen: true }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><Calendar size={15} className="text-emerald-500" /><span className="text-xs font-black text-[var(--text-main)] uppercase tracking-wider">Календарь</span></button>
-              <button onClick={() => { setIsSettingsMenuOpen(false); setAnalyticsModal({ isOpen: true, type: "expense" }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><PieChart size={15} className="text-amber-500" /><span className="text-xs font-black text-[var(--text-main)] uppercase tracking-wider">Аналитика</span></button>
+              <button onClick={() => { setIsSettingsMenuOpen(false); pullSettings(); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><RefreshCcw size={15} className={`text-amber-500 ${syncStatus === 'loading' ? 'animate-spin' : ''}`} /><span className="text-xs font-black text-[var(--text-main)] uppercase tracking-wider">{t('Update')}</span></button>
+              <button onClick={() => { setIsSettingsMenuOpen(false); setHistoryModal({ isOpen: true, entity: { name: t('Feed'), icon: "list" }, type: "feed" }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><List size={15} className="text-[var(--primary-color)]" /><span className="text-xs font-black text-[var(--text-main)] uppercase tracking-wider">{t('Feed')}</span></button>
+              <button onClick={() => { setIsSettingsMenuOpen(false); setCalendarAnalyticsModal({ isOpen: true }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><Calendar size={15} className="text-emerald-500" /><span className="text-xs font-black text-[var(--text-main)] uppercase tracking-wider">{t('Calendar')}</span></button>
+              <button onClick={() => { setIsSettingsMenuOpen(false); setAnalyticsModal({ isOpen: true, type: "expense" }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><PieChart size={15} className="text-amber-500" /><span className="text-xs font-black text-[var(--text-main)] uppercase tracking-wider">{t('Analytics')}</span></button>
               {activeTableId && (
-                <button onClick={() => { setIsSettingsMenuOpen(false); setIsPasskeyModalOpen(true); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><Key size={15} className="text-indigo-400" /><span className="text-xs font-black text-[var(--text-main)] uppercase tracking-wider">Безопасность</span></button>
+                <button onClick={() => { setIsSettingsMenuOpen(false); setIsPasskeyModalOpen(true); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><Key size={15} className="text-indigo-400" /><span className="text-xs font-black text-[var(--text-main)] uppercase tracking-wider">{t('Security')}</span></button>
               )}
-              <button onClick={() => { setIsSettingsMenuOpen(false); setIsDownloadModalOpen(true); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><Smartphone size={15} className="text-[#6d5dfc]" /><span className="text-xs font-black text-[var(--text-main)] uppercase tracking-wider">Приложение</span></button>
+              <button onClick={() => { setIsSettingsMenuOpen(false); setIsDownloadModalOpen(true); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><Smartphone size={15} className="text-[#6d5dfc]" /><span className="text-xs font-black text-[var(--text-main)] uppercase tracking-wider">{t('Application')}</span></button>
             </div>
           </>
         )}
@@ -300,8 +302,8 @@ export function AppHeader({
           <div onClick={e => e.stopPropagation()} className="w-full max-w-sm glass-panel p-8 relative border-white/10 shadow-2xl rounded-[32px] bg-[var(--bg-color)]">
             <button onClick={() => setIsDownloadModalOpen(false)} className="absolute top-4 right-4 text-white/40 hover:text-white transition-colors outline-none"><X size={24} /></button>
             <div className="text-center mb-6">
-              <h3 className="text-xl font-bold text-[var(--text-main)] mb-2">Установить CoinLover</h3>
-              <p className="text-xs text-[var(--text-main)] opacity-50">Отсканируйте QR-код для скачивания приложения на ваш смартфон</p>
+              <h3 className="text-xl font-bold text-[var(--text-main)] mb-2">{t('Install CoinLover')}</h3>
+              <p className="text-xs text-[var(--text-main)] opacity-50">{t('Scan QR code to download')}</p>
             </div>
             <div className="bg-white p-3 rounded-2xl flex justify-center mb-6">
               <img 
@@ -317,7 +319,7 @@ export function AppHeader({
                 className="w-full py-4 bg-[#6d5dfc] text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-[#5b4ce3] transition-all text-xs uppercase tracking-widest"
               >
                 <Smartphone size={16} />
-                Скачать APK (Android)
+                {t('Download APK')}
               </a>
             </div>
           </div>
@@ -342,10 +344,10 @@ export function AppHeader({
             <div className="text-center mb-2">
               <h3 className="text-xl font-bold text-[var(--text-main)] mb-2 flex items-center justify-center gap-2">
                 <Fingerprint size={24} className="text-[#6d5dfc]" />
-                Биометрия и Вход
+                {t('Biometrics and Login')}
               </h3>
               <p className="text-xs text-[var(--text-main)] opacity-60 leading-relaxed mt-3">
-                Вы можете привязать это устройство к данным. Это позволит вам мгновенно входить в приложение с помощью Face ID или Touch ID на любом из ваших устройств.
+                {t('Biometrics Desc')}
               </p>
             </div>
 
@@ -353,7 +355,7 @@ export function AppHeader({
               {passkeyLoading ? (
                 <div className="flex flex-col items-center gap-2 py-4">
                   <RefreshCcw size={32} className="text-[#6d5dfc] animate-spin" />
-                  <span className="text-xs text-[var(--text-main)] opacity-55">Загрузка данных...</span>
+                  <span className="text-xs text-[var(--text-main)] opacity-55">{t('Loading Data')}</span>
                 </div>
               ) : passkeyStatus === "enabled" ? (
                 <div className="flex flex-col items-center gap-3">
@@ -361,8 +363,8 @@ export function AppHeader({
                     <ShieldCheck size={28} />
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-[var(--text-main)]">Биометрия активна</h4>
-                    <p className="text-[10px] text-emerald-500 font-medium uppercase mt-0.5 tracking-wider">Устройство связано с данными</p>
+                    <h4 className="text-sm font-bold text-[var(--text-main)]">{t('Biometrics Active')}</h4>
+                    <p className="text-[10px] text-emerald-500 font-medium uppercase mt-0.5 tracking-wider">{t('Device Linked')}</p>
                   </div>
                 </div>
               ) : (
@@ -371,8 +373,8 @@ export function AppHeader({
                     <ShieldAlert size={28} />
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-[var(--text-main)]">Биометрия не настроена</h4>
-                    <p className="text-[10px] text-amber-500 font-medium uppercase mt-0.5 tracking-wider">Вход только по ссылке</p>
+                    <h4 className="text-sm font-bold text-[var(--text-main)]">{t('Biometrics Not Configured')}</h4>
+                    <p className="text-[10px] text-amber-500 font-medium uppercase mt-0.5 tracking-wider">{t('Login via link only')}</p>
                   </div>
                 </div>
               )}
@@ -391,12 +393,12 @@ export function AppHeader({
                 {justRegistered ? (
                   <>
                     <ShieldCheck size={16} />
-                    Готово
+                    {t('Done')}
                   </>
                 ) : (
                   <>
                     <Fingerprint size={16} />
-                    {passkeyStatus === "enabled" ? "Перепривязать устройство" : "Настроить Face ID / Touch ID"}
+                    {passkeyStatus === "enabled" ? t('Relink Device') : t('Setup Biometrics')}
                   </>
                 )}
               </button>

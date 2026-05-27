@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { X, CheckCircle2, RefreshCcw, Database, User } from "lucide-react";
 import { googleSheetsService } from "../services/googleSheets";
+import { useLanguage } from "../contexts/LanguageContext";
 
 interface UsersModalProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ interface UsersModalProps {
 export const UsersModal: React.FC<UsersModalProps> = ({
   isOpen, onClose, users, activeTableId, onSwitchTable
 }) => {
+  const { t } = useLanguage();
   const [isInitializing, setIsInitializing] = useState<string | null>(null);
 
   const handleInit = async (id: string, e: React.MouseEvent) => {
@@ -21,10 +23,10 @@ export const UsersModal: React.FC<UsersModalProps> = ({
     setIsInitializing(id);
     try {
       const ok = await googleSheetsService.initTable(id);
-      if (ok) alert("Структура таблицы создана!");
-      else alert("Ошибка. Проверьте доступ для сервисного аккаунта.");
+      if (ok) alert(t("Structure created"));
+      else alert(t("Init Error"));
     } catch (e) {
-      alert("Ошибка соединения.");
+      alert(t("Connection Error"));
     } finally {
       setIsInitializing(null);
     }
@@ -33,7 +35,7 @@ export const UsersModal: React.FC<UsersModalProps> = ({
   if (!isOpen) return null;
 
   // Combine master with other users
-  const allUsers = [{ name: "Мой аккаунт", id: "" }, ...users];
+  const allUsers = [{ name: t("My Account"), id: "" }, ...users];
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[300] animate-in fade-in duration-300 flex items-center justify-center p-4" onClick={onClose}>
@@ -43,7 +45,7 @@ export const UsersModal: React.FC<UsersModalProps> = ({
             <div className="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-500 flex items-center justify-center">
               <Database size={20} />
             </div>
-            <h2 className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Выбор аккаунта</h2>
+            <h2 className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">{t("Select Account")}</h2>
           </div>
           <button onClick={onClose} className="w-10 h-10 rounded-xl bg-[var(--glass-item-bg)] flex items-center justify-center text-[var(--text-main)]"><X size={20} /></button>
         </div>
@@ -68,7 +70,7 @@ export const UsersModal: React.FC<UsersModalProps> = ({
                 {user.id && (
                   <button 
                     onClick={(e) => handleInit(user.id, e)}
-                    className="p-2 text-slate-500 hover:text-amber-500 transition-colors" title="Инициализировать"
+                    className="p-2 text-slate-500 hover:text-amber-500 transition-colors" title={t("Initialize")}
                   >
                     <RefreshCcw size={14} className={isInitializing === user.id ? "animate-spin" : ""} />
                   </button>
@@ -81,7 +83,7 @@ export const UsersModal: React.FC<UsersModalProps> = ({
         
         <div className="p-6 bg-amber-500/5 border-t border-[var(--glass-border)]">
           <p className="text-[9px] text-amber-500/80 leading-relaxed">
-            Чтобы добавить пользователя, впишите его в раздел <b>=== USERS ===</b> на листе Configs вашей мастер-таблицы.
+            {t("Add User Hint")}
           </p>
         </div>
       </div>

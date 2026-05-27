@@ -5,6 +5,7 @@ import { APP_SETTINGS } from "../../constants/settings";
 import { IncomeSource, Transaction, HistoryModalState, Account } from "../../types";
 import { RatesService } from "../../services/RatesService";
 import { DraggableIncomeItem } from "../DraggableIncomeItem";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 interface IncomeSectionProps {
   isIncomeCollapsed: boolean;
@@ -28,12 +29,13 @@ export function IncomeSection({
   baseCurrency, localCurrencyCode, activeDragId, isSortingMode, setIsSortingMode,
   setAnalyticsModal, setIncomeModal, setHistoryModal
 }: IncomeSectionProps) {
+  const { t } = useLanguage();
   return (
     <section className={`px-0 overflow-hidden transition-all duration-500 ease-in-out shrink-0 origin-top-left ${isIncomeCollapsed ? "max-h-0 opacity-0 scale-90 -translate-x-10 -translate-y-4" : "max-h-[160px] opacity-100 scale-100 translate-x-0 translate-y-0 pb-1"}`}>
       <div className="px-6 pt-2 mb-1 flex justify-between items-center">
         <div onClick={toggleIncome} className="flex items-center gap-2 cursor-pointer group">
           <ChevronRight size={APP_SETTINGS.UI.ICON_SIZE_SMALL} className="text-[var(--text-muted)] opacity-60 rotate-90" />
-          <h2 className="text-[9px] font-black tracking-[0.2em] text-[var(--text-muted)] uppercase opacity-80 group-hover:text-[var(--text-main)]">Доходы</h2>
+          <h2 className="text-[9px] font-black tracking-[0.2em] text-[var(--text-muted)] uppercase opacity-80 group-hover:text-[var(--text-main)]">{t('Incomes')}</h2>
         </div>
         <div className="flex items-center gap-3">
         </div>
@@ -65,7 +67,7 @@ export function IncomeSection({
               <Plus size={22} className="text-[var(--text-muted)] group-hover:text-[var(--text-main)] transition-colors" />
             </div>
             <div className="flex flex-col items-center text-center leading-tight pointer-events-none select-none">
-              <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider group-hover:text-[var(--text-main)] transition-colors">Создать</span>
+              <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider group-hover:text-[var(--text-main)] transition-colors">{t('Create')}</span>
             </div>
           </div>
         </div>

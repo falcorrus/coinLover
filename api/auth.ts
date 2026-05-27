@@ -191,7 +191,7 @@ export async function authHandler(req: Request, res: Response) {
         expectedChallenge,
         expectedOrigin: [`https://${rpId}`, `http://${rpId}`, `https://coinlover.ru`, `https://coin.reloto.ru`],
         expectedRPID: rpId,
-        requireUserVerification: false
+        requireUserVerification: true
       });
 
       if (!verification.verified || !verification.registrationInfo) {
@@ -259,7 +259,7 @@ export async function authHandler(req: Request, res: Response) {
       console.log(`[Auth] login-options rpId=${rpId}`);
       const options = await generateAuthenticationOptions({
         rpID: rpId,
-        userVerification: 'preferred'
+        userVerification: 'required'
       });
 
       const challengeToken = generateChallengeToken(options.challenge);
@@ -347,7 +347,7 @@ export async function authHandler(req: Request, res: Response) {
         expectedChallenge: clientChallenge,
         expectedOrigin: [`https://${rpId}`, `http://${rpId}`, `https://coinlover.ru`, `https://coin.reloto.ru`],
         expectedRPID: rpId,
-        requireUserVerification: false,
+        requireUserVerification: true,
         credential: {
           id: passkeyCredId,
           publicKey: base64urlToBuffer(passkeyPubKey),
