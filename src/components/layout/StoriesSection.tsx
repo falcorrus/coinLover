@@ -189,8 +189,9 @@ export function StoriesSection({
   }, [activeStoryIndex, activeSlideIndex, isPaused]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    // Если нажатие на интерактивный элемент - игнорируем логику жестов истории
-    if ((e.target as HTMLElement).closest('.pointer-events-auto')) {
+    // Если нажатие на кнопку или ссылку - игнорируем логику жестов истории, чтобы кнопка сработала сама
+    const target = e.target as HTMLElement;
+    if (target.closest('button') || target.closest('a') || target.closest('[role="button"]')) {
       return;
     }
     touchStartX.current = e.touches[0].clientX;
@@ -200,9 +201,9 @@ export function StoriesSection({
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    // Если событие началось на кнопке (мы вышли из handleTouchStart), 
-    // или закончилось на кнопке - игнорируем
-    if ((e.target as HTMLElement).closest('.pointer-events-auto') || touchStartTime.current === 0) {
+    // Если событие началось на кнопке или закончилось на ней - игнорируем
+    const target = e.target as HTMLElement;
+    if (target.closest('button') || target.closest('a') || target.closest('[role="button"]') || touchStartTime.current === 0) {
       setIsPaused(false);
       return;
     }
@@ -211,7 +212,7 @@ export function StoriesSection({
     const diffY = e.changedTouches[0].clientY - touchStartY.current;
     const duration = Date.now() - touchStartTime.current;
     setIsPaused(false);
-    touchStartTime.current = 0; // Сбрасываем
+    touchStartTime.current = 0;
 
     if (Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY)) {
       if (diffX > 0) handlePrev(true);
@@ -224,14 +225,15 @@ export function StoriesSection({
     if (duration < 250 && Math.abs(diffX) < 10 && Math.abs(diffY) < 10) {
       const clickX = e.changedTouches[0].clientX;
       const width = window.innerWidth;
-      if (clickX < width / 3) handlePrev();
+      // Instagram style: 25% edges for navigation
+      if (clickX < width * 0.25) handlePrev();
       else handleNext();
     }
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    // Игнорируем нажатия на интерактивные кнопки
-    if ((e.target as HTMLElement).closest('.pointer-events-auto')) {
+    const target = e.target as HTMLElement;
+    if (target.closest('button') || target.closest('a') || target.closest('[role="button"]')) {
       return;
     }
     mouseStartX.current = e.clientX;
@@ -247,8 +249,8 @@ export function StoriesSection({
       return;
     }
 
-    // Если нажатие на кнопку - игнорируем
-    if ((e.target as HTMLElement).closest('.pointer-events-auto') || mouseStartTime.current === 0) {
+    const target = e.target as HTMLElement;
+    if (target.closest('button') || target.closest('a') || target.closest('[role="button"]') || mouseStartTime.current === 0) {
       setIsPaused(false);
       return;
     }
@@ -257,7 +259,7 @@ export function StoriesSection({
     const diffY = e.clientY - mouseStartY.current;
     const duration = Date.now() - mouseStartTime.current;
     setIsPaused(false);
-    mouseStartTime.current = 0; // Сбрасываем
+    mouseStartTime.current = 0;
 
     if (Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY)) {
       if (diffX > 0) handlePrev(true);
@@ -271,7 +273,8 @@ export function StoriesSection({
       const modalRect = modalRef.current?.getBoundingClientRect();
       if (!modalRect) return;
       const relativeX = e.clientX - modalRect.left;
-      if (relativeX < modalRect.width / 3) handlePrev();
+      const width = modalRect.width;
+      if (relativeX < width * 0.25) handlePrev();
       else handleNext();
     }
   };
