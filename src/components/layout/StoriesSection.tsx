@@ -585,6 +585,8 @@ export function StoriesSection({
   };
 
   if (activeStoryIndex === null) {
+    const isBlackTheme = theme === "black" || theme === "dark";
+    
     return (
       <section className="px-6 py-4">
         <div className="flex gap-4 overflow-x-auto hide-scrollbar -mx-6 px-6">
@@ -594,9 +596,13 @@ export function StoriesSection({
               onClick={() => handleStoryClick(index)}
               className="flex-shrink-0 flex flex-col items-center gap-2 cursor-pointer group"
             >
-              <div className={`w-16 h-16 rounded-3xl bg-gradient-to-br ${story.gradient} p-[2px] shadow-lg transition-transform group-hover:scale-105 active:scale-95`}>
+              <div className={`w-16 h-16 rounded-3xl p-[2px] transition-all duration-300 group-hover:scale-105 active:scale-95 ${
+                isBlackTheme 
+                  ? `bg-gradient-to-br ${story.gradient} shadow-lg shadow-${story.color.replace('#', '')}/10` 
+                  : 'bg-[var(--glass-border)]'
+              }`}>
                 <div className="w-full h-full rounded-[22px] bg-[var(--bg-color)] flex items-center justify-center overflow-hidden">
-                  <story.icon size={28} className="text-[var(--text-main)]" />
+                  <story.icon size={28} className={isBlackTheme ? "text-[var(--text-main)]" : "text-[var(--primary-color)]"} />
                 </div>
               </div>
               {!isStoriesCollapsed && (
