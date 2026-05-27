@@ -173,11 +173,11 @@ const LanguageContext = React.createContext<LanguageContextType | undefined>(und
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguage] = React.useState<Language>(
-    (localStorage.getItem('cl_language') as Language) || 'ru'
+    (localStorage.getItem('cl_lang') as Language) || 'ru'
   );
 
   React.useEffect(() => {
-    localStorage.setItem('cl_language', language);
+    localStorage.setItem('cl_lang', language);
   }, [language]);
 
   const t = (key: string) => translations[language][key] || key;
