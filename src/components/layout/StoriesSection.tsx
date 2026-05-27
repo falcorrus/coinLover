@@ -76,26 +76,26 @@ export function StoriesSection({
   // Tips Content (4 slides)
   const tips = [
     {
-      title: t('Long Press'),
-      text: t('Quick actions on accounts'),
+      title: t('Drag & Drop'),
+      text: t('Move icon between wallets or to expense'),
     },
     {
-      title: t('Drag & Drop'),
+      title: t('Reorder'),
       text: t('Reorder your categories'),
     },
     {
-      title: t('Safe Mode'),
-      text: t('Hide balances in public'),
+      title: t('Long Press'),
+      text: t('Quick edit wallet or category'),
     },
     {
-      title: t('Dark Theme'),
-      text: t('Easy on the eyes'),
+      title: t('Pult'),
+      text: t('All frequent actions and settings'),
     },
   ];
 
   const tipsMedia = [
-    { src: "/quick-input.mp4", width: "155px", scale: "scale(1.06)" },
     { src: "/tip-sort.mp4", width: "157px", scale: "scale(1.06)" },
+    { src: "/quick-input.mp4", width: "155px", scale: "scale(1.06)" },
     { src: "/tip-edit.mp4", width: "155px", scale: "scale(1.06)" },
     { src: "/tip-analytics.mp4", width: "147px", scale: "scale(1.06)" },
   ];
@@ -363,20 +363,23 @@ export function StoriesSection({
                 
                 <div className="space-y-3">
                   {topCategories.length > 0 ? (
-                    topCategories.map((cat, i) => (
-                      <div key={i} className="flex items-center justify-between p-3.5 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] shadow-sm animate-in slide-in-from-bottom-2 duration-300" style={{ animationDelay: `${i * 100}ms` }}>
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-sm" style={{ backgroundColor: cat.color }}>
-                            {React.createElement(IconMap[cat.icon] || ShoppingBag, { size: 18 })}
+                    topCategories.map((cat, i) => {
+                      const percent = expensesThisMonth > 0 ? Math.round((cat.amount / expensesThisMonth) * 100) : 0;
+                      return (
+                        <div key={i} className="flex items-center justify-between p-3.5 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] shadow-sm animate-in slide-in-from-bottom-2 duration-300" style={{ animationDelay: `${i * 100}ms` }}>
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-sm" style={{ backgroundColor: cat.color }}>
+                              {React.createElement(IconMap[cat.icon] || ShoppingBag, { size: 18 })}
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-xs font-bold text-[var(--text-main)] leading-none mb-1">{cat.name}</span>
+                              <span className="text-[10px] text-[var(--text-muted)] font-black uppercase tracking-tighter">{percent}% {t('of total spent')}</span>
+                            </div>
                           </div>
-                          <div className="flex flex-col">
-                            <span className="text-xs font-bold text-[var(--text-main)] leading-none mb-1">{cat.name}</span>
-                            <span className="text-[10px] text-[var(--text-muted)] font-black uppercase tracking-tighter">{t('of total spent')}</span>
-                          </div>
+                          <p className="text-sm font-black text-rose-500">{Math.round(cat.amount).toLocaleString()} {baseSymbol}</p>
                         </div>
-                        <p className="text-sm font-black text-rose-500">{Math.round(cat.amount).toLocaleString()} {baseSymbol}</p>
-                      </div>
-                    ))
+                      );
+                    })
                   ) : (
                     <div className="p-6 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] text-center text-xs text-[var(--text-muted)] shadow-sm">
                       {t('No data available')}
