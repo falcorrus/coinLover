@@ -560,7 +560,7 @@ export function StoriesSection({
                 </button>
                 
                 <div className="grid grid-cols-3 gap-2 pt-2">
-                  <button onClick={(e) => { e.stopPropagation(); setLanguage(language === 'en' ? 'ru' : 'en'); }} className="pointer-events-auto p-3 rounded-2xl bg-[var(--glass-item-bg)] border border-[var(--glass-border)] flex flex-col items-center justify-center gap-1 hover:bg-[var(--glass-item-active)] transition-all">
+                  <button onClick={(e) => { e.stopPropagation(); const nextLang = language === 'en' ? 'ru' : 'en'; setLanguage(nextLang); }} className="pointer-events-auto p-3 rounded-2xl bg-[var(--glass-item-bg)] border border-[var(--glass-border)] flex flex-col items-center justify-center gap-1 hover:bg-[var(--glass-item-active)] transition-all">
                     <Languages size={18} className="text-indigo-500" />
                     <span className="text-[10px] font-bold text-[var(--text-main)] uppercase">{language}</span>
                   </button>
