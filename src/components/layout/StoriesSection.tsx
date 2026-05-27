@@ -67,6 +67,8 @@ export function StoriesSection({
   const mouseStartY = React.useRef(0);
   const mouseStartTime = React.useRef(0);
 
+  const lastTouchTimestamp = React.useRef(0);
+
   // Video player Ref for Tips Slides
   const videoRef = React.useRef<HTMLVideoElement | null>(null);
   const modalRef = React.useRef<HTMLDivElement>(null);
@@ -189,6 +191,7 @@ export function StoriesSection({
   }, [activeStoryIndex, activeSlideIndex, isPaused]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
+    lastTouchTimestamp.current = Date.now();
     // Если нажатие на кнопку или ссылку - игнорируем логику жестов истории, чтобы кнопка сработала сама
     const target = e.target as HTMLElement;
     if (target.closest('button') || target.closest('a') || target.closest('[role="button"]')) {
@@ -201,6 +204,7 @@ export function StoriesSection({
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
+    lastTouchTimestamp.current = Date.now();
     // Если событие началось на кнопке или закончилось на ней - игнорируем
     const target = e.target as HTMLElement;
     if (target.closest('button') || target.closest('a') || target.closest('[role="button"]') || touchStartTime.current === 0) {
@@ -232,6 +236,9 @@ export function StoriesSection({
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    // Игнорируем мышиные события, если недавно был тач (фильтр синтетики на мобилках)
+    if (Date.now() - lastTouchTimestamp.current < 800) return;
+
     const target = e.target as HTMLElement;
     if (target.closest('button') || target.closest('a') || target.closest('[role="button"]')) {
       return;
@@ -244,7 +251,7 @@ export function StoriesSection({
 
   const handleMouseUp = (e: React.MouseEvent) => {
     // Filter synthesized mouse events on mobile
-    if (Date.now() - touchStartTime.current < 800 && touchStartTime.current !== 0) {
+    if (Date.now() - lastTouchTimestamp.current < 800) {
       setIsPaused(false);
       return;
     }
