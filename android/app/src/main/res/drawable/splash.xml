@@ -8,7 +8,7 @@
     <!-- Clean, centered app icon representing 1:1 scale (perfect compact PWA styling) -->
     <item>
         <bitmap
-            android:src="@mipmap/ic_launcher"
+            android:src="@mipmap/ic_launcher_foreground"
             android:gravity="center" />
     </item>
 </layer-list>
