@@ -3,7 +3,7 @@ import { Sun, Moon, Plus, Menu, RefreshCcw, List, Calendar, PieChart, Sparkles, 
 import { APP_SETTINGS } from "../../constants/settings";
 import { HistoryModalState } from "../../types";
 import { startRegistration } from "@simplewebauthn/browser";
-import { googleSheetsService } from "../../services/googleSheets";
+import { googleSheetsService, getAbsoluteApiUrl } from "../../services/googleSheets";
 import { useLanguage } from "../../contexts/LanguageContext";
 
 interface AppHeaderProps {
@@ -84,7 +84,7 @@ export function AppHeader({
         });
 
       // 2. Prefetch registration options to preserve User Gesture on mobile browsers
-      fetch(`/api/auth/register-options?ssId=${encodeURIComponent(activeTableId)}`)
+      fetch(getAbsoluteApiUrl(`/api/auth/register-options?ssId=${encodeURIComponent(activeTableId)}`))
         .then(res => {
           if (res.ok) return res.json();
           throw new Error("Failed to prefetch registration options");
@@ -96,7 +96,7 @@ export function AppHeader({
         })
         .catch(err => console.warn("Prefetch registration options failed:", err));
     }
-  }, [isPasskeyModalOpen, activeTableId]);
+  }, [isPasskeyModalOpen, activeTableId]);ObjRef:1
 
   const handleRegisterPasskey = async () => {
     if (!activeTableId) return;
@@ -113,7 +113,7 @@ export function AppHeader({
       // Fallback if prefetch hasn't finished loading yet (unlikely but safe)
       if (!data) {
         console.log("[Auth UI] No prefetched options found, fetching dynamically...");
-        const optionsRes = await fetch(`/api/auth/register-options?ssId=${encodeURIComponent(activeTableId)}`);
+        const optionsRes = await fetch(getAbsoluteApiUrl(`/api/auth/register-options?ssId=${encodeURIComponent(activeTableId)}`));
         if (!optionsRes.ok) {
           throw new Error(await optionsRes.text() || "Failed to fetch registration options");
         }
@@ -149,7 +149,7 @@ export function AppHeader({
       }
 
       console.log("[Auth UI] Verifying credentials on backend...");
-      const verifyRes = await fetch("/api/auth/register-verify", {
+      const verifyRes = await fetch(getAbsoluteApiUrl("/api/auth/register-verify"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
