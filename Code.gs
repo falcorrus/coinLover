@@ -18,7 +18,47 @@ function getSS(e, data) {
 
 function parseNum(val, fallback = 0) {
   if (val === undefined || val === null || val === "") return fallback;
-  const n = parseFloat(String(val).replace(',', '.'));
+  
+  let s = String(val).trim();
+  
+  // Normalize typographic minuses and dashes (en-dash, em-dash, typographic minus) to standard hyphen-minus
+  s = s.replace(/[\u2212\u2013\u2014]/g, '-');
+  
+  // Handle parenthesized accounting format: (123) -> -123
+  if (s.startsWith('(') && s.endsWith(')')) {
+    s = '-' + s.slice(1, -1);
+  }
+  
+  // Remove spaces
+  s = s.replace(/\s/g, '');
+  
+  // If there are both dots and commas
+  if (s.includes('.') && s.includes(',')) {
+    if (s.lastIndexOf('.') > s.lastIndexOf(',')) {
+      s = s.replace(/,/g, '');
+    } else {
+      s = s.replace(/\./g, '').replace(',', '.');
+    }
+  } else {
+    const dots = (s.match(/\./g) || []).length;
+    const commas = (s.match(/,/g) || []).length;
+    
+    if (dots > 1) {
+      s = s.replace(/\./g, '');
+    } else if (commas > 1) {
+      s = s.replace(/,/g, '');
+    } else if (commas === 1) {
+      const parts = s.split(',');
+      if (parts[1].length === 3) {
+        s = s.replace(',', '');
+      } else {
+        s = s.replace(',', '.');
+      }
+    }
+  }
+  
+  const cleaned = s.replace(/[^\d.-]/g, '');
+  const n = parseFloat(cleaned);
   return isNaN(n) ? fallback : n;
 }
 
