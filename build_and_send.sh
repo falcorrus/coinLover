@@ -23,4 +23,5 @@ mkdir -p apk
 cp android/app/build/outputs/apk/debug/app-debug.apk apk/coinlover-debug.apk
 
 echo "Sending to Telegram..."
-curl -F chat_id="159194550" -F document=@"apk/coinlover-debug.apk" -F caption="CoinLover APK Fix: Build v1.1" https://api.telegram.org/bot6027699883:AAFKOu9gPsc7rd-SDQeFCHTt0edI73dXWSQ/sendDocument
+DATE_STR=$(date +'%m-%d')
+curl -F chat_id="159194550" -F document=@"apk/coinlover-debug.apk" -F caption="CoinLover APK Fix: Build ${DATE_STR}" https://api.telegram.org/bot6027699883:AAFKOu9gPsc7rd-SDQeFCHTt0edI73dXWSQ/sendDocument
