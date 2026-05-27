@@ -108,6 +108,20 @@ async function getSsIdByContact(contact: string): Promise<string | null> {
 
 // Handler for all auth operations
 export async function authHandler(req: Request, res: Response) {
+  // CORS Headers for Native App (Capacitor)
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  // Prevent caching
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+
   const { path: routePath, method } = req;
   const action = routePath.split('/').pop();
   

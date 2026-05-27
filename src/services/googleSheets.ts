@@ -17,44 +17,8 @@ const getGoogleScriptUrl = () => {
   return getAbsoluteApiUrl("/api/sheets");
 };
 
-// Universal fetch that uses native HTTP on mobile to bypass CORS
+// Universal fetch that uses standard fetch on all platforms since we control the proxy CORS
 const universalFetch = async (url: string, options?: any) => {
-  const isNative = Capacitor.isNativePlatform();
-  
-  if (isNative) {
-    try {
-      const response = await CapacitorHttp.request({
-        url,
-        method: options?.method || 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          ...options?.headers
-        },
-        data: options?.body ? (typeof options.body === 'string' ? JSON.parse(options.body) : options.body) : undefined,
-        connectTimeout: 10000,
-        readTimeout: 10000
-      });
-      
-      return {
-        ok: response.status >= 200 && response.status < 300,
-        status: response.status,
-        json: async () => {
-          if (typeof response.data === 'string') {
-            try {
-              return JSON.parse(response.data);
-            } catch (err) {
-              return response.data;
-            }
-          }
-          return response.data;
-        }
-      };
-    } catch (e: any) {
-      console.error("Native fetch failed:", e);
-      throw e;
-    }
-  }
-  
   return fetch(url, options);
 };
 

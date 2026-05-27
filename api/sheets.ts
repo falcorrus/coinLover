@@ -393,6 +393,15 @@ async function findUserByContactInMaster(sheets, contact: string) {
 }
 
 export default async function handler(req, res) {
+  // CORS Headers for Native App (Capacitor)
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   // Prevent any browser/CDN caching for API requests
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   res.setHeader('Pragma', 'no-cache');
