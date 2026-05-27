@@ -345,8 +345,15 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
             return { ...p, [key]: ev }; 
           }
           
+          // Prevent mathematical operators if string is currently empty/zero, except for minus (which becomes unary minus)
+          if (["+", "*", "/", "%"].includes(inputVal) && currStr === "0") {
+            return p;
+          }
+
           let nv;
-          if (["+", "-", "*", "/", "%"].includes(inputVal) && currStr !== "0") {
+          if (inputVal === "-" && currStr === "0") {
+            nv = "-";
+          } else if (["+", "-", "*", "/", "%"].includes(inputVal) && currStr !== "0") {
             nv = currStr + "\n" + inputVal;
           } else {
             nv = currStr === "0" && !isNaN(Number(inputVal)) ? inputVal : currStr + inputVal;
