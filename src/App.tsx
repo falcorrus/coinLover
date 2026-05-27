@@ -224,11 +224,12 @@ const isNativeApp = React.useMemo(() => {
       
       return prev;
     });
-  }, [
+    }, [
     accountModal.isOpen, incomeModal.isOpen, categoryModal.isOpen, historyModal.isOpen,
     analyticsModal.isOpen, calendarAnalyticsModal.isOpen, confirmDelete.isOpen,
-    isTagModalOpen, isUsersModalOpen, isThemeModalOpen, numpad.isOpen, isSettingsMenuOpen
-  ]);
+    isTagModalOpen, isUsersModalOpen, isThemeModalOpen, numpad.isOpen, isSettingsMenuOpen,
+    activeStoryIndex
+    ]);
 
   // 2. ВТОРИЧНЫЙ ЭФФЕКТ: Синхронизация modalStack с Историей Браузера
   React.useEffect(() => {
