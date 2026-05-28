@@ -92,6 +92,8 @@ const translations = {
     downloadGooglePlay: "Google Play",
     downloadBtn: "Скачать",
     downloadModalTitle: "Установить CoinLover",
+    orLabel: "или",
+    faceIdBtn: "Войти через Face ID / Passkey",
   },
   en: {
     demo: "Demo",
@@ -171,6 +173,8 @@ const translations = {
     downloadGooglePlay: "Google Play",
     downloadBtn: "Download",
     downloadModalTitle: "Install CoinLover",
+    orLabel: "or",
+    faceIdBtn: "Log In with Face ID / Passkey",
   }
 };
 
@@ -1081,7 +1085,7 @@ export const LandingPage: React.FC = () => {
                         <>
                           <div className="flex items-center justify-center gap-3 my-1">
                             <div className="h-[1px] bg-white/10 flex-1" />
-                            <span className="text-[9px] text-white/30 font-black uppercase tracking-wider">или</span>
+                            <span className="text-[9px] text-white/30 font-black uppercase tracking-wider">{t.orLabel}</span>
                             <div className="h-[1px] bg-white/10 flex-1" />
                           </div>
 
@@ -1092,7 +1096,7 @@ export const LandingPage: React.FC = () => {
                             className="w-full py-4 bg-white/5 border border-white/10 hover:bg-white/10 text-white font-bold rounded-xl flex items-center justify-center gap-2.5 transition-all text-xs uppercase tracking-widest outline-none active:scale-98"
                           >
                             <Fingerprint size={16} className="text-[#6d5dfc]" />
-                            Войти через Face ID / Passkey
+                            {t.faceIdBtn}
                           </button>
                         </>
                       )}
