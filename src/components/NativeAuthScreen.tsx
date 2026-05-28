@@ -9,7 +9,7 @@ import {
   Fingerprint
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { googleSheetsService, getAbsoluteApiUrl } from "../services/googleSheets";
+import { googleSheetsService, getAbsoluteApiUrl, universalFetch } from "../services/googleSheets";
 import { APP_SETTINGS } from "../constants/settings";
 import { startAuthentication } from "@simplewebauthn/browser";
 
@@ -68,7 +68,7 @@ export const NativeAuthScreen: React.FC = () => {
       setSafePt("24px");
     }
 
-    fetch(getAbsoluteApiUrl("/api/auth/login-options"))
+    universalFetch(getAbsoluteApiUrl("/api/auth/login-options"))
       .then(res => {
         if (res.ok) return res.json();
         throw new Error("Failed to prefetch login options");
@@ -109,8 +109,7 @@ export const NativeAuthScreen: React.FC = () => {
         if (navigator.vibrate) navigator.vibrate(80);
 
         localStorage.setItem("cl_active_table_id", parsedSsId);
-        // Пользователь уже имеет таблицу — онбординг не нужен
-        localStorage.setItem("cl_onboarding_completed", "true");
+        localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE, "false");
         document.cookie = `cl_active_table_id=${parsedSsId}; path=/; max-age=${60*60*24*365}; SameSite=Lax`;
 
         setIsSuccess(true);
@@ -142,7 +141,7 @@ export const NativeAuthScreen: React.FC = () => {
 
       if (!data) {
         console.log("No prefetched login options found, fetching dynamically...");
-        const optionsRes = await fetch(getAbsoluteApiUrl("/api/auth/login-options"));
+        const optionsRes = await universalFetch(getAbsoluteApiUrl("/api/auth/login-options"));
         if (!optionsRes.ok) {
           throw new Error(await optionsRes.text() || "Failed to fetch login options");
         }
@@ -183,7 +182,7 @@ export const NativeAuthScreen: React.FC = () => {
         throw new Error("Failed to decode ssId from credential");
       }
 
-      const verifyRes = await fetch(getAbsoluteApiUrl("/api/auth/login-verify"), {
+      const verifyRes = await universalFetch(getAbsoluteApiUrl("/api/auth/login-verify"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -198,7 +197,7 @@ export const NativeAuthScreen: React.FC = () => {
         if (navigator.vibrate) navigator.vibrate(80);
         
         localStorage.setItem("cl_active_table_id", verifyData.ssId || ssId);
-        localStorage.setItem("cl_onboarding_completed", "true");
+        localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE, "false");
         document.cookie = `cl_active_table_id=${verifyData.ssId || ssId}; path=/; max-age=${60*60*24*365}; SameSite=Lax`;
 
         setIsSuccess(true);

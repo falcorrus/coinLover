@@ -27,8 +27,8 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
     baseCurrency, baseSymbol, categoryCurrencyMode, localCurrencyCode, onItemClick
 }) => {
     const getSymbol = (code: string) => {
-        const symbols: Record<string, string> = { "USD": "$", "EUR": "€", "GBP": "£", "RUB": "₽", "RSD": "din", "BRL": "R$", "ARS": "ARS" };
-        return symbols[code.toUpperCase()] || code;
+        const symbols: Record<string, string> = { "USD": "$", "EUR": "€", "GBP": "£" };
+        return symbols[code.toUpperCase()] || code.toUpperCase();
     };
 
     const localSymbol = getSymbol(localCurrencyCode);

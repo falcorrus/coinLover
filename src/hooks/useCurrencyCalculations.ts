@@ -13,8 +13,8 @@ export function useCurrencyCalculations(
   
   const getSymbol = React.useCallback((code: string) => {
     if (!code || !isNaN(Number(code))) return "$";
-    const symbols: Record<string, string> = { "USD": "$", "EUR": "€", "GBP": "£", "RUB": "₽", "RSD": "din", "BRL": "R$", "ARS": "ARS" };
-    return symbols[code.toUpperCase()] || code;
+    const symbols: Record<string, string> = { "USD": "$", "EUR": "€", "GBP": "£" };
+    return symbols[code.toUpperCase()] || code.toUpperCase();
   }, []);
 
   const baseSymbol = getSymbol(baseCurrency);

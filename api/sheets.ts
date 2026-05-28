@@ -518,8 +518,8 @@ export default async function handler(req, res) {
     if (method === 'GET') {
       const isDemo = query.demo === 'true';
       const targetSsId = ssId || MASTER_SS_ID; 
-      const configSheetName = isDemo ? "Configs-demo" : "Configs";
-      const txSheetName = isDemo ? "Transactions-demo" : "Transactions";
+      let configSheetName = isDemo ? "Configs-demo" : "Configs";
+      let txSheetName = isDemo ? "Transactions-demo" : "Transactions";
 
       if (query.action === 'template') {
         const data = {
@@ -543,15 +543,29 @@ export default async function handler(req, res) {
 
       // Fetch Configs
       let rows = [];
+      configSheetName = "Configs"; // Demo sheets are retired
+      txSheetName = "Transactions";
+      
       try {
         const confRes = await sheets.spreadsheets.values.get({
           spreadsheetId: targetSsId,
           range: `${configSheetName}!A:M`
         });
         rows = confRes.data.values || [];
-      } catch (e) {
-        console.warn(`[API] Config sheet not found in ${targetSsId}.`);
-        return res.status(200).json({ status: "success", data: { accounts: [], categories: [], incomes: [], transactions: [], baseCurrency: "USD" } });
+      } catch (e: any) {
+        console.error(`[API] Failed to fetch Configs from ${targetSsId}:`, e.message);
+        const status = e.code || 500;
+        const message = status === 403 
+          ? "Доступ к таблице запрещен. Добавьте сервисный аккаунт как Редактора." 
+          : status === 404 
+            ? "Таблица не найдена. Проверьте правильность ID." 
+            : `Ошибка Google Sheets: ${e.message}`;
+            
+        return res.status(status === 404 ? 404 : 403).json({ 
+          status: "error", 
+          code: status === 403 ? "access_denied" : "sheet_not_found",
+          message 
+        });
       }
       
       const data: any = { accounts: [], categories: [], incomes: [], transactions: [], baseCurrency: "USD" };

@@ -446,6 +446,7 @@ SplashScreen.hide().catch(() => {});
             isStoriesCollapsed={isStoriesCollapsed}
             activeStoryIndex={activeStoryIndex}
             setActiveStoryIndex={setActiveStoryIndex}
+            incomes={incomes}
           />
 
           <IncomeSection 

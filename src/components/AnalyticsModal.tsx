@@ -71,8 +71,8 @@ interface DetailItemProps {
 const DetailItem: React.FC<DetailItemProps> = ({ detail, analysisType, currencyMode, localCurrencyCode, onClick }) => {
     const baseCur = RatesService.getBaseCurrency();
     const getSymbol = (code: string) => {
-        const symbols: Record<string, string> = { "USD": "$", "EUR": "€", "GBP": "£", "RUB": "₽", "RSD": "din", "BRL": "R$", "ARS": "ARS" };
-        return symbols[code.toUpperCase()] || code;
+        const symbols: Record<string, string> = { "USD": "$", "EUR": "€", "GBP": "£" };
+        return symbols[code.toUpperCase()] || code.toUpperCase();
     };
     
     const isBase = currencyMode === 'base';
@@ -173,8 +173,8 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
     const { displayTotal, displaySymbol } = useMemo(() => {
         const baseCur = RatesService.getBaseCurrency();
         const getSymbol = (code: string) => {
-            const symbols: Record<string, string> = { "USD": "$", "EUR": "€", "GBP": "£", "RUB": "₽", "RSD": "din", "BRL": "R$", "ARS": "ARS" };
-            return symbols[code.toUpperCase()] || code;
+            const symbols: Record<string, string> = { "USD": "$", "EUR": "€", "GBP": "£" };
+            return symbols[code.toUpperCase()] || code.toUpperCase();
         };
         const isBase = currencyMode === 'base';
         const amount = isBase ? displayedTotal : RatesService.convert(displayedTotal, baseCur, localCurrencyCode);
@@ -383,8 +383,8 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                                             const baseCur = RatesService.getBaseCurrency();
                                             const isBase = currencyMode === 'base';
                                             const getSymbol = (code: string) => {
-                                                const symbols: Record<string, string> = { "USD": "$", "EUR": "€", "GBP": "£", "RUB": "₽", "RSD": "din", "BRL": "R$", "ARS": "ARS" };
-                                                return symbols[code.toUpperCase()] || code;
+                                                const symbols: Record<string, string> = { "USD": "$", "EUR": "€", "GBP": "£" };
+                                                return symbols[code.toUpperCase()] || code.toUpperCase();
                                             };
                                             const symbol = isBase ? getSymbol(baseCur) : getSymbol(localCurrencyCode);
                                             

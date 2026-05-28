@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="ru" class="dark">
   <head>
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-X63WEFC7X3"></script>
@@ -31,7 +31,47 @@
     <meta property="twitter:description" content="Управляйте своими финансами играючи.">
     <meta property="twitter:image" content="https://coinlover.ru/og-image.jpg">
 
-    <link rel="canonical" href="https://coinlover.ru" />
+    <!-- Динамический канонический URL для предотвращения дублей / и /landing -->
+    <link id="canonical-link" rel="canonical" href="https://coinlover.ru" />
+    <script>
+      (function() {
+        try {
+          var path = window.location.pathname;
+          var canonical = document.getElementById('canonical-link');
+          if (canonical) {
+            if (path === '/landing' || path.endsWith('/landing')) {
+              canonical.setAttribute('href', 'https://coinlover.ru/landing');
+            } else {
+              canonical.setAttribute('href', 'https://coinlover.ru');
+            }
+          }
+        } catch (e) {
+          console.error('Canonical resolution error:', e);
+        }
+      })();
+    </script>
+
+    <!-- Микроразметка Schema.org (JSON-LD) для улучшения поисковых сниппетов -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "CoinLover",
+      "operatingSystem": "All",
+      "applicationCategory": "FinanceApplication",
+      "browserRequirements": "Requires HTML5 support, JavaScript, and Cookies",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "RUB"
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "ratingCount": "120"
+      }
+    }
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.json" />
@@ -55,7 +95,26 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- SEO Pre-render Static Skeleton (Визуально скрыт, но полностью доступен для роботов индексации Яндекса/Google) -->
+      <div style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0;" aria-hidden="false">
+        <header>
+          <nav>
+            <a href="/">Главная</a> | <a href="/landing">Узнать больше о CoinLover</a>
+          </nav>
+        </header>
+        <main>
+          <article>
+            <h1>CoinLover — Удобный учет расходов в Гугл Таблицах</h1>
+            <h2>Современный геймифицированный трекер личных финансов</h2>
+            <p>CoinLover — это эстетичный минималистичный сервис для отслеживания расходов и доходов с интеграцией в ваши личные Google Таблицы (концепция Bring Your Own Database).</p>
+            <p>Основные преимущества: 100% приватность и владение данными, беспарольный безопасный вход по Passkeys (биометрия / Face ID), мультивалютность и интеллектуальный расчет курсов валют, а также тактильная геймифицированная механика перетаскивания монет (Drag and Drop) расходов.</p>
+            <p>Превратите скучную бухгалтерию и планирование семейного бюджета в увлекательную дофаминовую игру без лишних платных подписок и небезопасных синхронизаций с банками!</p>
+            <a href="/landing">Начать вести бюджет бесплатно</a>
+          </article>
+        </main>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

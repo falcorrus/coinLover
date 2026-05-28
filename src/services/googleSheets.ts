@@ -17,8 +17,46 @@ const getGoogleScriptUrl = () => {
   return getAbsoluteApiUrl("/api/sheets");
 };
 
-// Universal fetch that uses standard fetch on all platforms since we control the proxy CORS
-const universalFetch = async (url: string, options?: any) => {
+// Universal fetch that uses CapacitorHttp on native platforms for better stability and CORS handling
+export const universalFetch = async (url: string, options?: any) => {
+  const isNative = Capacitor.isNativePlatform();
+  
+  if (isNative) {
+    try {
+      const httpOptions: any = {
+        url,
+        method: options?.method || "GET",
+        headers: {
+          "Content-Type": "application/json",
+          ...(options?.headers || {}),
+        },
+      };
+
+      if (options?.body) {
+        // CapacitorHttp expects 'data' for POST/PUT bodies
+        try {
+          httpOptions.data = typeof options.body === "string" ? JSON.parse(options.body) : options.body;
+        } catch (e) {
+          httpOptions.data = options.body;
+        }
+      }
+
+      const response = await CapacitorHttp.request(httpOptions);
+      
+      // Map CapacitorHttp response to a fetch-like object
+      return {
+        ok: response.status >= 200 && response.status < 300,
+        status: response.status,
+        json: async () => response.data,
+        text: async () => typeof response.data === "string" ? response.data : JSON.stringify(response.data),
+      } as any;
+    } catch (err) {
+      console.error("CapacitorHttp request failed:", err);
+      // Fallback to standard fetch if CapacitorHttp fails to initialize
+      return fetch(url, options);
+    }
+  }
+  
   return fetch(url, options);
 };
 

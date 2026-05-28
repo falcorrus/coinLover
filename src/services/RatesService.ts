@@ -80,19 +80,9 @@ export class RatesService {
         const symbols: Record<string, string> = {
             "USD": "$",
             "EUR": "€",
-            "RUB": "₽",
-            "THB": "฿",
-            "GEL": "₾",
-            "BRL": "R$",
-            "ARS": "$",
-            "TRY": "₺",
-            "KZT": "₸",
-            "AED": "د.إ",
-            "GBP": "£",
-            "JPY": "¥",
-            "CNY": "¥"
+            "GBP": "£"
         };
-        return symbols[currencyCode.toUpperCase()] || currencyCode;
+        return symbols[currencyCode.toUpperCase()] || currencyCode.toUpperCase();
     }
 
     static convert(amount: number, fromCurrency: string, toCurrency: string): number {

@@ -112,8 +112,8 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
         const tCurr = tx.targetCurrency || tx.currencyLocal || (account?.currency || baseCurrency);
 
         const getSymbol = (code: string) => {
-            const symbols: Record<string, string> = { "USD": "$", "EUR": "€", "GBP": "£", "RUB": "₽", "RSD": "din", "BRL": "R$", "ARS": "ARS" };
-            return symbols[code.toUpperCase()] || code;
+            const symbols: Record<string, string> = { "USD": "$", "EUR": "€", "GBP": "£" };
+            return symbols[code.toUpperCase()] || code.toUpperCase();
         };
 
         let displayAmount = entityType === "account" ? sAmt : tAmt;

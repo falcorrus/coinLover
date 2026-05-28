@@ -27,6 +27,8 @@ export const useSync = ({
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
   const lastRemoteSnapshot = useRef<string>("");
 
+  const lang = (typeof window !== "undefined" && localStorage.getItem("cl_lang") === "en") ? "en" : "ru";
+
   const getSettingsSnapshot = (data: any) => {
     try {
       const acc = (data.accounts || []).map((a: any) => ({ 
@@ -79,7 +81,7 @@ export const useSync = ({
   }, [setAccounts, setCategories, setIncomes, setTransactions, setUsers]);
 
   const pullSettings = useCallback(async () => {
-    const isDemo = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE) === "true";
+    const isDemo = !ssId && localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE) === "true";
     if (!ssId && !isDemo) {
       setSyncStatus("idle");
       return false;
@@ -135,14 +137,7 @@ export const useSync = ({
       const remote = await googleSheetsService.fetchSettings(ssId);
       if (remote) {
         const localLastSync = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC);
-        const isRemoteEmpty = (!remote.accounts || remote.accounts.length === 0) && (!remote.categories || remote.categories.length === 0);
-        const isLocalEmpty = accounts.length === 0 && categories.length === 0;
         
-        if (isRemoteEmpty && !isLocalEmpty) {
-          setSyncStatus("success");
-          return true;
-        }
-
         if (remote.timestamp && localLastSync) {
           const remoteDate = new Date(remote.timestamp);
           const localDate = new Date(localLastSync);
@@ -163,19 +158,21 @@ export const useSync = ({
         return true;
       }
     } catch (e: any) {
-      if (e.statusCode === 403) {
+      console.error("Pull settings error:", e);
+      if (e.statusCode === 403 || (e.code && e.code === "access_denied")) {
         setAccessError(e.message || "Доступ ограничен");
         setSyncStatus("error");
         return false;
       }
+      setAccessError(lang === "ru" ? "Ошибка загрузки данных. Проверьте соединение." : "Failed to load data. Check connection.");
     }
     setSyncStatus("error");
     return false;
-  }, [updateLocalFromRemote, ssId, accounts.length, categories.length]);
+  }, [updateLocalFromRemote, ssId, accounts.length, categories.length, lang]);
 
   const checkConflicts = useCallback(async () => {
     if (syncStatus === "loading" || !!accessError) return;
-    const isDemo = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE) === "true";
+    const isDemo = !ssId && localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE) === "true";
     if (isDemo) return;
     if (!ssId) return;
     try {
@@ -203,7 +200,7 @@ export const useSync = ({
   }, [updateLocalFromRemote, ssId, syncStatus, accessError, accounts.length, categories.length]);
 
   const pushSettings = useCallback((a: Account[], c: Category[], i: IncomeSource[], immediate = false) => {
-    const isDemo = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE) === "true";
+    const isDemo = !ssId && localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE) === "true";
     if (isDemo) {
       localStorage.setItem("cl_demo_cl_accounts", JSON.stringify(a));
       localStorage.setItem("cl_demo_cl_categories", JSON.stringify(c));

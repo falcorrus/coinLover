@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Flame, Zap, HelpCircle, X, Palette, BarChart3, ChevronRight, Landmark, Compass, DollarSign, ShoppingBag, Calendar, PieChart, Languages, ChevronLeft, Coins } from "lucide-react";
-import { Account, Transaction } from "../../types";
+import { Account, Transaction, IncomeSource } from "../../types";
 import { useLanguage } from "../../contexts/LanguageContext";
 import { IconMap } from "../../constants";
 import { RatesService } from "../../services/RatesService";
@@ -22,6 +22,7 @@ interface StoriesSectionProps {
   isStoriesCollapsed?: boolean;
   activeStoryIndex: number | null;
   setActiveStoryIndex: (index: number | null) => void;
+  incomes: IncomeSource[];
 }
 
 interface Story {
@@ -48,6 +49,7 @@ export function StoriesSection({
   isStoriesCollapsed = false,
   activeStoryIndex,
   setActiveStoryIndex,
+  incomes,
 }: StoriesSectionProps) {
   const { t, language, setLanguage } = useLanguage();
   const totalCategoryItems = categories.length + 1;
@@ -287,28 +289,43 @@ export function StoriesSection({
   };
 
   const renderStoryContent = (storyId: string, slideIdx: number) => {
+    const getSafeAccount = (accountId: string) => {
+      const aid = String(accountId || "").trim().toLowerCase();
+      return accounts.find(a => String(a.id).trim().toLowerCase() === aid || String(a.name).trim().toLowerCase() === aid);
+    };
+
     const todayTransactions = currentMonthTransactions.filter(t => {
       const d = safeParseDate(t.date);
       const now = new Date();
-      return !isNaN(d.getTime()) && d.getDate() === now.getDate() && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      const type = String(t.type).toLowerCase();
+      return (type === "expense" || type === "income") && !isNaN(d.getTime()) && d.getDate() === now.getDate() && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
     });
-    const spentToday = todayTransactions.reduce((acc, t) => {
-      const account = accounts.find(a => a.id === t.accountId);
-      const currency = t.sourceCurrency || account?.currency || baseCurrency;
-      return acc + RatesService.convert(t.sourceAmount, currency, baseCurrency);
-    }, 0);
+    const spentToday = todayTransactions
+      .filter(t => String(t.type).toLowerCase() === "expense")
+      .reduce((acc, t) => {
+        const account = getSafeAccount(t.accountId);
+        const currency = t.sourceCurrency || account?.currency || baseCurrency;
+        return acc + RatesService.convert(t.sourceAmount, currency, baseCurrency);
+      }, 0);
+    const earnedToday = todayTransactions
+      .filter(t => String(t.type).toLowerCase() === "income")
+      .reduce((acc, t) => {
+        const account = getSafeAccount(t.accountId);
+        const currency = t.targetCurrency || account?.currency || baseCurrency;
+        return acc + RatesService.convert(t.targetAmount, currency, baseCurrency);
+      }, 0);
     const hasSpendToday = spentToday > 0;
-    const expensesThisMonth = currentMonthTransactions.filter(t => t.type === 'expense').reduce((acc, t) => {
-      const account = accounts.find(a => a.id === t.accountId);
+    const expensesThisMonth = currentMonthTransactions.filter(t => String(t.type).toLowerCase() === "expense").reduce((acc, t) => {
+      const account = getSafeAccount(t.accountId);
       const currency = t.sourceCurrency || account?.currency || baseCurrency;
       return acc + RatesService.convert(t.sourceAmount, currency, baseCurrency);
     }, 0);
-    const incomeThisMonth = currentMonthTransactions.filter(t => t.type === 'income').reduce((acc, t) => {
-      const account = accounts.find(a => a.id === t.accountId);
+    const incomeThisMonth = currentMonthTransactions.filter(t => String(t.type).toLowerCase() === "income").reduce((acc, t) => {
+      const account = getSafeAccount(t.accountId);
       const currency = t.targetCurrency || account?.currency || baseCurrency;
       return acc + RatesService.convert(t.targetAmount, currency, baseCurrency);
     }, 0);
-    const baseSymbol = baseCurrency === 'RUB' ? '₽' : baseCurrency === 'RSD' ? 'din' : '$';
+    const baseSymbol = RatesService.getSymbol(baseCurrency);
 
     switch (storyId) {
       case "overview":
@@ -341,7 +358,7 @@ export function StoriesSection({
         } else if (slideIdx === 1) {
           const topCategories = categories.map(c => {
             const amount = currentMonthTransactions.filter(t => t.targetId === c.id).reduce((acc, t) => {
-              const account = accounts.find(a => a.id === t.accountId);
+              const account = getSafeAccount(t.accountId);
               const currency = t.sourceCurrency || account?.currency || baseCurrency;
               return acc + RatesService.convert(t.sourceAmount, currency, baseCurrency);
             }, 0);
@@ -439,28 +456,50 @@ export function StoriesSection({
                   <p className="text-[10px] text-[var(--text-muted)] tracking-wide">{hasSpendToday ? t('Today expenses are under control') : t('Your wallet is resting today')}</p>
                 </div>
                 <div className="scrollable-content p-4 rounded-2xl bg-[var(--glass-card-bg)] border border-[var(--glass-border)] space-y-3.5 backdrop-blur-md text-left shadow-sm overflow-y-auto max-h-[350px]" onClick={(e) => e.stopPropagation()}>
-                  {hasSpendToday ? (
+                  {todayTransactions.length > 0 ? (
                     <div className="space-y-3">
-                      <p className="text-xs text-[var(--text-main)] opacity-90 leading-relaxed">{t('Spent today')}: <span className="font-bold text-rose-500">{spentToday.toLocaleString()} {baseSymbol}</span>.</p>
+                      <div className="flex flex-col gap-1 text-xs text-[var(--text-main)] opacity-90 leading-relaxed pb-1 border-b border-[var(--glass-border)]">
+                        {spentToday > 0 && (
+                          <div className="flex justify-between items-center">
+                            <span>{t('Spent today')}:</span>
+                            <span className="font-bold text-rose-500">{spentToday.toLocaleString()} {baseSymbol}</span>
+                          </div>
+                        )}
+                        {earnedToday > 0 && (
+                          <div className="flex justify-between items-center">
+                            <span>{t('Earned today')}:</span>
+                            <span className="font-bold text-[var(--success-color)]">+{earnedToday.toLocaleString()} {baseSymbol}</span>
+                          </div>
+                        )}
+                      </div>
                       <div className="space-y-2 pt-1">
                         <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">{t('Day Detail')}</p>
                         {todayTransactions.slice(0, 6).map((tx, i) => {
-                          const category = categories.find(c => c.id === tx.targetId);
-                          const account = accounts.find(a => a.id === tx.accountId);
-                          const currency = tx.sourceCurrency || account?.currency || baseCurrency;
-                          const amountBase = Math.round(RatesService.convert(tx.sourceAmount, currency, baseCurrency));
+                          const isExpense = String(tx.type).toLowerCase() === "expense";
+                          const counterpart = isExpense 
+                            ? categories.find(c => c.id === tx.targetId)
+                            : incomes.find(inc => inc.id === tx.targetId);
+                          const account = getSafeAccount(tx.accountId);
+                          const currency = isExpense 
+                            ? (tx.sourceCurrency || account?.currency || baseCurrency)
+                            : (tx.targetCurrency || account?.currency || baseCurrency);
+                          const amount = isExpense ? tx.sourceAmount : tx.targetAmount;
+                          const amountBase = Math.round(RatesService.convert(amount, currency, baseCurrency));
+                          
                           return (
                             <div key={i} className="flex items-center justify-between group">
                               <div className="flex items-center gap-2">
-                                <div className="w-6 h-6 rounded-lg flex items-center justify-center text-[10px]" style={{ backgroundColor: `${category?.color || '#666'}15`, color: category?.color || '#666' }}>
-                                  {React.createElement(IconMap[category?.icon || 'shopping-bag'] || ShoppingBag, { size: 12 })}
+                                <div className="w-6 h-6 rounded-lg flex items-center justify-center text-[10px]" style={{ backgroundColor: `${counterpart?.color || '#666'}15`, color: counterpart?.color || '#666' }}>
+                                  {React.createElement(IconMap[counterpart?.icon || 'shopping-bag'] || ShoppingBag, { size: 12 })}
                                 </div>
                                 <div className="flex flex-col">
-                                  <span className="text-[11px] font-bold text-[var(--text-main)] leading-none">{category?.name || t('Other')}</span>
+                                  <span className="text-[11px] font-bold text-[var(--text-main)] leading-none">{counterpart?.name || t('Other')}</span>
                                   {tx.comment && <span className="text-[9px] text-[var(--text-muted)] truncate max-w-[120px] leading-tight">{tx.comment}</span>}
                                 </div>
                               </div>
-                              <span className="text-[11px] font-black text-[var(--text-main)]">-{amountBase.toLocaleString()} {baseSymbol}</span>
+                              <span className={`text-[11px] font-black ${isExpense ? 'text-[var(--text-main)]' : 'text-[var(--success-color)]'}`}>
+                                {isExpense ? "-" : "+"}{amountBase.toLocaleString()} {baseSymbol}
+                              </span>
                             </div>
                           );
                         })}
