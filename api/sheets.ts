@@ -522,22 +522,124 @@ export default async function handler(req, res) {
       let txSheetName = isDemo ? "Transactions-demo" : "Transactions";
 
       if (query.action === 'template') {
-        const data = {
-          accounts: [
-            { id: "acc-cash", name: "Наличные", balance: 0, currency: "RUB", color: "#10b981", icon: "wallet" },
-            { id: "acc-card", name: "Карта", balance: 0, currency: "RUB", color: "#3b82f6", icon: "credit-card" }
-          ],
-          categories: [
-            { id: "cat-food", name: "Еда", color: "#f59e0b", icon: "utensils", tags: ["продукты", "супермаркет"] },
-            { id: "cat-transport", name: "Транспорт", color: "#3b82f6", icon: "car", tags: ["такси", "бензин"] },
-            { id: "cat-home", name: "Жилье", color: "#ef4444", icon: "home", tags: ["аренда", "коммуналка"] },
-            { id: "cat-fun", name: "Развлечения", color: "#ec4899", icon: "film", tags: ["кино", "бар"] }
-          ],
-          incomes: [
-            { id: "inc-salary", name: "Зарплата", color: "#10b981", icon: "briefcase", tags: ["основная"] },
-            { id: "inc-gift", name: "Подарки", color: "#8b5cf6", icon: "gift", tags: ["день рождения"] }
-          ]
-        };
+        const lang = query.lang || 'ru';
+        const templateSheetName = lang === 'en' ? "Template_Configs_EN" : "Template_Configs";
+        let data: any = null;
+
+        try {
+          console.log(`[API] Fetching dynamic template from MASTER_SS_ID tab: ${templateSheetName}`);
+          const tmplRes = await sheets.spreadsheets.values.get({
+            spreadsheetId: MASTER_SS_ID,
+            range: `${templateSheetName}!A:M`
+          });
+          const rows = tmplRes.data.values || [];
+          
+          if (rows.length > 0) {
+            data = { accounts: [], categories: [], incomes: [] };
+            let section = "";
+            let sectionHeaderIdx = -1;
+
+            for (let i = 0; i < rows.length; i++) {
+              const row = rows[i];
+              if (!row || !row[0]) continue;
+              const key = String(row[0] || "").toLowerCase().trim();
+              if (key.includes("wallets") || key.includes("accounts") || key.includes("кошельки") || key.includes("счета")) { section = "acc"; sectionHeaderIdx = i + 1; continue; }
+              if (key.includes("categories") || key.includes("категории")) { section = "cat"; sectionHeaderIdx = i + 1; continue; }
+              if (key.includes("incomes") || key.includes("доходы")) { section = "inc"; sectionHeaderIdx = i + 1; continue; }
+              if (key.startsWith("===")) { section = ""; sectionHeaderIdx = -1; continue; }
+              
+              if (sectionHeaderIdx === -1 || i <= sectionHeaderIdx) continue;
+
+              const hRow = rows[sectionHeaderIdx] || [];
+              const col: any = {};
+              hRow.forEach((v, idx) => { if(v) col[String(v).trim().toLowerCase()] = idx; });
+
+              const getIdx = (keys: string[]) => {
+                for (const k of keys) if (col[k] !== undefined) return col[k];
+                return -1;
+              };
+
+              const uId = getIdx(["id", "идентификатор", "айди"]), 
+                    uName = getIdx(["name", "имя", "название", "кошелек", "категория", "источник"]), 
+                    uColor = getIdx(["color", "цвет"]),
+                    uIcon = getIdx(["icon", "иконка"]), 
+                    uTags = getIdx(["tags", "теги", "метки"]), 
+                    uBal = getIdx(["balance", "баланс", "остаток"]),
+                    uCurr = getIdx(["currency", "валюта", "вал"]);
+
+              const val = (idx: number, def = "") => {
+                if (idx === -1 || row[idx] === undefined) return def;
+                return String(row[idx]).trim().replace(/^'/, "");
+              };
+              const num = (idx: number) => {
+                if (idx === -1 || row[idx] === undefined) return 0;
+                return parseNum(row[idx]);
+              };
+
+              const id = val(uId);
+              if (!id || id.toLowerCase() === "id") continue;
+
+              if (section === "acc") {
+                data.accounts.push({ 
+                  id, 
+                  name: val(uName, "Wallet"), 
+                  balance: num(uBal), 
+                  color: val(uColor, "#ccc"), 
+                  icon: val(uIcon, "wallet"), 
+                  currency: (val(uCurr) || "USD").toUpperCase() 
+                });
+              } else if (section === "cat" || section === "inc") {
+                const entity = { 
+                  id, 
+                  name: val(uName, "No Name"), 
+                  color: val(uColor, "#ccc"), 
+                  icon: val(uIcon, section === "cat" ? "tag" : "business"), 
+                  tags: val(uTags) ? val(uTags).split(",").map(t => t.trim()).filter(Boolean) : [] 
+                };
+                if (section === "cat") data.categories.push(entity); else data.incomes.push(entity);
+              }
+            }
+            console.log(`[API] Dynamic template loaded successfully from ${templateSheetName}:`, data.accounts.length, "accounts,", data.categories.length, "categories,", data.incomes.length, "incomes");
+          }
+        } catch (e: any) {
+          console.warn(`[API] Failed to fetch dynamic template ${templateSheetName} from Google Sheets: ${e.message}. Falling back to static template.`);
+        }
+
+        // Статический фолбек на случай сбоев или отсутствия таба
+        if (!data || !data.accounts || data.accounts.length === 0) {
+          data = lang === 'en' ? {
+            accounts: [
+              { id: "acc-cash", name: "Cash", balance: 0, currency: "USD", color: "#10b981", icon: "wallet" },
+              { id: "acc-card", name: "Card", balance: 0, currency: "USD", color: "#3b82f6", icon: "credit-card" }
+            ],
+            categories: [
+              { id: "cat-food", name: "Food", color: "#f59e0b", icon: "utensils", tags: ["groceries", "supermarket"] },
+              { id: "cat-transport", name: "Transport", color: "#3b82f6", icon: "car", tags: ["taxi", "fuel"] },
+              { id: "cat-home", name: "Home", color: "#ef4444", icon: "home", tags: ["rent", "utilities"] },
+              { id: "cat-fun", name: "Leisure", color: "#ec4899", icon: "film", tags: ["cinema", "bar"] }
+            ],
+            incomes: [
+              { id: "inc-salary", name: "Salary", color: "#10b981", icon: "briefcase", tags: ["monthly"] },
+              { id: "inc-gift", name: "Gifts", color: "#8b5cf6", icon: "gift", tags: ["birthday"] }
+            ]
+          } : {
+            accounts: [
+              { id: "acc-cash", name: "Наличные", balance: 0, currency: "RUB", color: "#10b981", icon: "wallet" },
+              { id: "acc-card", name: "Карта", balance: 0, currency: "RUB", color: "#3b82f6", icon: "credit-card" }
+            ],
+            categories: [
+              { id: "cat-food", name: "Еда", color: "#f59e0b", icon: "utensils", tags: ["продукты", "супермаркет"] },
+              { id: "cat-transport", name: "Транспорт", color: "#3b82f6", icon: "car", tags: ["такси", "бензин"] },
+              { id: "cat-home", name: "Жилье", color: "#ef4444", icon: "home", tags: ["аренда", "коммуналка"] },
+              { id: "cat-fun", name: "Развлечения", color: "#ec4899", icon: "film", tags: ["кино", "бар"] }
+            ],
+            incomes: [
+              { id: "inc-salary", name: "Зарплата", color: "#10b981", icon: "briefcase", tags: ["основная"] },
+              { id: "inc-gift", name: "Подарки", color: "#8b5cf6", icon: "gift", tags: ["день рождения"] }
+            ]
+          };
+        }
+
         return res.status(200).json({ status: "success", data });
       }
 

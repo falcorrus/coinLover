@@ -26,6 +26,7 @@ import { ExpenseSection } from "./components/layout/ExpenseSection";
 import { StoriesSection } from "./components/layout/StoriesSection";
 
 import { googleSheetsService } from "./services/googleSheets";
+import { useLanguage } from "./contexts/LanguageContext";
 import { setGAUser, trackScreen, trackEvent } from "./services/analytics";
 import { Capacitor } from "@capacitor/core";
 import { App as CapacitorApp } from "@capacitor/app";
@@ -35,6 +36,7 @@ export default function App() {
   const urlParams = new URLSearchParams(window.location.search);
   const isUserPath = currentPath.startsWith("/s/");
   const { activeTableId, switchTable } = useUsers();
+  const { language } = useLanguage();
 
   const {
     accounts, setAccounts, categories, setCategories, incomes, setIncomes,
@@ -107,7 +109,7 @@ const isNativeApp = React.useMemo(() => {
     let newIncomes = [];
 
     if (useTemplate) {
-      const tmpl = await googleSheetsService.fetchTemplate();
+      const tmpl = await googleSheetsService.fetchTemplate(language);
       console.log("Template fetched:", tmpl);
       newAccounts = tmpl?.accounts || [];
       newCategories = tmpl?.categories || [];
@@ -117,7 +119,7 @@ const isNativeApp = React.useMemo(() => {
       setCategories(newCategories);
       setIncomes(newIncomes);
     } else {
-      newAccounts = [{ id: `acc-${Date.now()}`, name: "Наличные", balance: 0, currency: localCurrency, color: "#10b981", icon: "wallet" }];
+      newAccounts = [{ id: `acc-${Date.now()}`, name: language === "en" ? "Cash" : "Наличные", balance: 0, currency: localCurrency, color: "#10b981", icon: "wallet" }];
       setAccounts(newAccounts);
     }
     

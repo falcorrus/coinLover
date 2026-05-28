@@ -169,10 +169,10 @@ export const googleSheetsService = {
     return this.syncToSheets({ action: "initTable", ssId });
   },
 
-  async fetchTemplate(): Promise<{ accounts?: any[], categories?: any[], incomes?: any[] } | null> {
+  async fetchTemplate(lang?: string): Promise<{ accounts?: any[], categories?: any[], incomes?: any[] } | null> {
     const GOOGLE_SCRIPT_URL = getGoogleScriptUrl();
     try {
-      const url = `${GOOGLE_SCRIPT_URL}?action=template`;
+      const url = `${GOOGLE_SCRIPT_URL}?action=template${lang ? `&lang=${lang}` : ""}`;
       const response = await universalFetch(url);
       if (!response.ok) return null;
       
