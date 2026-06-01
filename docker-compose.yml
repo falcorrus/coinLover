@@ -1,7 +1,10 @@
 services:
-  coinlover:
-    build: .
+  app:
+    build: 
+      context: .
+      dockerfile: Dockerfile
     container_name: coinlover
     ports:
       - "8010:80"
     restart: always
+    env_file: .env
