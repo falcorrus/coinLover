@@ -14,10 +14,10 @@ ENV_DEV="dev|/root/MyProjects/coinlover-dev|preview|8011|8001|dev-coinlover"
 echo "🔍 Running local checks..."
 
 echo "Checking Frontend Types (tsc)..."
-npm run lint || { echo "❌ Lint failed! Deployment aborted."; exit 1; }
+pnpm run lint || { echo "❌ Lint failed! Deployment aborted."; exit 1; }
 
 echo "Checking Frontend Build (vite build)..."
-npm run build || { echo "❌ Build failed! Deployment aborted."; exit 1; }
+pnpm run build || { echo "❌ Build failed! Deployment aborted."; exit 1; }
 
 # echo "Checking Backend Logic (test_api.py)..."
 # PYTHONPATH=./backend python3 backend/test_api.py || { echo "❌ Backend test failed! Deployment aborted."; exit 1; }

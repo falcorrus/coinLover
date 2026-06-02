@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">CoinLover</string>
+    <string name="title_activity_main">CoinLover</string>
+    <string name="package_name">com.reloto.coinlover</string>
+    <string name="custom_url_scheme">com.reloto.coinlover</string>
+</resources>

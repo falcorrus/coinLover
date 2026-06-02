@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Premium dark background matching Linear Style #050505 -->
+    <item>
+        <color android:color="#050505"/>
+    </item>
+    
+    <!-- Clean, centered app icon representing 1:1 scale (perfect compact PWA styling) -->
+    <item>
+        <bitmap
+            android:src="@mipmap/ic_launcher"
+            android:gravity="center" />
+    </item>
+</layer-list>
