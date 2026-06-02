@@ -68,8 +68,8 @@ const isNativeApp = React.useMemo(() => {
       return;
     }
 
-    // 2. Если данные есть — онбординг пройден
-    if (accounts.length > 0 || transactions.length > 0) {
+    // 2. Если данные есть и синхронизация успешна — онбординг пройден
+    if (syncStatus === "success" && (accounts.length > 0 || transactions.length > 0)) {
       localStorage.setItem("cl_onboarding_completed", "true");
       setIsOnboarding(false);
       return;

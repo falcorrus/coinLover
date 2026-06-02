@@ -489,6 +489,14 @@ export const LandingPage: React.FC = () => {
       const verifyData = await verifyRes.json();
       if (verifyData.status === "success" && verifyData.verified) {
         setPasskeyRegisterSuccess(true);
+        // Clear cached data of any previous tables
+        localStorage.removeItem("cl_accounts");
+        localStorage.removeItem("cl_categories");
+        localStorage.removeItem("cl_incomes");
+        localStorage.removeItem("cl_transactions");
+        localStorage.removeItem("cl_last_sync");
+        localStorage.removeItem("cl_onboarding_completed");
+        
         localStorage.setItem("cl_active_table_id", verifyData.ssId || ssId);
         document.cookie = `cl_active_table_id=${verifyData.ssId || ssId}; path=/; max-age=${60*60*24*365}; SameSite=Lax`;
         
