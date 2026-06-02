@@ -130,7 +130,9 @@ const isNativeApp = React.useMemo(() => {
   const [mode, setMode] = React.useState<"expense" | "income">("expense");
   const [pillMode, setPillMode] = React.useState<"expense" | "income" | "balance">(() => (localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.PILL_MODE) as any) || "expense");
   const [isIncomeCollapsed, setIsIncomeCollapsed] = React.useState(true);
-  const [isStoriesCollapsed, setIsStoriesCollapsed] = React.useState(false);
+  const [isStoriesCollapsed, setIsStoriesCollapsed] = React.useState<boolean>(() => {
+    return localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.STORIES_COLLAPSED) === "true";
+  });
   const [isSettingsMenuOpen, setIsSettingsMenuOpen] = React.useState(false);
   const [theme, setTheme] = React.useState<"white" | "mint" | "black">(() => {
     const cached = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.THEME);
@@ -374,7 +376,11 @@ SplashScreen.hide().catch(() => {});
   }, [activeTableId, checkConflicts]);
 
   const toggleIncome = () => { const next = !isIncomeCollapsed; setIsIncomeCollapsed(next); setMode(next ? "expense" : "income"); };
-  const toggleStories = () => { setIsStoriesCollapsed(!isStoriesCollapsed); };
+  const toggleStories = () => {
+    const next = !isStoriesCollapsed;
+    setIsStoriesCollapsed(next);
+    localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.STORIES_COLLAPSED, String(next));
+  };
   const isFullModalOpen = accountModal.isOpen || incomeModal.isOpen || categoryModal.isOpen || historyModal.isOpen || analyticsModal.isOpen || calendarAnalyticsModal.isOpen || numpad.isOpen || confirmDelete.isOpen || isTagModalOpen;
   const anyModalOpen = isFullModalOpen || isSettingsMenuOpen;
 

@@ -34,6 +34,7 @@ export const APP_SETTINGS = {
     RATES_LAST_SYNC: "cl_rates_last_sync",
     MANAGED_TABLES: "cl_managed_tables",
     ACTIVE_TABLE_ID: "cl_active_table_id",
+    STORIES_COLLAPSED: "cl_stories_collapsed",
   },
 
   // Rates Service
