@@ -1,5 +1,6 @@
 #!/bin/bash
 export JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home
+export ANDROID_HOME=/Users/eugene/Library/Android/sdk
 export PATH=$JAVA_HOME/bin:$PATH
 cd /Users/eugene/MyProjects/CoinLover
 
@@ -10,8 +11,11 @@ rm -f android/app/build/outputs/apk/debug/app-debug.apk
 echo "Building web..."
 pnpm run build || { echo "Web build failed"; exit 1; }
 
-echo "Copying to android..."
-npx cap copy android || { echo "Capacitor copy failed"; exit 1; }
+# Удаляем скачиваемый APK из дистрибутива перед упаковкой в мобильное приложение
+rm -rf dist/download
+
+echo "Syncing to android..."
+npx cap sync android || { echo "Capacitor sync failed"; exit 1; }
 
 cd android
 echo "Cleaning build cache..."
