@@ -13,6 +13,12 @@ export const TagModal: React.FC<Props> = ({ isOpen, onClose, onSelect, existingT
   const [query, setQuery] = React.useState("");
   const inputRef = React.useRef<HTMLInputElement>(null);
 
+  const isIOS = React.useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+      (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent));
+  }, []);
+
   React.useEffect(() => {
     if (isOpen) {
       setQuery("");
@@ -37,9 +43,20 @@ export const TagModal: React.FC<Props> = ({ isOpen, onClose, onSelect, existingT
   };
 
   return (
-    <div className="fixed inset-0 z-[500] bg-black/60 backdrop-blur-md flex items-start sm:items-center justify-center p-4 pt-[15vh] sm:pt-0 animate-in fade-in duration-300" onClick={onClose}>
+    <div 
+      className={`fixed inset-0 z-[500] bg-black/60 backdrop-blur-md flex justify-center animate-in fade-in duration-300 ${
+        isIOS 
+          ? "items-start p-4 pt-[15vh] sm:items-center sm:pt-0" 
+          : "items-end sm:items-center"
+      }`}
+      onClick={onClose}
+    >
       <div 
-        className="w-full max-w-md bg-[var(--bg-color)] border border-[var(--glass-border)] rounded-2xl p-6 flex flex-col gap-6 animate-in zoom-in-95 duration-300 shadow-2xl"
+        className={`w-full max-w-md bg-[var(--bg-color)] border border-[var(--glass-border)] p-6 flex flex-col gap-6 shadow-2xl ${
+          isIOS 
+            ? "rounded-2xl animate-in zoom-in-95 duration-300" 
+            : "rounded-t-3xl sm:rounded-2xl animate-in slide-in-from-bottom sm:zoom-in-95 duration-300"
+        }`}
         onClick={e => e.stopPropagation()}
       >
         <div className="flex justify-between items-center">
