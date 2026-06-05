@@ -136,16 +136,17 @@ export async function authHandler(req: Request, res: Response) {
     if (action === 'register-options') {
       const ssId = String(req.query.ssId || "").trim();
       const contact = String(req.query.contact || "").trim();
+      const clientName = String(req.query.name || "").trim();
       if (!ssId && !contact) {
         return res.status(400).json({ status: 'error', message: 'Missing ssId or contact' });
       }
 
       const identifier = ssId || contact;
-      const userName = ssId 
+      const userName = clientName || (ssId 
         ? `user-${ssId.substring(0, 8)}@coinlover.ru` 
-        : `new-${contact.replace(/[^a-zA-Z0-9]/g, '')}@coinlover.ru`;
+        : `new-${contact.replace(/[^a-zA-Z0-9]/g, '')}@coinlover.ru`);
 
-      console.log(`[Auth] register-options: ssId=${ssId.substring(0, 12)}... contact=${contact}`);
+      console.log(`[Auth] register-options: ssId=${ssId.substring(0, 12)}... contact=${contact} name=${clientName}`);
 
       // Generate credentials creation options
       const options = await generateRegistrationOptions({
@@ -153,7 +154,7 @@ export async function authHandler(req: Request, res: Response) {
         rpID: rpId,
         userID: Buffer.from(identifier, 'utf8'),
         userName: userName,
-        userDisplayName: ssId ? 'CoinLover Wallet Holder' : `CoinLover User (${contact})`,
+        userDisplayName: clientName || (ssId ? 'CoinLover Wallet Holder' : `CoinLover User (${contact})`),
         attestationType: 'none',
         authenticatorSelection: {
           authenticatorAttachment: 'platform',

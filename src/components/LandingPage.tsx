@@ -353,7 +353,7 @@ export const LandingPage: React.FC = () => {
   React.useEffect(() => {
     if (modalType === "onboarding" && contact.trim().length > 3 && usePasskeyForOnboarding && window.PublicKeyCredential) {
       const controller = new AbortController();
-      fetch(`/api/auth/register-options?contact=${encodeURIComponent(contact.trim())}`, { signal: controller.signal })
+      fetch(`/api/auth/register-options?contact=${encodeURIComponent(contact.trim())}&name=${encodeURIComponent(name.trim())}`, { signal: controller.signal })
         .then(res => {
           if (res.ok) return res.json();
           throw new Error("Failed to prefetch register options");
@@ -372,7 +372,7 @@ export const LandingPage: React.FC = () => {
     } else {
       setPendingRegisterOptions(null);
     }
-  }, [contact, modalType, usePasskeyForOnboarding]);
+  }, [contact, name, modalType, usePasskeyForOnboarding]);
 
   React.useEffect(() => {
     trackScreen("Landing Page");
@@ -421,7 +421,7 @@ export const LandingPage: React.FC = () => {
       let data = pendingRegisterOptions;
       if (!data) {
         console.log("No prefetched register options found, fetching dynamically...");
-        const optionsRes = await fetch(`/api/auth/register-options?contact=${encodeURIComponent(contact)}`);
+        const optionsRes = await fetch(`/api/auth/register-options?contact=${encodeURIComponent(contact)}&name=${encodeURIComponent(name)}`);
         if (!optionsRes.ok) {
           throw new Error(await optionsRes.text() || "Failed to fetch registration options");
         }
