@@ -1,6 +1,6 @@
 // CoinLover - Modern Personal Finance App
 import * as React from "react";
-import { DndContext, DragOverlay, rectIntersection, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { DndContext, DragOverlay, pointerWithin, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { Wallet, Heart, Menu, Lock, X } from "lucide-react";
 
 // Modules
@@ -408,7 +408,7 @@ SplashScreen.hide().catch(() => {});
   }
 
   return (
-    <DndContext sensors={sensors} collisionDetection={rectIntersection} onDragStart={handleDragStart} onDragMove={handleDragMove} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
+    <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragStart={handleDragStart} onDragMove={handleDragMove} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
       {isSplashVisible && (
         <div className={`fixed inset-0 z-[2000] bg-[#050505] flex flex-col items-center justify-center transition-all duration-500 ease-in-out ${isSplashFading ? 'opacity-0 scale-110 pointer-events-none' : 'opacity-100 scale-100'}`}>
           <div className="flex flex-col items-center gap-6">
