@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Sun, Moon, Plus, Menu, RefreshCcw, List, Calendar, PieChart, Sparkles, TrendingDown, TrendingUp, Wallet, X, Smartphone, QrCode, Key, Fingerprint, ShieldCheck, ShieldAlert } from "lucide-react";
+import { Sun, Moon, Plus, Menu, RefreshCcw, List, Calendar, PieChart, Sparkles, TrendingDown, TrendingUp, Wallet, X, Smartphone, QrCode, Key, Fingerprint, ShieldCheck, ShieldAlert, Settings, ChevronLeft } from "lucide-react";
 import { APP_SETTINGS } from "../../constants/settings";
 import { HistoryModalState } from "../../types";
 import { startRegistration } from "@simplewebauthn/browser";
@@ -49,6 +49,13 @@ export function AppHeader({
   const [justRegistered, setJustRegistered] = React.useState(false);
   const [prefetchedRegisterOptions, setPrefetchedRegisterOptions] = React.useState<any>(null);
   const [passkeyPending, setPasskeyPending] = React.useState(false); // biometrics in progress
+  const [isMoreOpen, setIsMoreOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!isSettingsMenuOpen) {
+      setIsMoreOpen(false);
+    }
+  }, [isSettingsMenuOpen]);
 
   React.useEffect(() => {
     if (isPasskeyModalOpen && activeTableId) {
@@ -263,35 +270,55 @@ export function AppHeader({
         {isSettingsMenuOpen && (
           <>
             <div className="fixed inset-0 z-[140] bg-black/45 backdrop-blur-[2px]" onClick={() => setIsSettingsMenuOpen(false)} />
-            <div className="absolute bottom-[72px] right-0 w-48 bg-[var(--bg-color)] border border-[var(--glass-border)] rounded-[24px] shadow-[0_10px_30px_rgba(0,0,0,0.5)] flex flex-col z-[145] p-2.5 animate-in fade-in slide-in-from-bottom-5 zoom-in-95 origin-bottom-right backdrop-blur-xl">
-              <div className="flex items-center justify-around p-2 border-b border-[var(--glass-border)]/50 mb-1.5">
-                <button 
-                  onClick={() => { setTheme("white"); setIsSettingsMenuOpen(false); }}
-                  className={`p-2 rounded-xl transition-all ${theme === 'white' || theme === 'zen' ? 'bg-amber-100 text-amber-600 scale-110 shadow-sm' : 'text-slate-400 hover:bg-slate-100'}`}
-                >
-                  <Sun size={18} />
-                </button>
-                <button 
-                  onClick={() => { setTheme("mint"); setIsSettingsMenuOpen(false); }}
-                  className={`p-2 rounded-xl transition-all ${theme === 'mint' ? 'bg-emerald-500/20 text-emerald-600 scale-110 shadow-sm' : 'text-slate-400 hover:bg-emerald-50'}`}
-                >
-                  <Sparkles size={18} />
-                </button>
-                <button 
-                  onClick={() => { setTheme("black"); setIsSettingsMenuOpen(false); }}
-                  className={`p-2 rounded-xl transition-all ${theme === 'black' || theme === 'modern' ? 'bg-purple-500/20 text-purple-400 scale-110 shadow-sm' : 'text-slate-400 hover:bg-white/5'}`}
-                >
-                  <Moon size={18} />
-                </button>
-              </div>
-              <button onClick={() => { setIsSettingsMenuOpen(false); pullSettings(); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><RefreshCcw size={15} className={`text-amber-500 ${syncStatus === 'loading' ? 'animate-spin' : ''}`} /><span className="text-xs font-black text-[var(--text-main)] uppercase tracking-wider">{t('Update')}</span></button>
-              <button onClick={() => { setIsSettingsMenuOpen(false); setHistoryModal({ isOpen: true, entity: { name: t('Feed'), icon: "list" }, type: "feed" }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><List size={15} className="text-[var(--primary-color)]" /><span className="text-xs font-black text-[var(--text-main)] uppercase tracking-wider">{t('Feed')}</span></button>
-              <button onClick={() => { setIsSettingsMenuOpen(false); setCalendarAnalyticsModal({ isOpen: true }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><Calendar size={15} className="text-emerald-500" /><span className="text-xs font-black text-[var(--text-main)] uppercase tracking-wider">{t('Calendar')}</span></button>
-              <button onClick={() => { setIsSettingsMenuOpen(false); setAnalyticsModal({ isOpen: true, type: "expense" }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><PieChart size={15} className="text-amber-500" /><span className="text-xs font-black text-[var(--text-main)] uppercase tracking-wider">{t('Analytics')}</span></button>
-              {activeTableId && (
-                <button onClick={() => { setIsSettingsMenuOpen(false); setIsPasskeyModalOpen(true); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><Key size={15} className="text-indigo-400" /><span className="text-xs font-black text-[var(--text-main)] uppercase tracking-wider">{t('Security')}</span></button>
+            <div className="absolute bottom-[72px] right-0 w-48 bg-[var(--bg-color)] border border-[var(--glass-border)] rounded-[24px] shadow-[0_10px_30px_rgba(0,0,0,0.5)] flex flex-col z-[145] p-2 animate-in fade-in slide-in-from-bottom-5 zoom-in-95 origin-bottom-right backdrop-blur-xl">
+              <button onClick={() => { setIsSettingsMenuOpen(false); setHistoryModal({ isOpen: true, entity: { name: t('Feed'), icon: "list" }, type: "feed" }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left">
+                <List size={15} className="text-[var(--primary-color)]" />
+                <span className="text-xs font-black text-[var(--text-main)] uppercase tracking-wider">{t('Feed')}</span>
+              </button>
+              <button onClick={() => { setIsSettingsMenuOpen(false); setCalendarAnalyticsModal({ isOpen: true }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left">
+                <Calendar size={15} className="text-emerald-500" />
+                <span className="text-xs font-black text-[var(--text-main)] uppercase tracking-wider">{t('Calendar')}</span>
+              </button>
+              <button onClick={() => { setIsSettingsMenuOpen(false); setAnalyticsModal({ isOpen: true, type: "expense" }); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left">
+                <PieChart size={15} className="text-amber-500" />
+                <span className="text-xs font-black text-[var(--text-main)] uppercase tracking-wider">{t('Analytics')}</span>
+              </button>
+
+              <div className="h-px bg-[var(--glass-border)]/30 my-1 mx-2" />
+              
+              <button onClick={() => setIsMoreOpen(!isMoreOpen)} className="flex items-center justify-between px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left group">
+                <div className="flex items-center gap-3">
+                  <Settings size={15} className={`text-slate-400 group-hover:rotate-45 transition-transform duration-500 ${isMoreOpen ? 'rotate-90' : ''}`} />
+                  <span className="text-xs font-black text-[var(--text-main)] opacity-60 uppercase tracking-wider">{t('Settings')}</span>
+                </div>
+                <ChevronLeft size={14} className={`text-slate-500 transition-transform duration-300 ${isMoreOpen ? 'rotate-90' : '-rotate-90'}`} />
+              </button>
+
+              {isMoreOpen && (
+                <div className="flex flex-col gap-1 px-1 pb-1 animate-in slide-in-from-top-2 duration-300">
+                  <div className="flex items-center justify-around p-1.5 bg-[var(--glass-item-bg)]/40 rounded-xl mb-1 border border-[var(--glass-border)]/20">
+                    <button onClick={() => { setTheme("white"); setIsSettingsMenuOpen(false); }} className={`p-2 rounded-lg transition-all ${theme === 'white' || theme === 'zen' ? 'bg-amber-100 text-amber-600 scale-105 shadow-sm' : 'text-slate-400 hover:bg-slate-100'}`}><Sun size={15} /></button>
+                    <button onClick={() => { setTheme("mint"); setIsSettingsMenuOpen(false); }} className={`p-2 rounded-lg transition-all ${theme === 'mint' ? 'bg-emerald-500/20 text-emerald-600 scale-105 shadow-sm' : 'text-slate-400 hover:bg-emerald-50'}`}><Sparkles size={15} /></button>
+                    <button onClick={() => { setTheme("black"); setIsSettingsMenuOpen(false); }} className={`p-2 rounded-lg transition-all ${theme === 'black' || theme === 'modern' ? 'bg-purple-500/20 text-purple-400 scale-105 shadow-sm' : 'text-slate-400 hover:bg-white/5'}`}><Moon size={15} /></button>
+                  </div>
+                  
+                  <button onClick={() => { setIsSettingsMenuOpen(false); pullSettings(); }} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left">
+                    <RefreshCcw size={14} className={`text-amber-500 ${syncStatus === 'loading' ? 'animate-spin' : ''}`} />
+                    <span className="text-[10px] font-black text-[var(--text-main)] opacity-70 uppercase tracking-wider">{t('Update')}</span>
+                  </button>
+
+                  {activeTableId && (
+                    <button onClick={() => { setIsSettingsMenuOpen(false); setIsPasskeyModalOpen(true); }} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left">
+                      <Key size={14} className="text-indigo-400" />
+                      <span className="text-[10px] font-black text-[var(--text-main)] opacity-70 uppercase tracking-wider">{t('Security')}</span>
+                    </button>
+                  )}
+                  <button onClick={() => { setIsSettingsMenuOpen(false); setIsDownloadModalOpen(true); }} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left">
+                    <Smartphone size={14} className="text-[#6d5dfc]" />
+                    <span className="text-[10px] font-black text-[var(--text-main)] opacity-70 uppercase tracking-wider">{t('Application')}</span>
+                  </button>
+                </div>
               )}
-              <button onClick={() => { setIsSettingsMenuOpen(false); setIsDownloadModalOpen(true); }} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"><Smartphone size={15} className="text-[#6d5dfc]" /><span className="text-xs font-black text-[var(--text-main)] uppercase tracking-wider">{t('Application')}</span></button>
             </div>
           </>
         )}

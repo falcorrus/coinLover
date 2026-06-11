@@ -2,13 +2,13 @@
 
 ## 📂 Индекс знаний проекта
 Все инструкции и детали архитектуры структурированы в папке `Obsidian_Docs/`:
-1. [[Obsidian_Docs/01_ARCHITECTURE.md|Архитектура и Стек]] - Capacitor, React, VPS Proxy.
-2. [[Obsidian_Docs/02_UX_DESIGN.md|UX и Дизайн-система]] - Linear Style, DND механики, Темы.
-3. [[Obsidian_Docs/03_DEVELOPMENT.md|Разработка и Процессы]] - Стандарты, Тестирование, Цикл успеха.
-4. [[Obsidian_Docs/04_SYNC_DATA.md|Синхронизация и Данные]] - VPS Proxy, Разрешение конфликтов, Безопасность.
-5. [[Obsidian_Docs/05_SOLUTIONS_INDEX.md|Индекс решений]] - iOS PWA, лаги DND, Android Notch.
-6. [[Obsidian_Docs/06_ROADMAP.md|Роадмап]] - Multi-tenant, AI функции, глобальная экспансия.
-7. [[Obsidian_Docs/07_MOBILE_APK.md|Мобильное приложение и APK]] - Процесс сборки и синхронизация лендинга.
+1. [[!Docs/01_ARCHITECTURE.md|Архитектура и Стек]] - Capacitor, React, VPS Proxy.
+2. [[!Docs/02_UX_DESIGN.md|UX и Дизайн-система]] - Linear Style, DND механики, Темы.
+3. [[!Docs/03_DEVELOPMENT.md|Разработка и Процессы]] - Стандарты, Тестирование, Цикл успеха.
+4. [[!Docs/04_SYNC_DATA.md|Синхронизация и Данные]] - VPS Proxy, Разрешение конфликтов, Безопасность.
+5. [[!Docs/05_SOLUTIONS_INDEX.md|Индекс решений]] - iOS PWA, лаги DND, Android Notch.
+6. [[!Docs/06_ROADMAP.md|Роадмап]] - Multi-tenant, AI функции, глобальная экспансия.
+7. [[!Docs/07_MOBILE_APK.md|Мобильное приложение и APK]] - Процесс сборки и синхронизация лендинга.
 
 
 ## 🚀 Quick Commands
