@@ -115,7 +115,25 @@ export const AISheet: React.FC<AISheetProps> = ({
     return () => clearInterval(interval);
   }, [isRecording]);
 
-  const startVoiceRecording = () => {
+  const requestMicrophonePermission = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Stop the stream immediately after getting permission
+      stream.getTracks().forEach(track => track.stop());
+      return true;
+    } catch (err) {
+      console.error("Microphone permission denied:", err);
+      return false;
+    }
+  };
+
+  const startVoiceRecording = async () => {
+    const hasPermission = await requestMicrophonePermission();
+    if (!hasPermission) {
+      alert("Нет доступа к микрофону. Проверьте настройки разрешений приложения.");
+      return;
+    }
+
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
       alert("Ваш браузер не поддерживает распознавание речи.");

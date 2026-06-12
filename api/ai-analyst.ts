@@ -238,7 +238,7 @@ export default async function handler(req, res) {
         "X-Title": "CoinLover AI Analyst"
       },
       body: JSON.stringify({
-        model: "google/gemini-2.0-flash-lite-001",
+        model: "google/gemini-2.5-flash-lite",
         messages: [
           { role: "system", content: systemPrompt },
           ...history,
