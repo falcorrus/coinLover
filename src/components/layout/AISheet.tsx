@@ -71,24 +71,29 @@ export const AISheet: React.FC<AISheetProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      // Focus input after a short delay to allow animation to start
-      setTimeout(() => {
-        inputRef.current?.focus();
-      }, 100);
+      if (!startInVoiceMode) {
+        // Focus input after a short delay to allow animation to start
+        setTimeout(() => {
+          inputRef.current?.focus();
+        }, 100);
+      }
     } else {
       setMessages([]);
       setQuery("");
       setAmbiguousTx(null);
       setShowDoneButton(false);
     }
-  }, [isOpen]);
+  }, [isOpen, startInVoiceMode]);
 
   useEffect(() => {
     if (isOpen && initialQuery) {
       handleSend(initialQuery);
     }
     if (isOpen && startInVoiceMode) {
-      startVoiceRecording();
+      // Small delay to ensure UI is ready and focus hasn't been stolen
+      setTimeout(() => {
+        startVoiceRecording();
+      }, 300);
     }
   }, [isOpen, initialQuery, startInVoiceMode]);
 
@@ -133,8 +138,12 @@ export const AISheet: React.FC<AISheetProps> = ({
       handleSend(transcript);
     };
 
-    recognition.onerror = () => {
+    recognition.onerror = (event: any) => {
+      console.error("Speech recognition error:", event.error);
       setIsRecording(false);
+      if (event.error === 'not-allowed') {
+        alert("Нет доступа к микрофону. Проверьте настройки разрешений приложения.");
+      }
     };
 
     recognition.onend = () => {
