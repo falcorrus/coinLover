@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import sheetsHandler from './api/sheets.ts';
 import { authHandler } from './api/auth.ts';
+import aiHandler from './api/ai-analyst.ts';
 
 dotenv.config();
 
@@ -44,6 +45,15 @@ app.all('/api/sheets', async (req, res) => {
     await sheetsHandler(req, res);
   } catch (err) {
     console.error('API Error:', err);
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+});
+
+app.all('/api/ai-analyst', async (req, res) => {
+  try {
+    await aiHandler(req, res);
+  } catch (err) {
+    console.error('AI API Error:', err);
     res.status(500).json({ status: 'error', message: err.message });
   }
 });

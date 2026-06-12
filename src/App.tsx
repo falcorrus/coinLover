@@ -20,10 +20,11 @@ import { RatesService } from "./services/RatesService";
 
 // Layout Components
 import { AppHeader } from "./components/layout/AppHeader";
-import { IncomeSection } from "./components/layout/IncomeSection";
+import { AISheet } from "./components/layout/AISheet";
+import { StoriesSection } from "./components/layout/StoriesSection";
 import { AccountsSection } from "./components/layout/AccountsSection";
 import { ExpenseSection } from "./components/layout/ExpenseSection";
-import { StoriesSection } from "./components/layout/StoriesSection";
+import { IncomeSection } from "./components/layout/IncomeSection";
 
 import { googleSheetsService } from "./services/googleSheets";
 import { useLanguage } from "./contexts/LanguageContext";
@@ -155,6 +156,7 @@ const isNativeApp = React.useMemo(() => {
   const [isUsersModalOpen, setIsUsersModalOpen] = React.useState(false);
   const [isThemeModalOpen, setIsThemeModalOpen] = React.useState(false);
   const [activeStoryIndex, setActiveStoryIndex] = React.useState<number | null>(null);
+  const [aiSheet, setAiSheet] = React.useState<{ isOpen: boolean; startInVoiceMode: boolean; isExpanded: boolean }>({ isOpen: false, startInVoiceMode: false, isExpanded: false });
 
   const [numpad, setNumpad] = React.useState<any>({ 
     isOpen: false, 
@@ -196,6 +198,7 @@ const isNativeApp = React.useMemo(() => {
       case "numpad": setNumpad((p: any) => ({ ...p, isOpen: false })); break;
       case "settings": setIsSettingsMenuOpen(false); break;
       case "stories": setActiveStoryIndex(null); break;
+      case "ai": setAiSheet({ isOpen: false, startInVoiceMode: false, isExpanded: false }); break;
     }
   };
 
@@ -214,7 +217,8 @@ const isNativeApp = React.useMemo(() => {
       { id: "theme", open: isThemeModalOpen },
       { id: "numpad", open: numpad.isOpen },
       { id: "settings", open: isSettingsMenuOpen },
-      { id: "stories", open: activeStoryIndex !== null }
+      { id: "stories", open: activeStoryIndex !== null },
+      { id: "ai", open: aiSheet.isOpen }
     ];
 
     const currentlyOpenIds = openModals.filter(m => m.open).map(m => m.id);
@@ -232,7 +236,7 @@ const isNativeApp = React.useMemo(() => {
     accountModal.isOpen, incomeModal.isOpen, categoryModal.isOpen, historyModal.isOpen,
     analyticsModal.isOpen, calendarAnalyticsModal.isOpen, confirmDelete.isOpen,
     isTagModalOpen, isUsersModalOpen, isThemeModalOpen, numpad.isOpen, isSettingsMenuOpen,
-    activeStoryIndex
+    activeStoryIndex, aiSheet.isOpen
     ]);
 
   // 2. ВТОРИЧНЫЙ ЭФФЕКТ: Синхронизация modalStack с Историей Браузера
@@ -305,10 +309,9 @@ const isNativeApp = React.useMemo(() => {
   const calculations = useCurrencyCalculations(accounts, currentMonthTransactions, categories, incomes, categoryCurrencyMode);
 
   const settingsLongPress = useLongPress(() => { 
-    setIsSettingsMenuOpen(false); 
-    setIsUsersModalOpen(true); 
+    setAiSheet({ isOpen: true, startInVoiceMode: true });
     if (navigator.vibrate) navigator.vibrate(APP_SETTINGS.HAPTIC_FEEDBACK_DURATION_MEDIUM); 
-  }, 5000);
+  }, 800);
 
   const handleMenuClick = () => setIsSettingsMenuOpen(!isSettingsMenuOpen);
 
@@ -381,7 +384,7 @@ SplashScreen.hide().catch(() => {});
     setIsStoriesCollapsed(next);
     localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.STORIES_COLLAPSED, String(next));
   };
-  const isFullModalOpen = accountModal.isOpen || incomeModal.isOpen || categoryModal.isOpen || historyModal.isOpen || analyticsModal.isOpen || calendarAnalyticsModal.isOpen || numpad.isOpen || confirmDelete.isOpen || isTagModalOpen;
+  const isFullModalOpen = accountModal.isOpen || incomeModal.isOpen || categoryModal.isOpen || historyModal.isOpen || analyticsModal.isOpen || calendarAnalyticsModal.isOpen || numpad.isOpen || confirmDelete.isOpen || isTagModalOpen || aiSheet.isExpanded;
   const anyModalOpen = isFullModalOpen || isSettingsMenuOpen;
 
   const allExistingTags = React.useMemo(() => {
@@ -427,15 +430,31 @@ SplashScreen.hide().catch(() => {});
 
         <div className={`flex-1 flex flex-col overflow-hidden animate-in zoom-in-95 duration-300 transition-all duration-300 ease-out ${isFullModalOpen ? "scale-[0.96] blur-[3px] opacity-60" : "scale-100 blur-0 opacity-100"}`}>
           <AppHeader
-            isIncomeCollapsed={isIncomeCollapsed} toggleIncome={toggleIncome}
-            isStoriesCollapsed={isStoriesCollapsed} toggleStories={toggleStories}
-            settingsLongPress={settingsLongPress} handleMenuClick={handleMenuClick} isSettingsMenuOpen={isSettingsMenuOpen} setIsSettingsMenuOpen={setIsSettingsMenuOpen}
-
-            pullSettings={pullSettings} setHistoryModal={setHistoryModal} setCalendarAnalyticsModal={setCalendarAnalyticsModal} setAnalyticsModal={setAnalyticsModal}
-            theme={theme} setTheme={setTheme} syncStatus={syncStatus} pillMode={pillMode} setPillMode={setPillMode}
-            currentSymbol={calculations.currentSymbol} displaySpent={calculations.displaySpent} displayEarned={calculations.displayEarned} displayBalance={calculations.displayBalance}
+            isIncomeCollapsed={isIncomeCollapsed}
+            toggleIncome={toggleIncome}
+            isStoriesCollapsed={isStoriesCollapsed}
+            toggleStories={toggleStories}
+            settingsLongPress={settingsLongPress}
+            handleMenuClick={handleMenuClick}
+            isSettingsMenuOpen={isSettingsMenuOpen}
+            setIsSettingsMenuOpen={setIsSettingsMenuOpen}
+            pullSettings={pullSettings}
+            setHistoryModal={setHistoryModal}
+            setCalendarAnalyticsModal={setCalendarAnalyticsModal}
+            setAnalyticsModal={setAnalyticsModal}
+            theme={theme}
+            setTheme={setTheme}
+            syncStatus={syncStatus}
+            pillMode={pillMode}
+            setPillMode={setPillMode}
+            currentSymbol={calculations.currentSymbol}
+            displaySpent={calculations.displaySpent}
+            displayEarned={calculations.displayEarned}
+            displayBalance={calculations.displayBalance}
             categoriesCount={categories.length}
             activeTableId={activeTableId}
+            setIsAISheetOpen={(val, voice) => setAiSheet(p => ({ ...p, isOpen: val, startInVoiceMode: !!voice }))}
+            isAISheetOpen={aiSheet.isOpen}
           />
 
           <StoriesSection
@@ -478,6 +497,18 @@ SplashScreen.hide().catch(() => {});
             setCalendarAnalyticsModal={setCalendarAnalyticsModal} theme={theme}
           />
         </div>
+
+        <AISheet 
+          isOpen={aiSheet.isOpen} 
+          onClose={() => setAiSheet({ isOpen: false, startInVoiceMode: false, isExpanded: false })}
+          startInVoiceMode={aiSheet.startInVoiceMode}
+          onExpandChange={(val) => setAiSheet(p => ({ ...p, isExpanded: val }))}
+          ssId={activeTableId}
+          accounts={accounts}
+          categories={categories}
+          onTransactionAdded={pullSettings}
+          addTransaction={addTransaction}
+        />
 
         <ModalManager
           accountModal={accountModal} incomeModal={incomeModal} categoryModal={categoryModal} historyModal={historyModal}

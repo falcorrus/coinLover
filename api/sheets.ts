@@ -2,12 +2,12 @@ import { google } from 'googleapis';
 import fs from 'fs';
 import path from 'path';
 
-const MASTER_SS_ID = "1IQCs35RQlMMQsGB-CRczJeuRqa8WIxW4Sy_kjZyHP2M";
+export const MASTER_SS_ID = "1IQCs35RQlMMQsGB-CRczJeuRqa8WIxW4Sy_kjZyHP2M";
 
 let authClient: any = null;
 let sheetsClient: any = null;
 
-function parseNum(v: any) {
+export function parseNum(v: any) {
   if (v === undefined || v === null || v === "") return 0;
   
   let s = String(v).trim();
@@ -53,7 +53,7 @@ function parseNum(v: any) {
   return isNaN(n) ? 0 : n;
 }
 
-async function getSheetsClient() {
+export async function getSheetsClient() {
   if (sheetsClient) return sheetsClient;
   
   let clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
@@ -372,7 +372,7 @@ function cleanContact(c: string): string {
   return clean;
 }
 
-async function findUserByContactInMaster(sheets, contact: string) {
+export async function findUserByContactInMaster(sheets, contact: string) {
   const cleanSearch = cleanContact(contact);
   if (!cleanSearch) return null;
 
