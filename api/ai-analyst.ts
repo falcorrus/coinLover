@@ -264,15 +264,25 @@ export default async function handler(req, res) {
     let isSpecificMonth = false;
     let isAllTime = false;
     
-    const monthsMap: Record<string, number> = {
-      'январ': 1, 'феврал': 2, 'март': 3, 'апрел': 4, 'май': 5, 'мая': 5, 'мае': 5,
-      'июн': 6, 'июл': 7, 'август': 8, 'сентябр': 9, 'октябр': 10, 'ноябр': 11, 'декабр': 12
-    };
+    const monthPatterns = [
+      { month: 1, regex: /янв/ },
+      { month: 2, regex: /фев/ },
+      { month: 3, regex: /мар/ },
+      { month: 4, regex: /апр/ },
+      { month: 5, regex: /ма[йяею]/ },
+      { month: 6, regex: /июн/ },
+      { month: 7, regex: /июл/ },
+      { month: 8, regex: /авг/ },
+      { month: 9, regex: /сен/ },
+      { month: 10, regex: /окт/ },
+      { month: 11, regex: /ноя/ },
+      { month: 12, regex: /дек/ }
+    ];
 
     // Check for explicit month mentions
-    for (const [key, val] of Object.entries(monthsMap)) {
-      if (queryLower.includes(key)) {
-        targetMonth = val;
+    for (const pattern of monthPatterns) {
+      if (pattern.regex.test(queryLower)) {
+        targetMonth = pattern.month;
         isSpecificMonth = true;
         break;
       }
