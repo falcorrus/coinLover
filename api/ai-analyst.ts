@@ -63,30 +63,34 @@ export default async function handler(req, res) {
 Тебе передаётся готовая структура данных:
 - \`period_total_expense\` — итоговая сумма расходов за период (ТОЧНАЯ)
 - \`period_total_income\` — итоговая сумма доходов за период (ТОЧНАЯ)
-- \`expenses_by_category\` — расходы по категориям, каждая содержит \`total\` и \`tags\` с их \`total\` и списком транзакций
+- \`expenses_by_category\` — расходы по категориям (каждая содержит \`total\` и \`tags\` с их \`total\`)
 - \`income_by_category\` — аналогично для доходов
+- \`expenses_by_tag\` — расходы, сгруппированные глобально по тегам (содержит \`tag\`, \`total\` и \`transactions\`)
+- \`income_by_tag\` — аналогично для доходов
 - \`recent_transactions\` — последние 10 транзакций (для контекста при записи новой)
 
 **Правила работы:**
 1. Все поля \`total\` в данных — 100% точные числа, вычисленные на сервере. НИКОГДА не пересчитывай их.
-2. При ответе на вопрос о сумме — бери значение из \`total\` соответствующей группы напрямую.
-3. При перечислении транзакций — бери из поля \`transactions\` внутри нужного \`tag\`.
+2. При ответе на вопрос о сумме — бери значение из \`total\` соответствующей категории или тега напрямую.
+3. При перечислении транзакций — бери из поля \`transactions\` внутри нужного \`tag\` (или из глобальных тегов).
 
 ---
 
 ## АЛГОРИТМ ПОИСКА ПО ЗАПРОСУ
 Когда пользователь спрашивает о чём-то (например, "расходы на детей"):
-1. Найди нужную категорию в \`expenses_by_category\` по смыслу (category).
-2. Выведи \`total\` этой категории как итог.
-3. Если просят подробней — покажи разбивку по тегам (\`tags\`), используя их \`total\`.
-4. Если просят ещё подробней — покажи транзакции из \`transactions\`.
+1. Найди нужную категорию в \`expenses_by_category\` по смыслу (category) или нужный тег.
+2. Выведи \`total\` этой категории/тега как итог. Никаких транзакций не перечисляй!
+3. Только если пользователь в запросе явно использует слова-триггеры детализации (подробней, распиши, операции, транзакции, покажи записи), покажи разбивку:
+   - Если спросили про категорию: покажи разбивку по тегам (\`tags\`), используя их \`total\`.
+   - Если спросили про тег или просят максимальную детализацию: покажи построчный список транзакций из \`transactions\`.
 
 ---
 
 ## ЛОГИКА ДЕТАЛИЗАЦИИ ("Подробней")
-- **Уровень 1:** Итог по категории: взять \`category.total\`
-- **Уровень 2:** Разбивка по тегам: взять \`tag.total\` для каждого тега
-- **Уровень 3:** Построчный список: взять \`transactions[]\` из нужного тега
+- **По умолчанию (Общий вопрос):** Выводится ТОЛЬКО общая сумма (\`total\`). Построчные операции скрыты!
+- **При явном запросе детализации (подробней, операции):**
+  - **Уровень 1 (Категория):** Разбивка по тегам: взять \`tag.total\` для каждого тега.
+  - **Уровень 2 (Тег):** Построчный список: взять \`transactions[]\` (дата, сумма, комментарий).
 
 ---
 
@@ -242,12 +246,13 @@ export default async function handler(req, res) {
    - IF NO PERIOD IS SPECIFIED: You MUST ONLY use transactions from the current month (${currentMonthName} ${currentYearNum}).
    - You must parse the "date" field (format is typically DD.MM.YYYY, but can vary) and DISCARD any transaction that does not fall within the requested period.
    - FORBIDDEN: Including transactions from previous months if the user asked about "this month" or didn't specify a date.
-3. ABSTRACTION LEVELS FOR DETAILED REQUESTS:
-   - If the user asks for details ("подробней", "распиши"), you MUST follow this hierarchy:
-     1. Group by Categories ("dst" for expenses, "src" for incomes).
-     2. Group by Tags ("tag" column).
-     3. Finally, list individual transactions line-by-line.
-   - DO NOT jump straight to a line-by-line list unless the user specifically asks for all operations or there is only a single category/tag.
+3. СТРОГИЕ УРОВНИ ДЕТАЛИЗАЦИИ И АБСТРАКЦИИ:
+   - На ЛЮБОЙ первый или общий вопрос (например: "сколько потратил на жилье", "расходы на туризм в мае", "какие траты на еду") ты должен вывести ТОЛЬКО общую сводную сумму (итоговую цифру категории или тега).
+   - ТЕБЕ КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО выводить построчный список транзакций (с датами, комментариями, отдельными суммами), если пользователь явно не попросил об этом в текущем сообщении (используя слова: "подробно", "подробней", "детализация", "распиши", "транзакции", "операции", "покажи записи").
+   - Даже если в категории/теге всего одна транзакция, ты всё равно должен вывести ТОЛЬКО общую сумму и НЕ показывать построчную транзакцию без явного запроса детализации!
+   - Если пользователь явно запросил детализацию (слова "подробно", "транзакции" и т.д.):
+     1. Если X — категория: покажи разбивку по тегам внутри неё.
+     2. Если просят ещё подробней (или X — тег): покажи список транзакций (дата - сумма - комментарий).
 4. OUTPUT FORMATS:
    - ANALYSIS/LISTS: USE ONLY TEXT/MARKDOWN. 
    - NEW TRANSACTION: USE JSON BLOCK (\`action: "add_transaction"\`).
@@ -386,11 +391,33 @@ export default async function handler(req, res) {
         }).sort((a, b) => b.total - a.total);
       };
 
+      const groupByTag = (rows: TxRow[]) => {
+        const tagMap: Record<string, TxRow[]> = {};
+        rows.forEach(tx => {
+          const tag = tx.tag || 'Без тега';
+          if (!tagMap[tag]) tagMap[tag] = [];
+          tagMap[tag].push(tx);
+        });
+
+        return Object.entries(tagMap).map(([tag, tagTxs]) => ({
+          tag,
+          total: round2(tagTxs.reduce((s, t) => s + t.base_amt, 0)),
+          transactions: tagTxs.map(t => ({
+            date: t.date,
+            amount: round2(t.base_amt),
+            comment: t.comment,
+            category: t.dst || t.src
+          }))
+        })).sort((a, b) => b.total - a.total);
+      };
+
       return {
         period_total_expense: round2(expenseTxs.reduce((s, t) => s + t.base_amt, 0)),
         period_total_income:  round2(incomeTxs.reduce((s, t) => s + t.base_amt, 0)),
         expenses_by_category: groupByCategory(expenseTxs, 'dst'),
         income_by_category:   groupByCategory(incomeTxs, 'src'),
+        expenses_by_tag:      groupByTag(expenseTxs),
+        income_by_tag:        groupByTag(incomeTxs),
         // Also keep recent raw transactions for add_transaction tag suggestion
         recent_transactions: txs.slice(-10).map(t => ({
           date: t.date, type: t.type, category: t.dst || t.src, tag: t.tag, amount: round2(t.base_amt), comment: t.comment
