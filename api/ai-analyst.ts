@@ -220,6 +220,7 @@ export default async function handler(req, res) {
     const now = new Date();
     const currentMonthNum = now.getMonth() + 1;
     const currentYearNum = now.getFullYear();
+    const currentMonthStr = `${String(currentMonthNum).padStart(2, '0')}.${currentYearNum}`;
     const currentMonthName = now.toLocaleString('ru-RU', { month: 'long' });
     const monthFilter = `.${currentMonthNum < 10 ? '0' + currentMonthNum : currentMonthNum}.${currentYearNum}`;
 
@@ -256,31 +257,79 @@ export default async function handler(req, res) {
    - ONLY ADDITION is allowed.`;
 
     // 6. Server-side pre-filtering by period
-    // Detect if user mentioned a specific period in the query
     const queryLower = query.toLowerCase();
-    const periodKeywords = [
-      'прошл', 'позапрошл', 'январ', 'феврал', 'март', 'апрел', 'май', 'мая',
-      'июн', 'июл', 'август', 'сентябр', 'октябр', 'ноябр', 'декабр',
-      'январе', 'феврале', 'марте', 'апреле', 'июне', 'июле', 'сентябре',
-      'за год', 'за всё время', 'за все время', 'всего', 'за всё', 'history',
-      '2024', '2025', '2026'
-    ];
-    const userMentionedPeriod = periodKeywords.some(kw => queryLower.includes(kw));
+    
+    let targetMonth = currentMonthNum;
+    let targetYear = currentYearNum;
+    let isSpecificMonth = false;
+    let isAllTime = false;
+    
+    const monthsMap: Record<string, number> = {
+      'январ': 1, 'феврал': 2, 'март': 3, 'апрел': 4, 'май': 5, 'мая': 5,
+      'июн': 6, 'июл': 7, 'август': 8, 'сентябр': 9, 'октябр': 10, 'ноябр': 11, 'декабр': 12
+    };
 
-    const currentMonthStr = `${String(currentMonthNum).padStart(2, '0')}.${currentYearNum}`;
+    // Check for explicit month mentions
+    for (const [key, val] of Object.entries(monthsMap)) {
+      if (queryLower.includes(key)) {
+        targetMonth = val;
+        isSpecificMonth = true;
+        break;
+      }
+    }
+
+    // Check for explicit year mentions (e.g. 2024, 2025, 2026)
+    const yearMatch = queryLower.match(/\b(20\d{2})\b/);
+    if (yearMatch) {
+      targetYear = parseInt(yearMatch[1]);
+      isSpecificMonth = true;
+    } else if (isSpecificMonth) {
+      // If month was mentioned but no year, assume current or previous year
+      if (targetMonth > currentMonthNum) {
+        targetYear = currentYearNum - 1;
+      } else {
+        targetYear = currentYearNum;
+      }
+    }
+
+    // Check for relative periods
+    if (queryLower.includes('прошл') && queryLower.includes('месяц')) {
+      targetMonth = currentMonthNum - 1;
+      targetYear = currentYearNum;
+      if (targetMonth === 0) {
+        targetMonth = 12;
+        targetYear = currentYearNum - 1;
+      }
+      isSpecificMonth = true;
+    } else if (queryLower.includes('позапрошл') && queryLower.includes('месяц')) {
+      targetMonth = currentMonthNum - 2;
+      targetYear = currentYearNum;
+      if (targetMonth <= 0) {
+        targetMonth = 12 + targetMonth;
+        targetYear = currentYearNum - 1;
+      }
+      isSpecificMonth = true;
+    } else if ((queryLower.includes('текущ') && queryLower.includes('месяц')) || queryLower.includes('этот месяц')) {
+      targetMonth = currentMonthNum;
+      targetYear = currentYearNum;
+      isSpecificMonth = true;
+    }
+
+    if (queryLower.includes('за год') || queryLower.includes('всего') || queryLower.includes('за всё время') || queryLower.includes('за все время') || queryLower.includes('истори') || queryLower.includes('history')) {
+      isAllTime = true;
+    }
 
     let filteredTxData: typeof txData;
     let datasetDescription: string;
 
-    if (!userMentionedPeriod) {
-      // No period specified → send ONLY current month transactions
-      filteredTxData = txData.filter(tx => tx.date.endsWith(`.${currentMonthStr}`)
-        || tx.date.includes(`.${String(currentMonthNum).padStart(2, '0')}.${currentYearNum}`));
-      datasetDescription = `IMPORTANT: You are receiving ONLY transactions for the CURRENT MONTH (${currentMonthStr}). Do NOT say "I don't have data for other periods" — just analyze what is provided.`;
-    } else {
-      // User mentioned a specific period → send up to 12 months of data
+    if (isAllTime) {
       filteredTxData = txData;
-      datasetDescription = `You are receiving up to ${txData.length} transactions (last 12 months). Filter by the period the user requested.`;
+      datasetDescription = `You are receiving up to ${txData.length} transactions (last 12 months) because the user requested all-time or yearly data.`;
+    } else {
+      const targetMonthStr = String(targetMonth).padStart(2, '0');
+      const suffix = `.${targetMonthStr}.${targetYear}`;
+      filteredTxData = txData.filter(tx => tx.date.endsWith(suffix) || tx.date.includes(`.${targetMonthStr}.${targetYear}`));
+      datasetDescription = `IMPORTANT: You are receiving ONLY transactions for the specific period: ${targetMonthStr}.${targetYear}. All totals and transactions are pre-filtered for this month.`;
     }
 
     // 7. Server-side aggregation — all math is done here, AI only formats
