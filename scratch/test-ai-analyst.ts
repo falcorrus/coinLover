@@ -20,7 +20,7 @@ async function runTest() {
     method: 'POST',
     body: {
       ssId: "1IQCs35RQlMMQsGB-CRczJeuRqa8WIxW4Sy_kjZyHP2M",
-      query: "распиши подробно расходы на туризм в мае",
+      query: "расходы на жилье по месяцам",
       history: []
     }
   };

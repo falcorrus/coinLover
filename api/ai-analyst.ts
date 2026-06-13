@@ -67,6 +67,8 @@ export default async function handler(req, res) {
 - \`income_by_category\` — аналогично для доходов
 - \`expenses_by_tag\` — расходы, сгруппированные глобально по тегам (содержит \`tag\`, \`total\` и \`transactions\`)
 - \`income_by_tag\` — аналогично для доходов
+- \`expenses_by_month\` — расходы по месяцам (содержит хронологический список месяцев: \`month\` (MM.YYYY), \`total\`, \`categories\` (категория и ее total в этом месяце), \`tags\` (тег и его total в этом месяце))
+- \`income_by_month\` — аналогично для доходов по месяцам
 - \`recent_transactions\` — последние 10 транзакций (для контекста при записи новой)
 
 **Правила работы:**
@@ -78,16 +80,20 @@ export default async function handler(req, res) {
 
 ## АЛГОРИТМ ПОИСКА ПО ЗАПРОСУ
 Когда пользователь спрашивает о чём-то (например, "расходы на детей"):
-1. Найди нужную категорию в \`expenses_by_category\` по смыслу (category) или нужный тег.
-2. Выведи \`total\` этой категории/тега как итог. Никаких транзакций не перечисляй!
-3. Только если пользователь в запросе явно использует слова-триггеры детализации (подробней, распиши, операции, транзакции, покажи записи), покажи разбивку:
-   - Если спросили про категорию: покажи разбивку по тегам (\`tags\`), используя их \`total\`.
-   - Если спросили про тег или просят максимальную детализацию: покажи построчный список транзакций из \`transactions\`.
+1. Если запрос просит динамику по месяцам (например, "по месяцам", "тренд", "динамика", "сравнение по месяцам"):
+   - Найди нужную категорию или тег в списке \`expenses_by_month\` / \`income_by_month\`.
+   - Выведи хронологический список месяцев и сумм для этой категории/тега (например: "Май 2026: 1408.11 USD, Июнь 2026: 1090.09 USD"). Не показывай транзакции!
+2. В остальных случаях:
+   - Найди нужную категорию в \`expenses_by_category\` по смыслу (category) или нужный тег.
+   - Выведи \`total\` этой категории/тега как итог. Никаких транзакций не перечисляй!
+   - Только если пользователь в запросе явно использует слова-триггеры детализации (подробней, распиши, операции, транзакции, покажи записи), покажи разбивку:
+     - Если спросили про категорию: покажи разбивку по тегам (\`tags\`), используя их \`total\`.
+     - Если спросили про тег или просят максимальную детализацию: покажи построчный список транзакций из \`transactions\`.
 
 ---
 
 ## ЛОГИКА ДЕТАЛИЗАЦИИ ("Подробней")
-- **По умолчанию (Общий вопрос):** Выводится ТОЛЬКО общая сумма (\`total\`). Построчные операции скрыты!
+- **По умолчанию (Общий вопрос):** Выводится ТОЛЬКО общая сумма (\`total\`) или список месяцев (при запросе "по месяцам"). Построчные операции скрыты!
 - **При явном запросе детализации (подробней, операции):**
   - **Уровень 1 (Категория):** Разбивка по тегам: взять \`tag.total\` для каждого тега.
   - **Уровень 2 (Тег):** Построчный список: взять \`transactions[]\` (дата, сумма, комментарий).
@@ -330,7 +336,7 @@ export default async function handler(req, res) {
       isSpecificMonth = true;
     }
 
-    if (queryLower.includes('за год') || queryLower.includes('всего') || queryLower.includes('за всё время') || queryLower.includes('за все время') || queryLower.includes('истори') || queryLower.includes('history')) {
+    if (queryLower.includes('за год') || queryLower.includes('всего') || queryLower.includes('за всё время') || queryLower.includes('за все время') || queryLower.includes('истори') || queryLower.includes('history') || queryLower.includes('по месяцам') || queryLower.includes('динамик') || queryLower.includes('тренд') || queryLower.includes('график') || queryLower.includes('сравн')) {
       isAllTime = true;
     }
 
@@ -411,6 +417,44 @@ export default async function handler(req, res) {
         })).sort((a, b) => b.total - a.total);
       };
 
+      const groupByMonth = (rows: TxRow[]) => {
+        const monthMap: Record<string, TxRow[]> = {};
+        rows.forEach(tx => {
+          if (!tx.date) return;
+          const parts = tx.date.split(' ')[0].split('.');
+          if (parts.length < 3) return;
+          const monthStr = `${parts[1]}.${parts[2]}`; // MM.YYYY
+          if (!monthMap[monthStr]) monthMap[monthStr] = [];
+          monthMap[monthStr].push(tx);
+        });
+
+        return Object.entries(monthMap).map(([month, monthTxs]) => {
+          const catMap: Record<string, number> = {};
+          const tagMap: Record<string, number> = {};
+
+          monthTxs.forEach(tx => {
+            const cat = tx.dst || tx.src || 'Без категории';
+            const tag = tx.tag || 'Без тега';
+            catMap[cat] = round2((catMap[cat] || 0) + tx.base_amt);
+            tagMap[tag] = round2((tagMap[tag] || 0) + tx.base_amt);
+          });
+
+          const categories = Object.entries(catMap).map(([category, total]) => ({ category, total })).sort((a, b) => b.total - a.total);
+          const tags = Object.entries(tagMap).map(([tag, total]) => ({ tag, total })).sort((a, b) => b.total - a.total);
+
+          return {
+            month,
+            total: round2(monthTxs.reduce((s, t) => s + t.base_amt, 0)),
+            categories,
+            tags
+          };
+        }).sort((a, b) => {
+          const [aM, aY] = a.month.split('.').map(Number);
+          const [bM, bY] = b.month.split('.').map(Number);
+          return (aY * 12 + aM) - (bY * 12 + bM);
+        });
+      };
+
       return {
         period_total_expense: round2(expenseTxs.reduce((s, t) => s + t.base_amt, 0)),
         period_total_income:  round2(incomeTxs.reduce((s, t) => s + t.base_amt, 0)),
@@ -418,6 +462,8 @@ export default async function handler(req, res) {
         income_by_category:   groupByCategory(incomeTxs, 'src'),
         expenses_by_tag:      groupByTag(expenseTxs),
         income_by_tag:        groupByTag(incomeTxs),
+        expenses_by_month:    groupByMonth(expenseTxs),
+        income_by_month:      groupByMonth(incomeTxs),
         // Also keep recent raw transactions for add_transaction tag suggestion
         recent_transactions: txs.slice(-10).map(t => ({
           date: t.date, type: t.type, category: t.dst || t.src, tag: t.tag, amount: round2(t.base_amt), comment: t.comment
