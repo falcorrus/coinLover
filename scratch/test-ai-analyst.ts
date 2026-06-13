@@ -8,7 +8,7 @@ async function runTest() {
     method: 'POST',
     body: {
       ssId: "1IQCs35RQlMMQsGB-CRczJeuRqa8WIxW4Sy_kjZyHP2M",
-      query: "какие расходы на детей",
+      query: "расходы на жилье в мае",
       history: []
     }
   };
