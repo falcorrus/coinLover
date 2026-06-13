@@ -239,19 +239,45 @@ export default async function handler(req, res) {
    - NEVER SUBTRACT.
    - ONLY ADDITION is allowed.`;
 
-    // 6. Build user message with a clear context header
+    // 6. Server-side pre-filtering by period
+    // Detect if user mentioned a specific period in the query
+    const queryLower = query.toLowerCase();
+    const periodKeywords = [
+      'прошл', 'позапрошл', 'январ', 'феврал', 'март', 'апрел', 'май', 'мая',
+      'июн', 'июл', 'август', 'сентябр', 'октябр', 'ноябр', 'декабр',
+      'январе', 'феврале', 'марте', 'апреле', 'июне', 'июле', 'сентябре',
+      'за год', 'за всё время', 'за все время', 'всего', 'за всё', 'history',
+      '2024', '2025', '2026'
+    ];
+    const userMentionedPeriod = periodKeywords.some(kw => queryLower.includes(kw));
+
     const currentMonthStr = `${String(currentMonthNum).padStart(2, '0')}.${currentYearNum}`;
-    const currentMonthTransactions = txData.filter(tx => tx.date.includes(`.${currentMonthStr}`));
+
+    let filteredTxData: typeof txData;
+    let datasetDescription: string;
+
+    if (!userMentionedPeriod) {
+      // No period specified → send ONLY current month transactions
+      filteredTxData = txData.filter(tx => tx.date.endsWith(`.${currentMonthStr}`)
+        || tx.date.includes(`.${String(currentMonthNum).padStart(2, '0')}.${currentYearNum}`));
+      datasetDescription = `IMPORTANT: You are receiving ONLY transactions for the CURRENT MONTH (${currentMonthStr}). Do NOT say "I don't have data for other periods" — just analyze what is provided.`;
+    } else {
+      // User mentioned a specific period → send up to 12 months of data
+      filteredTxData = txData;
+      datasetDescription = `You are receiving up to ${txData.length} transactions (last 12 months). Filter by the period the user requested.`;
+    }
+
     const userMessageContent = [
       `=== DATA CONTEXT ===`,
-      `Total transactions provided: ${txData.length}`,
-      `Transactions in CURRENT MONTH (${currentMonthStr}): ${currentMonthTransactions.length}`,
-      `Date format in data: DD.MM.YYYY`,
       `Today: ${currentDate}`,
+      `Current month: ${currentMonthStr}`,
+      datasetDescription,
+      `Transactions in dataset: ${filteredTxData.length}`,
+      `Date format in data: DD.MM.YYYY (day.month.year)`,
       `===================`,
       ``,
       `Financial Data (JSON):`,
-      JSON.stringify(txData),
+      JSON.stringify(filteredTxData),
       ``,
       `User Question: ${query}`
     ].join('\n');
