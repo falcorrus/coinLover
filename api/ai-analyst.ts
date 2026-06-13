@@ -55,34 +55,48 @@ export default async function handler(req, res) {
 ## БАЗОВЫЕ ПРАВИЛА (ОГРАНИЧЕНИЯ)
 1. **ПЕРИОД ПО УМОЛЧАНИЮ:** Если пользователь в запросе не указал конкретную дату или период (например: "сколько я потратил на кофе?"), ВСЕГДА используй текущий месяц (с 1-го числа текущего месяца до сегодняшней даты включительно).
 2. **ОПРЕДЕЛЕНИЕ ТИПА:** Расходы — это строго тип \`expense\` (столбец B). Доходы — это строго тип \`income\` (столбец B). Всегда фильтруй данные по этому столбцу перед любыми расчетами.
-3. **МАТЕМАТИКА:** Из математических операций тебе разрешено использовать ТОЛЬКО сложение (суммирование строк). Запрещено вычислять среднее, вычитать или прогнозировать, если об этом нет явной системной команды.
+3. **МАТЕМАТИКА:** Тебе ЗАПРЕЩЕНО самостоятельно вычислять любые суммы. Все итоги уже посчитаны на сервере и переданы тебе в поле \`PRE-COMPUTED FINANCIAL DATA\`. Используй только эти цифры.
 
 ---
 
-## АЛГОРИТМ ПОИСКА ДАННЫХ (От общего к частному)
-Пользователи мыслят абстракциями. Когда поступает запрос (например, "расходы на жилье"), действуй строго по этому алгоритму:
-1. **Шаг 1:** Определи период (по умолчанию — текущий месяц).
-2. **Шаг 2:** Отфильтруй тип операций (например, только \`expense\`).
-3. **Шаг 3:** Ищи совпадения по сущности в столбце "CATEGORIES" (Категории).
-4. **Шаг 4:** Если точного или смыслового совпадения в Категориях НЕТ, переходи к поиску по столбцу "Tags" (Теги) и комментариям (столбец Description).
+## АЛГОРИТМ РАБОТЫ С PRE-COMPUTED DATA
+Тебе передаётся готовая структура данных:
+- \`period_total_expense\` — итоговая сумма расходов за период (ТОЧНАЯ)
+- \`period_total_income\` — итоговая сумма доходов за период (ТОЧНАЯ)
+- \`expenses_by_category\` — расходы по категориям, каждая содержит \`total\` и \`tags\` с их \`total\` и списком транзакций
+- \`income_by_category\` — аналогично для доходов
+- \`recent_transactions\` — последние 10 транзакций (для контекста при записи новой)
+
+**Правила работы:**
+1. Все поля \`total\` в данных — 100% точные числа, вычисленные на сервере. НИКОГДА не пересчитывай их.
+2. При ответе на вопрос о сумме — бери значение из \`total\` соответствующей группы напрямую.
+3. При перечислении транзакций — бери из поля \`transactions\` внутри нужного \`tag\`.
+
+---
+
+## АЛГОРИТМ ПОИСКА ПО ЗАПРОСУ
+Когда пользователь спрашивает о чём-то (например, "расходы на детей"):
+1. Найди нужную категорию в \`expenses_by_category\` по смыслу (category).
+2. Выведи \`total\` этой категории как итог.
+3. Если просят подробней — покажи разбивку по тегам (\`tags\`), используя их \`total\`.
+4. Если просят ещё подробней — покажи транзакции из \`transactions\`.
 
 ---
 
 ## ЛОГИКА ДЕТАЛИЗАЦИИ ("Подробней")
-Когда пользователь просит "подробней", "распиши" или задает уточняющий вопрос, спускайся на один уровень абстракции ниже по следующей цепочке:
-- **Уровень 1 (Высокий):** Общая сумма (например: "Всего расходов за май: 1500$").
-- **Уровень 2 (Средний):** Группировка (например: "Расходы на Жилье: 1000$, из них Аренда 800$, Коммуналка 200$ / или разбивка по тегам").
-- **Уровень 3 (Низкий):** Построчный список (Детальный список конкретных транзакций: Дата, Сумма, Категория/Тег, Комментарий).
+- **Уровень 1:** Итог по категории: взять \`category.total\`
+- **Уровень 2:** Разбивка по тегам: взять \`tag.total\` для каждого тега
+- **Уровень 3:** Построчный список: взять \`transactions[]\` из нужного тега
 
 ---
 
 ## РЕЖИМЫ ОТВЕТА (ВНИМАНИЕ!)
 
 ### 1. Текстовый анализ (Markdown) — ДЛЯ ВСЕХ ВОПРОСОВ АНАЛИЗА
-Если пользователь просит: показать операции, посчитать траты, дать подробности, сравнить периоды.
-- Отвечай ТОЛЬКО текстом с использованием Markdown. Отвечай коротко и по делу. Суммы выводи в понятном формате. Если данных за период нет, так и скажи: "За этот период нет записей по данному запросу."
-- **Никогда не используй JSON для этих запросов.**
-- Если просят "подробней" или "показать операции" — выведи список транзакций из предоставленных данных в виде красивого списка. Пример: "11.06 - Продукты: 500 руб (Пятерочка)".
+- Отвечай ТОЛЬКО текстом с Markdown. Коротко и по делу.
+- Суммы бери ТОЛЬКО из pre-computed полей \`total\`. Не складывай и не вычитай.
+- **Никогда не используй JSON для аналитических запросов.**
+- Пример вывода транзакций: "04.06 - 39.76 USD (Даниэле за транспорт)"
 
 ### 2. JSON блок — ТОЛЬКО ДЛЯ СОЗДАНИЯ НОВЫХ ТРАТ
 Если пользователь говорит: "купил кофе за 200", "запиши расход 500".
@@ -98,16 +112,18 @@ export default async function handler(req, res) {
     "is_ambiguous": true
   }
   \`\`\`
-- ВАЖНО: Если пользователь явно не указал кошелек/счет для расхода, обязательно установи \`"is_ambiguous": true\` и оставь \`wallet_id\` пустым. Это вызовет кнопки выбора кошелька в интерфейсе.
-- ТЕГИ (АВТОМАТИЗАЦИЯ): Обязательно проанализируй последние 10 транзакций. Если похожая трата уже была, используй такой же тег. Если нет — выбери наиболее подходящий из списка тегов. Если ничего не подходит, оставь поле \`tag\` пустым ("").
-- Обязательно добавь текстовое пояснение ПОСЛЕ или ДО блока JSON.
+- ВАЖНО: Если пользователь явно не указал кошелек, установи \`"is_ambiguous": true\` и оставь \`wallet_id\` пустым.
+- ТЕГИ: Посмотри на \`recent_transactions\` — если похожая трата уже была с тегом, используй тот же тег.
+- Добавь текстовое пояснение ДО или ПОСЛЕ блока JSON.
 
 ---
 
 ## ПРАВИЛА ПОВЕДЕНИЯ
-1. НЕ ПРИДУМЫВАЙ новые действия типа "show_operations" в JSON. Это сломает систему.
+1. НЕ ПРИДУМЫВАЙ новые действия в JSON (только \`add_transaction\`).
 2. Весь просмотр истории и анализ — это текстовый режим.
-3. Будь лаконичен и точен.`;
+3. Будь лаконичен и точен.
+4. Никогда не говори "я не могу посчитать" — данные уже посчитаны, просто читай их.`;
+
 
     // 2. Fetch Data (Transactions & Configs)
     // Use UNFORMATTED_VALUE to get raw numbers instead of localized strings
@@ -267,20 +283,81 @@ export default async function handler(req, res) {
       datasetDescription = `You are receiving up to ${txData.length} transactions (last 12 months). Filter by the period the user requested.`;
     }
 
+    // 7. Server-side aggregation — all math is done here, AI only formats
+    type TxRow = { date: string; type: string; src: string; dst: string; tag: string; base_amt: number; comment: string; };
+    
+    const buildAggregates = (txs: TxRow[]) => {
+      // Round helper to avoid floating point drift
+      const round2 = (n: number) => Math.round(n * 100) / 100;
+
+      const expenseTxs = txs.filter(tx => tx.type === 'expense');
+      const incomeTxs  = txs.filter(tx => tx.type === 'income');
+
+      const groupByCategory = (rows: TxRow[], categoryField: 'dst' | 'src') => {
+        const catMap: Record<string, TxRow[]> = {};
+        rows.forEach(tx => {
+          const cat = tx[categoryField] || 'Без категории';
+          if (!catMap[cat]) catMap[cat] = [];
+          catMap[cat].push(tx);
+        });
+
+        return Object.entries(catMap).map(([category, catTxs]) => {
+          const tagMap: Record<string, TxRow[]> = {};
+          catTxs.forEach(tx => {
+            const tag = tx.tag || 'Без тега';
+            if (!tagMap[tag]) tagMap[tag] = [];
+            tagMap[tag].push(tx);
+          });
+
+          const tags = Object.entries(tagMap).map(([tag, tagTxs]) => ({
+            tag,
+            total: round2(tagTxs.reduce((s, t) => s + t.base_amt, 0)),
+            transactions: tagTxs.map(t => ({
+              date: t.date,
+              amount: round2(t.base_amt),
+              comment: t.comment
+            }))
+          }));
+
+          return {
+            category,
+            total: round2(catTxs.reduce((s, t) => s + t.base_amt, 0)),
+            tags
+          };
+        }).sort((a, b) => b.total - a.total);
+      };
+
+      return {
+        period_total_expense: round2(expenseTxs.reduce((s, t) => s + t.base_amt, 0)),
+        period_total_income:  round2(incomeTxs.reduce((s, t) => s + t.base_amt, 0)),
+        expenses_by_category: groupByCategory(expenseTxs, 'dst'),
+        income_by_category:   groupByCategory(incomeTxs, 'src'),
+        // Also keep recent raw transactions for add_transaction tag suggestion
+        recent_transactions: txs.slice(-10).map(t => ({
+          date: t.date, type: t.type, category: t.dst || t.src, tag: t.tag, amount: round2(t.base_amt), comment: t.comment
+        }))
+      };
+    };
+
+    const aggregates = buildAggregates(filteredTxData);
+
     const userMessageContent = [
       `=== DATA CONTEXT ===`,
       `Today: ${currentDate}`,
       `Current month: ${currentMonthStr}`,
       datasetDescription,
-      `Transactions in dataset: ${filteredTxData.length}`,
-      `Date format in data: DD.MM.YYYY (day.month.year)`,
+      `Currency: ${baseCurrency}`,
       `===================`,
       ``,
-      `Financial Data (JSON):`,
-      JSON.stringify(filteredTxData),
+      `## PRE-COMPUTED FINANCIAL DATA`,
+      `CRITICAL: All totals below are 100% accurate — computed server-side. DO NOT recalculate them.`,
+      `Use ONLY these numbers in your response. Copy them exactly as-is.`,
+      ``,
+      JSON.stringify(aggregates, null, 2),
       ``,
       `User Question: ${query}`
     ].join('\n');
+
 
     // 7. Call OpenRouter
     const openRouterApiKey = process.env.OPENROUTER_API_KEY;
