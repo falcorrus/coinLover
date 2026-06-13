@@ -163,6 +163,22 @@ export default async function handler(req, res) {
     const tagIdx = ids.indexOf('tag');
     const commentIdx = ids.indexOf('comment');
 
+    // Helper: convert Excel serial date OR string date to DD.MM.YYYY
+    const parseToDateStr = (rawDate: any): string => {
+      if (!rawDate) return "";
+      // If it's a number, it's an Excel serial date (days since 1899-12-30)
+      if (typeof rawDate === 'number') {
+        const excelEpoch = new Date(1899, 11, 30);
+        const d = new Date(excelEpoch.getTime() + rawDate * 86400000);
+        const dd = String(d.getDate()).padStart(2, '0');
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const yyyy = d.getFullYear();
+        return `${dd}.${mm}.${yyyy}`;
+      }
+      // If it's already a string in recognizable format, return as-is
+      return String(rawDate);
+    };
+
     const recentRows = txRows.slice(-500);
     const txData = recentRows.map(row => {
       const rawAmt = row[baseAmtIdx];
@@ -174,7 +190,7 @@ export default async function handler(req, res) {
       }
       
       return {
-        date: String(row[dateIdx] || ""),
+        date: parseToDateStr(row[dateIdx]),
         type: String(row[typeIdxTx] || "").toLowerCase(),
         src: String(row[srcIdx] || ""),
         dst: String(row[dstIdx] || ""),
@@ -223,7 +239,24 @@ export default async function handler(req, res) {
    - NEVER SUBTRACT.
    - ONLY ADDITION is allowed.`;
 
-    // 6. Call OpenRouter
+    // 6. Build user message with a clear context header
+    const currentMonthStr = `${String(currentMonthNum).padStart(2, '0')}.${currentYearNum}`;
+    const currentMonthTransactions = txData.filter(tx => tx.date.includes(`.${currentMonthStr}`));
+    const userMessageContent = [
+      `=== DATA CONTEXT ===`,
+      `Total transactions provided: ${txData.length}`,
+      `Transactions in CURRENT MONTH (${currentMonthStr}): ${currentMonthTransactions.length}`,
+      `Date format in data: DD.MM.YYYY`,
+      `Today: ${currentDate}`,
+      `===================`,
+      ``,
+      `Financial Data (JSON):`,
+      JSON.stringify(txData),
+      ``,
+      `User Question: ${query}`
+    ].join('\n');
+
+    // 7. Call OpenRouter
     const openRouterApiKey = process.env.OPENROUTER_API_KEY;
     if (!openRouterApiKey) {
       return res.status(500).json({ status: "error", message: "OPENROUTER_API_KEY is missing." });
@@ -238,11 +271,11 @@ export default async function handler(req, res) {
         "X-Title": "CoinLover AI Analyst"
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash-lite",
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
           ...history,
-          { role: "user", content: `Financial Data (JSON):\n${JSON.stringify(txData)}\n\nUser Question: ${query}` }
+          { role: "user", content: userMessageContent }
         ]
       })
     });

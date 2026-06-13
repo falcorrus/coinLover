@@ -117,22 +117,25 @@ export const AISheet: React.FC<AISheetProps> = ({
 
   const requestMicrophonePermission = async () => {
     try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        console.warn("getUserMedia API not available. Trying to proceed anyway.");
+        return true; // Fallback to let SpeechRecognition handle it
+      }
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      // Stop the stream immediately after getting permission
       stream.getTracks().forEach(track => track.stop());
       return true;
-    } catch (err) {
+    } catch (err: any) {
       console.error("Microphone permission denied:", err);
+      // Detailed error for debugging
+      const errMsg = err.name === 'NotAllowedError' ? "Доступ запрещен." : `${err.name}: ${err.message}`;
+      alert(`Ошибка доступа к микрофону: ${errMsg}`);
       return false;
     }
   };
 
   const startVoiceRecording = async () => {
     const hasPermission = await requestMicrophonePermission();
-    if (!hasPermission) {
-      alert("Нет доступа к микрофону. Проверьте настройки разрешений приложения.");
-      return;
-    }
+    if (!hasPermission) return;
 
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -160,7 +163,13 @@ export const AISheet: React.FC<AISheetProps> = ({
       console.error("Speech recognition error:", event.error);
       setIsRecording(false);
       if (event.error === 'not-allowed') {
-        alert("Нет доступа к микрофону. Проверьте настройки разрешений приложения.");
+        alert("Голосовой ввод заблокирован системой. Проверьте настройки разрешений Google и браузера.");
+      } else if (event.error === 'network') {
+        alert("Ошибка сети при распознавании голоса.");
+      } else if (event.error === 'no-speech') {
+        // Just ignore no-speech, user might have just been quiet
+      } else {
+        alert(`Ошибка распознавания (${event.error}). Попробуйте еще раз.`);
       }
     };
 
@@ -168,7 +177,12 @@ export const AISheet: React.FC<AISheetProps> = ({
       setIsRecording(false);
     };
 
-    recognition.start();
+    try {
+      recognition.start();
+    } catch (e: any) {
+      console.error("Recognition start failed:", e);
+      alert(`Не удалось запустить микрофон: ${e.message}`);
+    }
   };
 
   const handleSaveTransaction = async (walletName: string, transactionData: any) => {
@@ -224,7 +238,14 @@ export const AISheet: React.FC<AISheetProps> = ({
         body: JSON.stringify({
           ssId,
           query: text,
-          history: messages.slice(-5).map(m => ({ role: m.role, content: m.content }))
+          // Pass history but truncate long AI responses to prevent the model from
+          // re-using previously computed numbers instead of recalculating from raw data
+          history: messages.slice(-6).map(m => ({
+            role: m.role,
+            content: m.role === 'assistant' && m.content.length > 300
+              ? m.content.slice(0, 300) + '\n[...response truncated, recalculate from raw data...]'
+              : m.content
+          }))
         })
       });
 
