@@ -16,11 +16,12 @@ interface SyncStateProps {
   setIncomes: (i: IncomeSource[]) => void;
   setTransactions: (t: Transaction[]) => void;
   setUsers: (u: { name: string; id: string }[]) => void;
+  setTariff?: (t: string) => void;
   ssId?: string;
 }
 
 export const useSync = ({
-  accounts, setAccounts, categories, setCategories, incomes, setIncomes, setTransactions, setUsers, ssId
+  accounts, setAccounts, categories, setCategories, incomes, setIncomes, setTransactions, setUsers, setTariff, ssId
 }: SyncStateProps) => {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>("idle");
   const [accessError, setAccessError] = useState<string | null>(null);
@@ -60,6 +61,16 @@ export const useSync = ({
     if (data.incomes) setIncomes(data.incomes);
     if (data.users) setUsers(data.users);
     
+    if (data.tariff) {
+      localStorage.setItem("cl_user_tariff", data.tariff);
+      if (setTariff) setTariff(data.tariff);
+    } else {
+      // Default to Free if not specified
+      const defaultTariff = "Free";
+      localStorage.setItem("cl_user_tariff", defaultTariff);
+      if (setTariff) setTariff(defaultTariff);
+    }
+    
     if (data.baseCurrency) {
       const oldBase = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY);
       if (oldBase && oldBase !== data.baseCurrency) {
@@ -78,60 +89,14 @@ export const useSync = ({
       setTransactions([...data.transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
     }
     setAccessError(null);
-  }, [setAccounts, setCategories, setIncomes, setTransactions, setUsers]);
+  }, [setAccounts, setCategories, setIncomes, setTransactions, setUsers, setTariff, ssId]);
 
   const pullSettings = useCallback(async () => {
-    const isDemo = !ssId && localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE) === "true";
-    if (!ssId && !isDemo) {
+    if (!ssId) {
       setSyncStatus("idle");
       return false;
     }
     setSyncStatus("loading");
-
-    if (isDemo) {
-      try {
-        const savedAccounts = localStorage.getItem("cl_demo_cl_accounts");
-        const savedCategories = localStorage.getItem("cl_demo_cl_categories");
-        const savedIncomes = localStorage.getItem("cl_demo_cl_incomes");
-        const savedTransactions = localStorage.getItem("cl_demo_cl_transactions");
-
-        if (savedAccounts || savedCategories || savedIncomes || savedTransactions) {
-          updateLocalFromRemote({
-            accounts: savedAccounts ? JSON.parse(savedAccounts) : [],
-            categories: savedCategories ? JSON.parse(savedCategories) : [],
-            incomes: savedIncomes ? JSON.parse(savedIncomes) : [],
-            transactions: savedTransactions ? JSON.parse(savedTransactions) : [],
-            timestamp: new Date().toISOString(),
-            baseCurrency: "RUB"
-          });
-        } else {
-          // Инициализируем красивыми мок-данными
-          const { DEMO_ACCOUNTS, DEMO_CATEGORIES, DEMO_INCOMES, getDemoTransactions } = await import("../constants/demoDataTemplate");
-          const txs = getDemoTransactions();
-          
-          localStorage.setItem("cl_demo_cl_accounts", JSON.stringify(DEMO_ACCOUNTS));
-          localStorage.setItem("cl_demo_cl_categories", JSON.stringify(DEMO_CATEGORIES));
-          localStorage.setItem("cl_demo_cl_incomes", JSON.stringify(DEMO_INCOMES));
-          localStorage.setItem("cl_demo_cl_transactions", JSON.stringify(txs));
-          localStorage.setItem("cl_demo_cl_last_sync", new Date().toISOString());
-
-          updateLocalFromRemote({
-            accounts: DEMO_ACCOUNTS,
-            categories: DEMO_CATEGORIES,
-            incomes: DEMO_INCOMES,
-            transactions: txs,
-            timestamp: new Date().toISOString(),
-            baseCurrency: "RUB"
-          });
-        }
-        setSyncStatus("success");
-        return true;
-      } catch (err) {
-        console.error("Failed to initialize demo data:", err);
-        setSyncStatus("error");
-        return false;
-      }
-    }
 
     try {
       const remote = await googleSheetsService.fetchSettings(ssId);
@@ -153,7 +118,6 @@ export const useSync = ({
         }
 
         updateLocalFromRemote(remote);
-        if (ssId) localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE, "false");
         setSyncStatus("success");
         return true;
       }
@@ -172,8 +136,6 @@ export const useSync = ({
 
   const checkConflicts = useCallback(async () => {
     if (syncStatus === "loading" || !!accessError) return;
-    const isDemo = !ssId && localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE) === "true";
-    if (isDemo) return;
     if (!ssId) return;
     try {
       const remote = await googleSheetsService.fetchSettings(ssId);
@@ -200,12 +162,7 @@ export const useSync = ({
   }, [updateLocalFromRemote, ssId, syncStatus, accessError, accounts.length, categories.length]);
 
   const pushSettings = useCallback((a: Account[], c: Category[], i: IncomeSource[], immediate = false) => {
-    const isDemo = !ssId && localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE) === "true";
-    if (isDemo) {
-      localStorage.setItem("cl_demo_cl_accounts", JSON.stringify(a));
-      localStorage.setItem("cl_demo_cl_categories", JSON.stringify(c));
-      localStorage.setItem("cl_demo_cl_incomes", JSON.stringify(i));
-      localStorage.setItem("cl_demo_cl_last_sync", new Date().toISOString());
+    if (!ssId) {
       setSyncStatus("success");
       return true;
     }

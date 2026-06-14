@@ -34,13 +34,16 @@ interface AppHeaderProps {
   activeTableId: string | null;
   setIsAISheetOpen: (val: boolean, startInVoiceMode?: boolean) => void;
   isAISheetOpen: boolean;
+  tariff?: string;
+  onOpenPremiumModal: () => void;
 }
 
 export function AppHeader({
   isIncomeCollapsed, toggleIncome, isStoriesCollapsed, toggleStories, settingsLongPress, handleMenuClick, isSettingsMenuOpen,
   setIsSettingsMenuOpen, pullSettings, setHistoryModal, setCalendarAnalyticsModal, setAnalyticsModal,
   theme, setTheme, syncStatus, pillMode, setPillMode, currentSymbol, displaySpent, displayEarned, displayBalance,
-  categoriesCount, activeTableId, setIsAISheetOpen, isAISheetOpen
+  categoriesCount, activeTableId, setIsAISheetOpen, isAISheetOpen,
+  tariff = "Free", onOpenPremiumModal
 }: AppHeaderProps) {
   const { t } = useLanguage();
   const isCompact = categoriesCount > 8;
@@ -291,14 +294,28 @@ export function AppHeader({
 
                       <div className="flex gap-1 m-1 p-1 bg-[var(--glass-item-bg)] border border-[var(--glass-border)] rounded-[18px]">
                       <button 
-                        onClick={() => { setIsSettingsMenuOpen(false); setIsAISheetOpen(true, false); }}
+                        onClick={() => { 
+                          setIsSettingsMenuOpen(false); 
+                          if (tariff !== "Premium") {
+                            onOpenPremiumModal();
+                          } else {
+                            setIsAISheetOpen(true, false); 
+                          }
+                        }}
                         className="flex-1 flex items-center justify-center gap-2 py-2 rounded-[14px] hover:bg-[var(--glass-item-active)] active:scale-95 transition-all group"
                       >
                         <Keyboard size={14} className="text-[var(--text-main)] opacity-40 group-hover:text-[#6d5dfc] group-hover:opacity-100 transition-all" />
                         <span className="text-[9px] text-[var(--text-main)] opacity-40 font-bold uppercase tracking-wider">{t('Type')}</span>
                       </button>
                       <button 
-                        onClick={() => { setIsSettingsMenuOpen(false); setIsAISheetOpen(true, true); }}
+                        onClick={() => { 
+                          setIsSettingsMenuOpen(false); 
+                          if (tariff !== "Premium") {
+                            onOpenPremiumModal();
+                          } else {
+                            setIsAISheetOpen(true, true); 
+                          }
+                        }}
                         className="flex-1 flex items-center justify-center gap-2 py-2 rounded-[14px] hover:bg-[var(--glass-item-active)] active:scale-95 transition-all group"
                       >
                         <Mic size={14} className="text-[#6d5dfc] group-hover:scale-110 transition-transform" />

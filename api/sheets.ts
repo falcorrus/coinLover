@@ -85,30 +85,6 @@ export async function getSheetsClient() {
 
 async function updateConfigs(sheets, spreadsheetId, sheetName, payload) {
   try {
-    // Read current configs first to preserve Passkey values
-    let passkeyEnabled = payload.passkeyEnabled;
-    let passkeyCredId = payload.passkeyCredId;
-    let passkeyPubKey = payload.passkeyPubKey;
-    let passkeyCounter = payload.passkeyCounter;
-
-    try {
-      const existing = await sheets.spreadsheets.values.get({
-        spreadsheetId,
-        range: `${sheetName}!A:M`
-      });
-      const extRows = existing.data.values || [];
-      for (const row of extRows) {
-        if (!row || !row[0]) continue;
-        const k = String(row[0]).trim();
-        if (k === "Passkey_Enabled" && passkeyEnabled === undefined) passkeyEnabled = row[1];
-        if (k === "Passkey_Credential_ID" && passkeyCredId === undefined) passkeyCredId = row[1];
-        if (k === "Passkey_Public_Key" && passkeyPubKey === undefined) passkeyPubKey = row[1];
-        if (k === "Passkey_Counter" && passkeyCounter === undefined) passkeyCounter = row[1];
-      }
-    } catch (err) {
-      // Config sheet might be new or not found
-    }
-
     // Recreate the managed parts
     const ts = payload.timestamp || new Date().toISOString();
     const baseCurrency = payload.baseCurrency || "USD";
@@ -152,13 +128,6 @@ async function updateConfigs(sheets, spreadsheetId, sheetName, payload) {
       });
     }
 
-    pushRow(["", ""]);
-    pushRow([" === SYSTEM ===", ""]);
-    if (passkeyEnabled !== undefined) pushRow(["Passkey_Enabled", passkeyEnabled]);
-    if (passkeyCredId !== undefined) pushRow(["Passkey_Credential_ID", passkeyCredId]);
-    if (passkeyPubKey !== undefined) pushRow(["Passkey_Public_Key", passkeyPubKey]);
-    if (passkeyCounter !== undefined) pushRow(["Passkey_Counter", passkeyCounter]);
-
     // Clear and update
     await sheets.spreadsheets.values.clear({
       spreadsheetId,
@@ -182,28 +151,10 @@ async function initSheets(sheets, spreadsheetId, baseCurrency = "USD") {
   try {
     const configSheet = "Configs";
     const txSheet = "Transactions";
+    const passkeySheet = "Passkey";
     
     const ss = await sheets.spreadsheets.get({ spreadsheetId });
     const sheetNames = ss.data.sheets.map(s => s.properties.title);
-
-    // Read current system keys from existing Configs sheet if they exist to preserve them (e.g. Passkeys)
-    let preservedSystemKeys: any[][] = [];
-    if (sheetNames.includes(configSheet)) {
-      try {
-        const currentRes = await sheets.spreadsheets.values.get({
-          spreadsheetId,
-          range: `${configSheet}!A:M`
-        });
-        const currentRows = currentRes.data.values || [];
-        for (const row of currentRows) {
-          if (row && row[0] && String(row[0]).startsWith("Passkey_")) {
-            preservedSystemKeys.push([row[0], row[1]]);
-          }
-        }
-      } catch (e: any) {
-        console.error("[API] Failed to read existing system keys to preserve:", e.message);
-      }
-    }
 
     const requests = [];
     if (!sheetNames.includes(configSheet)) {
@@ -211,6 +162,9 @@ async function initSheets(sheets, spreadsheetId, baseCurrency = "USD") {
     }
     if (!sheetNames.includes(txSheet)) {
       requests.push({ addSheet: { properties: { title: txSheet } } });
+    }
+    if (!sheetNames.includes(passkeySheet)) {
+      requests.push({ addSheet: { properties: { title: passkeySheet } } });
     }
 
     if (requests.length > 0) {
@@ -233,14 +187,8 @@ async function initSheets(sheets, spreadsheetId, baseCurrency = "USD") {
       ["ID", "Name", "Color", "Icon", "Tags"],
       ["", ""],
       [" === INCOMES ===", ""],
-      ["ID", "Name", "Color", "Icon", "Tags"],
-      ["", ""],
-      [" === SYSTEM ===", ""]
+      ["ID", "Name", "Color", "Icon", "Tags"]
     ];
-
-    if (preservedSystemKeys.length > 0) {
-      configRows.push(...preservedSystemKeys);
-    }
 
     const txRows = [
       ["date", "type", "src", "dst", "tag", "s_amt", "s_curr", "t_amt", "t_curr", "base_amt", "comment", "id"],
@@ -259,6 +207,13 @@ async function initSheets(sheets, spreadsheetId, baseCurrency = "USD") {
       range: `${txSheet}!A1`,
       valueInputOption: "USER_ENTERED",
       requestBody: { values: txRows }
+    });
+
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: `${passkeySheet}!A1`,
+      valueInputOption: "USER_ENTERED",
+      requestBody: { values: [["Key", "Value"]] }
     });
 
     // Formatting: Hide technical row 1 and freeze headers (row 1-2)
@@ -442,7 +397,6 @@ export default async function handler(req, res) {
   const { method, query, body } = req;
   const parsedBody = typeof body === 'string' ? (body ? JSON.parse(body) : {}) : (body || {});
   const action = query.action || parsedBody.action;
-  const isDemo = query.demo === 'true' || parsedBody.demo === true;
 
   let ssId = query.ssId || parsedBody.ssId;
 
@@ -465,7 +419,6 @@ export default async function handler(req, res) {
   }
 
   const isAllowedWithoutSsId = 
-    isDemo || 
     action === 'template' || 
     action === 'findUserByContact' || 
     action === 'registerLead';
@@ -477,6 +430,8 @@ export default async function handler(req, res) {
     });
   }
 
+  let userTariff = (ssId && ssId === MASTER_SS_ID) ? "Premium" : "Free";
+
   try {
     // Check access in MASTER SS / Users sheet
     if (ssId && ssId !== MASTER_SS_ID) {
@@ -484,7 +439,7 @@ export default async function handler(req, res) {
       try {
         const masterRes = await sheets.spreadsheets.values.get({
           spreadsheetId: MASTER_SS_ID,
-          range: 'Users!A:F'
+          range: 'Users!A:G'
         });
         const mRows = masterRes.data.values || [];
         if (mRows.length > 0) {
@@ -499,6 +454,7 @@ export default async function handler(req, res) {
           
           const idIdx = headers.indexOf("id");
           const accessIdx = headers.indexOf("access ends");
+          const tariffIdx = headers.findIndex(h => h === "tariff" || h === "тариф");
           
           let accessValid = true;
           let accessEndsDate = null;
@@ -510,6 +466,9 @@ export default async function handler(req, res) {
             if (rowId) console.log(`[API] Comparing: '${cleanSsId}' with '${rowId}'`);
             if (rowId === cleanSsId) {
               found = true;
+              if (tariffIdx !== -1 && mRows[i][tariffIdx]) {
+                userTariff = String(mRows[i][tariffIdx]).trim();
+              }
               if (accessIdx !== -1 && mRows[i][accessIdx]) {
                 const rawDateStr = String(mRows[i][accessIdx]).trim();
                 accessEndsDate = rawDateStr;
@@ -557,10 +516,9 @@ export default async function handler(req, res) {
     }
 
     if (method === 'GET') {
-      const isDemo = query.demo === 'true';
       const targetSsId = ssId || MASTER_SS_ID; 
-      let configSheetName = isDemo ? "Configs-demo" : "Configs";
-      let txSheetName = isDemo ? "Transactions-demo" : "Transactions";
+      let configSheetName = "Configs";
+      let txSheetName = "Transactions";
 
       if (query.action === 'template') {
         const lang = query.lang || 'ru';
@@ -686,15 +644,34 @@ export default async function handler(req, res) {
 
       // Fetch Configs
       let rows = [];
+      let passkeyRows = [];
       configSheetName = "Configs"; // Demo sheets are retired
       txSheetName = "Transactions";
       
       try {
-        const confRes = await sheets.spreadsheets.values.get({
-          spreadsheetId: targetSsId,
-          range: `${configSheetName}!A:M`
-        });
-        rows = confRes.data.values || [];
+        const [confRes, passkeyRes] = await Promise.allSettled([
+          sheets.spreadsheets.values.get({
+            spreadsheetId: targetSsId,
+            range: `${configSheetName}!A:M`
+          }),
+          sheets.spreadsheets.values.get({
+            spreadsheetId: targetSsId,
+            range: `Passkey!A:B`
+          })
+        ]);
+
+        if (confRes.status === "fulfilled") {
+          rows = confRes.value.data.values || [];
+        } else {
+          // If Configs fails, it is critical
+          throw confRes.reason;
+        }
+
+        if (passkeyRes.status === "fulfilled") {
+          passkeyRows = passkeyRes.value.data.values || [];
+        } else {
+          console.log(`[API] Passkey sheet not found or inaccessible for ${targetSsId}. Proceeding without biometric keys.`);
+        }
       } catch (e: any) {
         console.error(`[API] Failed to fetch Configs from ${targetSsId}:`, e.message);
         const status = e.code || 500;
@@ -711,7 +688,8 @@ export default async function handler(req, res) {
               categories: [],
               incomes: [],
               transactions: [],
-              baseCurrency: "USD"
+              baseCurrency: "USD",
+              tariff: userTariff
             }
           });
         }
@@ -733,16 +711,24 @@ export default async function handler(req, res) {
       let section = "";
       let sectionHeaderIdx = -1;
 
+      // Parse Passkey data first if available
+      for (const row of passkeyRows) {
+        if (!row || !row[0]) continue;
+        const key = String(row[0] || "").toLowerCase().trim();
+        if (key === "passkey_enabled") { data.passkeyEnabled = String(row[1] || "").trim() === "TRUE"; }
+        if (key === "passkey_credential_id") { data.passkeyCredId = String(row[1] || "").trim(); }
+        if (key === "passkey_public_key") { data.passkeyPubKey = String(row[1] || "").trim(); }
+        if (key === "passkey_counter") { data.passkeyCounter = parseInt(row[1], 10) || 0; }
+      }
+
       for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
         if (!row || !row[0]) continue;
         const key = String(row[0] || "").toLowerCase().trim();
         if (key.includes("updated") || key.includes("обновлено")) { data.timestamp = row[1]; continue; }
         if (key.includes("base_currency") || key.includes("базовая валюта") || key.includes("base_curr")) { data.baseCurrency = String(row[1] || "").trim() || "USD"; continue; }
-        if (key === "passkey_enabled") { data.passkeyEnabled = String(row[1] || "").trim() === "TRUE"; continue; }
-        if (key === "passkey_credential_id") { data.passkeyCredId = String(row[1] || "").trim(); continue; }
-        if (key === "passkey_public_key") { data.passkeyPubKey = String(row[1] || "").trim(); continue; }
-        if (key === "passkey_counter") { data.passkeyCounter = parseInt(row[1], 10) || 0; continue; }
+        // Passkey keys are no longer parsed from Configs sheet, they are parsed from Passkey sheet above
+        if (key === "passkey_enabled" || key === "passkey_credential_id" || key === "passkey_public_key" || key === "passkey_counter") continue;
         if (key.includes("wallets") || key.includes("accounts") || key.includes("кошельки") || key.includes("счета")) { section = "acc"; sectionHeaderIdx = i + 1; continue; }
         if (key.includes("categories") || key.includes("категории")) { section = "cat"; sectionHeaderIdx = i + 1; continue; }
         if (key.includes("incomes") || key.includes("доходы")) { section = "inc"; sectionHeaderIdx = i + 1; continue; }
@@ -912,6 +898,7 @@ export default async function handler(req, res) {
         }
       } catch (e) { console.error("Failed to parse transactions", e); }
 
+      data.tariff = userTariff;
       return res.status(200).json({ status: "success", data });
     }
 
@@ -921,9 +908,8 @@ export default async function handler(req, res) {
         payload.ssId = ssId;
       }
       const targetSsId = payload.ssId || (payload.sheetUrl && payload.sheetUrl.match(/[-\w]{25,}/) ? payload.sheetUrl.match(/[-\w]{25,}/)[0] : MASTER_SS_ID);
-      const isDemo = payload.demo === true;
-      const configSheetName = isDemo ? "Configs-demo" : "Configs";
-      const txSheetName = isDemo ? "Transactions-demo" : "Transactions";
+      const configSheetName = "Configs";
+      const txSheetName = "Transactions";
       
       console.log(`[API] POST Action: ${payload.action} on SS: ${targetSsId}`);
 

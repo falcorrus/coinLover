@@ -11,6 +11,7 @@ import { useAppDnD } from "./hooks/useAppDnD";
 import { useUsers } from "./hooks/useUsers";
 import { useLongPress } from "./hooks/useLongPress";
 import { ModalManager } from "./components/ModalManager";
+import { PremiumModal } from "./components/PremiumModal";
 import { LandingPage } from "./components/LandingPage";
 import { NativeAuthScreen } from "./components/NativeAuthScreen";
 import { OnboardingModal } from "./components/OnboardingModal";
@@ -43,7 +44,7 @@ export default function App() {
     accounts, setAccounts, categories, setCategories, incomes, setIncomes,
     transactions, setTransactions, syncStatus, users, addTransaction, updateTransaction, deleteTransaction, saveAccount, deleteAccount,
     saveCategory, deleteCategory, saveIncome, deleteIncome, syncCategories, syncIncomes, syncAccountsOrder,
-    pullSettings, checkConflicts, updateLocalFromRemote, pushSettings, accessError, setAccessError
+    pullSettings, checkConflicts, updateLocalFromRemote, pushSettings, accessError, setAccessError, tariff
   } = useFinance(activeTableId);
 
   const isStandalone = typeof window !== "undefined" && (!!(window as any).__IS_PWA__ || window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone);
@@ -155,6 +156,7 @@ const isNativeApp = React.useMemo(() => {
   const [isTagModalOpen, setIsTagModalOpen] = React.useState(false);
   const [isUsersModalOpen, setIsUsersModalOpen] = React.useState(false);
   const [isThemeModalOpen, setIsThemeModalOpen] = React.useState(false);
+  const [isPremiumModalOpen, setIsPremiumModalOpen] = React.useState(false);
   const [activeStoryIndex, setActiveStoryIndex] = React.useState<number | null>(null);
   const [aiSheet, setAiSheet] = React.useState<{ isOpen: boolean; startInVoiceMode: boolean; isExpanded: boolean }>({ isOpen: false, startInVoiceMode: false, isExpanded: false });
 
@@ -309,6 +311,10 @@ const isNativeApp = React.useMemo(() => {
   const calculations = useCurrencyCalculations(accounts, currentMonthTransactions, categories, incomes, categoryCurrencyMode);
 
   const settingsLongPress = useLongPress(() => { 
+    if (tariff !== "Premium") {
+      setIsPremiumModalOpen(true);
+      return;
+    }
     setAiSheet({ isOpen: true, startInVoiceMode: true });
     if (navigator.vibrate) navigator.vibrate(APP_SETTINGS.HAPTIC_FEEDBACK_DURATION_MEDIUM); 
   }, 800);
@@ -455,6 +461,8 @@ SplashScreen.hide().catch(() => {});
             activeTableId={activeTableId}
             setIsAISheetOpen={(val, voice) => setAiSheet(p => ({ ...p, isOpen: val, startInVoiceMode: !!voice }))}
             isAISheetOpen={aiSheet.isOpen}
+            tariff={tariff}
+            onOpenPremiumModal={() => setIsPremiumModalOpen(true)}
           />
 
           <StoriesSection
@@ -530,6 +538,7 @@ SplashScreen.hide().catch(() => {});
 
 
         <OnboardingModal isOpen={isOnboarding} onComplete={handleOnboardingComplete} />
+        <PremiumModal isOpen={isPremiumModalOpen} onClose={() => setIsPremiumModalOpen(false)} />
       </div>
 
       <DragOverlay dropAnimation={null}>

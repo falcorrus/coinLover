@@ -6,33 +6,24 @@ import { useTransactions } from "./useTransactions";
 import { useEntities } from "./useEntities";
 
 export const useFinance = (ssId?: string) => {
-  const isDemoMode = !ssId && typeof window !== "undefined" && (
-    localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.DEMO_MODE) === "true" ||
-    new URLSearchParams(window.location.search).get("demo") === "true" ||
-    window.location.pathname === "/demo"
-  );
-
-  const getStorageKey = (key: string) => {
-    return isDemoMode ? `cl_demo_${key}` : key;
-  };
-
   const [accounts, setAccounts] = useState<Account[]>(() => {
-    const saved = localStorage.getItem(getStorageKey(APP_SETTINGS.STORAGE_KEYS.ACCOUNTS));
+    const saved = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.ACCOUNTS);
     return saved ? JSON.parse(saved) : [];
   });
   const [categories, setCategories] = useState<Category[]>(() => {
-    const saved = localStorage.getItem(getStorageKey(APP_SETTINGS.STORAGE_KEYS.CATEGORIES));
+    const saved = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.CATEGORIES);
     return saved ? JSON.parse(saved) : [];
   });
   const [incomes, setIncomes] = useState<IncomeSource[]>(() => {
-    const saved = localStorage.getItem(getStorageKey(APP_SETTINGS.STORAGE_KEYS.INCOMES));
+    const saved = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.INCOMES);
     return saved ? JSON.parse(saved) : [];
   });
   const [transactions, setTransactions] = useState<Transaction[]>(() => {
-    const saved = localStorage.getItem(getStorageKey(APP_SETTINGS.STORAGE_KEYS.TRANSACTIONS));
+    const saved = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.TRANSACTIONS);
     return saved ? JSON.parse(saved) : [];
   });
   const [users, setUsers] = useState<{ name: string; id: string }[]>([]);
+  const [tariff, setTariff] = useState<string>(() => localStorage.getItem("cl_user_tariff") || "Free");
 
   const isInitialLoad = useRef(true);
 
@@ -41,7 +32,7 @@ export const useFinance = (ssId?: string) => {
     syncStatus, setSyncStatus, accessError, setAccessError,
     pullSettings, pushSettings, checkConflicts, updateLocalFromRemote
   } = useSync({
-    accounts, setAccounts, categories, setCategories, incomes, setIncomes, setTransactions, setUsers, ssId
+    accounts, setAccounts, categories, setCategories, incomes, setIncomes, setTransactions, setUsers, setTariff, ssId
   });
 
   // 2. Hook: Transaction CRUD
@@ -64,15 +55,16 @@ export const useFinance = (ssId?: string) => {
   }, [ssId]);
 
   // Persistent storage effects
-  useEffect(() => { if (accounts.length > 0) localStorage.setItem(getStorageKey(APP_SETTINGS.STORAGE_KEYS.ACCOUNTS), JSON.stringify(accounts)); }, [accounts, isDemoMode]);
-  useEffect(() => { if (categories.length > 0) localStorage.setItem(getStorageKey(APP_SETTINGS.STORAGE_KEYS.CATEGORIES), JSON.stringify(categories)); }, [categories, isDemoMode]);
-  useEffect(() => { if (incomes.length > 0) localStorage.setItem(getStorageKey(APP_SETTINGS.STORAGE_KEYS.INCOMES), JSON.stringify(incomes)); }, [incomes, isDemoMode]);
-  useEffect(() => { if (transactions.length > 0) localStorage.setItem(getStorageKey(APP_SETTINGS.STORAGE_KEYS.TRANSACTIONS), JSON.stringify(transactions)); }, [transactions, isDemoMode]);
+  useEffect(() => { if (accounts.length > 0) localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.ACCOUNTS, JSON.stringify(accounts)); }, [accounts]);
+  useEffect(() => { if (categories.length > 0) localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.CATEGORIES, JSON.stringify(categories)); }, [categories]);
+  useEffect(() => { if (incomes.length > 0) localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.INCOMES, JSON.stringify(incomes)); }, [incomes]);
+  useEffect(() => { if (transactions.length > 0) localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.TRANSACTIONS, JSON.stringify(transactions)); }, [transactions]);
 
   return {
     accounts, setAccounts, categories, setCategories, incomes, setIncomes, transactions, setTransactions, syncStatus,
     users, addTransaction, updateTransaction, deleteTransaction, saveAccount, deleteAccount, saveCategory, deleteCategory, saveIncome, deleteIncome,
     syncCategories, syncIncomes, syncAccountsOrder, pullSettings, checkConflicts, updateLocalFromRemote, accessError, setAccessError,
-    pushSettings: (a?: Account[], c?: Category[], i?: IncomeSource[]) => pushSettings(a || accounts, c || categories, i || incomes)
+    pushSettings: (a?: Account[], c?: Category[], i?: IncomeSource[]) => pushSettings(a || accounts, c || categories, i || incomes),
+    tariff
   };
 };

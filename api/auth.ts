@@ -224,54 +224,42 @@ export async function authHandler(req: Request, res: Response) {
       // Prepare Google Sheets update
       const sheets = await getSheetsClient();
       
-      // Read current configs first to preserve them
+      // Read current Passkey sheet first to preserve keys (or create if absent)
       let existingRows: any[][] = [];
+      let passkeySheetExists = false;
       try {
-        const confRes = await sheets.spreadsheets.values.get({
-          spreadsheetId: ssId,
-          range: 'Configs!A:M'
-        });
-        existingRows = confRes.data.values || [];
-      } catch (err: any) {
-        const status = err.code || 500;
-        const errMsg = err.message || "";
-        const isMissingSheet = (status === 400 || status === 404) && 
-          (errMsg.includes('Unable to parse range') || errMsg.includes('not found') || errMsg.includes('Requested entity was not found'));
+        const ss = await sheets.spreadsheets.get({ spreadsheetId: ssId });
+        const sheetNames = ss.data.sheets.map((s: any) => s.properties.title);
+        passkeySheetExists = sheetNames.includes("Passkey");
         
-        if (isMissingSheet) {
-          console.log(`[Auth] Configs sheet is missing during biometrics binding. Creating and initializing sheets first...`);
-          try {
-            const ss = await sheets.spreadsheets.get({ spreadsheetId: ssId });
-            const sheetNames = ss.data.sheets.map((s: any) => s.properties.title);
-
-            const requests = [];
-            if (!sheetNames.includes("Configs")) {
-              requests.push({ addSheet: { properties: { title: "Configs" } } });
-            }
-            if (!sheetNames.includes("Transactions")) {
-              requests.push({ addSheet: { properties: { title: "Transactions" } } });
-            }
-
-            if (requests.length > 0) {
-              await sheets.spreadsheets.batchUpdate({
-                spreadsheetId: ssId,
-                requestBody: { requests }
-              });
-              await new Promise(resolve => setTimeout(resolve, 1500));
-            }
-
-            const defaultTxRows = [
-              ["date", "type", "src", "dst", "tag", "s_amt", "s_curr", "t_amt", "t_curr", "base_amt", "comment", "id"],
-              ["Дата", "Тип", "Источник", "Назначение", "Тег", "Сумма (исх)", "Вал (исх)", "Сумма (цель)", "Вал (цель)", "USD", "Комментарий", "ID"]
-            ];
-            await sheets.spreadsheets.values.update({
-              spreadsheetId: ssId,
-              range: 'Transactions!A1',
-              valueInputOption: "USER_ENTERED",
-              requestBody: { values: defaultTxRows }
-            });
-
-            existingRows = [
+        if (passkeySheetExists) {
+          const passkeyRes = await sheets.spreadsheets.values.get({
+            spreadsheetId: ssId,
+            range: 'Passkey!A:B'
+          });
+          existingRows = passkeyRes.data.values || [];
+        } else {
+          // If Passkey sheet is missing, check and create it
+          console.log(`[Auth] Passkey sheet is missing during biometrics binding. Creating...`);
+          const requests = [{ addSheet: { properties: { title: "Passkey" } } }];
+          
+          // Also double check if Configs/Transactions exist, if they are completely missing (e.g. fresh table)
+          if (!sheetNames.includes("Configs")) {
+            requests.push({ addSheet: { properties: { title: "Configs" } } });
+          }
+          if (!sheetNames.includes("Transactions")) {
+            requests.push({ addSheet: { properties: { title: "Transactions" } } });
+          }
+          
+          await sheets.spreadsheets.batchUpdate({
+            spreadsheetId: ssId,
+            requestBody: { requests }
+          });
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          
+          // If Configs was missing, we should also initialize it with default structure
+          if (!sheetNames.includes("Configs")) {
+            const defaultConfigsRows = [
               ["Updated", new Date().toISOString()],
               ["BASE_CURRENCY", "USD"],
               ["", ""],
@@ -282,20 +270,36 @@ export async function authHandler(req: Request, res: Response) {
               ["ID", "Name", "Color", "Icon", "Tags"],
               ["", ""],
               [" === INCOMES ===", ""],
-              ["ID", "Name", "Color", "Icon", "Tags"],
-              ["", ""],
-              [" === SYSTEM ===", ""]
+              ["ID", "Name", "Color", "Icon", "Tags"]
             ];
-          } catch (initErr: any) {
-            console.error('[Auth] Failed to auto-initialize sheets during biometrics registration:', initErr);
-            return res.status(404).json({ status: 'error', message: 'Google Sheet not found or access denied (auto-init failed)' });
+            await sheets.spreadsheets.values.update({
+              spreadsheetId: ssId,
+              range: 'Configs!A1',
+              valueInputOption: "USER_ENTERED",
+              requestBody: { values: defaultConfigsRows }
+            });
           }
-        } else {
-          return res.status(404).json({ status: 'error', message: 'Google Sheet not found or access denied' });
+          
+          // If Transactions was missing, initialize it too
+          if (!sheetNames.includes("Transactions")) {
+            const defaultTxRows = [
+              ["date", "type", "src", "dst", "tag", "s_amt", "s_curr", "t_amt", "t_curr", "base_amt", "comment", "id"],
+              ["Дата", "Тип", "Источник", "Назначение", "Тег", "Сумма (исх)", "Вал (исх)", "Сумма (цель)", "Вал (цель)", "USD", "Комментарий", "ID"]
+            ];
+            await sheets.spreadsheets.values.update({
+              spreadsheetId: ssId,
+              range: 'Transactions!A1',
+              valueInputOption: "USER_ENTERED",
+              requestBody: { values: defaultTxRows }
+            });
+          }
         }
+      } catch (err: any) {
+        console.error('[Auth] Failed to access sheet or create Passkey tab:', err);
+        return res.status(404).json({ status: 'error', message: 'Google Sheet not found or access denied (failed to initialize Passkey sheet)' });
       }
 
-      // Update the configs array with new system keys
+      // Update the passkey array with new system keys
       const updatedRows = [...existingRows];
       
       // Helper to set or append key
@@ -313,15 +317,15 @@ export async function authHandler(req: Request, res: Response) {
       setKeyVal("Passkey_Public_Key", credentialPublicKeyStr);
       setKeyVal("Passkey_Counter", String(counter));
 
-      // Save back to Google Sheets
+      // Save back to Google Sheets (on the Passkey sheet)
       await sheets.spreadsheets.values.clear({
         spreadsheetId: ssId,
-        range: 'Configs!A1:Z500'
+        range: 'Passkey!A1:B100'
       });
 
       await sheets.spreadsheets.values.update({
         spreadsheetId: ssId,
-        range: 'Configs!A1',
+        range: 'Passkey!A1',
         valueInputOption: 'USER_ENTERED',
         requestBody: { values: updatedRows }
       });
@@ -382,13 +386,13 @@ export async function authHandler(req: Request, res: Response) {
       const sheets = await getSheetsClient();
       let rows: any[][] = [];
       try {
-        const confRes = await sheets.spreadsheets.values.get({
+        const passkeyRes = await sheets.spreadsheets.values.get({
           spreadsheetId: resolvedSsId,
-          range: 'Configs!A:M'
+          range: 'Passkey!A:B'
         });
-        rows = confRes.data.values || [];
+        rows = passkeyRes.data.values || [];
       } catch (err) {
-        return res.status(404).json({ status: 'error', message: 'Google Sheet not found or access denied' });
+        return res.status(404).json({ status: 'error', message: 'Google Sheet not found or access denied (Passkey sheet missing)' });
       }
 
       // Find keys
@@ -446,12 +450,12 @@ export async function authHandler(req: Request, res: Response) {
       // Save back counter
       await sheets.spreadsheets.values.clear({
         spreadsheetId: resolvedSsId,
-        range: 'Configs!A1:Z500'
+        range: 'Passkey!A1:B100'
       });
 
       await sheets.spreadsheets.values.update({
         spreadsheetId: resolvedSsId,
-        range: 'Configs!A1',
+        range: 'Passkey!A1',
         valueInputOption: 'USER_ENTERED',
         requestBody: { values: updatedRows }
       });
