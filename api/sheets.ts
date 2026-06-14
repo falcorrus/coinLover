@@ -434,7 +434,7 @@ export default async function handler(req, res) {
 
   try {
     // Check access in MASTER SS / Users sheet
-    if (ssId && ssId !== MASTER_SS_ID) {
+    if (ssId) {
       const cleanSsId = String(ssId).trim();
       try {
         const masterRes = await sheets.spreadsheets.values.get({
@@ -498,7 +498,7 @@ export default async function handler(req, res) {
             }
           }
 
-          if (found && !accessValid) {
+          if (found && !accessValid && cleanSsId !== MASTER_SS_ID) {
             console.warn(`[API] Access DENIED for ${cleanSsId}. Subscription expired on ${accessEndsDate}`);
             return res.status(403).json({ 
               status: "error", 
