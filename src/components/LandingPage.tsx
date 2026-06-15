@@ -20,6 +20,15 @@ const translations = {
     sloganMain: "Твои деньги.",
     sloganSub: "Твой учет. Твой стиль.",
     scrollHint: "Посмотрите, как магия транзакций оживает в CoinLover.",
+    easyInsertTag: "Мгновенный учет",
+    easyInsertTitle: "Лёгкий ввод",
+    easyInsertText: "Один жест, одна цифра, «Внести». Или просто скажите голосом.",
+    storiesTag: "Финансовая картина",
+    storiesTitle: "Сторис одним кликом",
+    storiesText: "Ваша финансовая картина и настройки. Только когда надо.",
+    themeTag: "Темы оформления",
+    themeTitle: "Выбери свой стиль",
+    themeText: "Оформление под настроение. Смена в 2 клика.",
     analyticsTag: "Визуальная ясность",
     analyticsTitle: "Аналитика, которая не пугает.",
     analyticsText: "CoinLover превращает сухие цифры в наглядную историю ваших трат. Один взгляд — и вы знаете, куда ушел бюджет.",
@@ -40,9 +49,9 @@ const translations = {
     sheetsTitle: "Твои данные — в твоих таблицах.",
     sheetsText: "Никаких закрытых баз данных. Каждая транзакция мгновенно улетает в твою личную Google Таблицу. Полная свобода и контроль над информацией.",
     roadmapTitle: "Будущее CoinLover",
-    aiTag: "В разработке",
-    aiTitle: "ИИ-ассистент",
-    aiText: "Ваш личный финансовый директор на базе нейросетей. Автоматическое распределение трат и советы по экономии в реальном времени.",
+    aiTag: "Premium",
+    aiTitle: "ИИ-Ассистент",
+    aiText: "ИИ для ввода операций, запроса аналитики.",
     familyTitle: "Семейная синхронизация",
     familyText: "Поддержка командных бюджетов и общих таблиц для всей семьи. Следите за общим капиталом вместе.",
     finalCta: "Верни себе контроль.",
@@ -72,7 +81,7 @@ const translations = {
     modalNext: "Далее",
     modalBack: "Назад",
     knowledgeBase: "ЧаВо",
-    footerStudio: "2026 Сделано Broz Studio",
+    footerStudio: "@2026 Создано Broz.agency",
     wallets: { cash: "Наличные", bank: "Банк", exchange: "Биржа" },
     categories: { food: "Еда", transport: "Транспорт", coffee: "Кофе", shopping: "Покупки", fun: "Отдых" },
     modalTitleLogin: "Вход в CoinLover",
@@ -101,6 +110,15 @@ const translations = {
     sloganMain: "Your money.",
     sloganSub: "Your tracking. Your style.",
     scrollHint: "See how transaction magic comes to life in CoinLover.",
+    easyInsertTag: "Instant Logging",
+    easyInsertTitle: "Easy Input",
+    easyInsertText: "One gesture, one digit, 'Add'. Or just say it out loud.",
+    storiesTag: "Financial Overview",
+    storiesTitle: "One-click Stories",
+    storiesText: "Your financial picture and settings. Only when you need it.",
+    themeTag: "UI Themes",
+    themeTitle: "Choose Your Style",
+    themeText: "Interface styling to match your mood. Switch themes in just 2 clicks.",
     analyticsTag: "Visual Clarity",
     analyticsTitle: "Analytics that doesn't scare.",
     analyticsText: "CoinLover turns dry numbers into a visual story of your spending. One look - and you know where your budget went.",
@@ -121,9 +139,9 @@ const translations = {
     sheetsTitle: "Your data — in your sheets.",
     sheetsText: "No locked databases. Every transaction instantly flies into your personal Google Sheet. Full freedom and control over your information.",
     roadmapTitle: "Future of CoinLover",
-    aiTag: "In Development",
+    aiTag: "Premium",
     aiTitle: "AI Assistant",
-    aiText: "Your personal AI-powered financial director. Automatic expense categorization and real-time saving tips.",
+    aiText: "AI for logging transactions and querying analytics.",
     familyTitle: "Family Sync",
     familyText: "Support for team budgets and shared sheets for the whole family. Track common capital together.",
     finalCta: "Take back control.",
@@ -153,7 +171,7 @@ const translations = {
     modalNext: "Next",
     modalBack: "Back",
     knowledgeBase: "FAQ",
-    footerStudio: "2026 Made by Broz Studio",
+    footerStudio: "@2026 Created by Broz.agency",
     wallets: { cash: "Cash", bank: "Bank", exchange: "Exchange" },
     categories: { food: "Food", transport: "Transport", coffee: "Coffee", shopping: "Shopping", fun: "Fun" },
     modalTitleLogin: "Log In to CoinLover",
@@ -206,6 +224,9 @@ export const LandingPage: React.FC = () => {
   const [isLoading, setIsLoading] = React.useState(false);
   const [errorMsg, setErrorMsg] = React.useState("");
   const [analyticsImageIndex, setAnalyticsImageIndex] = React.useState(0);
+  const [aiImageIndex, setAiImageIndex] = React.useState(0);
+  const [storiesImageIndex, setStoriesImageIndex] = React.useState(0);
+  const [themeImageIndex, setThemeImageIndex] = React.useState(0);
   const [copiedEmail, setCopiedEmail] = React.useState(false);
   const [prefetchedLoginOptions, setPrefetchedLoginOptions] = React.useState<any>(null);
   const [usePasskeyForOnboarding, setUsePasskeyForOnboarding] = React.useState(true);
@@ -239,6 +260,9 @@ export const LandingPage: React.FC = () => {
   };
 
   const t = translations[lang];
+  const activeTableId = typeof window !== "undefined" ? (localStorage.getItem("cl_active_table_id") || "") : "";
+  const tgText = `Здравствуйте, хочу попробовать Premium. Я зарегистрировался под логином ${activeTableId || "[ID вашей таблицы или ссылка]"}`;
+  const tgUrl = `https://t.me/argodon?text=${encodeURIComponent(tgText)}`;
 
   const handleOpenModal = (type: "onboarding" | "studio" | "login") => {
     trackEvent("modal_open", { type });
@@ -396,6 +420,9 @@ export const LandingPage: React.FC = () => {
   React.useEffect(() => {
     const timer = setInterval(() => {
       setAnalyticsImageIndex((prev) => (prev === 0 ? 1 : 0));
+      setAiImageIndex((prev) => (prev === 0 ? 1 : 0));
+      setStoriesImageIndex((prev) => (prev === 2 ? 0 : prev + 1));
+      setThemeImageIndex((prev) => (prev === 2 ? 0 : prev + 1));
     }, 4000);
     return () => clearInterval(timer);
   }, []);
@@ -680,6 +707,15 @@ export const LandingPage: React.FC = () => {
       </section>
 
       <div className="max-w-6xl mx-auto space-y-32 md:space-y-60 py-10 md:py-20 px-6">
+        <section className="text-center max-w-3xl mx-auto relative group">
+          <div className="absolute -inset-10 bg-[#6d5dfc]/5 blur-3xl opacity-50 group-hover:opacity-100 transition-opacity duration-1000 rounded-full pointer-events-none" />
+          <div className="relative z-10 py-6">
+            <span className="text-[#6d5dfc] font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">{t.easyInsertTag}</span>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">{t.easyInsertTitle}</h2>
+            <p className="text-lg text-white/50 mb-8 leading-relaxed max-w-2xl mx-auto">{t.easyInsertText}</p>
+          </div>
+        </section>
+
         <section className="flex flex-col md:flex-row items-center gap-16 md:gap-20">
           <div className="flex-1 text-center md:text-left">
             <span className="text-[#6d5dfc] font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">{t.analyticsTag}</span>
@@ -696,6 +732,7 @@ export const LandingPage: React.FC = () => {
             </AnimatePresence>
           </div>
         </section>
+
 
         <section className="flex flex-col md:flex-row-reverse items-center gap-16 md:gap-20">
           <div className="flex-1 text-center md:text-left">
@@ -763,11 +800,28 @@ export const LandingPage: React.FC = () => {
 
         <section className="flex flex-col md:flex-row-reverse items-center gap-16 md:gap-20">
           <div className="flex-1 text-center md:text-left">
+            <span className="text-[#6d5dfc] font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">{t.storiesTag}</span>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">{t.storiesTitle}</h2>
+            <p className="text-lg text-white/50 mb-8 leading-relaxed">{t.storiesText}</p>
+          </div>
+          <div className="flex-1 relative group flex justify-center md:justify-start items-center min-h-[450px] md:min-h-[600px]">
+            <div className="absolute -inset-4 bg-[#6d5dfc]/10 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000 rounded-full" />
+            <AnimatePresence mode="wait">
+              <motion.div key={storiesImageIndex} initial={{ opacity: 0, x: -20, scale: 0.95 }} animate={{ opacity: 1, x: 0, scale: 1 }} exit={{ opacity: 0, x: 20, scale: 0.95 }} transition={{ duration: 0.8, ease: "easeInOut" }} className="glass-panel p-2 border-white/10 shadow-2xl relative z-10 overflow-hidden w-fit perspective-1000 h-fit">
+                <motion.img animate={{ y: [0, -5, 0], rotate: [0, -0.5, 0] }} transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }} src={storiesImageIndex === 0 ? "/stories-preview-1.png" : storiesImageIndex === 1 ? "/stories-preview-2.png" : "/stories-preview-3.png"} alt="Stories" className="block w-full h-auto max-h-[450px] md:max-h-[600px] rounded-[20px] object-contain" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#050505]/40 to-transparent pointer-events-none" />
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </section>
+
+        <section className="flex flex-col md:flex-row items-center gap-16 md:gap-20">
+          <div className="flex-1 text-center md:text-left">
             <span className="text-green-500 font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">{t.sheetsTag}</span>
             <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">{t.sheetsTitle}</h2>
             <p className="text-lg text-white/50 mb-8 leading-relaxed">{t.sheetsText}</p>
           </div>
-          <div className="flex-1 relative group flex justify-center md:justify-start">
+          <div className="flex-1 relative group flex justify-center md:justify-end">
             <div className="absolute -inset-4 bg-green-500/5 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000 rounded-full" />
             <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.3 }} className="glass-panel p-2 border-white/10 shadow-2xl relative z-10 overflow-hidden w-fit">
               <img src="/sheets-preview.png" alt="Sheets" className="block w-full h-auto max-h-[400px] rounded-[20px] object-cover" />
@@ -776,24 +830,51 @@ export const LandingPage: React.FC = () => {
           </div>
         </section>
 
-        <section className="text-center">
-          <h2 className="text-4xl font-bold mb-16 text-gradient-purple">{t.roadmapTitle}</h2>
-          <div className="grid md:grid-cols-2 gap-8 text-left">
-            <div className="glass-card p-10 border-[#6d5dfc]/20 relative overflow-hidden group">
-              <div className="absolute inset-0 ai-shimmer opacity-20" />
-              <div className="relative z-10">
-                <div className="flex items-center gap-3 mb-6"><Sparkles className="w-6 h-6 text-[#6d5dfc]" /><span className="text-xs font-bold tracking-widest uppercase text-[#6d5dfc]">{t.aiTag}</span></div>
-                <h3 className="text-2xl font-bold mb-4">{t.aiTitle}</h3>
-                <p className="text-white/60 leading-relaxed">{t.aiText}</p>
-              </div>
-            </div>
-            <div className="glass-card p-10 border-white/5 opacity-60">
-               <RefreshCw className="w-6 h-6 text-white/40 mb-6" />
-               <h3 className="text-2xl font-bold mb-4">{t.familyTitle}</h3>
-               <p className="text-white/60 leading-relaxed">{t.familyText}</p>
+        <section className="flex flex-col md:flex-row-reverse items-center gap-16 md:gap-20">
+          <div className="flex-1 text-center md:text-left">
+            <span className="text-[#6d5dfc] font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">{t.aiTag}</span>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">{t.aiTitle}</h2>
+            <p className="text-lg text-white/50 mb-8 leading-relaxed">{t.aiText}</p>
+            <div className="pt-6 border-t border-white/5">
+              <a 
+                href={tgUrl} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-sm text-[#6d5dfc] hover:text-[#5b4ce3] font-semibold transition-colors inline-flex items-center gap-1.5 group/link"
+              >
+                <span>* {lang === 'ru' ? 'В тарифе Premium. Запросите его бесплатно' : 'In Premium tier. Get it for free'}</span>
+                <ArrowRight size={14} className="transition-transform group-hover/link:translate-x-1" />
+              </a>
             </div>
           </div>
+          <div className="flex-1 relative group flex justify-center md:justify-start items-center min-h-[450px] md:min-h-[600px]">
+            <div className="absolute -inset-4 bg-[#6d5dfc]/10 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000 rounded-full" />
+            <AnimatePresence mode="wait">
+              <motion.div key={aiImageIndex} initial={{ opacity: 0, x: -20, scale: 0.95 }} animate={{ opacity: 1, x: 0, scale: 1 }} exit={{ opacity: 0, x: 20, scale: 0.95 }} transition={{ duration: 0.8, ease: "easeInOut" }} className="glass-panel p-2 border-white/10 shadow-2xl relative z-10 overflow-hidden w-fit perspective-1000 h-fit">
+                <motion.img animate={{ y: [0, -5, 0], rotate: [0, -0.5, 0] }} transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }} src={aiImageIndex === 0 ? "/ai-preview-1.png" : "/ai-preview-2.png"} alt="AI Assistant" className="block w-full h-auto max-h-[450px] md:max-h-[600px] rounded-[20px] object-contain" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#050505]/40 to-transparent pointer-events-none" />
+              </motion.div>
+            </AnimatePresence>
+          </div>
         </section>
+
+        <section className="flex flex-col md:flex-row items-center gap-16 md:gap-20">
+          <div className="flex-1 text-center md:text-left">
+            <span className="text-[#6d5dfc] font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">{t.themeTag}</span>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">{t.themeTitle}</h2>
+            <p className="text-lg text-white/50 mb-8 leading-relaxed">{t.themeText}</p>
+          </div>
+          <div className="flex-1 relative group flex justify-center md:justify-end items-center min-h-[450px] md:min-h-[600px]">
+            <div className="absolute -inset-4 bg-[#6d5dfc]/10 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000 rounded-full" />
+            <AnimatePresence mode="wait">
+              <motion.div key={themeImageIndex} initial={{ opacity: 0, x: 20, scale: 0.95 }} animate={{ opacity: 1, x: 0, scale: 1 }} exit={{ opacity: 0, x: -20, scale: 0.95 }} transition={{ duration: 0.8, ease: "easeInOut" }} className="glass-panel p-2 border-white/10 shadow-2xl relative z-10 overflow-hidden w-fit perspective-1000 h-fit">
+                <motion.img animate={{ y: [0, -5, 0], rotate: [0, 0.5, 0] }} transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }} src={themeImageIndex === 0 ? "/style-preview-1.png" : themeImageIndex === 1 ? "/style-preview-2.png" : "/style-preview-3.png"} alt="Theme Styles" className="block w-full h-auto max-h-[450px] md:max-h-[600px] rounded-[20px] object-contain" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#050505]/40 to-transparent pointer-events-none" />
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </section>
+
 
         <section id="download" className="flex flex-col md:flex-row items-center gap-16 md:gap-20 py-10">
           <div className="flex-1 text-center md:text-left">
