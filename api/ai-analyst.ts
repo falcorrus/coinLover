@@ -3,6 +3,196 @@ import fs from 'fs';
 import path from 'path';
 import { getSheetsClient, MASTER_SS_ID } from './sheets.ts';
 
+function extractPeriod(text: string, currentMonthNum: number, currentYearNum: number): any {
+  const textLower = text.toLowerCase();
+  
+  const monthPatterns = [
+    { month: 1, regex: /янв/ },
+    { month: 2, regex: /фев/ },
+    { month: 3, regex: /мар/ },
+    { month: 4, regex: /апр/ },
+    { month: 5, regex: /ма[йяею]/ },
+    { month: 6, regex: /июн/ },
+    { month: 7, regex: /июл/ },
+    { month: 8, regex: /авг/ },
+    { month: 9, regex: /сен/ },
+    { month: 10, regex: /окт/ },
+    { month: 11, regex: /ноя/ },
+    { month: 12, regex: /дек/ }
+  ];
+
+  // 1. Поиск упомянутых месяцев и их позиций в строке
+  const foundMonths: { month: number; index: number }[] = [];
+  monthPatterns.forEach(pattern => {
+    const idx = textLower.search(pattern.regex);
+    if (idx !== -1) {
+      foundMonths.push({ month: pattern.month, index: idx });
+    }
+  });
+
+  // Сортируем по порядку появления в тексте
+  foundMonths.sort((a, b) => a.index - b.index);
+
+  // Проверяем наличие годов (2024, 2025, 2026...)
+  const years = [...textLower.matchAll(/\b(20\d{2})\b/g)].map(m => parseInt(m[1]));
+
+  // Относительные периоды
+  const isRelativePrev = textLower.includes('прошл') && textLower.includes('месяц');
+  const isRelativePrevPrev = textLower.includes('позапрошл') && textLower.includes('месяц');
+  const isRelativeCurrent = (textLower.includes('текущ') && textLower.includes('месяц')) || textLower.includes('этот месяц');
+  
+  const isAllTime = textLower.includes('за год') || 
+                    textLower.includes('всего') || 
+                    textLower.includes('за всё время') || 
+                    textLower.includes('за все время') || 
+                    textLower.includes('истори') || 
+                    textLower.includes('history') || 
+                    textLower.includes('по месяцам') || 
+                    textLower.includes('динамик') || 
+                    textLower.includes('тренд') || 
+                    textLower.includes('график') || 
+                    textLower.includes('сравн');
+
+  const hasRelative = isRelativePrev || isRelativePrevPrev || isRelativeCurrent || isAllTime;
+  const hasPeriod = foundMonths.length > 0 || hasRelative || years.length > 0;
+
+  if (!hasPeriod) {
+    return { hasPeriod: false };
+  }
+
+  // Сценарий 1: Диапазон "с ... по/до ..." (два месяца найдены)
+  const isRange = foundMonths.length >= 2 && (
+    textLower.includes(' по ') || 
+    textLower.includes(' до ') || 
+    textLower.includes(' - ') || 
+    textLower.includes('—')
+  );
+
+  if (isRange) {
+    const startMonth = foundMonths[0].month;
+    const endMonth = foundMonths[1].month;
+    let startYear = currentYearNum;
+    let endYear = currentYearNum;
+
+    if (years.length === 2) {
+      startYear = years[0];
+      endYear = years[1];
+    } else if (years.length === 1) {
+      startYear = years[0];
+      endYear = years[0];
+    } else {
+      if (startMonth > currentMonthNum) startYear = currentYearNum - 1;
+      if (endMonth > currentMonthNum) endYear = currentYearNum - 1;
+      if (endMonth < startMonth && startYear === endYear) {
+        endYear = startYear + 1;
+      }
+    }
+
+    return {
+      hasPeriod: true,
+      isRange: true,
+      isStartingFrom: false,
+      isAllTime: false,
+      startMonth,
+      startYear,
+      endMonth,
+      endYear
+    };
+  }
+
+  // Сценарий 2: Диапазон "начиная с ..." (один месяц + триггер "с" / "начиная")
+  const isStartingFrom = foundMonths.length === 1 && (
+    textLower.includes('начиная') || 
+    /\b(с|от)\s+(янв|фев|мар|апр|ма[йя]|июн|июл|авг|сен|окт|ноя|дек)/.test(textLower)
+  );
+
+  if (isStartingFrom) {
+    const startMonth = foundMonths[0].month;
+    let startYear = currentYearNum;
+    if (years.length > 0) {
+      startYear = years[0];
+    } else if (startMonth > currentMonthNum) {
+      startYear = currentYearNum - 1;
+    }
+
+    return {
+      hasPeriod: true,
+      isRange: false,
+      isStartingFrom: true,
+      isAllTime: false,
+      startMonth,
+      startYear,
+      endMonth: currentMonthNum,
+      endYear: currentYearNum
+    };
+  }
+
+  // Сценарий 3: Относительный период
+  if (isRelativePrev) {
+    let targetMonth = currentMonthNum - 1;
+    let targetYear = currentYearNum;
+    if (targetMonth === 0) {
+      targetMonth = 12;
+      targetYear = currentYearNum - 1;
+    }
+    return { hasPeriod: true, isRange: false, isStartingFrom: false, isAllTime: false, targetMonth, targetYear };
+  }
+
+  if (isRelativePrevPrev) {
+    let targetMonth = currentMonthNum - 2;
+    let targetYear = currentYearNum;
+    if (targetMonth <= 0) {
+      targetMonth = 12 + targetMonth;
+      targetYear = currentYearNum - 1;
+    }
+    return { hasPeriod: true, isRange: false, isStartingFrom: false, isAllTime: false, targetMonth, targetYear };
+  }
+
+  if (isRelativeCurrent) {
+    return { hasPeriod: true, isRange: false, isStartingFrom: false, isAllTime: false, targetMonth: currentMonthNum, targetYear: currentYearNum };
+  }
+
+  if (isAllTime) {
+    return { hasPeriod: true, isRange: false, isStartingFrom: false, isAllTime: true };
+  }
+
+  // Сценарий 4: Конкретный месяц (один месяц найден)
+  if (foundMonths.length === 1) {
+    const targetMonth = foundMonths[0].month;
+    let targetYear = currentYearNum;
+    if (years.length > 0) {
+      targetYear = years[0];
+    } else if (targetMonth > currentMonthNum) {
+      targetYear = currentYearNum - 1;
+    }
+
+    return {
+      hasPeriod: true,
+      isRange: false,
+      isStartingFrom: false,
+      isAllTime: false,
+      targetMonth,
+      targetYear
+    };
+  }
+
+  // Сценарий 5: Указан только год
+  if (years.length > 0) {
+    return {
+      hasPeriod: true,
+      isRange: true,
+      isStartingFrom: false,
+      isAllTime: false,
+      startMonth: 1,
+      startYear: years[0],
+      endMonth: 12,
+      endYear: years[0]
+    };
+  }
+
+  return { hasPeriod: false };
+}
+
 export default async function handler(req, res) {
   // CORS Headers for Native App (Capacitor)
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -268,103 +458,51 @@ export default async function handler(req, res) {
    - ONLY ADDITION is allowed.`;
 
     // 6. Server-side pre-filtering by period
-    const queryLower = query.toLowerCase();
+    let period = extractPeriod(query, currentMonthNum, currentYearNum);
     
-    let targetMonth = currentMonthNum;
-    let targetYear = currentYearNum;
-    let isSpecificMonth = false;
-    let isAllTime = false;
-    
-    const monthPatterns = [
-      { month: 1, regex: /янв/ },
-      { month: 2, regex: /фев/ },
-      { month: 3, regex: /мар/ },
-      { month: 4, regex: /апр/ },
-      { month: 5, regex: /ма[йяею]/ },
-      { month: 6, regex: /июн/ },
-      { month: 7, regex: /июл/ },
-      { month: 8, regex: /авг/ },
-      { month: 9, regex: /сен/ },
-      { month: 10, regex: /окт/ },
-      { month: 11, regex: /ноя/ },
-      { month: 12, regex: /дек/ }
-    ];
-
-    // Check for explicit month mentions
-    for (const pattern of monthPatterns) {
-      if (pattern.regex.test(queryLower)) {
-        targetMonth = pattern.month;
-        isSpecificMonth = true;
-        break;
+    // Если в текущем запросе период не определен, пытаемся унаследовать его из истории сообщений пользователя
+    if (!period.hasPeriod && history && history.length > 0) {
+      for (let i = history.length - 1; i >= 0; i--) {
+        const msg = history[i];
+        if (msg.role === 'user' && msg.content) {
+          const historicalPeriod = extractPeriod(msg.content, currentMonthNum, currentYearNum);
+          if (historicalPeriod.hasPeriod) {
+            period = historicalPeriod;
+            console.log(`[AI API] Inherited period from user history message: "${msg.content}"`);
+            break;
+          }
+        }
       }
-    }
-
-    // Check for explicit year mentions (e.g. 2024, 2025, 2026)
-    const yearMatch = queryLower.match(/\b(20\d{2})\b/);
-    if (yearMatch) {
-      targetYear = parseInt(yearMatch[1]);
-      isSpecificMonth = true;
-    } else if (isSpecificMonth) {
-      // If month was mentioned but no year, assume current or previous year
-      if (targetMonth > currentMonthNum) {
-        targetYear = currentYearNum - 1;
-      } else {
-        targetYear = currentYearNum;
-      }
-    }
-
-    // Check for relative periods
-    if (queryLower.includes('прошл') && queryLower.includes('месяц')) {
-      targetMonth = currentMonthNum - 1;
-      targetYear = currentYearNum;
-      if (targetMonth === 0) {
-        targetMonth = 12;
-        targetYear = currentYearNum - 1;
-      }
-      isSpecificMonth = true;
-    } else if (queryLower.includes('позапрошл') && queryLower.includes('месяц')) {
-      targetMonth = currentMonthNum - 2;
-      targetYear = currentYearNum;
-      if (targetMonth <= 0) {
-        targetMonth = 12 + targetMonth;
-        targetYear = currentYearNum - 1;
-      }
-      isSpecificMonth = true;
-    } else if ((queryLower.includes('текущ') && queryLower.includes('месяц')) || queryLower.includes('этот месяц')) {
-      targetMonth = currentMonthNum;
-      targetYear = currentYearNum;
-      isSpecificMonth = true;
-    }
-
-    if (queryLower.includes('за год') || queryLower.includes('всего') || queryLower.includes('за всё время') || queryLower.includes('за все время') || queryLower.includes('истори') || queryLower.includes('history') || queryLower.includes('по месяцам') || queryLower.includes('динамик') || queryLower.includes('тренд') || queryLower.includes('график') || queryLower.includes('сравн')) {
-      isAllTime = true;
     }
 
     let filteredTxData: typeof txData;
     let datasetDescription: string;
 
-    const isStartingFrom = queryLower.includes('начиная') || /\b(с|от)\s+(янв|фев|мар|апр|ма[йя]|июн|июл|авг|сен|окт|ноя|дек)/.test(queryLower);
-
-    if (isAllTime) {
+    if (!period.hasPeriod || period.isAllTime) {
       filteredTxData = txData;
-      datasetDescription = `You are receiving up to ${txData.length} transactions (last 12 months) because the user requested all-time or yearly data.`;
-    } else if (isStartingFrom) {
-      const startValue = targetYear * 12 + targetMonth;
+      datasetDescription = `You are receiving up to ${txData.length} transactions (last 12 months) because the user requested all-time or yearly data or no period was resolved.`;
+    } else if (period.isRange || period.isStartingFrom) {
+      const startValue = period.startYear * 12 + period.startMonth;
+      const endValue = period.endYear * 12 + period.endMonth;
+      
       filteredTxData = txData.filter(tx => {
         const parts = tx.date.split(' ')[0].split('.');
         if (parts.length < 3) return false;
         const txM = parseInt(parts[1], 10);
         const txY = parseInt(parts[2], 10);
         if (isNaN(txM) || isNaN(txY)) return false;
-        return (txY * 12 + txM) >= startValue;
+        const txValue = txY * 12 + txM;
+        return txValue >= startValue && txValue <= endValue;
       });
-      const startMonthStr = String(targetMonth).padStart(2, '0');
-      datasetDescription = `IMPORTANT: You are receiving transactions STARTING FROM: ${startMonthStr}.${targetYear} until now. Please provide the breakdown by month for the requested categories/tags in your response.`;
+      
+      const startMonthStr = String(period.startMonth).padStart(2, '0');
+      const endMonthStr = String(period.endMonth).padStart(2, '0');
+      datasetDescription = `IMPORTANT: You are receiving transactions for the range: ${startMonthStr}.${period.startYear} to ${endMonthStr}.${period.endYear}. Please provide the breakdown by month for the requested categories/tags in your response.`;
     } else {
-      const targetMonthStr = String(targetMonth).padStart(2, '0');
-      const suffix = `.${targetMonthStr}.${targetYear}`;
-      filteredTxData = txData.filter(tx => tx.date.endsWith(suffix) || tx.date.includes(`.${targetMonthStr}.${targetYear}`));
-      datasetDescription = `IMPORTANT: You are receiving ONLY transactions for the specific period: ${targetMonthStr}.${targetYear}. All totals and transactions are pre-filtered for this month.`;
+      const targetMonthStr = String(period.targetMonth).padStart(2, '0');
+      const suffix = `.${targetMonthStr}.${period.targetYear}`;
+      filteredTxData = txData.filter(tx => tx.date.endsWith(suffix) || tx.date.includes(`.${targetMonthStr}.${period.targetYear}`));
+      datasetDescription = `IMPORTANT: You are receiving ONLY transactions for the specific period: ${targetMonthStr}.${period.targetYear}. All totals and transactions are pre-filtered for this month.`;
     }
 
     // 7. Server-side aggregation — all math is done here, AI only formats
