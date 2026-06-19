@@ -4,6 +4,9 @@ import { X, Mic, Send, List, Calendar, PieChart, Wallet as WalletIcon, Check, Sp
 import { useLanguage } from '../../contexts/LanguageContext';
 import { getAbsoluteApiUrl, googleSheetsService } from '../../services/googleSheets';
 import { Account, Category, Transaction, TransactionType } from '../../types';
+import { Capacitor } from '@capacitor/core';
+import { SpeechRecognition as NativeSpeechRecognition } from '@capacitor-community/speech-recognition';
+
 
 interface Message {
   role: 'user' | 'assistant';
@@ -62,6 +65,8 @@ export const AISheet: React.FC<AISheetProps> = ({
   const [showDoneButton, setShowDoneButton] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const nativeListenerRef = useRef<any>(null);
+  const webRecognitionRef = useRef<any>(null);
 
   const isExpanded = messages.length > 0 || isLoading;
 
@@ -82,6 +87,7 @@ export const AISheet: React.FC<AISheetProps> = ({
       setQuery("");
       setAmbiguousTx(null);
       setShowDoneButton(false);
+      stopVoiceRecording();
     }
   }, [isOpen, startInVoiceMode]);
 
@@ -133,7 +139,7 @@ export const AISheet: React.FC<AISheetProps> = ({
     }
   };
 
-  const startVoiceRecording = async () => {
+  const startWebVoiceRecording = async () => {
     const hasPermission = await requestMicrophonePermission();
     if (!hasPermission) return;
 
@@ -147,6 +153,7 @@ export const AISheet: React.FC<AISheetProps> = ({
     recognition.lang = 'ru-RU';
     recognition.continuous = false;
     recognition.interimResults = false;
+    webRecognitionRef.current = recognition;
 
     recognition.onstart = () => {
       setIsRecording(true);
@@ -160,14 +167,14 @@ export const AISheet: React.FC<AISheetProps> = ({
     };
 
     recognition.onerror = (event: any) => {
-      console.error("Speech recognition error:", event.error);
+      console.error("Web speech recognition error:", event.error);
       setIsRecording(false);
       if (event.error === 'not-allowed') {
         alert("Голосовой ввод заблокирован системой. Проверьте настройки разрешений Google и браузера.");
       } else if (event.error === 'network') {
         alert("Ошибка сети при распознавании голоса.");
       } else if (event.error === 'no-speech') {
-        // Just ignore no-speech, user might have just been quiet
+        // Ignore
       } else {
         alert(`Ошибка распознавания (${event.error}). Попробуйте еще раз.`);
       }
@@ -175,14 +182,95 @@ export const AISheet: React.FC<AISheetProps> = ({
 
     recognition.onend = () => {
       setIsRecording(false);
+      webRecognitionRef.current = null;
     };
 
     try {
       recognition.start();
     } catch (e: any) {
-      console.error("Recognition start failed:", e);
+      console.error("Web recognition start failed:", e);
       alert(`Не удалось запустить микрофон: ${e.message}`);
     }
+  };
+
+  const startVoiceRecording = async () => {
+    const isNative = Capacitor.isNativePlatform();
+
+    if (isNative) {
+      try {
+        const { available } = await NativeSpeechRecognition.available();
+        if (!available) {
+          throw new Error("Speech recognition not available natively");
+        }
+
+        await NativeSpeechRecognition.requestPermissions();
+        
+        setIsRecording(true);
+        if (window.navigator.vibrate) window.navigator.vibrate(50);
+
+        if (nativeListenerRef.current) {
+          nativeListenerRef.current.remove();
+          nativeListenerRef.current = null;
+        }
+
+        let lastTranscript = "";
+        
+        nativeListenerRef.current = await NativeSpeechRecognition.addListener(
+          "partialResults",
+          (data: { matches: string[] }) => {
+            if (data.matches && data.matches.length > 0) {
+              lastTranscript = data.matches[0];
+              setQuery(lastTranscript);
+            }
+          }
+        );
+
+        NativeSpeechRecognition.start({
+          language: "ru-RU",
+          maxResults: 1,
+          partialResults: true,
+          popup: false,
+        }).then(() => {
+          setIsRecording(false);
+          if (nativeListenerRef.current) {
+            nativeListenerRef.current.remove();
+            nativeListenerRef.current = null;
+          }
+          if (lastTranscript.trim()) {
+            handleSend(lastTranscript);
+          }
+        }).catch((err) => {
+          console.error("Native recognition stopped:", err);
+          setIsRecording(false);
+        });
+
+      } catch (err: any) {
+        console.error("Native speech recognition failed, falling back to Web API:", err);
+        await startWebVoiceRecording();
+      }
+    } else {
+      await startWebVoiceRecording();
+    }
+  };
+
+  const stopVoiceRecording = async () => {
+    const isNative = Capacitor.isNativePlatform();
+    if (isNative) {
+      try {
+        await NativeSpeechRecognition.stop();
+      } catch (e) {
+        console.error("Failed to stop native speech recognition:", e);
+      }
+      if (nativeListenerRef.current) {
+        nativeListenerRef.current.remove();
+        nativeListenerRef.current = null;
+      }
+    } else {
+      if (webRecognitionRef.current) {
+        webRecognitionRef.current.stop();
+      }
+    }
+    setIsRecording(false);
   };
 
   const handleSaveTransaction = async (walletName: string, transactionData: any) => {
