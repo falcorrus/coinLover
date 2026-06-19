@@ -343,9 +343,23 @@ export default async function handler(req, res) {
     let filteredTxData: typeof txData;
     let datasetDescription: string;
 
+    const isStartingFrom = queryLower.includes('начиная') || /\b(с|от)\s+(янв|фев|мар|апр|ма[йя]|июн|июл|авг|сен|окт|ноя|дек)/.test(queryLower);
+
     if (isAllTime) {
       filteredTxData = txData;
       datasetDescription = `You are receiving up to ${txData.length} transactions (last 12 months) because the user requested all-time or yearly data.`;
+    } else if (isStartingFrom) {
+      const startValue = targetYear * 12 + targetMonth;
+      filteredTxData = txData.filter(tx => {
+        const parts = tx.date.split(' ')[0].split('.');
+        if (parts.length < 3) return false;
+        const txM = parseInt(parts[1], 10);
+        const txY = parseInt(parts[2], 10);
+        if (isNaN(txM) || isNaN(txY)) return false;
+        return (txY * 12 + txM) >= startValue;
+      });
+      const startMonthStr = String(targetMonth).padStart(2, '0');
+      datasetDescription = `IMPORTANT: You are receiving transactions STARTING FROM: ${startMonthStr}.${targetYear} until now. Please provide the breakdown by month for the requested categories/tags in your response.`;
     } else {
       const targetMonthStr = String(targetMonth).padStart(2, '0');
       const suffix = `.${targetMonthStr}.${targetYear}`;
