@@ -139,7 +139,7 @@ export const AISheet: React.FC<AISheetProps> = ({
     }
   };
 
-  const startWebVoiceRecording = async () => {
+  const startWebVoiceRecording = async (isFallback = false) => {
     const hasPermission = await requestMicrophonePermission();
     if (!hasPermission) return;
 
@@ -147,6 +147,13 @@ export const AISheet: React.FC<AISheetProps> = ({
     if (!SpeechRecognition) {
       alert("Ваш браузер не поддерживает распознавание речи.");
       return;
+    }
+
+    if (isFallback && Capacitor.isNativePlatform()) {
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: '⚠️ **Предупреждение:** Нативное распознавание речи не сработало. Используется веб-версия, которая в Android WebView на некоторых устройствах может распознавать некорректно (например, выдавать иероглифы из-за несовместимости локалей).'
+      }]);
     }
 
     const recognition = new SpeechRecognition();
@@ -198,9 +205,14 @@ export const AISheet: React.FC<AISheetProps> = ({
 
     if (isNative) {
       try {
+        // Проверяем, существует ли сам объект плагина
+        if (!NativeSpeechRecognition) {
+          throw new Error("SpeechRecognition plugin is not loaded/implemented");
+        }
+
         const { available } = await NativeSpeechRecognition.available();
         if (!available) {
-          throw new Error("Speech recognition not available natively");
+          throw new Error("Speech recognition not available natively on this device");
         }
 
         await NativeSpeechRecognition.requestPermissions();
@@ -246,10 +258,24 @@ export const AISheet: React.FC<AISheetProps> = ({
 
       } catch (err: any) {
         console.error("Native speech recognition failed, falling back to Web API:", err);
-        await startWebVoiceRecording();
+        const errMsg = err.message || "";
+        const isNotImplemented = errMsg.includes('not implemented') || 
+                                 errMsg.includes('loaded') || 
+                                 errMsg.includes('is not a function') ||
+                                 errMsg.includes('plugin');
+        
+        if (isNotImplemented) {
+          setMessages(prev => [...prev, { 
+            role: 'assistant', 
+            content: '⚠️ **Ошибка голосового ввода:** Нативный плагин распознавания речи отсутствует в этой сборке APK.\n\nПожалуйста, соберите и установите новую версию приложения с помощью команды `./build_and_send.sh`.' 
+          }]);
+        } else {
+          // Если плагин есть, но произошла другая ошибка (например, нет разрешений на запись звука), переходим на веб с предупреждением
+          await startWebVoiceRecording(true);
+        }
       }
     } else {
-      await startWebVoiceRecording();
+      await startWebVoiceRecording(false);
     }
   };
 
