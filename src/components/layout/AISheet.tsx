@@ -215,7 +215,14 @@ export const AISheet: React.FC<AISheetProps> = ({
           throw new Error("Speech recognition not available natively on this device");
         }
 
-        await NativeSpeechRecognition.requestPermissions();
+        // Явно проверяем и запрашиваем разрешения
+        const permStatus = await NativeSpeechRecognition.checkPermissions();
+        if (permStatus.speechRecognition !== 'granted') {
+          const reqStatus = await NativeSpeechRecognition.requestPermissions();
+          if (reqStatus.speechRecognition !== 'granted') {
+            throw new Error("speech_recognition_permission_denied");
+          }
+        }
         
         setIsRecording(true);
         if (window.navigator.vibrate) window.navigator.vibrate(50);
@@ -237,41 +244,55 @@ export const AISheet: React.FC<AISheetProps> = ({
           }
         );
 
-        NativeSpeechRecognition.start({
-          language: "ru-RU",
-          maxResults: 1,
-          partialResults: true,
-          popup: false,
-        }).then(() => {
-          setIsRecording(false);
-          if (nativeListenerRef.current) {
-            nativeListenerRef.current.remove();
-            nativeListenerRef.current = null;
-          }
-          if (lastTranscript.trim()) {
-            handleSend(lastTranscript);
-          }
-        }).catch((err) => {
-          console.error("Native recognition stopped:", err);
-          setIsRecording(false);
+        // Оборачиваем вызов старта в Promise для отслеживания ошибок запуска службы
+        await new Promise<void>((resolve, reject) => {
+          NativeSpeechRecognition.start({
+            language: "ru-RU",
+            maxResults: 1,
+            partialResults: true,
+            popup: false,
+          }).then(() => {
+            resolve();
+          }).catch((err) => {
+            reject(err);
+          });
         });
+
+        setIsRecording(false);
+        if (nativeListenerRef.current) {
+          nativeListenerRef.current.remove();
+          nativeListenerRef.current = null;
+        }
+        if (lastTranscript.trim()) {
+          handleSend(lastTranscript);
+        }
 
       } catch (err: any) {
         console.error("Native speech recognition failed, falling back to Web API:", err);
         const errMsg = err.message || "";
-        const isNotImplemented = errMsg.includes('not implemented') || 
-                                 errMsg.includes('loaded') || 
-                                 errMsg.includes('is not a function') ||
-                                 errMsg.includes('plugin');
         
-        if (isNotImplemented) {
+        if (errMsg === "speech_recognition_permission_denied") {
           setMessages(prev => [...prev, { 
             role: 'assistant', 
-            content: '⚠️ **Ошибка голосового ввода:** Нативный плагин распознавания речи отсутствует в этой сборке APK.\n\nПожалуйста, соберите и установите новую версию приложения с помощью команды `./build_and_send.sh`.' 
+            content: '⚠️ **Нет доступа к микрофону:** Разрешение на распознавание речи отклонено.\n\nПожалуйста, перейдите в настройки телефона -> Приложения -> CoinLover -> Разрешения и разрешите доступ к Микрофону.' 
           }]);
+          setIsRecording(false);
         } else {
-          // Если плагин есть, но произошла другая ошибка (например, нет разрешений на запись звука), переходим на веб с предупреждением
-          await startWebVoiceRecording(true);
+          const isNotImplemented = errMsg.includes('not implemented') || 
+                                   errMsg.includes('loaded') || 
+                                   errMsg.includes('is not a function') ||
+                                   errMsg.includes('plugin');
+          
+          if (isNotImplemented) {
+            setMessages(prev => [...prev, { 
+              role: 'assistant', 
+              content: '⚠️ **Ошибка голосового ввода:** Нативный плагин распознавания речи отсутствует в этой сборке APK.\n\nПожалуйста, соберите и установите новую версию приложения с помощью команды `./build_and_send.sh`.' 
+            }]);
+            setIsRecording(false);
+          } else {
+            // Если плагин есть, но произошла другая ошибка (например, служба Speech Recognition не установлена/неактивна), переходим на веб с предупреждением
+            await startWebVoiceRecording(true);
+          }
         }
       }
     } else {

@@ -31,6 +31,7 @@ export const useLongPress = (callback: () => void, ms = 1000) => {
     onPointerDown: start,
     onPointerUp: stop,
     onPointerLeave: stop,
+    onPointerCancel: stop,
     onPointerMove: move
   };
 };
