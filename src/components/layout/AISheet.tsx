@@ -66,7 +66,9 @@ export const AISheet: React.FC<AISheetProps> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const nativeListenerRef = useRef<any>(null);
+  const nativeListeningStateListenerRef = useRef<any>(null);
   const webRecognitionRef = useRef<any>(null);
+  const lastTranscriptRef = useRef<string>("");
 
   const isExpanded = messages.length > 0 || isLoading;
 
@@ -232,44 +234,66 @@ export const AISheet: React.FC<AISheetProps> = ({
           nativeListenerRef.current = null;
         }
 
-        let lastTranscript = "";
-        
+        if (nativeListeningStateListenerRef.current) {
+          nativeListeningStateListenerRef.current.remove();
+          nativeListeningStateListenerRef.current = null;
+        }
+
+        lastTranscriptRef.current = "";
+        setQuery("");
+
+        // Слушатель частичных результатов
         nativeListenerRef.current = await NativeSpeechRecognition.addListener(
           "partialResults",
           (data: { matches: string[] }) => {
             if (data.matches && data.matches.length > 0) {
-              lastTranscript = data.matches[0];
-              setQuery(lastTranscript);
+              const text = data.matches[0];
+              lastTranscriptRef.current = text;
+              setQuery(text);
             }
           }
         );
 
-        // Оборачиваем вызов старта в Promise для отслеживания ошибок запуска службы
-        await new Promise<void>((resolve, reject) => {
-          NativeSpeechRecognition.start({
-            language: "ru-RU",
-            maxResults: 1,
-            partialResults: true,
-            popup: false,
-          }).then(() => {
-            resolve();
-          }).catch((err) => {
-            reject(err);
-          });
-        });
+        // Слушатель состояния (запуск / остановка)
+        nativeListeningStateListenerRef.current = await NativeSpeechRecognition.addListener(
+          "listeningState",
+          (data: { status: 'started' | 'stopped' }) => {
+            console.log("Native listening state change:", data.status);
+            if (data.status === 'stopped') {
+              setIsRecording(currentRecording => {
+                if (currentRecording) {
+                  // Вызываем stopVoiceRecording через таймаут для завершения
+                  setTimeout(() => {
+                    stopVoiceRecording();
+                  }, 100);
+                }
+                return false;
+              });
+            }
+          }
+        );
 
-        setIsRecording(false);
-        if (nativeListenerRef.current) {
-          nativeListenerRef.current.remove();
-          nativeListenerRef.current = null;
-        }
-        if (lastTranscript.trim()) {
-          handleSend(lastTranscript);
-        }
+        // Запуск
+        await NativeSpeechRecognition.start({
+          language: "ru-RU",
+          maxResults: 1,
+          partialResults: true,
+          popup: false,
+        });
 
       } catch (err: any) {
         console.error("Native speech recognition failed, falling back to Web API:", err);
         const errMsg = err.message || "";
+        
+        // Очистим листенеры при ошибке старта
+        if (nativeListenerRef.current) {
+          nativeListenerRef.current.remove();
+          nativeListenerRef.current = null;
+        }
+        if (nativeListeningStateListenerRef.current) {
+          nativeListeningStateListenerRef.current.remove();
+          nativeListeningStateListenerRef.current = null;
+        }
         
         if (errMsg === "speech_recognition_permission_denied") {
           setMessages(prev => [...prev, { 
@@ -311,6 +335,15 @@ export const AISheet: React.FC<AISheetProps> = ({
       if (nativeListenerRef.current) {
         nativeListenerRef.current.remove();
         nativeListenerRef.current = null;
+      }
+      if (nativeListeningStateListenerRef.current) {
+        nativeListeningStateListenerRef.current.remove();
+        nativeListeningStateListenerRef.current = null;
+      }
+
+      const finalVal = lastTranscriptRef.current;
+      if (finalVal.trim()) {
+        handleSend(finalVal);
       }
     } else {
       if (webRecognitionRef.current) {

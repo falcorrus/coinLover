@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { Transaction } from "../types";
 import { safeParseDate } from "../hooks/utils";
@@ -13,6 +13,12 @@ interface Props {
 export const CalendarModal: React.FC<Props> = ({ isOpen, onClose, onSelect, transactions = [] }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
 
+    useEffect(() => {
+        if (isOpen) {
+            setCurrentDate(new Date());
+        }
+    }, [isOpen]);
+
     if (!isOpen) return null;
 
     const daysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
@@ -21,8 +27,8 @@ export const CalendarModal: React.FC<Props> = ({ isOpen, onClose, onSelect, tran
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
 
-    const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
-    const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
+    const prevMonth = () => setCurrentDate(d => new Date(d.getFullYear(), d.getMonth() - 1, 1));
+    const nextMonth = () => setCurrentDate(d => new Date(d.getFullYear(), d.getMonth() + 1, 1));
 
     const monthNames = [
         "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
