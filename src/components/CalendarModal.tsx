@@ -107,7 +107,7 @@ export const CalendarModal: React.FC<Props> = ({ isOpen, onClose, onSelect, tran
     };
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[300] flex items-center justify-center p-6 animate-in fade-in">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[500] flex items-center justify-center p-6 animate-in fade-in">
             <div className="glass-panel w-full max-w-[340px] p-6 shadow-2xl shadow-[var(--shadow-color)] animate-in zoom-in-95 text-[var(--text-main)]">
                 <div className="flex justify-between items-center mb-6">
                     <div className="flex items-center gap-2">

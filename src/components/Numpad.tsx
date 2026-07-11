@@ -287,7 +287,7 @@ export const Numpad: React.FC<Props> = ({
 
       {/* Currency Picker Modal */}
       {currencyPicker.isOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[300] flex items-end justify-center animate-in fade-in duration-300" onClick={() => setCurrencyPicker({ isOpen: false, field: null })}>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[500] flex items-end justify-center animate-in fade-in duration-300" onClick={() => setCurrencyPicker({ isOpen: false, field: null })}>
           <div className="w-full max-w-md bg-[var(--bg-color)] border border-[var(--glass-border)] rounded-t-3xl p-6 flex flex-col gap-4 animate-in slide-in-from-bottom duration-300 shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center"><h3 className="text-sm font-bold uppercase text-[var(--text-main)]">Выберите валюту</h3><button onClick={() => setCurrencyPicker({ isOpen: false, field: null })} className="p-1 text-[var(--text-muted)] hover:text-[var(--text-main)]"><X size={20} /></button></div>
             <div className={`grid ${getGridCols()} gap-2`}>
@@ -315,7 +315,7 @@ export const Numpad: React.FC<Props> = ({
       {/* Comment Modal */}
       {isCommentOpen && (
         <div 
-          className={`fixed inset-0 bg-black/60 backdrop-blur-md z-[300] flex justify-center animate-in fade-in duration-300 ${
+          className={`fixed inset-0 bg-black/60 backdrop-blur-md z-[500] flex justify-center animate-in fade-in duration-300 ${
             isIOS 
               ? "items-start p-4 pt-[15vh] sm:items-center sm:pt-0" 
               : "items-end sm:items-center"
