@@ -382,6 +382,23 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
             addTransaction(numpad.type, numpad.source!, numpad.destination!, fs, ft, numpad.tag || undefined, date, numpad.comment || undefined, customCurr);
           }
           
+          if (date) {
+            try {
+              const txDate = new Date(date);
+              const now = new Date();
+              if (!isNaN(txDate.getTime()) && (txDate.getMonth() !== now.getMonth() || txDate.getFullYear() !== now.getFullYear())) {
+                const langCode = localStorage.getItem("cl_lang") === "en" ? "en-US" : "ru-RU";
+                const monthName = txDate.toLocaleString(langCode, { month: "long" });
+                alert(localStorage.getItem("cl_lang") === "en"
+                  ? `Transaction successfully recorded for ${monthName}! Note: on the main screen, only the current month is displayed. You can view past operations in the Calendar or History.`
+                  : `Операция успешно записана на ${monthName}! Обратите внимание: на главном экране отображается только текущий месяц. Прошлые операции можно посмотреть в Календаре или Истории.`
+                );
+              }
+            } catch (e) {
+              console.error("Alert error:", e);
+            }
+          }
+          
           if (numpad.returnState) {
             setHistoryModal(numpad.returnState);
           }

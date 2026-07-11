@@ -27,8 +27,17 @@ export const CalendarModal: React.FC<Props> = ({ isOpen, onClose, onSelect, tran
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
 
-    const prevMonth = () => setCurrentDate(d => new Date(d.getFullYear(), d.getMonth() - 1, 1));
-    const nextMonth = () => setCurrentDate(d => new Date(d.getFullYear(), d.getMonth() + 1, 1));
+    const prevMonth = () => setCurrentDate(d => {
+        const y = d.getFullYear();
+        const m = d.getMonth();
+        return m === 0 ? new Date(y - 1, 11, 1) : new Date(y, m - 1, 1);
+    });
+
+    const nextMonth = () => setCurrentDate(d => {
+        const y = d.getFullYear();
+        const m = d.getMonth();
+        return m === 11 ? new Date(y + 1, 0, 1) : new Date(y, m + 1, 1);
+    });
 
     const monthNames = [
         "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
@@ -36,8 +45,15 @@ export const CalendarModal: React.FC<Props> = ({ isOpen, onClose, onSelect, tran
     ];
 
     const daysArr = [];
-    const firstDay = (firstDayOfMonth(year, month) + 6) % 7; // Adjust to Monday start
-    const totalDays = daysInMonth(year, month);
+    let firstDay = 0;
+    let totalDays = 30;
+
+    try {
+        firstDay = (firstDayOfMonth(year, month) + 6) % 7; // Adjust to Monday start
+        totalDays = daysInMonth(year, month);
+    } catch (e) {
+        console.error("Error calculating calendar dates:", e);
+    }
 
     // Padding for start of month
     for (let i = 0; i < firstDay; i++) {
@@ -49,30 +65,45 @@ export const CalendarModal: React.FC<Props> = ({ isOpen, onClose, onSelect, tran
     }
 
     const handleDateClick = (day: number) => {
-        onSelect(new Date(year, month, day));
-        onClose();
+        try {
+            onSelect(new Date(year, month, day));
+            onClose();
+        } catch (e) {
+            console.error("Error selecting date:", e);
+        }
     };
 
     const isToday = (day: number) => {
-        const today = new Date();
-        return today.getDate() === day && today.getMonth() === month && today.getFullYear() === year;
+        try {
+            const today = new Date();
+            return today.getDate() === day && today.getMonth() === month && today.getFullYear() === year;
+        } catch {
+            return false;
+        }
     };
 
     const getDayInfo = (day: number) => {
-        if (!transactions.length) return null;
-        
-        const dayTx = transactions.filter(t => {
-            const d = safeParseDate(t.date);
-            return d.getDate() === day && d.getMonth() === month && d.getFullYear() === year;
-        });
+        try {
+            if (!transactions || !Array.isArray(transactions) || !transactions.length) return null;
+            
+            const dayTx = transactions.filter(t => {
+                if (!t || !t.date) return false;
+                const d = safeParseDate(t.date);
+                if (isNaN(d.getTime())) return false;
+                return d.getDate() === day && d.getMonth() === month && d.getFullYear() === year;
+            });
 
-        if (dayTx.length === 0) return null;
+            if (dayTx.length === 0) return null;
 
-        return {
-            hasIncome: dayTx.some(t => t.type === "income"),
-            hasExpense: dayTx.some(t => t.type === "expense"),
-            hasTransfer: dayTx.some(t => t.type === "transfer")
-        };
+            return {
+                hasIncome: dayTx.some(t => t && t.type === "income"),
+                hasExpense: dayTx.some(t => t && t.type === "expense"),
+                hasTransfer: dayTx.some(t => t && t.type === "transfer")
+            };
+        } catch (err) {
+            console.error("Error in getDayInfo:", err);
+            return null;
+        }
     };
 
     return (
