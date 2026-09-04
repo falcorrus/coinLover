@@ -105,15 +105,19 @@ export const ReconciliationModal: React.FC<ReconciliationModalProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 bg-black/60 backdrop-blur-md z-[550] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200"
+      className="fixed inset-0 bg-black/75 backdrop-blur-md z-[550] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200"
       onClick={onClose}
     >
       <div 
-        className="glass-panel w-full max-w-lg max-h-[90vh] flex flex-col rounded-[28px] border border-[var(--glass-border)] bg-[var(--panel-bg)] shadow-2xl shadow-[var(--shadow-color)] overflow-hidden animate-in zoom-in-95 duration-200 text-[var(--text-main)]"
+        className="w-full max-w-lg max-h-[90vh] flex flex-col rounded-[28px] border border-[var(--glass-border)] shadow-2xl shadow-[var(--shadow-color)] overflow-hidden animate-in zoom-in-95 duration-200 text-[var(--text-main)]"
+        style={{ backgroundColor: "var(--panel-bg)" }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-[var(--glass-border)] shrink-0 bg-[var(--glass-card-bg)]">
+        <div 
+          className="flex items-center justify-between p-5 border-b border-[var(--glass-border)] shrink-0"
+          style={{ backgroundColor: "var(--panel-bg)" }}
+        >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-[var(--primary-color)]/15 text-[var(--primary-color)] flex items-center justify-center shrink-0">
               <ShieldCheck size={22} />
@@ -150,11 +154,17 @@ export const ReconciliationModal: React.FC<ReconciliationModalProps> = ({
         </div>
 
         {/* Checkpoint Mode Selector (3 точки восстановления) */}
-        <div className="px-5 py-3 border-b border-[var(--glass-border)] bg-[var(--glass-bg)] flex flex-col gap-1.5 shrink-0">
+        <div 
+          className="px-5 py-3 border-b border-[var(--glass-border)] flex flex-col gap-1.5 shrink-0"
+          style={{ backgroundColor: "var(--panel-bg)" }}
+        >
           <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
             Точка восстановления (откуда считать операции):
           </span>
-          <div className="grid grid-cols-3 gap-1.5 p-1 rounded-2xl bg-[var(--glass-item-bg)] border border-[var(--glass-border)]">
+          <div 
+            className="grid grid-cols-3 gap-1.5 p-1 rounded-2xl border border-[var(--glass-border)]"
+            style={{ backgroundColor: "var(--bg-color)" }}
+          >
             <button
               type="button"
               onClick={() => setCheckpointMode("yesterday")}
@@ -212,7 +222,10 @@ export const ReconciliationModal: React.FC<ReconciliationModalProps> = ({
         </div>
 
         {/* Status / Notice */}
-        <div className="px-5 py-3 border-b border-[var(--glass-border)] flex items-center justify-between gap-3 bg-[var(--glass-bg)] shrink-0 text-xs">
+        <div 
+          className="px-5 py-3 border-b border-[var(--glass-border)] flex items-center justify-between gap-3 shrink-0 text-xs"
+          style={{ backgroundColor: "var(--panel-bg)" }}
+        >
           <div className="flex items-center gap-2">
             {discrepancyAccounts.length > 0 ? (
               <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/15 text-amber-500 border border-amber-500/30">
@@ -233,7 +246,10 @@ export const ReconciliationModal: React.FC<ReconciliationModalProps> = ({
         </div>
 
         {/* Discrepancy Cards List */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3.5 hide-scrollbar bg-[var(--bg-color)]/30">
+        <div 
+          className="flex-1 overflow-y-auto p-4 space-y-3.5 hide-scrollbar"
+          style={{ backgroundColor: "var(--panel-bg)" }}
+        >
           {discrepancyAccounts.length === 0 ? (
             <div className="py-14 flex flex-col items-center justify-center text-center gap-3">
               <div className="w-14 h-14 rounded-2xl bg-emerald-500/15 text-emerald-500 flex items-center justify-center">
@@ -253,7 +269,8 @@ export const ReconciliationModal: React.FC<ReconciliationModalProps> = ({
               return (
                 <div
                   key={rec.account.id}
-                  className="p-4 rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-card-bg)] flex flex-col gap-3 shadow-md"
+                  className="p-4 rounded-2xl border border-[var(--glass-border)] flex flex-col gap-3 shadow-md"
+                  style={{ backgroundColor: "var(--bg-color)" }}
                 >
                   {/* Account Header */}
                   <div className="flex items-center justify-between">
@@ -269,7 +286,10 @@ export const ReconciliationModal: React.FC<ReconciliationModalProps> = ({
                           <span className="text-sm font-bold text-[var(--text-main)] truncate">
                             {rec.account.name}
                           </span>
-                          <span className="text-[10px] font-black uppercase text-[var(--text-muted)] px-1.5 py-0.5 rounded bg-[var(--glass-item-bg)] border border-[var(--glass-border)]">
+                          <span 
+                            className="text-[10px] font-black uppercase text-[var(--text-muted)] px-1.5 py-0.5 rounded border border-[var(--glass-border)]"
+                            style={{ backgroundColor: "var(--panel-bg)" }}
+                          >
                             {rec.account.currency}
                           </span>
                         </div>
@@ -292,10 +312,11 @@ export const ReconciliationModal: React.FC<ReconciliationModalProps> = ({
                           type="button"
                           disabled={isApplying}
                           onClick={() => handleToggleChoice(rec.account.id, "current")}
+                          style={!isSelected ? { backgroundColor: "var(--panel-bg)" } : undefined}
                           className={`p-3 rounded-xl border text-left flex flex-col transition-all cursor-pointer ${
                             isSelected
                               ? "border-emerald-500/70 bg-emerald-500/15 ring-1 ring-emerald-500/30 shadow-md shadow-emerald-500/10"
-                              : "border-[var(--glass-border)] bg-[var(--glass-item-bg)] hover:bg-[var(--glass-item-active)] hover:border-[var(--glass-border-highlight)] opacity-70 hover:opacity-100"
+                              : "border-[var(--glass-border)] hover:bg-[var(--glass-item-active)] hover:border-[var(--glass-border-highlight)] opacity-80 hover:opacity-100"
                           }`}
                         >
                           <span className="text-[10px] uppercase font-bold flex items-center justify-between text-emerald-500">
@@ -324,10 +345,11 @@ export const ReconciliationModal: React.FC<ReconciliationModalProps> = ({
                           type="button"
                           disabled={isApplying}
                           onClick={() => handleToggleChoice(rec.account.id, "reconciled")}
+                          style={!isSelected ? { backgroundColor: "var(--panel-bg)" } : undefined}
                           className={`p-3 rounded-xl border text-left flex flex-col transition-all cursor-pointer ${
                             isSelected
                               ? "border-[var(--primary-color)] bg-[var(--primary-color)]/20 ring-1 ring-[var(--primary-color)]/50 shadow-md shadow-[var(--primary-color)]/20"
-                              : "border-[var(--glass-border)] bg-[var(--glass-item-bg)] hover:bg-[var(--glass-item-active)] hover:border-[var(--glass-border-highlight)] opacity-70 hover:opacity-100"
+                              : "border-[var(--glass-border)] hover:bg-[var(--glass-item-active)] hover:border-[var(--glass-border-highlight)] opacity-80 hover:opacity-100"
                           }`}
                         >
                           <span className="text-[10px] uppercase font-bold flex items-center justify-between text-[var(--primary-color)]">
@@ -355,11 +377,15 @@ export const ReconciliationModal: React.FC<ReconciliationModalProps> = ({
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 border-t border-[var(--glass-border)] bg-[var(--glass-card-bg)] shrink-0 flex items-center gap-3">
+        <div 
+          className="p-4 border-t border-[var(--glass-border)] shrink-0 flex items-center gap-3"
+          style={{ backgroundColor: "var(--panel-bg)" }}
+        >
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 h-12 rounded-xl bg-[var(--glass-item-bg)] border border-[var(--glass-border)] font-bold text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--glass-item-active)] active:scale-98 transition-all text-xs uppercase tracking-wider cursor-pointer"
+            style={{ backgroundColor: "var(--bg-color)" }}
+            className="flex-1 h-12 rounded-xl border border-[var(--glass-border)] font-bold text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--glass-item-active)] active:scale-98 transition-all text-xs uppercase tracking-wider cursor-pointer"
           >
             {discrepancyAccounts.length === 0 ? "Закрыть" : "Отмена"}
           </button>
