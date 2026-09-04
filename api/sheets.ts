@@ -648,8 +648,9 @@ export default async function handler(req, res) {
       configSheetName = "Configs"; // Demo sheets are retired
       txSheetName = "Transactions";
       
+      let memoRows: any[] = [];
       try {
-        const [confRes, passkeyRes] = await Promise.allSettled([
+        const [confRes, passkeyRes, memoRes] = await Promise.allSettled([
           sheets.spreadsheets.values.get({
             spreadsheetId: targetSsId,
             range: `${configSheetName}!A:M`
@@ -657,6 +658,10 @@ export default async function handler(req, res) {
           sheets.spreadsheets.values.get({
             spreadsheetId: targetSsId,
             range: `Passkey!A:B`
+          }),
+          sheets.spreadsheets.values.get({
+            spreadsheetId: targetSsId,
+            range: `НаПамять!A:G`
           })
         ]);
 
@@ -671,6 +676,10 @@ export default async function handler(req, res) {
           passkeyRows = passkeyRes.value.data.values || [];
         } else {
           console.log(`[API] Passkey sheet not found or inaccessible for ${targetSsId}. Proceeding without biometric keys.`);
+        }
+
+        if (memoRes.status === "fulfilled") {
+          memoRows = memoRes.value.data.values || [];
         }
       } catch (e: any) {
         console.error(`[API] Failed to fetch Configs from ${targetSsId}:`, e.message);
@@ -719,6 +728,36 @@ export default async function handler(req, res) {
         if (key === "passkey_credential_id") { data.passkeyCredId = String(row[1] || "").trim(); }
         if (key === "passkey_public_key") { data.passkeyPubKey = String(row[1] || "").trim(); }
         if (key === "passkey_counter") { data.passkeyCounter = parseInt(row[1], 10) || 0; }
+      }
+
+      // Parse Checkpoints from НаПамять if available
+      if (memoRows.length > 0) {
+        try {
+          const checkpointDate = memoRows[0]?.[1] ? String(memoRows[0][1]).trim() : undefined;
+          const checkpoints: Record<string, number> = {};
+          let memoHeaderIdx = -1;
+          for (let i = 0; i < memoRows.length; i++) {
+            const r = memoRows[i];
+            if (!r || !r[0]) continue;
+            const key = String(r[0] || "").toLowerCase().trim();
+            if (key.includes("wallets") || key.includes("accounts") || key.includes("кошельки")) {
+              memoHeaderIdx = i + 1;
+              continue;
+            }
+            if (memoHeaderIdx !== -1 && i > memoHeaderIdx) {
+              if (key.startsWith("===")) break;
+              const aid = String(r[0]).trim();
+              const aname = String(r[1] || "").trim().toLowerCase();
+              const bal = parseNum(r[2]);
+              checkpoints[aid] = bal;
+              if (aname) checkpoints[aname] = bal;
+            }
+          }
+          if (checkpointDate) data.checkpointDate = checkpointDate;
+          if (Object.keys(checkpoints).length > 0) data.checkpoints = checkpoints;
+        } catch (mErr) {
+          console.warn("[API] Error parsing НаПамять checkpoints:", mErr);
+        }
       }
 
       for (let i = 0; i < rows.length; i++) {

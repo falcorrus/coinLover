@@ -109,6 +109,25 @@ export const Numpad: React.FC<Props> = ({
     return "text-lg sm:text-xl";
   };
 
+  const handleBtnPress = (val: string, e: React.PointerEvent | React.MouseEvent) => {
+    e.preventDefault();
+    if (typeof navigator !== "undefined" && navigator.vibrate) {
+      try { navigator.vibrate(10); } catch (_) {}
+    }
+    onPress(val);
+  };
+
+  const handleBtnDelete = (e: React.PointerEvent | React.MouseEvent) => {
+    e.preventDefault();
+    if (typeof navigator !== "undefined" && navigator.vibrate) {
+      try { navigator.vibrate(10); } catch (_) {}
+    }
+    onDelete();
+  };
+
+  const padBtnClass = "h-16 bg-[var(--numpad-bg)] flex items-center justify-center text-2xl font-light text-[var(--text-main)] active:bg-[var(--glass-item-active)] active:scale-95 transition-all touch-manipulation select-none cursor-pointer";
+  const opBtnClass = "h-16 bg-[var(--panel-bg)] flex items-center justify-center text-[var(--text-muted)] active:bg-[var(--glass-item-active)] active:scale-95 transition-all touch-manipulation select-none cursor-pointer";
+
   return (
     <div className="fixed inset-0 z-[400] flex justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-300 font-sans" onClick={onClose}>
       <div 
@@ -234,49 +253,51 @@ export const Numpad: React.FC<Props> = ({
         </div>
 
         {/* Numerical Pad */}
-        <div className="bg-[var(--numpad-bg)] border-t border-[var(--glass-border)] shrink-0 flex flex-col">
+        <div className="bg-[var(--numpad-bg)] border-t border-[var(--glass-border)] shrink-0 flex flex-col touch-manipulation select-none">
           <div className="grid grid-cols-[2fr_2fr_2fr_1.5fr_1.5fr] gap-px bg-[var(--glass-border)]">
             {/* Row 1 */}
-            <button onClick={() => onPress("1")} className="h-16 bg-[var(--numpad-bg)] flex items-center justify-center text-2xl font-light text-[var(--text-main)] active:bg-[var(--glass-item-active)] transition-all">1</button>
-            <button onClick={() => onPress("2")} className="h-16 bg-[var(--numpad-bg)] flex items-center justify-center text-2xl font-light text-[var(--text-main)] active:bg-[var(--glass-item-active)] transition-all">2</button>
-            <button onClick={() => onPress("3")} className="h-16 bg-[var(--numpad-bg)] flex items-center justify-center text-2xl font-light text-[var(--text-main)] active:bg-[var(--glass-item-active)] transition-all">3</button>
+            <button type="button" onPointerDown={(e) => handleBtnPress("1", e)} onClick={(e) => e.preventDefault()} className={padBtnClass}>1</button>
+            <button type="button" onPointerDown={(e) => handleBtnPress("2", e)} onClick={(e) => e.preventDefault()} className={padBtnClass}>2</button>
+            <button type="button" onPointerDown={(e) => handleBtnPress("3", e)} onClick={(e) => e.preventDefault()} className={padBtnClass}>3</button>
             <button 
+              type="button"
               onClick={() => setIsCommentOpen(true)} 
-              className={`h-16 flex items-center justify-center active:bg-[var(--glass-item-active)] transition-all border-l border-white/5 ${hasComment ? "bg-[var(--primary-color)]/20 text-[var(--primary-color)] shadow-[inset_0_0_15px_rgba(0,0,0,0.1)]" : "bg-[var(--panel-bg)]/80 text-[var(--text-muted)] hover:text-[var(--text-main)]"}`}
+              className={`h-16 flex items-center justify-center active:bg-[var(--glass-item-active)] transition-all border-l border-white/5 touch-manipulation select-none ${hasComment ? "bg-[var(--primary-color)]/20 text-[var(--primary-color)] shadow-[inset_0_0_15px_rgba(0,0,0,0.1)]" : "bg-[var(--panel-bg)]/80 text-[var(--text-muted)] hover:text-[var(--text-main)]"}`}
             >
               <MessageSquare size={20} className={hasComment ? "scale-110" : ""} />
-            </button>            <button onClick={() => onPress("C")} className="h-16 bg-[var(--panel-bg)] flex items-center justify-center text-[var(--text-muted)] active:bg-[var(--glass-item-active)] transition-all"><RotateCcw size={20} /></button>
+            </button>
+            <button type="button" onPointerDown={(e) => handleBtnPress("C", e)} onClick={(e) => e.preventDefault()} className={opBtnClass}><RotateCcw size={20} /></button>
 
             {/* Row 2 */}
-            <button onClick={() => onPress("4")} className="h-16 bg-[var(--numpad-bg)] flex items-center justify-center text-2xl font-light text-[var(--text-main)] active:bg-[var(--glass-item-active)] transition-all">4</button>
-            <button onClick={() => onPress("5")} className="h-16 bg-[var(--numpad-bg)] flex items-center justify-center text-2xl font-light text-[var(--text-main)] active:bg-[var(--glass-item-active)] transition-all">5</button>
-            <button onClick={() => onPress("6")} className="h-16 bg-[var(--numpad-bg)] flex items-center justify-center text-2xl font-light text-[var(--text-main)] active:bg-[var(--glass-item-active)] transition-all">6</button>
-            <button onClick={() => onPress("-")} className="h-16 bg-[var(--panel-bg)] flex items-center justify-center text-[var(--text-muted)] active:bg-[var(--glass-item-active)] transition-all"><Minus size={20} /></button>
-            <button onClick={() => onPress("%")} className="h-16 bg-[var(--panel-bg)] flex items-center justify-center text-[var(--text-muted)] active:bg-[var(--glass-item-active)] transition-all"><Percent size={18} /></button>
+            <button type="button" onPointerDown={(e) => handleBtnPress("4", e)} onClick={(e) => e.preventDefault()} className={padBtnClass}>4</button>
+            <button type="button" onPointerDown={(e) => handleBtnPress("5", e)} onClick={(e) => e.preventDefault()} className={padBtnClass}>5</button>
+            <button type="button" onPointerDown={(e) => handleBtnPress("6", e)} onClick={(e) => e.preventDefault()} className={padBtnClass}>6</button>
+            <button type="button" onPointerDown={(e) => handleBtnPress("-", e)} onClick={(e) => e.preventDefault()} className={opBtnClass}><Minus size={20} /></button>
+            <button type="button" onPointerDown={(e) => handleBtnPress("%", e)} onClick={(e) => e.preventDefault()} className={opBtnClass}><Percent size={18} /></button>
 
             {/* Row 3 */}
-            <button onClick={() => onPress("7")} className="h-16 bg-[var(--numpad-bg)] flex items-center justify-center text-2xl font-light text-[var(--text-main)] active:bg-[var(--glass-item-active)] transition-all">7</button>
-            <button onClick={() => onPress("8")} className="h-16 bg-[var(--numpad-bg)] flex items-center justify-center text-2xl font-light text-[var(--text-main)] active:bg-[var(--glass-item-active)] transition-all">8</button>
-            <button onClick={() => onPress("9")} className="h-16 bg-[var(--numpad-bg)] flex items-center justify-center text-2xl font-light text-[var(--text-main)] active:bg-[var(--glass-item-active)] transition-all">9</button>
-            <button onClick={() => onPress("+")} className="h-16 bg-[var(--panel-bg)] flex items-center justify-center text-[var(--text-muted)] active:bg-[var(--glass-item-active)] transition-all"><Plus size={20} /></button>
-            <button onClick={() => onPress("*")} className="h-16 bg-[var(--panel-bg)] flex items-center justify-center text-[var(--text-muted)] active:bg-[var(--glass-item-active)] transition-all"><X size={20} /></button>
+            <button type="button" onPointerDown={(e) => handleBtnPress("7", e)} onClick={(e) => e.preventDefault()} className={padBtnClass}>7</button>
+            <button type="button" onPointerDown={(e) => handleBtnPress("8", e)} onClick={(e) => e.preventDefault()} className={padBtnClass}>8</button>
+            <button type="button" onPointerDown={(e) => handleBtnPress("9", e)} onClick={(e) => e.preventDefault()} className={padBtnClass}>9</button>
+            <button type="button" onPointerDown={(e) => handleBtnPress("+", e)} onClick={(e) => e.preventDefault()} className={opBtnClass}><Plus size={20} /></button>
+            <button type="button" onPointerDown={(e) => handleBtnPress("*", e)} onClick={(e) => e.preventDefault()} className={opBtnClass}><X size={20} /></button>
 
             {/* Row 4 */}
-            <button onClick={() => onPress(".")} className="h-16 bg-[var(--numpad-bg)] flex items-center justify-center text-2xl font-light text-[var(--text-main)] active:bg-[var(--glass-item-active)] transition-all">,</button>
-            <button onClick={() => onPress("0")} className="h-16 bg-[var(--numpad-bg)] flex items-center justify-center text-2xl font-light text-[var(--text-main)] active:bg-[var(--glass-item-active)] transition-all">0</button>
-            <button onClick={onDelete} className="h-16 bg-[var(--numpad-bg)] flex items-center justify-center text-[var(--text-muted)] active:bg-[var(--glass-item-active)] transition-all"><Delete size={22} /></button>
-            <button onClick={() => onPress("=")} className="h-16 bg-[var(--panel-bg)] flex items-center justify-center text-[var(--text-muted)] active:bg-[var(--glass-item-active)] transition-all"><Equal size={22} /></button>
-            <button onClick={() => onPress("/")} className="h-16 bg-[var(--panel-bg)] flex items-center justify-center text-[var(--text-muted)] active:bg-[var(--glass-item-active)] transition-all"><Divide size={20} /></button>
+            <button type="button" onPointerDown={(e) => handleBtnPress(".", e)} onClick={(e) => e.preventDefault()} className={padBtnClass}>,</button>
+            <button type="button" onPointerDown={(e) => handleBtnPress("0", e)} onClick={(e) => e.preventDefault()} className={padBtnClass}>0</button>
+            <button type="button" onPointerDown={(e) => handleBtnDelete(e)} onClick={(e) => e.preventDefault()} className={padBtnClass}><Delete size={22} /></button>
+            <button type="button" onPointerDown={(e) => handleBtnPress("=", e)} onClick={(e) => e.preventDefault()} className={opBtnClass}><Equal size={22} /></button>
+            <button type="button" onPointerDown={(e) => handleBtnPress("/", e)} onClick={(e) => e.preventDefault()} className={opBtnClass}><Divide size={20} /></button>
           </div>
 
         {/* Bottom Action Bar */}
-        <div className="flex justify-center px-4 py-6 bg-[var(--numpad-bg)] shrink-0">
+        <div className="flex justify-center px-4 py-6 bg-[var(--numpad-bg)] shrink-0 touch-manipulation select-none">
           <div className="flex items-center bg-[#1a1c1e]/80 backdrop-blur-xl rounded-2xl p-1.5 border border-white/5 shadow-2xl">
-            <button onClick={handleYesterday} className="px-6 py-3 text-white/40 font-black uppercase text-[10px] tracking-widest active:text-white transition-all hover:text-white/70">Вчера</button>
-            <button onClick={() => onSubmit()} className="px-12 py-3 bg-[var(--success-color)] text-white font-black uppercase text-[10px] tracking-widest rounded-xl shadow-lg shadow-[var(--success-color)]/20 active:scale-95 transition-all">
+            <button type="button" onClick={handleYesterday} className="px-6 py-3 text-white/40 font-black uppercase text-[10px] tracking-widest active:text-white transition-all hover:text-white/70 touch-manipulation">Вчера</button>
+            <button type="button" onClick={() => onSubmit()} className="px-12 py-3 bg-[var(--success-color)] text-white font-black uppercase text-[10px] tracking-widest rounded-xl shadow-lg shadow-[var(--success-color)]/20 active:scale-95 transition-all touch-manipulation">
               {isEditing ? "Сохранить" : "Сегодня"}
             </button>
-            <button onClick={() => setIsCalendarOpen(true)} className="px-5 py-3 text-white/40 active:text-white transition-all hover:scale-110 hover:text-white/70"><CalendarDays size={18} /></button>
+            <button type="button" onClick={() => setIsCalendarOpen(true)} className="px-5 py-3 text-white/40 active:text-white transition-all hover:scale-110 hover:text-white/70 touch-manipulation"><CalendarDays size={18} /></button>
           </div>
         </div>
       </div>

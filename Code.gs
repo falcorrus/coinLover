@@ -268,9 +268,9 @@ function doGet(e) {
         const c_id = findCol(["id", "идентификатор"]);
         
         if (c_date !== undefined) {
-          const accMap = {}; data.accounts.forEach(a => { accMap[a.name] = a.id; accMap[a.id] = a.id; });
-          const catMap = {}; data.categories.forEach(c => { catMap[c.name] = c.id; catMap[c.id] = c.id; });
-          const incMap = {}; data.incomes.forEach(i => { incMap[i.name] = i.id; incMap[i.id] = i.id; });
+          const accMap = {}; data.accounts.forEach(a => { accMap[String(a.name).trim().toLowerCase()] = a.id; accMap[String(a.id).trim().toLowerCase()] = a.id; });
+          const catMap = {}; data.categories.forEach(c => { catMap[String(c.name).trim().toLowerCase()] = c.id; catMap[String(c.id).trim().toLowerCase()] = c.id; });
+          const incMap = {}; data.incomes.forEach(i => { incMap[String(i.name).trim().toLowerCase()] = i.id; incMap[String(i.id).trim().toLowerCase()] = i.id; });
 
           for (let i = dataStartIndex; i < txRows.length; i++) {
             const r = txRows[i]; 
@@ -285,11 +285,13 @@ function doGet(e) {
 
             const srcRaw = String(r[c_src] || "").trim();
             const dstRaw = String(r[c_dst] || "").trim();
+            const srcKey = srcRaw.toLowerCase();
+            const dstKey = dstRaw.toLowerCase();
             
             let aid = "", tid = "";
-            if (type === "expense") { aid = accMap[srcRaw] || srcRaw; tid = catMap[dstRaw] || dstRaw; }
-            else if (type === "income") { aid = accMap[dstRaw] || dstRaw; tid = incMap[srcRaw] || srcRaw; }
-            else if (type === "transfer") { aid = accMap[srcRaw] || srcRaw; tid = accMap[dstRaw] || dstRaw; }
+            if (type === "expense") { aid = accMap[srcKey] || srcRaw; tid = catMap[dstKey] || dstRaw; }
+            else if (type === "income") { aid = accMap[dstKey] || dstRaw; tid = incMap[srcKey] || srcRaw; }
+            else if (type === "transfer") { aid = accMap[srcKey] || srcRaw; tid = accMap[dstKey] || dstRaw; }
 
             let dt;
             if (dateRaw instanceof Date) {

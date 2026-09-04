@@ -2,11 +2,12 @@ import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sun, Moon, Plus, Menu, RefreshCcw, List, Calendar, PieChart, Sparkles, TrendingDown, TrendingUp, Wallet, X, Smartphone, QrCode, Key, Fingerprint, ShieldCheck, ShieldAlert, Settings, ChevronLeft, Mic, Search, Keyboard } from "lucide-react";
 import { APP_SETTINGS } from "../../constants/settings";
-import { HistoryModalState } from "../../types";
+import { HistoryModalState, Account, Transaction } from "../../types";
 import { startRegistration } from "@simplewebauthn/browser";
 import { googleSheetsService, getAbsoluteApiUrl } from "../../services/googleSheets";
 import { useLanguage } from "../../contexts/LanguageContext";
 import { AISheet } from "./AISheet";
+import { ReconciliationModal } from "../ReconciliationModal";
 
 interface AppHeaderProps {
   isIncomeCollapsed: boolean;
@@ -36,6 +37,11 @@ interface AppHeaderProps {
   isAISheetOpen: boolean;
   tariff?: string;
   onOpenPremiumModal: () => void;
+  accounts?: Account[];
+  transactions?: Transaction[];
+  checkpoints?: Record<string, number>;
+  checkpointDate?: string;
+  reconcileBalances?: (updatedAccounts: Account[]) => Promise<boolean | void>;
 }
 
 export function AppHeader({
@@ -43,7 +49,8 @@ export function AppHeader({
   setIsSettingsMenuOpen, pullSettings, setHistoryModal, setCalendarAnalyticsModal, setAnalyticsModal,
   theme, setTheme, syncStatus, pillMode, setPillMode, currentSymbol, displaySpent, displayEarned, displayBalance,
   categoriesCount, activeTableId, setIsAISheetOpen, isAISheetOpen,
-  tariff = "Free", onOpenPremiumModal
+  tariff = "Free", onOpenPremiumModal,
+  accounts = [], transactions = [], checkpoints, checkpointDate, reconcileBalances
 }: AppHeaderProps) {
   const { t } = useLanguage();
   const isCompact = categoriesCount > 8;
@@ -56,6 +63,7 @@ export function AppHeader({
   const [prefetchedRegisterOptions, setPrefetchedRegisterOptions] = React.useState<any>(null);
   const [passkeyPending, setPasskeyPending] = React.useState(false); 
   const [isMoreOpen, setIsMoreOpen] = React.useState(false);
+  const [isReconciliationModalOpen, setIsReconciliationModalOpen] = React.useState(false);
 
   React.useEffect(() => {
     if (!isSettingsMenuOpen) {
@@ -344,9 +352,16 @@ export function AppHeader({
                         <button onClick={() => { setTheme("black"); setIsSettingsMenuOpen(false); }} className={`p-2 rounded-lg transition-all ${theme === 'black' || theme === 'modern' ? 'bg-purple-500/20 text-purple-400 scale-105 shadow-sm' : 'text-slate-400 hover:bg-white/5'}`}><Moon size={15} /></button>
                       </div>
                       
-                      <button onClick={() => { setIsSettingsMenuOpen(false); pullSettings(); }} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left">
+                      <button 
+                        onClick={() => { 
+                          setIsSettingsMenuOpen(false); 
+                          pullSettings();
+                          setIsReconciliationModalOpen(true); 
+                        }} 
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[var(--glass-item-bg)] transition-colors text-left"
+                      >
                         <RefreshCcw size={14} className={`text-amber-500 ${syncStatus === 'loading' ? 'animate-spin' : ''}`} />
-                        <span className="text-xs font-black text-[var(--text-main)] uppercase tracking-wider">{t('Update')}</span>
+                        <span className="text-xs font-black text-[var(--text-main)] uppercase tracking-wider">{t('Reconcile Balances')}</span>
                       </button>
 
                       {activeTableId && (
@@ -478,6 +493,24 @@ export function AppHeader({
         </div>
       )}
     </header>
+
+    <ReconciliationModal
+      isOpen={isReconciliationModalOpen}
+      onClose={() => setIsReconciliationModalOpen(false)}
+      accounts={accounts}
+      transactions={transactions}
+      checkpoints={checkpoints}
+      checkpointDate={checkpointDate}
+      onApply={async (updated) => {
+        if (reconcileBalances) {
+          await reconcileBalances(updated);
+        }
+      }}
+      onRefresh={async () => {
+        await pullSettings();
+      }}
+      isLoading={syncStatus === "loading"}
+    />
     </>
   );
 }

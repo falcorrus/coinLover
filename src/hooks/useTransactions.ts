@@ -14,12 +14,12 @@ interface TransactionStateProps {
   transactions: Transaction[];
   setTransactions: (t: Transaction[] | ((prev: Transaction[]) => Transaction[])) => void;
   setSyncStatus: (s: "idle" | "loading" | "error" | "success") => void;
-  pushSettings: (a: Account[], c: Category[], i: IncomeSource[], immediate?: boolean) => Promise<boolean>;
+  pushSettings?: (a: Account[], c: Category[], i: IncomeSource[], immediate?: boolean) => Promise<boolean>;
   ssId?: string;
 }
 
 export const useTransactions = ({
-  accounts, setAccounts, categories, incomes, transactions, setTransactions, setSyncStatus, pushSettings, ssId
+  accounts, setAccounts, categories, incomes, transactions, setTransactions, setSyncStatus, ssId
 }: TransactionStateProps) => {
 
   const addTransaction = useCallback(async (type: TransactionType, source: Account | IncomeSource, destination: Account | Category, sourceAmount: number, targetAmount?: number, tag?: string, customDate?: string, comment?: string, customCurrency?: string) => {
@@ -89,21 +89,22 @@ export const useTransactions = ({
     trackEvent("TransactionAdd", { category: "Transaction", label: type });
     const updatedAccounts = accounts.map((a) => {
       const aid = String(a.id).trim().toLowerCase();
+      const aName = String(a.name).trim().toLowerCase();
       const sourceId = String(source.id).trim().toLowerCase();
       const destId = String(destination.id).trim().toLowerCase();
 
       const balance = Number(a.balance) || 0;
-      if (type === "expense" && aid === sourceId) {
+      if (type === "expense" && (aid === sourceId || aName === sourceId)) {
         return { ...a, balance: balance - (Number(sourceAmount) || 0) };
       }
-      if (type === "income" && aid === destId) {
+      if (type === "income" && (aid === destId || aName === destId)) {
         return { ...a, balance: balance + (Number(finalTargetAmount) || 0) };
       }
       if (type === "transfer") { 
-        if (aid === sourceId) {
+        if (aid === sourceId || aName === sourceId) {
           return { ...a, balance: balance - (Number(sourceAmount) || 0) }; 
         }
-        if (aid === destId) {
+        if (aid === destId || aName === destId) {
           return { ...a, balance: balance + (Number(finalTargetAmount) || 0) }; 
         }
       }
@@ -142,14 +143,13 @@ export const useTransactions = ({
         baseCurrency
     } as any);
 
-    // Затем всё равно вызываем pushSettings для локальной синхронизации и контроля конфликтов
     if (txOk) {
       localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC, ts);
-      await pushSettings(updatedAccounts, categories, incomes, true);
+      setSyncStatus("success");
     } else {
       setSyncStatus("error");
     }
-  }, [accounts, categories, incomes, setAccounts, setTransactions, setSyncStatus, pushSettings, ssId]);
+  }, [accounts, categories, incomes, setAccounts, setTransactions, setSyncStatus, ssId]);
 
   const updateTransaction = useCallback(async (txId: string, type: TransactionType, source: Account | IncomeSource, destination: Account | Category, sourceAmount: number, targetAmount?: number, tag?: string, customDate?: string, comment?: string, customCurrency?: string) => {
     // Гарантируем наличие курсов перед расчетом
@@ -207,24 +207,25 @@ export const useTransactions = ({
     trackEvent("TransactionUpdate", { category: "Transaction", label: type });
     const updatedAccounts = accounts.map(a => {
       const aid = String(a.id).trim().toLowerCase();
+      const aName = String(a.name).trim().toLowerCase();
       const oldTxAccId = String(oldTx.accountId).trim().toLowerCase();
       const oldTxTargetId = String(oldTx.targetId).trim().toLowerCase();
       const sourceId = String(source.id).trim().toLowerCase();
       const destId = String(destination.id).trim().toLowerCase();
 
       let balance = Number(a.balance) || 0;
-      if (oldTx.type === "expense" && aid === oldTxAccId) balance += (Number(oldTx.sourceAmount) || 0);
-      if (oldTx.type === "income" && aid === oldTxAccId) balance -= (Number(oldTx.targetAmount) || 0);
+      if (oldTx.type === "expense" && (aid === oldTxAccId || aName === oldTxAccId)) balance += (Number(oldTx.sourceAmount) || 0);
+      if (oldTx.type === "income" && (aid === oldTxAccId || aName === oldTxAccId)) balance -= (Number(oldTx.targetAmount) || 0);
       if (oldTx.type === "transfer") { 
-        if (aid === oldTxAccId) balance += (Number(oldTx.sourceAmount) || 0); 
-        if (aid === oldTxTargetId) balance -= (Number(oldTx.targetAmount) || 0); 
+        if (aid === oldTxAccId || aName === oldTxAccId) balance += (Number(oldTx.sourceAmount) || 0); 
+        if (aid === oldTxTargetId || aName === oldTxTargetId) balance -= (Number(oldTx.targetAmount) || 0); 
       }
       
-      if (type === "expense" && aid === sourceId) balance -= (Number(sourceAmount) || 0);
-      if (type === "income" && aid === destId) balance += (Number(finalTargetAmount) || 0);
+      if (type === "expense" && (aid === sourceId || aName === sourceId)) balance -= (Number(sourceAmount) || 0);
+      if (type === "income" && (aid === destId || aName === destId)) balance += (Number(finalTargetAmount) || 0);
       if (type === "transfer") { 
-        if (aid === sourceId) balance -= (Number(sourceAmount) || 0); 
-        if (aid === destId) balance += (Number(finalTargetAmount) || 0); 
+        if (aid === sourceId || aName === sourceId) balance -= (Number(sourceAmount) || 0); 
+        if (aid === destId || aName === destId) balance += (Number(finalTargetAmount) || 0); 
       }
       return a.balance !== balance ? { ...a, balance } : a;
     });
@@ -262,11 +263,11 @@ export const useTransactions = ({
 
     if (txOk) {
       localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC, ts);
-      await pushSettings(updatedAccounts, categories, incomes, true);
+      setSyncStatus("success");
     } else {
       setSyncStatus("error");
     }
-  }, [accounts, categories, incomes, transactions, setAccounts, setTransactions, setSyncStatus, pushSettings, ssId]);
+  }, [accounts, categories, incomes, transactions, setAccounts, setTransactions, setSyncStatus, ssId]);
 
   const deleteTransaction = useCallback(async (txId: string) => {
     // Гарантируем наличие курсов перед расчетом
@@ -277,15 +278,16 @@ export const useTransactions = ({
     trackEvent("TransactionDelete", { category: "Transaction", label: tx.type });
     const updatedAccounts = accounts.map((a) => {
       const aid = String(a.id).trim().toLowerCase();
+      const aName = String(a.name).trim().toLowerCase();
       const txAccId = String(tx.accountId).trim().toLowerCase();
       const txTargetId = String(tx.targetId).trim().toLowerCase();
 
       let balance = Number(a.balance) || 0;
-      if (tx.type === "expense" && aid === txAccId) balance += (Number(tx.sourceAmount) || 0);
-      if (tx.type === "income" && aid === txAccId) balance -= (Number(tx.targetAmount) || 0);
+      if (tx.type === "expense" && (aid === txAccId || aName === txAccId)) balance += (Number(tx.sourceAmount) || 0);
+      if (tx.type === "income" && (aid === txAccId || aName === txAccId)) balance -= (Number(tx.targetAmount) || 0);
       if (tx.type === "transfer") { 
-        if (aid === txAccId) balance += (Number(tx.sourceAmount) || 0); 
-        if (aid === txTargetId) balance -= (Number(tx.targetAmount) || 0); 
+        if (aid === txAccId || aName === txAccId) balance += (Number(tx.sourceAmount) || 0); 
+        if (aid === txTargetId || aName === txTargetId) balance -= (Number(tx.targetAmount) || 0); 
       }
       return a.balance !== balance ? { ...a, balance } : a;
     });
@@ -309,11 +311,11 @@ export const useTransactions = ({
 
     if (txOk) {
       localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC, ts);
-      await pushSettings(updatedAccounts, categories, incomes, true);
+      setSyncStatus("success");
     } else {
       setSyncStatus("error");
     }
-  }, [accounts, categories, incomes, transactions, setAccounts, setTransactions, setSyncStatus, pushSettings, ssId]);
+  }, [accounts, categories, incomes, transactions, setAccounts, setTransactions, setSyncStatus, ssId]);
 
   return { addTransaction, updateTransaction, deleteTransaction };
 };

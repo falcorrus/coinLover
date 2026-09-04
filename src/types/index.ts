@@ -79,6 +79,8 @@ export interface SyncSettingsFields {
   timestamp: string;
   baseCurrency?: string;
   tariff?: string;
+  checkpoints?: Record<string, number>;
+  checkpointDate?: string;
 }
 
 export interface ManagedTable {

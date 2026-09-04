@@ -322,7 +322,11 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
           });
         }}
         onPress={(val) => setNumpad(p => {
-          const isSource = p.activeField === "source"; const key = isSource ? "sourceAmount" : "targetAmount"; const currStr = p[key];
+          const isSource = p.activeField === "source"; const key = isSource ? "sourceAmount" : "targetAmount";
+          let currStr = p[key];
+          if (!currStr || currStr === "NaN" || currStr === "null" || currStr === "undefined") {
+            currStr = "0";
+          }
           
           // Normalize input: treat comma as dot for logic
           const inputVal = val === "," ? "." : val;
@@ -334,8 +338,20 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
             if (lastPart.includes(".")) return p;
           }
 
-          const computeTarget = (s: string): string => { const amt = parseFloat(safeEval(s)); return isNaN(amt) || amt === 0 ? "0" : (Math.round(RatesService.convert(amt, p.sourceCurrency, p.targetCurrency) * 100) / 100).toString(); };
-          const computeSource = (t: string): string => { const amt = parseFloat(safeEval(t)); return isNaN(amt) || amt === 0 ? "0" : (Math.round(RatesService.convert(amt, p.targetCurrency, p.sourceCurrency) * 100) / 100).toString(); };
+          const computeTarget = (s: string): string => {
+            const amt = parseFloat(safeEval(s));
+            if (isNaN(amt) || !isFinite(amt) || amt === 0) return "0";
+            const conv = RatesService.convert(amt, p.sourceCurrency, p.targetCurrency);
+            if (isNaN(conv) || !isFinite(conv) || conv === 0) return "0";
+            return (Math.round(conv * 100) / 100).toString();
+          };
+          const computeSource = (t: string): string => {
+            const amt = parseFloat(safeEval(t));
+            if (isNaN(amt) || !isFinite(amt) || amt === 0) return "0";
+            const conv = RatesService.convert(amt, p.targetCurrency, p.sourceCurrency);
+            if (isNaN(conv) || !isFinite(conv) || conv === 0) return "0";
+            return (Math.round(conv * 100) / 100).toString();
+          };
           
           if (inputVal === "C") return p.targetLinked ? { ...p, sourceAmount: "0", targetAmount: "0" } : { ...p, [key]: "0" };
           
@@ -346,15 +362,24 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
           }
           
           // Prevent mathematical operators if string is currently empty/zero, except for minus (which becomes unary minus)
-          if (["+", "*", "/", "%"].includes(inputVal) && currStr === "0") {
+          if (["+", "*", "/", "%"].includes(inputVal) && (currStr === "0" || currStr === "-")) {
             return p;
           }
 
           let nv;
+          const isOperator = ["+", "-", "*", "/", "%"].includes(inputVal);
+          const trimmed = currStr.trimEnd();
+          const lastChar = trimmed.slice(-1);
+          const isLastOp = ["+", "-", "*", "/", "%"].includes(lastChar);
+
           if (inputVal === "-" && currStr === "0") {
             nv = "-";
-          } else if (["+", "-", "*", "/", "%"].includes(inputVal) && currStr !== "0") {
-            nv = currStr + "\n" + inputVal;
+          } else if (isOperator && currStr !== "0") {
+            if (isLastOp) {
+              nv = trimmed.slice(0, -1).trimEnd() + "\n" + inputVal;
+            } else {
+              nv = currStr + "\n" + inputVal;
+            }
           } else {
             nv = currStr === "0" && !isNaN(Number(inputVal)) ? inputVal : currStr + inputVal;
           }
@@ -363,9 +388,29 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
           return { ...p, [key]: nv };
         })}
         onDelete={() => setNumpad(p => {
-          const isSource = p.activeField === "source"; const key = isSource ? "sourceAmount" : "targetAmount"; const currStr = p[key]; const nv = currStr.length > 1 ? currStr.slice(0, -1) : "0";
-          const computeTarget = (s: string): string => { const amt = parseFloat(safeEval(s)); return isNaN(amt) || amt === 0 ? "0" : (Math.round(RatesService.convert(amt, p.sourceCurrency, p.targetCurrency) * 100) / 100).toString(); };
-          const computeSource = (t: string): string => { const amt = parseFloat(safeEval(t)); return isNaN(amt) || amt === 0 ? "0" : (Math.round(RatesService.convert(amt, p.targetCurrency, p.sourceCurrency) * 100) / 100).toString(); };
+          const isSource = p.activeField === "source"; const key = isSource ? "sourceAmount" : "targetAmount";
+          let currStr = p[key];
+          if (!currStr || currStr === "NaN" || currStr === "null" || currStr === "undefined") {
+            currStr = "0";
+          }
+          let nv = currStr.length > 1 ? currStr.slice(0, -1).trimEnd() : "0";
+          if (!nv || nv === "-") nv = "0";
+
+          const computeTarget = (s: string): string => {
+            const amt = parseFloat(safeEval(s));
+            if (isNaN(amt) || !isFinite(amt) || amt === 0) return "0";
+            const conv = RatesService.convert(amt, p.sourceCurrency, p.targetCurrency);
+            if (isNaN(conv) || !isFinite(conv) || conv === 0) return "0";
+            return (Math.round(conv * 100) / 100).toString();
+          };
+          const computeSource = (t: string): string => {
+            const amt = parseFloat(safeEval(t));
+            if (isNaN(amt) || !isFinite(amt) || amt === 0) return "0";
+            const conv = RatesService.convert(amt, p.targetCurrency, p.sourceCurrency);
+            if (isNaN(conv) || !isFinite(conv) || conv === 0) return "0";
+            return (Math.round(conv * 100) / 100).toString();
+          };
+
           if (p.targetLinked) return isSource ? { ...p, sourceAmount: nv, targetAmount: computeTarget(nv) } : { ...p, targetAmount: nv, sourceAmount: computeSource(nv) };
           return { ...p, [key]: nv };
         })}

@@ -44,7 +44,8 @@ export default function App() {
     accounts, setAccounts, categories, setCategories, incomes, setIncomes,
     transactions, setTransactions, syncStatus, users, addTransaction, updateTransaction, deleteTransaction, saveAccount, deleteAccount,
     saveCategory, deleteCategory, saveIncome, deleteIncome, syncCategories, syncIncomes, syncAccountsOrder,
-    pullSettings, checkConflicts, updateLocalFromRemote, pushSettings, accessError, setAccessError, tariff
+    pullSettings, checkConflicts, updateLocalFromRemote, pushSettings, accessError, setAccessError, tariff,
+    checkpoints, checkpointDate, reconcileBalances
   } = useFinance(activeTableId);
 
   const isStandalone = typeof window !== "undefined" && (!!(window as any).__IS_PWA__ || window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone);
@@ -463,6 +464,11 @@ SplashScreen.hide().catch(() => {});
             isAISheetOpen={aiSheet.isOpen}
             tariff={tariff}
             onOpenPremiumModal={() => setIsPremiumModalOpen(true)}
+            accounts={accounts}
+            transactions={transactions}
+            checkpoints={checkpoints}
+            checkpointDate={checkpointDate}
+            reconcileBalances={reconcileBalances}
           />
 
           <StoriesSection

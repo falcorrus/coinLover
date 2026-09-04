@@ -30,14 +30,15 @@ export const useFinance = (ssId?: string) => {
   // 1. Hook: Sync logic
   const {
     syncStatus, setSyncStatus, accessError, setAccessError,
-    pullSettings, pushSettings, checkConflicts, updateLocalFromRemote
+    pullSettings, pushSettings, checkConflicts, updateLocalFromRemote,
+    checkpoints, checkpointDate, reconcileBalances
   } = useSync({
     accounts, setAccounts, categories, setCategories, incomes, setIncomes, setTransactions, setUsers, setTariff, ssId
   });
 
   // 2. Hook: Transaction CRUD
   const { addTransaction, updateTransaction, deleteTransaction } = useTransactions({
-    accounts, setAccounts, categories, incomes, transactions, setTransactions, setSyncStatus, pushSettings, ssId
+    accounts, setAccounts, categories, incomes, transactions, setTransactions, setSyncStatus, ssId
   });
 
   // 3. Hook: Entity CRUD
@@ -65,6 +66,6 @@ export const useFinance = (ssId?: string) => {
     users, addTransaction, updateTransaction, deleteTransaction, saveAccount, deleteAccount, saveCategory, deleteCategory, saveIncome, deleteIncome,
     syncCategories, syncIncomes, syncAccountsOrder, pullSettings, checkConflicts, updateLocalFromRemote, accessError, setAccessError,
     pushSettings: (a?: Account[], c?: Category[], i?: IncomeSource[]) => pushSettings(a || accounts, c || categories, i || incomes),
-    tariff
+    tariff, checkpoints, checkpointDate, reconcileBalances
   };
 };

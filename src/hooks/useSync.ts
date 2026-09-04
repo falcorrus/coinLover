@@ -25,6 +25,8 @@ export const useSync = ({
 }: SyncStateProps) => {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>("idle");
   const [accessError, setAccessError] = useState<string | null>(null);
+  const [checkpoints, setCheckpoints] = useState<Record<string, number> | undefined>(undefined);
+  const [checkpointDate, setCheckpointDate] = useState<string | undefined>(undefined);
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
   const lastRemoteSnapshot = useRef<string>("");
 
@@ -87,6 +89,12 @@ export const useSync = ({
     }
     if (data.transactions && Array.isArray(data.transactions)) {
       setTransactions([...data.transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    }
+    if (data.checkpoints) {
+      setCheckpoints(data.checkpoints);
+    }
+    if (data.checkpointDate) {
+      setCheckpointDate(data.checkpointDate);
     }
     setAccessError(null);
   }, [setAccounts, setCategories, setIncomes, setTransactions, setUsers, setTariff, ssId]);
@@ -203,8 +211,37 @@ export const useSync = ({
     return true;
   }, [ssId, accounts, categories, incomes, accessError]);
 
+  const reconcileBalances = useCallback(async (updatedAccounts: Account[]) => {
+    setSyncStatus("loading");
+    setAccounts(updatedAccounts);
+    const ts = getLocalTimeString();
+    const baseCurrency = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY) || "USD";
+
+    const ok = await googleSheetsService.syncToSheets({
+      action: "syncSettings",
+      targetSheet: "Configs",
+      accounts: enrichAccountsWithUSD(updatedAccounts),
+      categories,
+      incomes,
+      baseCurrency,
+      timestamp: ts,
+      ssId
+    });
+
+    if (ok) {
+      localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC, ts);
+      lastRemoteSnapshot.current = getSettingsSnapshot({ accounts: updatedAccounts, categories, incomes });
+      setSyncStatus("success");
+      return true;
+    } else {
+      setSyncStatus("error");
+      return false;
+    }
+  }, [setAccounts, categories, incomes, ssId]);
+
   return {
     syncStatus, setSyncStatus, accessError, setAccessError,
-    pullSettings, pushSettings, checkConflicts, updateLocalFromRemote
+    pullSettings, pushSettings, checkConflicts, updateLocalFromRemote,
+    checkpoints, checkpointDate, reconcileBalances
   };
 };
