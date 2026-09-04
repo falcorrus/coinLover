@@ -4,7 +4,8 @@ WORKDIR /app
 RUN npm install -g pnpm
 COPY package.json pnpm-lock.yaml ./
 RUN apk add --no-cache python3 make g++ && \
-    pnpm install --frozen-lockfile && \
+    pnpm config set enable-pre-post-scripts true && \
+    pnpm install --frozen-lockfile --dangerously-allow-all-builds && \
     apk del python3 make g++
 COPY . .
 RUN pnpm run build
@@ -21,7 +22,8 @@ COPY --from=build /app/pnpm-lock.yaml ./
 
 # Install only production dependencies (with build tools for native modules like better-sqlite3)
 RUN apk add --no-cache python3 make g++ && \
-    pnpm install --prod && \
+    pnpm config set enable-pre-post-scripts true && \
+    pnpm install --prod --dangerously-allow-all-builds && \
     apk del python3 make g++
 
 EXPOSE 80
