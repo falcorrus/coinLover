@@ -35,6 +35,7 @@ export const APP_SETTINGS = {
     MANAGED_TABLES: "cl_managed_tables",
     ACTIVE_TABLE_ID: "cl_active_table_id",
     STORIES_COLLAPSED: "cl_stories_collapsed",
+    RECONCILIATION_IGNORED: "cl_reconciliation_ignored",
   },
 
   // Rates Service

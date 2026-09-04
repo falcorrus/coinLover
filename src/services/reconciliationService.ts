@@ -18,30 +18,54 @@ export interface ReconciliationReport {
 }
 
 export class ReconciliationService {
+  /**
+   * Helper to parse date string in ISO or Russian DD.MM.YY / DD.MM.YYYY formats
+   */
+  static parseDate(rawDate?: string): Date | null {
+    if (!rawDate) return null;
+    try {
+      const raw = rawDate.trim();
+      // Match DD.MM.YYYY or DD.MM.YY (with optional HH:mm[:ss])
+      const ruMatch = raw.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2,4})(?:[ T](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
+      if (ruMatch) {
+        const day = parseInt(ruMatch[1], 10);
+        const month = parseInt(ruMatch[2], 10) - 1;
+        let year = parseInt(ruMatch[3], 10);
+        if (year < 100) year += 2000;
+        const hour = ruMatch[4] ? parseInt(ruMatch[4], 10) : 0;
+        const min = ruMatch[5] ? parseInt(ruMatch[5], 10) : 0;
+        const sec = ruMatch[6] ? parseInt(ruMatch[6], 10) : 0;
+        return new Date(year, month, day, hour, min, sec);
+      }
+      const dt = new Date(raw);
+      return !isNaN(dt.getTime()) ? dt : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /**
+   * Returns the start of the previous month (1st day at 00:00:00 local time)
+   */
+  static getStartOfPreviousMonth(): Date {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0);
+  }
+
   static compute(
     accounts: Account[],
     transactions: Transaction[],
     checkpoints?: Record<string, number>,
-    checkpointDate?: string
+    checkpointDate?: string,
+    options?: { useStartOfPrevMonth?: boolean }
   ): ReconciliationReport {
     let checkpointDt: Date | null = null;
-    if (checkpointDate) {
-      try {
-        const raw = checkpointDate.trim();
-        if (/^\d{2}\.\d{2}\.\d{4}/.test(raw)) {
-          const parts = raw.split(/[ .:]/);
-          const day = parseInt(parts[0], 10);
-          const month = parseInt(parts[1], 10) - 1;
-          const year = parseInt(parts[2], 10);
-          const hour = parts[3] ? parseInt(parts[3], 10) : 0;
-          const min = parts[4] ? parseInt(parts[4], 10) : 0;
-          const sec = parts[5] ? parseInt(parts[5], 10) : 0;
-          checkpointDt = new Date(year, month, day, hour, min, sec);
-        } else {
-          const dt = new Date(raw);
-          if (!isNaN(dt.getTime())) checkpointDt = dt;
-        }
-      } catch (_) {}
+
+    if (options?.useStartOfPrevMonth !== false) {
+      // Default rule: use start of previous month
+      checkpointDt = ReconciliationService.getStartOfPreviousMonth();
+    } else if (checkpointDate) {
+      checkpointDt = ReconciliationService.parseDate(checkpointDate);
     }
     const isCheckpointValid = checkpointDt !== null;
 
@@ -77,8 +101,8 @@ export class ReconciliationService {
         if (!tx || !tx.date) continue;
 
         if (usedCheckpoint && checkpointDt) {
-          const txDt = new Date(tx.date);
-          if (!isNaN(txDt.getTime()) && txDt < checkpointDt) {
+          const txDt = ReconciliationService.parseDate(tx.date);
+          if (txDt && txDt < checkpointDt) {
             continue;
           }
         }
@@ -129,11 +153,15 @@ export class ReconciliationService {
 
     const discrepancies = results.filter((r) => r.hasDiscrepancy);
 
+    const formattedCheckpointDate = checkpointDt
+      ? `${String(checkpointDt.getDate()).padStart(2, "0")}.${String(checkpointDt.getMonth() + 1).padStart(2, "0")}.${checkpointDt.getFullYear()}`
+      : undefined;
+
     return {
       results,
       hasAnyDiscrepancies: discrepancies.length > 0,
       totalDiscrepanciesCount: discrepancies.length,
-      checkpointDate: isCheckpointValid ? checkpointDate : undefined,
+      checkpointDate: formattedCheckpointDate,
     };
   }
 }
