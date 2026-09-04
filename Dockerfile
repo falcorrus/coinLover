@@ -7,7 +7,7 @@ RUN apk add --no-cache python3 make g++ && \
     pnpm install --frozen-lockfile && \
     apk del python3 make g++
 COPY . .
-RUN pnpm run build
+RUN npx vite build
 
 # Stage 2: Serve the app with Node.js
 FROM node:22-alpine
