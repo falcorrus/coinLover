@@ -1,8 +1,7 @@
 import React, { useState, useMemo } from "react";
-import { X, Check, RefreshCcw, AlertTriangle, CheckCircle2, ShieldCheck, Wallet, EyeOff, RotateCcw } from "lucide-react";
+import { X, Check, RefreshCcw, AlertTriangle, CheckCircle2, ShieldCheck, Wallet } from "lucide-react";
 import { Account, Transaction } from "../types";
 import { IconMap } from "../constants";
-import { APP_SETTINGS } from "../constants/settings";
 import { ReconciliationService } from "../services/reconciliationService";
 import { useLanguage } from "../contexts/LanguageContext";
 
@@ -32,84 +31,57 @@ export const ReconciliationModal: React.FC<ReconciliationModalProps> = ({
   const { t } = useLanguage();
   const [isApplying, setIsApplying] = useState(false);
 
-  // Persistent set of ignored account discrepancies
-  const [ignoredAccountIds, setIgnoredAccountIds] = useState<Record<string, boolean>>(() => {
-    try {
-      const saved = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.RECONCILIATION_IGNORED);
-      return saved ? JSON.parse(saved) : {};
-    } catch (_) {
-      return {};
-    }
-  });
-
   const report = useMemo(() => {
     return ReconciliationService.compute(accounts, transactions, checkpoints, checkpointDate, {
       useStartOfPrevMonth: true,
     });
   }, [accounts, transactions, checkpoints, checkpointDate]);
 
-  // Accounts that actually have a discrepancy and are not ignored
+  // Accounts that actually have a discrepancy
   const discrepancyAccounts = useMemo(() => {
-    return report.results.filter((r) => r.hasDiscrepancy && !ignoredAccountIds[r.account.id]);
-  }, [report, ignoredAccountIds]);
+    return report.results.filter((r) => r.hasDiscrepancy);
+  }, [report]);
 
-  const totalIgnoredCount = useMemo(() => {
-    return Object.keys(ignoredAccountIds).filter((id) =>
-      report.results.some((r) => r.account.id === id && r.hasDiscrepancy)
-    ).length;
-  }, [ignoredAccountIds, report]);
+  // Local selection per discrepancy account: 'current' (default) vs 'reconciled'
+  const [selectedChoices, setSelectedChoices] = useState<Record<string, "current" | "reconciled">>({});
 
-  // Permanently ignore (keep current balance forever)
-  const handleKeepCurrentPermanent = (accountId: string) => {
-    setIgnoredAccountIds((prev) => {
-      const next = { ...prev, [accountId]: true };
-      try {
-        localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.RECONCILIATION_IGNORED, JSON.stringify(next));
-      } catch (_) {}
-      return next;
+  // When discrepancyAccounts change, ensure each has a selection defaulting to 'current'
+  const currentSelections = useMemo(() => {
+    const sel: Record<string, "current" | "reconciled"> = {};
+    discrepancyAccounts.forEach((d) => {
+      sel[d.account.id] = selectedChoices[d.account.id] || "current";
     });
+    return sel;
+  }, [discrepancyAccounts, selectedChoices]);
+
+  const handleToggleChoice = (accountId: string, choice: "current" | "reconciled") => {
+    setSelectedChoices((prev) => ({
+      ...prev,
+      [accountId]: choice,
+    }));
   };
 
-  const handleResetIgnored = () => {
-    setIgnoredAccountIds({});
-    try {
-      localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.RECONCILIATION_IGNORED);
-    } catch (_) {}
-  };
+  // Count how many accounts are selected to be updated with reconciled balance
+  const reconciledCount = useMemo(() => {
+    return discrepancyAccounts.filter((d) => currentSelections[d.account.id] === "reconciled").length;
+  }, [discrepancyAccounts, currentSelections]);
 
-  // User chooses calculated balance for this account
-  const handleSelectReconciled = async (accountId: string, reconciledBalance: number) => {
-    setIsApplying(true);
-    try {
-      const updatedAccounts = accounts.map((acc) => {
-        if (acc.id === accountId) {
-          return { ...acc, balance: reconciledBalance };
-        }
-        return acc;
-      });
-      await onApply(updatedAccounts);
-    } catch (e) {
-      console.error("Failed to update account balance:", e);
-    } finally {
-      setIsApplying(false);
-    }
-  };
-
-  // Apply all calculated balances at once
-  const handleApplyAllReconciled = async () => {
+  // Apply chosen selections across all accounts at once
+  const handleApplyAll = async () => {
     setIsApplying(true);
     try {
       const updatedAccounts = accounts.map((acc) => {
         const item = discrepancyAccounts.find((d) => d.account.id === acc.id);
-        if (item) {
+        if (item && currentSelections[acc.id] === "reconciled") {
           return { ...acc, balance: item.reconciledBalance };
         }
         return acc;
       });
+
       await onApply(updatedAccounts);
       onClose();
     } catch (e) {
-      console.error("Failed to apply all reconciled:", e);
+      console.error("Failed to apply reconciliation selections:", e);
     } finally {
       setIsApplying(false);
     }
@@ -176,18 +148,6 @@ export const ReconciliationModal: React.FC<ReconciliationModalProps> = ({
                 Все балансы сходятся
               </span>
             )}
-
-            {totalIgnoredCount > 0 && (
-              <button
-                type="button"
-                onClick={handleResetIgnored}
-                title="Вернуть скрытые расхождения"
-                className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-white/10 text-white/70 hover:text-white hover:bg-white/15 transition-all"
-              >
-                <RotateCcw size={11} />
-                Скрыто: {totalIgnoredCount}
-              </button>
-            )}
           </div>
 
           <span className="text-[11px] text-[var(--text-muted)] hidden sm:inline">
@@ -243,58 +203,73 @@ export const ReconciliationModal: React.FC<ReconciliationModalProps> = ({
                         </p>
                       </div>
                     </div>
-
-                    {/* Permanently Dismiss Button */}
-                    <button
-                      type="button"
-                      onClick={() => handleKeepCurrentPermanent(rec.account.id)}
-                      title="Оставить текущий навсегда и скрыть расхождение"
-                      className="px-2.5 py-1 rounded-xl text-[11px] font-bold text-white/40 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/10 transition-all flex items-center gap-1"
-                    >
-                      <EyeOff size={13} />
-                      <span>Скрыть</span>
-                    </button>
                   </div>
 
                   {/* Choice: Click the correct balance */}
                   <div className="grid grid-cols-2 gap-2.5 pt-1">
-                    {/* Option 1: Current Balance */}
-                    <button
-                      type="button"
-                      disabled={isApplying}
-                      onClick={() => handleKeepCurrentPermanent(rec.account.id)}
-                      className="p-3 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.08] hover:border-white/25 active:scale-98 transition-all text-left flex flex-col group"
-                    >
-                      <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] flex items-center justify-between">
-                        Текущий
-                        <Check size={12} className="opacity-0 group-hover:opacity-100 text-emerald-400 transition-opacity" />
-                      </span>
-                      <span className="text-base font-black text-[var(--text-main)] mt-0.5">
-                        {rec.currentBalance.toLocaleString()} {rec.account.currency}
-                      </span>
-                      <span className="text-[10px] text-white/40 mt-1">
-                        Оставить без изменений
-                      </span>
-                    </button>
+                    {/* Option 1: Current Balance ("как сейчас") */}
+                    {(() => {
+                      const isSelected = currentSelections[rec.account.id] === "current";
+                      return (
+                        <button
+                          type="button"
+                          disabled={isApplying}
+                          onClick={() => handleToggleChoice(rec.account.id, "current")}
+                          className={`p-3 rounded-xl border text-left flex flex-col transition-all cursor-pointer ${
+                            isSelected
+                              ? "border-emerald-500/70 bg-emerald-500/15 ring-1 ring-emerald-500/30 shadow-md shadow-emerald-950/20"
+                              : "border-white/10 bg-white/[0.03] hover:bg-white/[0.08] hover:border-white/20 opacity-70 hover:opacity-100"
+                          }`}
+                        >
+                          <span className="text-[10px] uppercase font-bold flex items-center justify-between text-emerald-400">
+                            <span>Текущий</span>
+                            <div className={`w-4 h-4 rounded-full flex items-center justify-center ${
+                              isSelected ? "bg-emerald-500 text-white" : "border border-white/20 bg-black/20"
+                            }`}>
+                              {isSelected && <Check size={10} strokeWidth={3} />}
+                            </div>
+                          </span>
+                          <span className="text-base font-black text-[var(--text-main)] mt-1">
+                            {rec.currentBalance.toLocaleString()} {rec.account.currency}
+                          </span>
+                          <span className="text-[10px] text-[var(--text-muted)] mt-1">
+                            Оставить как сейчас
+                          </span>
+                        </button>
+                      );
+                    })()}
 
-                    {/* Option 2: Calculated from operations */}
-                    <button
-                      type="button"
-                      disabled={isApplying}
-                      onClick={() => handleSelectReconciled(rec.account.id, rec.reconciledBalance)}
-                      className="p-3 rounded-xl border border-[var(--primary-color)]/50 bg-[var(--primary-color)]/10 hover:bg-[var(--primary-color)]/20 hover:border-[var(--primary-color)] active:scale-98 transition-all text-left flex flex-col group shadow-sm"
-                    >
-                      <span className="text-[10px] uppercase font-bold text-[var(--primary-color)] flex items-center justify-between">
-                        По истории
-                        <Check size={12} className="opacity-0 group-hover:opacity-100 text-[var(--primary-color)] transition-opacity" />
-                      </span>
-                      <span className="text-base font-black text-[var(--primary-color)] mt-0.5">
-                        {rec.reconciledBalance.toLocaleString()} {rec.account.currency}
-                      </span>
-                      <span className="text-[10px] text-[var(--primary-color)]/70 mt-1">
-                        Выровнять с операциями
-                      </span>
-                    </button>
+                    {/* Option 2: Calculated from operations ("По истории") */}
+                    {(() => {
+                      const isSelected = currentSelections[rec.account.id] === "reconciled";
+                      return (
+                        <button
+                          type="button"
+                          disabled={isApplying}
+                          onClick={() => handleToggleChoice(rec.account.id, "reconciled")}
+                          className={`p-3 rounded-xl border text-left flex flex-col transition-all cursor-pointer ${
+                            isSelected
+                              ? "border-[var(--primary-color)] bg-[var(--primary-color)]/20 ring-1 ring-[var(--primary-color)]/50 shadow-md shadow-purple-950/30"
+                              : "border-white/10 bg-white/[0.03] hover:bg-white/[0.08] hover:border-white/20 opacity-70 hover:opacity-100"
+                          }`}
+                        >
+                          <span className="text-[10px] uppercase font-bold flex items-center justify-between text-[var(--primary-color)]">
+                            <span>По истории</span>
+                            <div className={`w-4 h-4 rounded-full flex items-center justify-center ${
+                              isSelected ? "bg-[var(--primary-color)] text-white" : "border border-white/20 bg-black/20"
+                            }`}>
+                              {isSelected && <Check size={10} strokeWidth={3} />}
+                            </div>
+                          </span>
+                          <span className="text-base font-black text-[var(--primary-color)] mt-1">
+                            {rec.reconciledBalance.toLocaleString()} {rec.account.currency}
+                          </span>
+                          <span className="text-[10px] text-[var(--primary-color)]/80 mt-1">
+                            С учётом операций до сейчас
+                          </span>
+                        </button>
+                      );
+                    })()}
                   </div>
                 </div>
               );
@@ -315,17 +290,19 @@ export const ReconciliationModal: React.FC<ReconciliationModalProps> = ({
           {discrepancyAccounts.length > 0 && (
             <button
               type="button"
-              onClick={handleApplyAllReconciled}
+              onClick={handleApplyAll}
               disabled={isApplying}
-              className="flex-1 h-12 rounded-xl bg-[var(--primary-color)] font-bold text-white shadow-lg shadow-[var(--primary-color)]/25 hover:brightness-110 active:scale-98 disabled:opacity-40 disabled:cursor-not-allowed transition-all text-xs uppercase tracking-wider flex items-center justify-center gap-2"
+              className="flex-1 h-12 rounded-xl bg-[var(--primary-color)] font-bold text-white shadow-lg shadow-[var(--primary-color)]/25 hover:brightness-110 active:scale-98 disabled:opacity-40 disabled:cursor-not-allowed transition-all text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer"
             >
               {isApplying ? (
                 <>
                   <RefreshCcw size={14} className="animate-spin" />
                   Применение...
                 </>
+              ) : reconciledCount > 0 ? (
+                `Применить (${reconciledCount} измен.)`
               ) : (
-                `Применить всё (${discrepancyAccounts.length})`
+                "Оставить всё как есть"
               )}
             </button>
           )}
