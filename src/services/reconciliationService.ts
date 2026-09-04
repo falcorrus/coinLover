@@ -45,6 +45,22 @@ export class ReconciliationService {
   }
 
   /**
+   * Returns yesterday at 00:00:00 local time
+   */
+  static getYesterday(): Date {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 0, 0, 0, 0);
+  }
+
+  /**
+   * Returns the start of the current month (1st day at 00:00:00 local time)
+   */
+  static getStartOfCurrentMonth(): Date {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+  }
+
+  /**
    * Returns the start of the previous month (1st day at 00:00:00 local time)
    */
   static getStartOfPreviousMonth(): Date {
@@ -57,11 +73,16 @@ export class ReconciliationService {
     transactions: Transaction[],
     checkpoints?: Record<string, number>,
     checkpointDate?: string,
-    options?: { useStartOfPrevMonth?: boolean }
+    options?: { 
+      useStartOfPrevMonth?: boolean;
+      customCheckpointDate?: Date;
+    }
   ): ReconciliationReport {
     let checkpointDt: Date | null = null;
 
-    if (options?.useStartOfPrevMonth !== false) {
+    if (options?.customCheckpointDate instanceof Date && !isNaN(options.customCheckpointDate.getTime())) {
+      checkpointDt = options.customCheckpointDate;
+    } else if (options?.useStartOfPrevMonth !== false) {
       // Default rule: use start of previous month
       checkpointDt = ReconciliationService.getStartOfPreviousMonth();
     } else if (checkpointDate) {
