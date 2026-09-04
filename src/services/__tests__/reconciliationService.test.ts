@@ -95,6 +95,8 @@ describe("ReconciliationService", () => {
         sourceCurrency: "USD",
         targetAmount: 864.64,
         targetCurrency: "USD",
+        sourceAmountUSD: 864.64,
+        targetAmountUSD: 864.64,
       },
     ];
 
