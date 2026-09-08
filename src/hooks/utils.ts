@@ -1,4 +1,4 @@
-import { Account } from "../types";
+import { Account, Transaction } from "../types";
 import { RatesService } from "../services/RatesService";
 
 export const safeParseDate = (dateStr?: string): Date => {
@@ -92,4 +92,26 @@ export const enrichAccountsWithUSD = (accs: Account[]): Account[] => {
     ...a,
     balanceUSD: Math.round(RatesService.convert(a.balance, a.currency || baseCur, baseCur) * 100) / 100
   }));
+};
+
+/**
+ * Сортирует транзакции в хронологическом порядке убывания (новые сверху):
+ * 1. По дате и времени (safeParseDate).
+ * 2. Внутри одного дня (при одинаковом времени): по числовому id (timestamp Date.now()).
+ * 3. Если id не числовые: по положению в исходном массиве (более поздние строки таблицы идут сверху).
+ */
+export const sortTransactionsDesc = (txList: Transaction[], referenceList?: Transaction[]): Transaction[] => {
+  const ref = referenceList || txList;
+  return [...txList].sort((a, b) => {
+    const timeDiff = safeParseDate(b.date).getTime() - safeParseDate(a.date).getTime();
+    if (timeDiff !== 0) return timeDiff;
+
+    const idB = Number(b.id);
+    const idA = Number(a.id);
+    if (!isNaN(idB) && !isNaN(idA) && idB !== idA) {
+      return idB - idA;
+    }
+
+    return ref.indexOf(b) - ref.indexOf(a);
+  });
 };

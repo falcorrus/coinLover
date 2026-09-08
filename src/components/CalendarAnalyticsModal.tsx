@@ -3,7 +3,7 @@ import { X, ChevronLeft, ChevronRight, RefreshCcw, Calendar, Wallet, AlertCircle
 import { Transaction, Account, Category, IncomeSource } from "../types";
 import { googleSheetsService } from "../services/googleSheets";
 import { IconMap } from "../constants";
-import { safeParseDate } from "../hooks/utils";
+import { safeParseDate, sortTransactionsDesc } from "../hooks/utils";
 import { RatesService } from "../services/RatesService";
 
 interface CalendarAnalyticsModalProps {
@@ -164,14 +164,11 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
     }, [currentDate]);
 
     const getDailyData = (day: number) => {
-        const dayTx = filteredTx.filter(t => {
+        const dayTxUnsorted = filteredTx.filter(t => {
             const txDate = safeParseDate(t.date);
             return txDate.getDate() === day;
-        }).sort((a, b) => {
-            const timeDiff = safeParseDate(b.date).getTime() - safeParseDate(a.date).getTime();
-            if (timeDiff !== 0) return timeDiff;
-            return filteredTx.indexOf(b) - filteredTx.indexOf(a);
         });
+        const dayTx = sortTransactionsDesc(dayTxUnsorted, filteredTx);
 
         const calcSum = (type: string, useBase: boolean) => Math.round(dayTx.filter(t => t.type === type).reduce((s, t) => {
             const valBase = (t.targetAmountUSD && t.targetAmountUSD !== 0 && baseCurrency === 'USD')

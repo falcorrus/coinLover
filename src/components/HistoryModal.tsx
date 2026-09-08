@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { X, ArrowDownLeft, ArrowUpRight, ArrowRight, Wallet, Pencil, Tag, ArrowRightLeft, AlertCircle, Check } from "lucide-react";
 import { Transaction, Account, Category, IncomeSource } from "../types";
 import { IconMap } from "../constants";
-import { safeParseDate } from "../hooks/utils";
+import { safeParseDate, sortTransactionsDesc } from "../hooks/utils";
 import { RatesService } from "../services/RatesService";
 
 interface HistoryModalProps {
@@ -37,9 +37,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
         filteredTransactions = transactions;
     }
 
-    const sortedTransactions = [...filteredTransactions].sort((a, b) =>
-        safeParseDate(b.date).getTime() - safeParseDate(a.date).getTime()
-    );
+    const sortedTransactions = sortTransactionsDesc(filteredTransactions);
 
     // Group transactions by date
     const groupedTransactions: { date: string, items: Transaction[] }[] = [];
