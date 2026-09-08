@@ -2,7 +2,77 @@ import { google } from 'googleapis';
 import fs from 'fs';
 import path from 'path';
 
-export const MASTER_SS_ID = "1IQCs35RQlMMQsGB-CRczJeuRqa8WIxW4Sy_kjZyHP2M";
+export const MASTER_SS_ID = process.env.MASTER_SS_ID || "1IQCs35RQlMMQsGB-CRczJeuRqa8WIxW4Sy_kjZyHP2M";
+
+export function verifyAdminToken(req: any, parsedBody: any): boolean {
+  const adminTokenHeader = req.headers ? (req.headers['x-admin-token'] || req.headers['authorization']) : undefined;
+  const tokenFromHeader = typeof adminTokenHeader === 'string'
+    ? adminTokenHeader.replace(/^Bearer\s+/i, '').trim()
+    : undefined;
+  const token = tokenFromHeader || req.query?.adminToken || parsedBody?.adminToken;
+  const expected = process.env.ADMIN_TOKEN;
+  return Boolean(expected && token && token === expected);
+}
+
+export async function checkUserAccess(sheets: any, ssId: string) {
+  const cleanSsId = String(ssId).trim();
+  let userTariff = (cleanSsId === MASTER_SS_ID) ? "Premium" : "Free";
+  let accessValid = true;
+  let accessEndsDate: string | null = null;
+  let found = false;
+
+  try {
+    const masterRes = await sheets.spreadsheets.values.get({
+      spreadsheetId: MASTER_SS_ID,
+      range: 'Users!A:G'
+    });
+    const mRows = masterRes.data.values || [];
+    if (mRows.length > 0) {
+      let headerRowIdx = 0;
+      if (String(mRows[0][0] || "").toLowerCase().includes("users") && mRows[1]) {
+        headerRowIdx = 1;
+      }
+      const headers = mRows[headerRowIdx].map((h: any) => String(h).trim().toLowerCase());
+      const idIdx = headers.indexOf("id");
+      const accessIdx = headers.indexOf("access ends");
+      const tariffIdx = headers.findIndex((h: string) => h === "tariff" || h === "тариф");
+
+      const dataStartIdx = headerRowIdx + 1;
+      for (let i = dataStartIdx; i < mRows.length; i++) {
+        const rowId = String(mRows[i][idIdx] || "").trim();
+        if (rowId === cleanSsId) {
+          found = true;
+          if (tariffIdx !== -1 && mRows[i][tariffIdx]) {
+            userTariff = String(mRows[i][tariffIdx]).trim();
+          }
+          if (accessIdx !== -1 && mRows[i][accessIdx]) {
+            const rawDateStr = String(mRows[i][accessIdx]).trim();
+            accessEndsDate = rawDateStr;
+            let d: Date | null = null;
+            const parts = rawDateStr.split('.');
+            if (parts.length === 3) {
+              const day = parseInt(parts[0], 10);
+              const month = parseInt(parts[1], 10);
+              const year = parseInt(parts[2], 10);
+              if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+                d = new Date(Date.UTC(year, month - 1, day, 23, 59, 59));
+              }
+            }
+            if (d && !isNaN(d.getTime())) {
+              const now = new Date();
+              if (d.getTime() < now.getTime()) accessValid = false;
+            }
+          }
+          break;
+        }
+      }
+    }
+  } catch (err: any) {
+    console.error("[API] checkUserAccess error:", err.message);
+  }
+
+  return { found, accessValid, tariff: userTariff, accessEndsDate };
+}
 
 let authClient: any = null;
 let sheetsClient: any = null;
@@ -436,87 +506,44 @@ export default async function handler(req, res) {
     // Check access in MASTER SS / Users sheet
     if (ssId) {
       const cleanSsId = String(ssId).trim();
-      try {
-        const masterRes = await sheets.spreadsheets.values.get({
-          spreadsheetId: MASTER_SS_ID,
-          range: 'Users!A:G'
-        });
-        const mRows = masterRes.data.values || [];
-        if (mRows.length > 0) {
-          // If first row is a section header like "=== USERS ===", take the next row as headers
-          let headerRowIdx = 0;
-          if (String(mRows[0][0] || "").toLowerCase().includes("users") && mRows[1]) {
-            headerRowIdx = 1;
-          }
-
-          const headers = mRows[headerRowIdx].map(h => String(h).trim().toLowerCase());
-          console.log(`[API] Users Sheet Headers (from row ${headerRowIdx + 1}): ${JSON.stringify(headers)}`);
-          
-          const idIdx = headers.indexOf("id");
-          const accessIdx = headers.indexOf("access ends");
-          const tariffIdx = headers.findIndex(h => h === "tariff" || h === "тариф");
-          
-          let accessValid = true;
-          let accessEndsDate = null;
-          let found = false;
-
-          const dataStartIdx = headerRowIdx + 1;
-          for (let i = dataStartIdx; i < mRows.length; i++) {
-            const rowId = String(mRows[i][idIdx] || "").trim();
-            if (rowId) console.log(`[API] Comparing: '${cleanSsId}' with '${rowId}'`);
-            if (rowId === cleanSsId) {
-              found = true;
-              if (tariffIdx !== -1 && mRows[i][tariffIdx]) {
-                userTariff = String(mRows[i][tariffIdx]).trim();
-              }
-              if (accessIdx !== -1 && mRows[i][accessIdx]) {
-                const rawDateStr = String(mRows[i][accessIdx]).trim();
-                accessEndsDate = rawDateStr;
-                let d: Date | null = null;
-                
-                // Parse DD.MM.YYYY
-                const parts = rawDateStr.split('.');
-                if (parts.length === 3) {
-                  const day = parseInt(parts[0], 10);
-                  const month = parseInt(parts[1], 10);
-                  const year = parseInt(parts[2], 10);
-                  
-                  if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
-                    // Set to end of the day in UTC
-                    d = new Date(Date.UTC(year, month - 1, day, 23, 59, 59));
-                  }
-                }
-
-                if (d && !isNaN(d.getTime())) {
-                  // Use UTC timestamp for comparison
-                  const now = new Date();
-                  if (d.getTime() < now.getTime()) accessValid = false;
-                  console.log(`[API] Access check for ${cleanSsId}: Found. Expiry: ${d.toISOString()}, Now: ${now.toISOString()}, Valid: ${accessValid}`);
-                }
-              }
-              break;
-            }
-          }
-
-          if (found && !accessValid && cleanSsId !== MASTER_SS_ID) {
-            console.warn(`[API] Access DENIED for ${cleanSsId}. Subscription expired on ${accessEndsDate}`);
-            return res.status(403).json({ 
-              status: "error", 
-              error: "access_expired", 
-              message: `Подписка истекла (${accessEndsDate}). Пожалуйста, продлите доступ.` 
-            });
-          }
-          if (!found) {
-            console.log(`[API] ssId ${cleanSsId} not found in Users list. Allowing by default.`);
-          }
+      
+      // Protect MASTER_SS_ID from unauthorized direct access
+      if (cleanSsId === MASTER_SS_ID && action !== 'template') {
+        const isAdmin = verifyAdminToken(req, parsedBody);
+        if (!isAdmin) {
+          console.warn(`[API] Unauthorized attempt to access MASTER_SS_ID`);
+          return res.status(403).json({
+            status: "error",
+            code: "master_sheet_restricted",
+            message: "Доступ к мастер-таблице ограничен. Требуется административный токен."
+          });
         }
-      } catch (e) {
-        console.error("[API] Access check failed:", e.message);
+      }
+
+      const accessInfo = await checkUserAccess(sheets, cleanSsId);
+      userTariff = accessInfo.tariff;
+
+      if (accessInfo.found && !accessInfo.accessValid && cleanSsId !== MASTER_SS_ID) {
+        console.warn(`[API] Access DENIED for ${cleanSsId}. Subscription expired on ${accessInfo.accessEndsDate}`);
+        return res.status(403).json({ 
+          status: "error", 
+          error: "access_expired", 
+          message: `Подписка истекла (${accessInfo.accessEndsDate}). Пожалуйста, продлите доступ.` 
+        });
+      }
+      if (!accessInfo.found) {
+        console.log(`[API] ssId ${cleanSsId} not found in Users list. Allowing by default.`);
       }
     }
 
     if (method === 'GET') {
-      const targetSsId = ssId || MASTER_SS_ID; 
+      if (query.action !== 'template' && !ssId) {
+        return res.status(400).json({
+          status: "error",
+          message: "ssId (Google Spreadsheet ID) is required for this request."
+        });
+      }
+      const targetSsId = query.action === 'template' ? MASTER_SS_ID : ssId;
       let configSheetName = "Configs";
       let txSheetName = "Transactions";
 
@@ -946,13 +973,39 @@ export default async function handler(req, res) {
       if (payload.ssId && payload.ssId !== ssId) {
         payload.ssId = ssId;
       }
-      const targetSsId = payload.ssId || (payload.sheetUrl && payload.sheetUrl.match(/[-\w]{25,}/) ? payload.sheetUrl.match(/[-\w]{25,}/)[0] : MASTER_SS_ID);
+      const targetSsId = payload.ssId || (payload.sheetUrl && payload.sheetUrl.match(/[-\w]{25,}/) ? payload.sheetUrl.match(/[-\w]{25,}/)[0] : (payload.action === 'registerLead' ? MASTER_SS_ID : ""));
       const configSheetName = "Configs";
       const txSheetName = "Transactions";
       
-      console.log(`[API] POST Action: ${payload.action} on SS: ${targetSsId}`);
+      console.log(`[API] POST Action: ${payload.action} on SS: ${targetSsId || 'none'}`);
+
+      if (targetSsId === MASTER_SS_ID && payload.action !== 'registerLead') {
+        const isAdmin = verifyAdminToken(req, payload);
+        if (!isAdmin) {
+          console.warn(`[API] Unauthorized attempt to modify MASTER_SS_ID with action ${payload.action}`);
+          return res.status(403).json({
+            status: "error",
+            code: "master_sheet_restricted",
+            message: "Модификация мастер-таблицы запрещена без административного токена."
+          });
+        }
+      }
+
+      if (!targetSsId && payload.action !== 'registerLead' && payload.action !== 'findUserByContact') {
+        return res.status(400).json({
+          status: "error",
+          message: "ssId (Google Spreadsheet ID) is required for this request."
+        });
+      }
 
       if (payload.action === 'findUserByContact') {
+        const isAdmin = verifyAdminToken(req, payload);
+        if (!isAdmin) {
+          return res.status(403).json({
+            status: "error",
+            message: "Поиск пользователей доступен только администраторам."
+          });
+        }
         const contact = payload.contact || "";
         if (!contact) {
           return res.status(400).json({ status: "error", message: "Контакт не указан" });

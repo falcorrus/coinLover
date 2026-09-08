@@ -31,4 +31,18 @@ cp android/app/build/outputs/apk/debug/app-debug.apk apk/coinlover-debug.apk
 
 echo "Sending to Telegram..."
 DATE_STR=$(date +'%m-%d')
-curl -F chat_id="159194550" -F document=@"apk/coinlover-debug.apk" -F caption="CoinLover APK Fix: Build ${DATE_STR}" https://api.telegram.org/bot6027699883:AAFKOu9gPsc7rd-SDQeFCHTt0edI73dXWSQ/sendDocument
+
+# Load .env if present
+if [ -f .env ]; then
+  export $(grep -E '^(TELEGRAM_BOT_TOKEN|TELEGRAM_CHAT_ID)=' .env | xargs)
+fi
+
+BOT_TOKEN="${TELEGRAM_BOT_TOKEN:-}"
+CHAT_ID="${TELEGRAM_CHAT_ID:-159194550}"
+
+if [ -z "$BOT_TOKEN" ]; then
+  echo "⚠️ TELEGRAM_BOT_TOKEN is not set in .env or environment. Skipping sending to Telegram."
+else
+  curl -s -F chat_id="$CHAT_ID" -F document=@"apk/coinlover-debug.apk" -F caption="CoinLover APK Fix: Build ${DATE_STR}" "https://api.telegram.org/bot${BOT_TOKEN}/sendDocument" > /dev/null
+  echo "✅ APK sent to Telegram (chat ${CHAT_ID})"
+fi

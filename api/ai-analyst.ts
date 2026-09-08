@@ -1,7 +1,34 @@
 import { google } from 'googleapis';
 import fs from 'fs';
 import path from 'path';
-import { getSheetsClient, MASTER_SS_ID } from './sheets.ts';
+import { getSheetsClient, MASTER_SS_ID, checkUserAccess, verifyAdminToken } from './sheets.ts';
+
+// In-memory rate limiting for AI endpoint (10 req/min)
+const aiRateLimitMap = new Map<string, { count: number; resetTime: number }>();
+
+function checkAiRateLimit(key: string, maxRequests = 10, windowMs = 60000): boolean {
+  const now = Date.now();
+  const record = aiRateLimitMap.get(key);
+
+  // Periodic cleanup if map grows too large
+  if (aiRateLimitMap.size > 1000) {
+    for (const [k, v] of aiRateLimitMap.entries()) {
+      if (now > v.resetTime) aiRateLimitMap.delete(k);
+    }
+  }
+
+  if (!record || now > record.resetTime) {
+    aiRateLimitMap.set(key, { count: 1, resetTime: now + windowMs });
+    return true;
+  }
+
+  if (record.count >= maxRequests) {
+    return false;
+  }
+
+  record.count += 1;
+  return true;
+}
 
 function extractPeriod(text: string, currentMonthNum: number, currentYearNum: number): any {
   const textLower = text.toLowerCase();
@@ -222,6 +249,52 @@ export default async function handler(req, res) {
 
   if (!ssId || !query) {
     return res.status(400).json({ status: "error", message: "ssId and query are required." });
+  }
+
+  // 1. Rate limiting: max 10 requests per minute per IP / ssId
+  const clientIp = req.headers ? (req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown') : 'unknown';
+  const rateLimitKey = `${clientIp}_${ssId}`;
+  if (!checkAiRateLimit(rateLimitKey, 10, 60000)) {
+    return res.status(429).json({
+      status: "error",
+      code: "rate_limit_exceeded",
+      message: "Слишком много запросов к AI-аналитику. Пожалуйста, подождите минуту перед следующим запросом."
+    });
+  }
+
+  // 2. Authorization and Subscription Check
+  const isAdmin = verifyAdminToken(req, parsedBody);
+  const cleanSsId = String(ssId).trim();
+
+  if (cleanSsId === MASTER_SS_ID && !isAdmin) {
+    return res.status(403).json({
+      status: "error",
+      code: "master_sheet_restricted",
+      message: "Доступ к мастер-таблице ограничен. Требуется административный токен."
+    });
+  }
+
+  if (!isAdmin) {
+    const accessInfo = await checkUserAccess(sheets, cleanSsId);
+    
+    if (accessInfo.found && !accessInfo.accessValid) {
+      return res.status(403).json({
+        status: "error",
+        code: "subscription_expired",
+        message: `Срок действия подписки истек (${accessInfo.accessEndsDate || ''}). Продлите доступ для использования AI.`
+      });
+    }
+
+    const isPremium = accessInfo.tariff.toLowerCase().includes("premium") || 
+                      accessInfo.tariff.toLowerCase().includes("премиум");
+
+    if (!isPremium) {
+      return res.status(403).json({
+        status: "error",
+        code: "premium_required",
+        message: "AI-аналитик доступен только для пользователей с тарифом Premium. Оформите подписку в настройках."
+      });
+    }
   }
 
   try {

@@ -10,7 +10,7 @@ import { google } from 'googleapis';
 import fs from 'fs';
 import path from 'path';
 
-const MASTER_SS_ID = "1IQCs35RQlMMQsGB-CRczJeuRqa8WIxW4Sy_kjZyHP2M";
+const MASTER_SS_ID = process.env.MASTER_SS_ID || "1IQCs35RQlMMQsGB-CRczJeuRqa8WIxW4Sy_kjZyHP2M";
 const SECRET = process.env.JWT_SECRET || "coinlover-super-secret-key-1337";
 
 // Helper: Get Sheets client (similar to api/sheets.ts)
@@ -297,6 +297,37 @@ export async function authHandler(req: Request, res: Response) {
       } catch (err: any) {
         console.error('[Auth] Failed to access sheet or create Passkey tab:', err);
         return res.status(404).json({ status: 'error', message: 'Google Sheet not found or access denied (failed to initialize Passkey sheet)' });
+      }
+
+      // Check if Passkey is already registered and active
+      let existingPasskeyEnabled = false;
+      let existingCredId = "";
+      for (const r of existingRows) {
+        if (!r || !r[0]) continue;
+        const k = String(r[0]).trim();
+        if (k === "Passkey_Enabled" && String(r[1]).trim().toUpperCase() === "TRUE") existingPasskeyEnabled = true;
+        if (k === "Passkey_Credential_ID") existingCredId = String(r[1]).trim();
+      }
+
+      // If a Passkey is already registered with a different Credential ID, prevent overwriting
+      // unless an admin token is provided to authorize key replacement.
+      if (existingPasskeyEnabled && existingCredId && existingCredId !== credentialIDStr) {
+        const adminTokenHeader = req.headers ? (req.headers['x-admin-token'] || req.headers['authorization']) : undefined;
+        const tokenFromHeader = typeof adminTokenHeader === 'string'
+          ? adminTokenHeader.replace(/^Bearer\s+/i, '').trim()
+          : undefined;
+        const adminToken = tokenFromHeader || req.body?.adminToken;
+        const expectedAdminToken = process.env.ADMIN_TOKEN;
+        const isAdmin = Boolean(expectedAdminToken && adminToken && adminToken === expectedAdminToken);
+
+        if (!isAdmin) {
+          console.warn(`[Auth] Unauthorized attempt to overwrite existing Passkey on ssId ${ssId}`);
+          return res.status(403).json({
+            status: 'error',
+            code: 'passkey_already_registered',
+            message: 'К этой таблице уже привязан Passkey. Перезапись ключа заблокирована в целях безопасности.'
+          });
+        }
       }
 
       // Update the passkey array with new system keys
