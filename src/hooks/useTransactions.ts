@@ -85,43 +85,36 @@ export const useTransactions = ({
       comment: comment || undefined 
     };
     
-    let rollbackTransactions: Transaction[] = [];
-    let rollbackAccounts: Account[] = [];
-    let updatedAccounts: Account[] = [];
+    const rollbackTransactions = transactions;
+    const rollbackAccounts = accounts;
 
-    setTransactions((prev) => {
-      rollbackTransactions = prev;
-      return [newTx, ...prev];
+    const updatedAccounts = accounts.map((a) => {
+      const aid = String(a.id).trim().toLowerCase();
+      const aName = String(a.name).trim().toLowerCase();
+      const sourceId = String(source.id).trim().toLowerCase();
+      const destId = String(destination.id).trim().toLowerCase();
+
+      const balance = Number(a.balance) || 0;
+      if (type === "expense" && (aid === sourceId || aName === sourceId)) {
+        return { ...a, balance: balance - (Number(sourceAmount) || 0) };
+      }
+      if (type === "income" && (aid === destId || aName === destId)) {
+        return { ...a, balance: balance + (Number(finalTargetAmount) || 0) };
+      }
+      if (type === "transfer") { 
+        if (aid === sourceId || aName === sourceId) {
+          return { ...a, balance: balance - (Number(sourceAmount) || 0) }; 
+        }
+        if (aid === destId || aName === destId) {
+          return { ...a, balance: balance + (Number(finalTargetAmount) || 0) }; 
+        }
+      }
+      return a;
     });
+
+    setTransactions([newTx, ...transactions]);
+    setAccounts(updatedAccounts);
     trackEvent("TransactionAdd", { category: "Transaction", label: type });
-
-    setAccounts((prev) => {
-      rollbackAccounts = prev;
-      updatedAccounts = prev.map((a) => {
-        const aid = String(a.id).trim().toLowerCase();
-        const aName = String(a.name).trim().toLowerCase();
-        const sourceId = String(source.id).trim().toLowerCase();
-        const destId = String(destination.id).trim().toLowerCase();
-
-        const balance = Number(a.balance) || 0;
-        if (type === "expense" && (aid === sourceId || aName === sourceId)) {
-          return { ...a, balance: balance - (Number(sourceAmount) || 0) };
-        }
-        if (type === "income" && (aid === destId || aName === destId)) {
-          return { ...a, balance: balance + (Number(finalTargetAmount) || 0) };
-        }
-        if (type === "transfer") { 
-          if (aid === sourceId || aName === sourceId) {
-            return { ...a, balance: balance - (Number(sourceAmount) || 0) }; 
-          }
-          if (aid === destId || aName === destId) {
-            return { ...a, balance: balance + (Number(finalTargetAmount) || 0) }; 
-          }
-        }
-        return a;
-      });
-      return updatedAccounts;
-    });
 
     setSyncStatus("loading");
 
@@ -129,6 +122,8 @@ export const useTransactions = ({
     const baseCurrency = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY) || "USD";
 
     try {
+      const accountsToSync = updatedAccounts.length > 0 ? enrichAccountsWithUSD(updatedAccounts) : undefined;
+
       // Сначала отправляем транзакцию (теперь с балансами для атомарности)
       const txOk = await googleSheetsService.syncToSheets({ 
           action: "addTransaction", 
@@ -149,7 +144,7 @@ export const useTransactions = ({
           targetAmountUSD: newTx.targetAmountUSD, 
           comment: comment || undefined,
           ssId,
-          accounts: enrichAccountsWithUSD(updatedAccounts),
+          accounts: accountsToSync,
           categories,
           incomes,
           timestamp: ts,
@@ -171,7 +166,7 @@ export const useTransactions = ({
       setAccounts(rollbackAccounts);
       setSyncStatus("error");
     }
-  }, [categories, incomes, setAccounts, setTransactions, setSyncStatus, ssId]);
+  }, [accounts, categories, incomes, transactions, setAccounts, setTransactions, setSyncStatus, ssId]);
 
   const updateTransaction = useCallback(async (txId: string, type: TransactionType, source: Account | IncomeSource, destination: Account | Category, sourceAmount: number, targetAmount?: number, tag?: string, customDate?: string, comment?: string, customCurrency?: string) => {
     // Гарантируем наличие курсов перед расчетом
@@ -225,44 +220,37 @@ export const useTransactions = ({
       comment: comment || undefined 
     };
 
-    let rollbackTransactions: Transaction[] = [];
-    let rollbackAccounts: Account[] = [];
-    let updatedAccounts: Account[] = [];
+    const rollbackTransactions = transactions;
+    const rollbackAccounts = accounts;
 
-    setTransactions(prev => {
-      rollbackTransactions = prev;
-      return prev.map(t => t.id === txId ? updatedTx : t);
+    const updatedAccounts = accounts.map(a => {
+      const aid = String(a.id).trim().toLowerCase();
+      const aName = String(a.name).trim().toLowerCase();
+      const oldTxAccId = String(oldTx.accountId).trim().toLowerCase();
+      const oldTxTargetId = String(oldTx.targetId).trim().toLowerCase();
+      const sourceId = String(source.id).trim().toLowerCase();
+      const destId = String(destination.id).trim().toLowerCase();
+
+      let balance = Number(a.balance) || 0;
+      if (oldTx.type === "expense" && (aid === oldTxAccId || aName === oldTxAccId)) balance += (Number(oldTx.sourceAmount) || 0);
+      if (oldTx.type === "income" && (aid === oldTxAccId || aName === oldTxAccId)) balance -= (Number(oldTx.targetAmount) || 0);
+      if (oldTx.type === "transfer") { 
+        if (aid === oldTxAccId || aName === oldTxAccId) balance += (Number(oldTx.sourceAmount) || 0); 
+        if (aid === oldTxTargetId || aName === oldTxTargetId) balance -= (Number(oldTx.targetAmount) || 0); 
+      }
+      
+      if (type === "expense" && (aid === sourceId || aName === sourceId)) balance -= (Number(sourceAmount) || 0);
+      if (type === "income" && (aid === destId || aName === destId)) balance += (Number(finalTargetAmount) || 0);
+      if (type === "transfer") { 
+        if (aid === sourceId || aName === sourceId) balance -= (Number(sourceAmount) || 0); 
+        if (aid === destId || aName === destId) balance += (Number(finalTargetAmount) || 0); 
+      }
+      return a.balance !== balance ? { ...a, balance } : a;
     });
+
+    setTransactions(transactions.map(t => t.id === txId ? updatedTx : t));
+    setAccounts(updatedAccounts);
     trackEvent("TransactionUpdate", { category: "Transaction", label: type });
-
-    setAccounts(prev => {
-      rollbackAccounts = prev;
-      updatedAccounts = prev.map(a => {
-        const aid = String(a.id).trim().toLowerCase();
-        const aName = String(a.name).trim().toLowerCase();
-        const oldTxAccId = String(oldTx.accountId).trim().toLowerCase();
-        const oldTxTargetId = String(oldTx.targetId).trim().toLowerCase();
-        const sourceId = String(source.id).trim().toLowerCase();
-        const destId = String(destination.id).trim().toLowerCase();
-
-        let balance = Number(a.balance) || 0;
-        if (oldTx.type === "expense" && (aid === oldTxAccId || aName === oldTxAccId)) balance += (Number(oldTx.sourceAmount) || 0);
-        if (oldTx.type === "income" && (aid === oldTxAccId || aName === oldTxAccId)) balance -= (Number(oldTx.targetAmount) || 0);
-        if (oldTx.type === "transfer") { 
-          if (aid === oldTxAccId || aName === oldTxAccId) balance += (Number(oldTx.sourceAmount) || 0); 
-          if (aid === oldTxTargetId || aName === oldTxTargetId) balance -= (Number(oldTx.targetAmount) || 0); 
-        }
-        
-        if (type === "expense" && (aid === sourceId || aName === sourceId)) balance -= (Number(sourceAmount) || 0);
-        if (type === "income" && (aid === destId || aName === destId)) balance += (Number(finalTargetAmount) || 0);
-        if (type === "transfer") { 
-          if (aid === sourceId || aName === sourceId) balance -= (Number(sourceAmount) || 0); 
-          if (aid === destId || aName === destId) balance += (Number(finalTargetAmount) || 0); 
-        }
-        return a.balance !== balance ? { ...a, balance } : a;
-      });
-      return updatedAccounts;
-    });
 
     setSyncStatus("loading");
 
@@ -270,6 +258,8 @@ export const useTransactions = ({
     const baseCurrency = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY) || "USD";
 
     try {
+      const accountsToSync = updatedAccounts.length > 0 ? enrichAccountsWithUSD(updatedAccounts) : undefined;
+
       const txOk = await googleSheetsService.syncToSheets({ 
           action: "updateTransaction", 
           targetSheet: "Transactions", 
@@ -289,7 +279,7 @@ export const useTransactions = ({
           targetAmountUSD: updatedTx.targetAmountUSD, 
           comment: comment || undefined,
           ssId,
-          accounts: enrichAccountsWithUSD(updatedAccounts),
+          accounts: accountsToSync,
           categories,
           incomes,
           timestamp: ts,
@@ -311,7 +301,7 @@ export const useTransactions = ({
       setAccounts(rollbackAccounts);
       setSyncStatus("error");
     }
-  }, [categories, incomes, transactions, setAccounts, setTransactions, setSyncStatus, ssId]);
+  }, [accounts, categories, incomes, transactions, setAccounts, setTransactions, setSyncStatus, ssId]);
 
   const deleteTransaction = useCallback(async (txId: string) => {
     // Гарантируем наличие курсов перед расчетом
@@ -319,35 +309,28 @@ export const useTransactions = ({
 
     const tx = transactions.find((t) => t.id === txId); if (!tx) return;
 
-    let rollbackTransactions: Transaction[] = [];
-    let rollbackAccounts: Account[] = [];
-    let updatedAccounts: Account[] = [];
+    const rollbackTransactions = transactions;
+    const rollbackAccounts = accounts;
 
-    setTransactions((prev) => {
-      rollbackTransactions = prev;
-      return prev.filter((t) => t.id !== txId);
+    const updatedAccounts = accounts.map((a) => {
+      const aid = String(a.id).trim().toLowerCase();
+      const aName = String(a.name).trim().toLowerCase();
+      const txAccId = String(tx.accountId).trim().toLowerCase();
+      const txTargetId = String(tx.targetId).trim().toLowerCase();
+
+      let balance = Number(a.balance) || 0;
+      if (tx.type === "expense" && (aid === txAccId || aName === txAccId)) balance += (Number(tx.sourceAmount) || 0);
+      if (tx.type === "income" && (aid === txAccId || aName === txAccId)) balance -= (Number(tx.targetAmount) || 0);
+      if (tx.type === "transfer") { 
+        if (aid === txAccId || aName === txAccId) balance += (Number(tx.sourceAmount) || 0); 
+        if (aid === txTargetId || aName === txTargetId) balance -= (Number(tx.targetAmount) || 0); 
+      }
+      return a.balance !== balance ? { ...a, balance } : a;
     });
+
+    setTransactions((prev) => prev.filter((t) => t.id !== txId));
+    setAccounts(updatedAccounts);
     trackEvent("TransactionDelete", { category: "Transaction", label: tx.type });
-
-    setAccounts((prev) => {
-      rollbackAccounts = prev;
-      updatedAccounts = prev.map((a) => {
-        const aid = String(a.id).trim().toLowerCase();
-        const aName = String(a.name).trim().toLowerCase();
-        const txAccId = String(tx.accountId).trim().toLowerCase();
-        const txTargetId = String(tx.targetId).trim().toLowerCase();
-
-        let balance = Number(a.balance) || 0;
-        if (tx.type === "expense" && (aid === txAccId || aName === txAccId)) balance += (Number(tx.sourceAmount) || 0);
-        if (tx.type === "income" && (aid === txAccId || aName === txAccId)) balance -= (Number(tx.targetAmount) || 0);
-        if (tx.type === "transfer") { 
-          if (aid === txAccId || aName === txAccId) balance += (Number(tx.sourceAmount) || 0); 
-          if (aid === txTargetId || aName === txTargetId) balance -= (Number(tx.targetAmount) || 0); 
-        }
-        return a.balance !== balance ? { ...a, balance } : a;
-      });
-      return updatedAccounts;
-    });
 
     setSyncStatus("loading");
 
@@ -355,17 +338,19 @@ export const useTransactions = ({
     const baseCurrency = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY) || "USD";
 
     try {
+      const accountsToSync = updatedAccounts.length > 0 ? enrichAccountsWithUSD(updatedAccounts) : undefined;
+
       const txOk = await googleSheetsService.syncToSheets({ 
           action: "deleteTransaction", 
           targetSheet: "Transactions", 
           id: txId, 
           ssId,
-          accounts: enrichAccountsWithUSD(updatedAccounts),
+          accounts: accountsToSync,
           categories,
           incomes,
           timestamp: ts,
           baseCurrency
-      });
+      } as any);
 
       if (txOk) {
         localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.LAST_SYNC, ts);
@@ -382,7 +367,7 @@ export const useTransactions = ({
       setAccounts(rollbackAccounts);
       setSyncStatus("error");
     }
-  }, [categories, incomes, transactions, setAccounts, setTransactions, setSyncStatus, ssId]);
+  }, [accounts, categories, incomes, transactions, setAccounts, setTransactions, setSyncStatus, ssId]);
 
   return { addTransaction, updateTransaction, deleteTransaction };
 };

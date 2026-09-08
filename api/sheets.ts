@@ -155,6 +155,61 @@ export async function getSheetsClient() {
 
 async function updateConfigs(sheets, spreadsheetId, sheetName, payload) {
   try {
+    const rawAccounts = Array.isArray(payload.accounts) ? payload.accounts : [];
+    const rawCategories = Array.isArray(payload.categories) ? payload.categories : [];
+    const rawIncomes = Array.isArray(payload.incomes) ? payload.incomes : [];
+
+    // 🛡️ CRITICAL SAFEGUARD: Never wipe out configs if all lists are empty!
+    if (rawAccounts.length === 0 && rawCategories.length === 0 && rawIncomes.length === 0) {
+      console.warn(`[API] Safeguard triggered: updateConfigs received completely empty payload for ${spreadsheetId}. Aborting update to prevent data loss.`);
+      return;
+    }
+
+    // If any section is empty, fetch existing data from the sheet to preserve it
+    let existingAccounts: any[] = [];
+    let existingCategories: any[] = [];
+    let existingIncomes: any[] = [];
+
+    if (rawAccounts.length === 0 || rawCategories.length === 0 || rawIncomes.length === 0) {
+      try {
+        const currentRes = await sheets.spreadsheets.values.get({
+          spreadsheetId,
+          range: `${sheetName}!A1:M150`
+        });
+        const currentRows = currentRes.data.values || [];
+        let section = "";
+        for (let i = 0; i < currentRows.length; i++) {
+          const r = currentRows[i];
+          if (!r || !r[0]) continue;
+          const k = String(r[0]).toLowerCase().trim();
+          if (k.includes("wallets") || k.includes("accounts") || k.includes("кошельки") || k.includes("счета")) { section = "acc"; continue; }
+          if (k.includes("categories") || k.includes("категории")) { section = "cat"; continue; }
+          if (k.includes("incomes") || k.includes("доходы")) { section = "inc"; continue; }
+          if (k.startsWith("===")) { section = ""; continue; }
+          if (String(r[0]).toUpperCase() === "ID") continue;
+
+          if (section === "acc" && r[0] && r[1]) {
+            existingAccounts.push({ id: r[0], name: r[1], balance: r[2], balanceUSD: r[3] || r[2], color: r[4] || "#6d5dfc", icon: r[5] || "wallet", currency: r[6] || "USD" });
+          } else if (section === "cat" && r[0] && r[1]) {
+            existingCategories.push({ id: r[0], name: r[1], color: r[2] || "#f43f5e", icon: r[3] || "folder", tags: r[4] || "" });
+          } else if (section === "inc" && r[0] && r[1]) {
+            existingIncomes.push({ id: r[0], name: r[1], color: r[2] || "#10b981", icon: r[3] || "wallet", tags: r[4] || "" });
+          }
+        }
+      } catch (err: any) {
+        console.warn("[API] Could not fetch existing configs for merging:", err.message);
+      }
+    }
+
+    const finalAccounts = rawAccounts.length > 0 ? rawAccounts : existingAccounts;
+    const finalCategories = rawCategories.length > 0 ? rawCategories : existingCategories;
+    const finalIncomes = rawIncomes.length > 0 ? rawIncomes : existingIncomes;
+
+    if (finalAccounts.length === 0 && finalCategories.length === 0 && finalIncomes.length === 0) {
+      console.warn(`[API] Safeguard: All sections are completely empty for ${spreadsheetId}. Aborting.`);
+      return;
+    }
+
     // Recreate the managed parts
     const ts = payload.timestamp || new Date().toISOString();
     const baseCurrency = payload.baseCurrency || "USD";
@@ -172,31 +227,25 @@ async function updateConfigs(sheets, spreadsheetId, sheetName, payload) {
     pushRow([" === WALLETS / ACCOUNTS ===", ""]);
     pushRow(["ID", "Name", "Balance", "Balance_Base", "Color", "Icon", "Currency"]);
     
-    if (payload.accounts) {
-      payload.accounts.forEach(a => {
-        pushRow([a.id, a.name, a.balance, a.balanceUSD || a.balance, a.color, a.icon, a.currency || "USD"]);
-      });
-    }
+    finalAccounts.forEach(a => {
+      pushRow([a.id, a.name, a.balance, a.balanceUSD || a.balance, a.color, a.icon, a.currency || "USD"]);
+    });
 
     pushRow(["", ""]);
     pushRow([" === CATEGORIES ===", ""]);
     pushRow(["ID", "Name", "Color", "Icon", "Tags"]);
     
-    if (payload.categories) {
-      payload.categories.forEach(c => {
-        pushRow([c.id, c.name, c.color, c.icon, Array.isArray(c.tags) ? c.tags.join(", ") : (c.tags || "")]);
-      });
-    }
+    finalCategories.forEach(c => {
+      pushRow([c.id, c.name, c.color, c.icon, Array.isArray(c.tags) ? c.tags.join(", ") : (c.tags || "")]);
+    });
 
     pushRow(["", ""]);
     pushRow([" === INCOMES ===", ""]);
     pushRow(["ID", "Name", "Color", "Icon", "Tags"]);
     
-    if (payload.incomes) {
-      payload.incomes.forEach(i => {
-        pushRow([i.id, i.name, i.color, i.icon, Array.isArray(i.tags) ? i.tags.join(", ") : (i.tags || "")]);
-      });
-    }
+    finalIncomes.forEach(i => {
+      pushRow([i.id, i.name, i.color, i.icon, Array.isArray(i.tags) ? i.tags.join(", ") : (i.tags || "")]);
+    });
 
     // Clear and update
     await sheets.spreadsheets.values.clear({
@@ -212,7 +261,7 @@ async function updateConfigs(sheets, spreadsheetId, sheetName, payload) {
     });
     
     console.log(`[API] Successfully synced ${rows.length} rows to ${sheetName}`);
-  } catch (e) {
+  } catch (e: any) {
     console.error("[API] Failed to update configs:", e.message);
   }
 }
@@ -1123,7 +1172,9 @@ export default async function handler(req, res) {
             }
           }
         }
-        if (payload.accounts) await updateConfigs(sheets, targetSsId, configSheetName, payload);
+        if (Array.isArray(payload.accounts) && payload.accounts.length > 0) {
+          await updateConfigs(sheets, targetSsId, configSheetName, payload);
+        }
         return res.status(200).json({ status: "success" });
       }
 
@@ -1167,7 +1218,9 @@ export default async function handler(req, res) {
             }
           }
         }
-        if (payload.accounts) await updateConfigs(sheets, targetSsId, configSheetName, payload);
+        if (Array.isArray(payload.accounts) && payload.accounts.length > 0) {
+          await updateConfigs(sheets, targetSsId, configSheetName, payload);
+        }
         return res.status(200).json({ status: "success" });
       }
       return res.status(200).json({ status: "success", message: `Action ${payload.action} handled` });
