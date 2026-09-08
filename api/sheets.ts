@@ -506,20 +506,6 @@ export default async function handler(req, res) {
     // Check access in MASTER SS / Users sheet
     if (ssId) {
       const cleanSsId = String(ssId).trim();
-      
-      // Protect MASTER_SS_ID from unauthorized direct access
-      if (cleanSsId === MASTER_SS_ID && action !== 'template') {
-        const isAdmin = verifyAdminToken(req, parsedBody);
-        if (!isAdmin) {
-          console.warn(`[API] Unauthorized attempt to access MASTER_SS_ID`);
-          return res.status(403).json({
-            status: "error",
-            code: "master_sheet_restricted",
-            message: "Доступ к мастер-таблице ограничен. Требуется административный токен."
-          });
-        }
-      }
-
       const accessInfo = await checkUserAccess(sheets, cleanSsId);
       userTariff = accessInfo.tariff;
 
@@ -979,14 +965,14 @@ export default async function handler(req, res) {
       
       console.log(`[API] POST Action: ${payload.action} on SS: ${targetSsId || 'none'}`);
 
-      if (targetSsId === MASTER_SS_ID && payload.action !== 'registerLead') {
+      if (targetSsId === MASTER_SS_ID && payload.action === 'initTable') {
         const isAdmin = verifyAdminToken(req, payload);
         if (!isAdmin) {
-          console.warn(`[API] Unauthorized attempt to modify MASTER_SS_ID with action ${payload.action}`);
+          console.warn(`[API] Unauthorized attempt to re-initialize MASTER_SS_ID`);
           return res.status(403).json({
             status: "error",
             code: "master_sheet_restricted",
-            message: "Модификация мастер-таблицы запрещена без административного токена."
+            message: "Переинициализация мастер-таблицы запрещена без административного токена."
           });
         }
       }

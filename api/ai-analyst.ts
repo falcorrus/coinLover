@@ -266,14 +266,6 @@ export default async function handler(req, res) {
   const isAdmin = verifyAdminToken(req, parsedBody);
   const cleanSsId = String(ssId).trim();
 
-  if (cleanSsId === MASTER_SS_ID && !isAdmin) {
-    return res.status(403).json({
-      status: "error",
-      code: "master_sheet_restricted",
-      message: "Доступ к мастер-таблице ограничен. Требуется административный токен."
-    });
-  }
-
   if (!isAdmin) {
     const accessInfo = await checkUserAccess(sheets, cleanSsId);
     
