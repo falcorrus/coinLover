@@ -1,4 +1,5 @@
 import { APP_SETTINGS } from "../constants/settings";
+import { universalFetch } from "./googleSheets";
 
 export class RatesService {
     private static memoryRates: Record<string, number> | null = null;
@@ -53,7 +54,7 @@ export class RatesService {
 
         const baseCurrency = this.getBaseCurrency();
         try {
-            const response = await fetch(`https://open.er-api.com/v6/latest/${baseCurrency}`);
+            const response = await universalFetch(`https://open.er-api.com/v6/latest/${baseCurrency}`);
             if (response.ok) {
                 const data = await response.json();
                 if (data && data.rates) {

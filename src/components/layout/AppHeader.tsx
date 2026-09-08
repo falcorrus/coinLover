@@ -4,7 +4,7 @@ import { Sun, Moon, Plus, Menu, RefreshCcw, List, Calendar, PieChart, Sparkles, 
 import { APP_SETTINGS } from "../../constants/settings";
 import { HistoryModalState, Account, Transaction } from "../../types";
 import { startRegistration } from "@simplewebauthn/browser";
-import { googleSheetsService, getAbsoluteApiUrl } from "../../services/googleSheets";
+import { googleSheetsService, getAbsoluteApiUrl, universalFetch } from "../../services/googleSheets";
 import { useLanguage } from "../../contexts/LanguageContext";
 import { AISheet } from "./AISheet";
 import { ReconciliationModal } from "../ReconciliationModal";
@@ -102,7 +102,7 @@ export function AppHeader({
           setPasskeyLoading(false);
         });
 
-      fetch(getAbsoluteApiUrl(`/api/auth/register-options?ssId=${encodeURIComponent(activeTableId)}`))
+      universalFetch(getAbsoluteApiUrl(`/api/auth/register-options?ssId=${encodeURIComponent(activeTableId)}`))
         .then(res => {
           if (res.ok) return res.json();
           throw new Error("Failed to prefetch registration options");
@@ -126,7 +126,7 @@ export function AppHeader({
 
       let data = prefetchedRegisterOptions;
       if (!data) {
-        const optionsRes = await fetch(getAbsoluteApiUrl(`/api/auth/register-options?ssId=${encodeURIComponent(activeTableId)}`));
+        const optionsRes = await universalFetch(getAbsoluteApiUrl(`/api/auth/register-options?ssId=${encodeURIComponent(activeTableId)}`));
         if (!optionsRes.ok) {
           throw new Error(await optionsRes.text() || "Failed to fetch registration options");
         }
@@ -150,7 +150,7 @@ export function AppHeader({
         throw regErr;
       }
 
-      const verifyRes = await fetch(getAbsoluteApiUrl("/api/auth/register-verify"), {
+      const verifyRes = await universalFetch(getAbsoluteApiUrl("/api/auth/register-verify"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

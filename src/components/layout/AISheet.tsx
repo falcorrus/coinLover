@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Mic, Send, List, Calendar, PieChart, Wallet as WalletIcon, Check, Sparkles } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { getAbsoluteApiUrl, googleSheetsService } from '../../services/googleSheets';
+import { getAbsoluteApiUrl, googleSheetsService, universalFetch } from '../../services/googleSheets';
 import { Account, Category, Transaction, TransactionType } from '../../types';
 import { Capacitor } from '@capacitor/core';
 import { SpeechRecognition as NativeSpeechRecognition } from '@capacitor-community/speech-recognition';
@@ -400,7 +400,7 @@ export const AISheet: React.FC<AISheetProps> = ({
     setIsLoading(true);
 
     try {
-      const response = await fetch(getAbsoluteApiUrl('/api/ai-analyst'), {
+      const response = await universalFetch(getAbsoluteApiUrl('/api/ai-analyst'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

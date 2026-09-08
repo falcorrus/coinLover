@@ -11,17 +11,19 @@ import { useAppDnD } from "./hooks/useAppDnD";
 import { useUsers } from "./hooks/useUsers";
 import { useLongPress } from "./hooks/useLongPress";
 import { ModalManager } from "./components/ModalManager";
-import { PremiumModal } from "./components/PremiumModal";
-import { LandingPage } from "./components/LandingPage";
-import { NativeAuthScreen } from "./components/NativeAuthScreen";
-import { OnboardingModal } from "./components/OnboardingModal";
 import { useCurrencyCalculations } from "./hooks/useCurrencyCalculations";
 import { safeParseDate } from "./hooks/utils";
 import { RatesService } from "./services/RatesService";
 
+// Lazy Loaded Screens and Modals
+const LandingPage = React.lazy(() => import("./components/LandingPage").then(m => ({ default: m.LandingPage })));
+const NativeAuthScreen = React.lazy(() => import("./components/NativeAuthScreen").then(m => ({ default: m.NativeAuthScreen })));
+const OnboardingModal = React.lazy(() => import("./components/OnboardingModal").then(m => ({ default: m.OnboardingModal })));
+const PremiumModal = React.lazy(() => import("./components/PremiumModal").then(m => ({ default: m.PremiumModal })));
+const AISheet = React.lazy(() => import("./components/layout/AISheet").then(m => ({ default: m.AISheet })));
+
 // Layout Components
 import { AppHeader } from "./components/layout/AppHeader";
-import { AISheet } from "./components/layout/AISheet";
 import { StoriesSection } from "./components/layout/StoriesSection";
 import { AccountsSection } from "./components/layout/AccountsSection";
 import { ExpenseSection } from "./components/layout/ExpenseSection";
@@ -406,15 +408,27 @@ SplashScreen.hide().catch(() => {});
 
   // /landing всегда показываем лендинг, независимо от состояния онбординга
   if (currentPath === "/landing") {
-    return <LandingPage />;
+    return (
+      <React.Suspense fallback={<div className="min-h-screen bg-[#050505]" />}>
+        <LandingPage />
+      </React.Suspense>
+    );
   }
 
   // Show landing when no active table and either root or non‑user path
   if (!activeTableId && !isUserPath) {
     if (isNativeApp) {
-      return <NativeAuthScreen />;
+      return (
+        <React.Suspense fallback={<div className="min-h-screen bg-[#050505]" />}>
+          <NativeAuthScreen />
+        </React.Suspense>
+      );
     }
-    return <LandingPage />;
+    return (
+      <React.Suspense fallback={<div className="min-h-screen bg-[#050505]" />}>
+        <LandingPage />
+      </React.Suspense>
+    );
   }
 
   return (
@@ -512,17 +526,29 @@ SplashScreen.hide().catch(() => {});
           />
         </div>
 
-        <AISheet 
-          isOpen={aiSheet.isOpen} 
-          onClose={() => setAiSheet({ isOpen: false, startInVoiceMode: false, isExpanded: false })}
-          startInVoiceMode={aiSheet.startInVoiceMode}
-          onExpandChange={(val) => setAiSheet(p => ({ ...p, isExpanded: val }))}
-          ssId={activeTableId}
-          accounts={accounts}
-          categories={categories}
-          onTransactionAdded={pullSettings}
-          addTransaction={addTransaction}
-        />
+        <React.Suspense fallback={null}>
+          {aiSheet.isOpen && (
+            <AISheet 
+              isOpen={aiSheet.isOpen} 
+              onClose={() => setAiSheet({ isOpen: false, startInVoiceMode: false, isExpanded: false })}
+              startInVoiceMode={aiSheet.startInVoiceMode}
+              onExpandChange={(val) => setAiSheet(p => ({ ...p, isExpanded: val }))}
+              ssId={activeTableId}
+              accounts={accounts}
+              categories={categories}
+              onTransactionAdded={pullSettings}
+              addTransaction={addTransaction}
+            />
+          )}
+
+          {isOnboarding && (
+            <OnboardingModal isOpen={isOnboarding} onComplete={handleOnboardingComplete} />
+          )}
+
+          {isPremiumModalOpen && (
+            <PremiumModal isOpen={isPremiumModalOpen} onClose={() => setIsPremiumModalOpen(false)} />
+          )}
+        </React.Suspense>
 
         <ModalManager
           accountModal={accountModal} incomeModal={incomeModal} categoryModal={categoryModal} historyModal={historyModal}
@@ -541,10 +567,6 @@ SplashScreen.hide().catch(() => {});
           saveAccount={saveAccount} deleteAccount={deleteAccount} saveCategory={saveCategory} deleteCategory={deleteCategory}
           saveIncome={saveIncome} deleteIncome={deleteIncome} updateLocalFromRemote={updateLocalFromRemote} onSwitchTable={handleSwitchTable}
         />
-
-
-        <OnboardingModal isOpen={isOnboarding} onComplete={handleOnboardingComplete} />
-        <PremiumModal isOpen={isPremiumModalOpen} onClose={() => setIsPremiumModalOpen(false)} />
       </div>
 
       <DragOverlay dropAnimation={null}>
