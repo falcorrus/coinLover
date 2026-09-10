@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Mic, Send, List, Calendar, PieChart, Wallet as WalletIcon, Check, Sparkles } from 'lucide-react';
+import { X, Mic, Send, List, Calendar, PieChart, Wallet as WalletIcon, Check, Sparkles, Square } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { getAbsoluteApiUrl, googleSheetsService, universalFetch } from '../../services/googleSheets';
 import { Account, Category, Transaction, TransactionType } from '../../types';
@@ -69,6 +69,7 @@ export const AISheet: React.FC<AISheetProps> = ({
   const nativeListeningStateListenerRef = useRef<any>(null);
   const webRecognitionRef = useRef<any>(null);
   const lastTranscriptRef = useRef<string>("");
+  const silenceTimeoutRef = useRef<any>(null);
 
   const isExpanded = messages.length > 0 || isLoading;
 
@@ -94,14 +95,22 @@ export const AISheet: React.FC<AISheetProps> = ({
   }, [isOpen, startInVoiceMode]);
 
   useEffect(() => {
+    const handlePushToTalkRelease = () => {
+      stopVoiceRecording();
+    };
+    window.addEventListener('coinlover-stop-voice-recording', handlePushToTalkRelease);
+    return () => {
+      window.removeEventListener('coinlover-stop-voice-recording', handlePushToTalkRelease);
+      clearSilenceTimer();
+    };
+  }, []);
+
+  useEffect(() => {
     if (isOpen && initialQuery) {
       handleSend(initialQuery);
     }
     if (isOpen && startInVoiceMode) {
-      // Small delay to ensure UI is ready and focus hasn't been stolen
-      setTimeout(() => {
-        startVoiceRecording();
-      }, 300);
+      startVoiceRecording();
     }
   }, [isOpen, initialQuery, startInVoiceMode]);
 
@@ -141,6 +150,23 @@ export const AISheet: React.FC<AISheetProps> = ({
     }
   };
 
+  const clearSilenceTimer = () => {
+    if (silenceTimeoutRef.current) {
+      clearTimeout(silenceTimeoutRef.current);
+      silenceTimeoutRef.current = null;
+    }
+  };
+
+  const resetSilenceTimer = () => {
+    clearSilenceTimer();
+    // Auto-finish and send after 1800ms of silence once speech was recorded
+    silenceTimeoutRef.current = setTimeout(() => {
+      if (lastTranscriptRef.current && lastTranscriptRef.current.trim().length > 0) {
+        stopVoiceRecording();
+      }
+    }, 1800);
+  };
+
   const startWebVoiceRecording = async (isFallback = false) => {
     const hasPermission = await requestMicrophonePermission();
     if (!hasPermission) return;
@@ -160,9 +186,12 @@ export const AISheet: React.FC<AISheetProps> = ({
 
     const recognition = new SpeechRecognition();
     recognition.lang = 'ru-RU';
-    recognition.continuous = false;
-    recognition.interimResults = false;
+    recognition.continuous = true;
+    recognition.interimResults = true;
     webRecognitionRef.current = recognition;
+
+    lastTranscriptRef.current = "";
+    setQuery("");
 
     recognition.onstart = () => {
       setIsRecording(true);
@@ -170,26 +199,40 @@ export const AISheet: React.FC<AISheetProps> = ({
     };
 
     recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript;
-      setQuery(transcript);
-      handleSend(transcript);
+      let interimTranscript = '';
+      let finalTranscript = '';
+
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript;
+        } else {
+          interimTranscript += event.results[i][0].transcript;
+        }
+      }
+
+      const currentText = (finalTranscript || interimTranscript || '').trim();
+      if (currentText) {
+        lastTranscriptRef.current = currentText;
+        setQuery(currentText);
+        resetSilenceTimer();
+      }
     };
 
     recognition.onerror = (event: any) => {
       console.error("Web speech recognition error:", event.error);
-      setIsRecording(false);
+      clearSilenceTimer();
+      if (event.error !== 'no-speech') {
+        setIsRecording(false);
+      }
       if (event.error === 'not-allowed') {
         alert("Голосовой ввод заблокирован системой. Проверьте настройки разрешений Google и браузера.");
       } else if (event.error === 'network') {
         alert("Ошибка сети при распознавании голоса.");
-      } else if (event.error === 'no-speech') {
-        // Ignore
-      } else {
-        alert(`Ошибка распознавания (${event.error}). Попробуйте еще раз.`);
       }
     };
 
     recognition.onend = () => {
+      clearSilenceTimer();
       setIsRecording(false);
       webRecognitionRef.current = null;
     };
@@ -203,11 +246,11 @@ export const AISheet: React.FC<AISheetProps> = ({
   };
 
   const startVoiceRecording = async () => {
+    clearSilenceTimer();
     const isNative = Capacitor.isNativePlatform();
 
     if (isNative) {
       try {
-        // Проверяем, существует ли сам объект плагина
         if (!NativeSpeechRecognition) {
           throw new Error("SpeechRecognition plugin is not loaded/implemented");
         }
@@ -217,7 +260,6 @@ export const AISheet: React.FC<AISheetProps> = ({
           throw new Error("Speech recognition not available natively on this device");
         }
 
-        // Явно проверяем и запрашиваем разрешения
         const permStatus = await NativeSpeechRecognition.checkPermissions();
         if (permStatus.speechRecognition !== 'granted') {
           const reqStatus = await NativeSpeechRecognition.requestPermissions();
@@ -250,6 +292,7 @@ export const AISheet: React.FC<AISheetProps> = ({
               const text = data.matches[0];
               lastTranscriptRef.current = text;
               setQuery(text);
+              resetSilenceTimer();
             }
           }
         );
@@ -260,9 +303,9 @@ export const AISheet: React.FC<AISheetProps> = ({
           (data: { status: 'started' | 'stopped' }) => {
             console.log("Native listening state change:", data.status);
             if (data.status === 'stopped') {
+              clearSilenceTimer();
               setIsRecording(currentRecording => {
                 if (currentRecording) {
-                  // Вызываем stopVoiceRecording через таймаут для завершения
                   setTimeout(() => {
                     stopVoiceRecording();
                   }, 100);
@@ -285,7 +328,6 @@ export const AISheet: React.FC<AISheetProps> = ({
         console.error("Native speech recognition failed, falling back to Web API:", err);
         const errMsg = err.message || "";
         
-        // Очистим листенеры при ошибке старта
         if (nativeListenerRef.current) {
           nativeListenerRef.current.remove();
           nativeListenerRef.current = null;
@@ -314,7 +356,6 @@ export const AISheet: React.FC<AISheetProps> = ({
             }]);
             setIsRecording(false);
           } else {
-            // Если плагин есть, но произошла другая ошибка (например, служба Speech Recognition не установлена/неактивна), переходим на веб с предупреждением
             await startWebVoiceRecording(true);
           }
         }
@@ -325,6 +366,7 @@ export const AISheet: React.FC<AISheetProps> = ({
   };
 
   const stopVoiceRecording = async () => {
+    clearSilenceTimer();
     const isNative = Capacitor.isNativePlatform();
     if (isNative) {
       try {
@@ -340,17 +382,21 @@ export const AISheet: React.FC<AISheetProps> = ({
         nativeListeningStateListenerRef.current.remove();
         nativeListeningStateListenerRef.current = null;
       }
-
-      const finalVal = lastTranscriptRef.current;
-      if (finalVal.trim()) {
-        handleSend(finalVal);
-      }
     } else {
       if (webRecognitionRef.current) {
-        webRecognitionRef.current.stop();
+        try {
+          webRecognitionRef.current.stop();
+        } catch (e) {
+          console.error("Failed to stop web speech recognition:", e);
+        }
       }
     }
     setIsRecording(false);
+
+    const finalVal = lastTranscriptRef.current;
+    if (finalVal && finalVal.trim()) {
+      handleSend(finalVal.trim());
+    }
   };
 
   const handleSaveTransaction = async (walletName: string, transactionData: any) => {
@@ -621,7 +667,7 @@ export const AISheet: React.FC<AISheetProps> = ({
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-                  placeholder={t('Ask AI or record spending...')}
+                  placeholder={isRecording ? (t('Listening...') || 'Слушаю вас... Говорите') : t('Ask AI or record spending...')}
                   className="w-full bg-transparent border-none outline-none text-base text-white placeholder:text-white/40"
                   disabled={isLoading}
                 />
@@ -629,15 +675,23 @@ export const AISheet: React.FC<AISheetProps> = ({
 
               <div className="flex items-center gap-1 shrink-0">
                 {isRecording ? (
-                  <div className="flex items-center gap-0.5 px-2">
-                    {waveData.slice(0, 5).map((h, i) => (
-                      <motion.div
-                        key={i}
-                        animate={{ height: h/2 }}
-                        className="w-1 bg-[#6d5dfc] rounded-full"
-                      />
-                    ))}
-                  </div>
+                  <button
+                    onClick={stopVoiceRecording}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-400 hover:bg-rose-500/30 active:scale-95 transition-all shadow-[0_0_12px_rgba(244,63,94,0.3)] group cursor-pointer"
+                    title={t('Done')}
+                  >
+                    <div className="flex items-center gap-0.5">
+                      {waveData.slice(0, 4).map((h, i) => (
+                        <motion.div
+                          key={i}
+                          animate={{ height: Math.max(4, h / 2.5) }}
+                          className="w-1 bg-rose-400 rounded-full"
+                        />
+                      ))}
+                    </div>
+                    <span className="text-xs font-bold uppercase tracking-wider">{t('Done')}</span>
+                    <Square size={13} className="fill-rose-400 text-rose-400 group-hover:scale-110 transition-transform" />
+                  </button>
                 ) : (
                   <>
                     {/* Show Mic if empty, or Send if has text */}

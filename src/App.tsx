@@ -313,14 +313,22 @@ const isNativeApp = React.useMemo(() => {
 
   const calculations = useCurrencyCalculations(accounts, currentMonthTransactions, categories, incomes, categoryCurrencyMode);
 
-  const settingsLongPress = useLongPress(() => { 
-    if (tariff !== "Premium") {
-      setIsPremiumModalOpen(true);
-      return;
+  const settingsLongPress = useLongPress(
+    () => { 
+      if (tariff !== "Premium") {
+        setIsPremiumModalOpen(true);
+        return;
+      }
+      setAiSheet({ isOpen: true, startInVoiceMode: true });
+      if (navigator.vibrate) navigator.vibrate(APP_SETTINGS.HAPTIC_FEEDBACK_DURATION_MEDIUM); 
+    },
+    600,
+    {
+      onRelease: () => {
+        window.dispatchEvent(new CustomEvent('coinlover-stop-voice-recording'));
+      }
     }
-    setAiSheet({ isOpen: true, startInVoiceMode: true });
-    if (navigator.vibrate) navigator.vibrate(APP_SETTINGS.HAPTIC_FEEDBACK_DURATION_MEDIUM); 
-  }, 800);
+  );
 
   const handleMenuClick = () => setIsSettingsMenuOpen(!isSettingsMenuOpen);
 

@@ -11,5 +11,6 @@ backend/ga-projects-key.json
 google-credentials.json
 .vercel
 # Obsidian Docs
-\!Docs
-\!Docs/
+!Docs
+!Docs/
+artifacts/

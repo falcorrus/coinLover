@@ -219,35 +219,26 @@ export function AppHeader({
             {...settingsLongPress} 
             onClick={handleMenuClick} 
             style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
-            className="w-14 h-14 rounded-full bg-[var(--glass-item-active)] border border-[var(--glass-border)] backdrop-blur-xl flex items-center justify-center shadow-[0_4px_14px_rgba(0,0,0,0.35),0_0_20px_rgba(109,93,252,0.15)] hover:scale-105 active:scale-95 transition-all text-slate-500 relative group overflow-hidden select-none touch-none"
+            className="w-14 h-14 rounded-full bg-transparent border-none flex items-center justify-center hover:scale-105 active:scale-95 transition-all relative group select-none touch-none cursor-pointer outline-none"
           >
-            <div className="absolute -inset-1 bg-gradient-to-tr from-[#FFD700]/10 to-[#6d5dfc]/10 opacity-0 group-hover:opacity-100 transition-opacity blur-sm" />
+            <div className="absolute inset-0 rounded-full bg-[#FFD700]/15 opacity-0 group-hover:opacity-100 transition-opacity blur-md" />
             
             <svg 
               xmlns="http://www.w3.org/2000/svg" 
               viewBox="0 0 32 32" 
               fill="none"
-              className={`w-9 h-9 transition-transform duration-500 ease-out ${isSettingsMenuOpen ? "rotate-[360deg] scale-90" : ""}`}
+              className={`w-14 h-14 transition-transform duration-500 ease-out filter drop-shadow-[0_4px_10px_rgba(0,0,0,0.25)] ${isSettingsMenuOpen ? "rotate-[360deg] scale-90" : ""}`}
             >
               <defs>
-                <linearGradient id="rim_grad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-                  <stop offset="0" stopColor="#FFD700"/>
-                  <stop offset="0.5" stopColor="#B8860B"/>
-                  <stop offset="1" stopColor="#8B6508"/>
+                <linearGradient id="coin_grad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stopColor="#F7C948"/>
+                  <stop offset="50%" stopColor="#E59E0B"/>
+                  <stop offset="100%" stopColor="#D97706"/>
                 </linearGradient>
-                <linearGradient id="face_grad" x1="32" y1="32" x2="0" y2="0" gradientUnits="userSpaceOnUse">
-                  <stop offset="0" stopColor="#F0B429"/>
-                  <stop offset="1" stopColor="#D49A17"/>
-                </linearGradient>
-                <filter id="depth" x="-10%" y="-10%" width="120%" height="120%">
-                  <feInnerShadow stdDeviation="1.5" />
-                </filter>
               </defs>
-              <circle cx="16" cy="16" r="15.5" fill="url(#rim_grad)" />
-              <circle cx="16" cy="16" r="13.5" fill="#8B6508" opacity="0.4" />
-              <circle cx="16" cy="16" r="12" fill="url(#face_grad)" />
-              <path d="M16 21.5S11 19 11 15C11 12.8 12.5 11.5 14 11.5C15.2 11.5 16 12.5 16 14C16 12.5 16.8 11.5 18 11.5C19.5 11.5 21 12.8 21 15C21 19 16 21.5 16 21.5Z" fill="white" />
-              <path d="M5 10C8 5 20 4 27 12" stroke="white" strokeWidth="1" strokeLinecap="round" opacity="0.3" />
+              <circle cx="16" cy="16" r="15" fill="url(#coin_grad)" />
+              {/* Enlarged clean white heart */}
+              <path d="M16 23.5S9.5 20.2 9.5 15C9.5 12.2 11.5 10.5 13.5 10.5C15 10.5 16 11.8 16 11.8C16 11.8 17 10.5 18.5 10.5C20.5 10.5 22.5 12.2 22.5 15C22.5 20.2 16 23.5 16 23.5Z" fill="white" />
             </svg>
           </button>
 
@@ -265,43 +256,43 @@ export function AppHeader({
                   </div>
 
                   {/* Theme Switcher Segment */}
-                  <div className="flex items-center p-0.5 bg-[var(--glass-item-bg)]/80 rounded-xl border border-[var(--glass-border)]/40">
+                  <div className="flex items-center gap-1.5 p-1 bg-[var(--glass-item-bg)]/80 rounded-xl border border-[var(--glass-border)]/40">
                     <button 
                       onClick={() => setTheme("white")} 
                       title="Light"
                       className={`p-1.5 rounded-lg transition-all ${theme === 'white' || theme === 'zen' ? 'bg-amber-100 text-amber-600 scale-105 shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
                     >
-                      <Sun size={13} />
+                      <Sun size={14} />
                     </button>
                     <button 
                       onClick={() => setTheme("mint")} 
                       title="Mint"
                       className={`p-1.5 rounded-lg transition-all ${theme === 'mint' ? 'bg-emerald-500/20 text-emerald-400 scale-105 shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
                     >
-                      <Sparkles size={13} />
+                      <Sparkles size={14} />
                     </button>
                     <button 
                       onClick={() => setTheme("black")} 
                       title="Dark"
                       className={`p-1.5 rounded-lg transition-all ${theme === 'black' || theme === 'modern' ? 'bg-[#6d5dfc]/25 text-[#9d8ffc] border border-[#6d5dfc]/40 scale-105 shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
                     >
-                      <Moon size={13} />
+                      <Moon size={14} />
                     </button>
                   </div>
                 </div>
 
                 {/* Bento Grid 3 Columns */}
-                <div className="grid grid-cols-3 gap-2 mb-2.5">
+                <div className="grid grid-cols-3 gap-1 mb-2.5">
                   {/* Feed */}
                   <button 
                     onClick={() => { 
                       setIsSettingsMenuOpen(false); 
                       setHistoryModal({ isOpen: true, entity: { name: t('Feed'), icon: "list" }, type: "feed" }); 
                     }} 
-                    className="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-[var(--glass-item-bg)] hover:bg-[var(--glass-item-active)] active:scale-95 border border-[var(--glass-border)]/30 transition-all group text-center"
+                    className="flex flex-col items-center justify-center p-2 rounded-2xl hover:bg-[var(--glass-item-active)] active:scale-95 transition-all group text-center"
                   >
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-[#6d5dfc]/10 text-[#6d5dfc] group-hover:scale-110 transition-transform mb-1.5">
-                      <List size={18} />
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-[#6d5dfc]/10 text-[#6d5dfc] group-hover:scale-110 transition-transform mb-1">
+                      <List size={20} />
                     </div>
                     <span className="text-[10px] font-bold text-[var(--text-main)] tracking-tight line-clamp-1 leading-none">{t('Feed')}</span>
                   </button>
@@ -312,10 +303,10 @@ export function AppHeader({
                       setIsSettingsMenuOpen(false); 
                       setCalendarAnalyticsModal({ isOpen: true }); 
                     }} 
-                    className="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-[var(--glass-item-bg)] hover:bg-[var(--glass-item-active)] active:scale-95 border border-[var(--glass-border)]/30 transition-all group text-center"
+                    className="flex flex-col items-center justify-center p-2 rounded-2xl hover:bg-[var(--glass-item-active)] active:scale-95 transition-all group text-center"
                   >
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-emerald-500/10 text-emerald-400 group-hover:scale-110 transition-transform mb-1.5">
-                      <Calendar size={18} />
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-emerald-500/10 text-emerald-500 group-hover:scale-110 transition-transform mb-1">
+                      <Calendar size={20} />
                     </div>
                     <span className="text-[10px] font-bold text-[var(--text-main)] tracking-tight line-clamp-1 leading-none">{t('Calendar')}</span>
                   </button>
@@ -326,10 +317,10 @@ export function AppHeader({
                       setIsSettingsMenuOpen(false); 
                       setAnalyticsModal({ isOpen: true, type: "expense" }); 
                     }} 
-                    className="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-[var(--glass-item-bg)] hover:bg-[var(--glass-item-active)] active:scale-95 border border-[var(--glass-border)]/30 transition-all group text-center"
+                    className="flex flex-col items-center justify-center p-2 rounded-2xl hover:bg-[var(--glass-item-active)] active:scale-95 transition-all group text-center"
                   >
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-amber-500/10 text-amber-400 group-hover:scale-110 transition-transform mb-1.5">
-                      <PieChart size={18} />
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-amber-500/10 text-amber-500 group-hover:scale-110 transition-transform mb-1">
+                      <PieChart size={20} />
                     </div>
                     <span className="text-[10px] font-bold text-[var(--text-main)] tracking-tight line-clamp-1 leading-none">{t('Analytics')}</span>
                   </button>
@@ -341,10 +332,10 @@ export function AppHeader({
                       pullSettings();
                       setIsReconciliationModalOpen(true); 
                     }} 
-                    className="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-[var(--glass-item-bg)] hover:bg-[var(--glass-item-active)] active:scale-95 border border-[var(--glass-border)]/30 transition-all group text-center"
+                    className="flex flex-col items-center justify-center p-2 rounded-2xl hover:bg-[var(--glass-item-active)] active:scale-95 transition-all group text-center"
                   >
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-orange-500/10 text-orange-400 group-hover:scale-110 transition-transform mb-1.5">
-                      <RefreshCcw size={17} className={syncStatus === 'loading' ? 'animate-spin' : ''} />
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-orange-500/10 text-orange-500 group-hover:scale-110 transition-transform mb-1">
+                      <RefreshCcw size={19} className={syncStatus === 'loading' ? 'animate-spin' : ''} />
                     </div>
                     <span className="text-[10px] font-bold text-[var(--text-main)] tracking-tight line-clamp-1 leading-none">{t('Reconcile Balances')}</span>
                   </button>
@@ -358,10 +349,10 @@ export function AppHeader({
                       }
                     }} 
                     disabled={!activeTableId}
-                    className={`flex flex-col items-center justify-center p-2.5 rounded-2xl bg-[var(--glass-item-bg)] hover:bg-[var(--glass-item-active)] active:scale-95 border border-[var(--glass-border)]/30 transition-all group text-center ${!activeTableId ? 'opacity-40 pointer-events-none' : ''}`}
+                    className={`flex flex-col items-center justify-center p-2 rounded-2xl hover:bg-[var(--glass-item-active)] active:scale-95 transition-all group text-center ${!activeTableId ? 'opacity-40 pointer-events-none' : ''}`}
                   >
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-indigo-500/10 text-indigo-400 group-hover:scale-110 transition-transform mb-1.5">
-                      <Key size={17} />
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-indigo-500/10 text-indigo-500 group-hover:scale-110 transition-transform mb-1">
+                      <Key size={19} />
                     </div>
                     <span className="text-[10px] font-bold text-[var(--text-main)] tracking-tight line-clamp-1 leading-none">{t('Security')}</span>
                   </button>
@@ -372,10 +363,10 @@ export function AppHeader({
                       setIsSettingsMenuOpen(false); 
                       setIsDownloadModalOpen(true); 
                     }} 
-                    className="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-[var(--glass-item-bg)] hover:bg-[var(--glass-item-active)] active:scale-95 border border-[var(--glass-border)]/30 transition-all group text-center"
+                    className="flex flex-col items-center justify-center p-2 rounded-2xl hover:bg-[var(--glass-item-active)] active:scale-95 transition-all group text-center"
                   >
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-cyan-500/10 text-cyan-400 group-hover:scale-110 transition-transform mb-1.5">
-                      <Smartphone size={17} />
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-cyan-500/10 text-cyan-600 group-hover:scale-110 transition-transform mb-1">
+                      <Smartphone size={19} />
                     </div>
                     <span className="text-[10px] font-bold text-[var(--text-main)] tracking-tight line-clamp-1 leading-none">{t('Application')}</span>
                   </button>
