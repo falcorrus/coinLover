@@ -401,7 +401,7 @@ SplashScreen.hide().catch(() => {});
     setIsStoriesCollapsed(next);
     localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.STORIES_COLLAPSED, String(next));
   };
-  const isFullModalOpen = accountModal.isOpen || incomeModal.isOpen || categoryModal.isOpen || historyModal.isOpen || analyticsModal.isOpen || calendarAnalyticsModal.isOpen || numpad.isOpen || confirmDelete.isOpen || isTagModalOpen || aiSheet.isExpanded;
+  const isFullModalOpen = accountModal.isOpen || incomeModal.isOpen || categoryModal.isOpen || historyModal.isOpen || analyticsModal.isOpen || calendarAnalyticsModal.isOpen || numpad.isOpen || confirmDelete.isOpen || isTagModalOpen || (aiSheet.isOpen && aiSheet.isExpanded);
   const anyModalOpen = isFullModalOpen || isSettingsMenuOpen;
 
   const allExistingTags = React.useMemo(() => {
@@ -482,7 +482,7 @@ SplashScreen.hide().catch(() => {});
             displayBalance={calculations.displayBalance}
             categoriesCount={categories.length}
             activeTableId={activeTableId}
-            setIsAISheetOpen={(val, voice) => setAiSheet(p => ({ ...p, isOpen: val, startInVoiceMode: !!voice }))}
+            setIsAISheetOpen={(val, voice) => setAiSheet({ isOpen: val, startInVoiceMode: !!voice, isExpanded: false })}
             isAISheetOpen={aiSheet.isOpen}
             tariff={tariff}
             onOpenPremiumModal={() => setIsPremiumModalOpen(true)}

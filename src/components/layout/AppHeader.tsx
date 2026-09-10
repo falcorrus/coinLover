@@ -252,7 +252,18 @@ export function AppHeader({
                 <div className="flex items-center justify-between gap-2 px-1 pb-3 mb-3 border-b border-[var(--glass-border)]/40">
                   <div className="flex items-center gap-2">
                     <div className="flex items-center gap-1.5">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#6d5dfc] animate-pulse" />
+                      <div 
+                        className={`w-2 h-2 rounded-full transition-colors ${
+                          syncStatus === "loading" 
+                            ? "bg-amber-400 animate-pulse" 
+                            : syncStatus === "success" 
+                              ? "bg-emerald-500/80 shadow-[0_0_6px_rgba(16,185,129,0.4)]" 
+                              : syncStatus === "error" 
+                                ? "bg-rose-500" 
+                                : "bg-white/20"
+                        }`} 
+                        title={syncStatus === "loading" ? "Синхронизация..." : syncStatus === "success" ? "Синхронизировано" : syncStatus === "error" ? "Ошибка синхронизации" : "Готов"}
+                      />
                       <span className="text-[11px] font-black text-[var(--text-main)] uppercase tracking-[0.18em] opacity-60">
                         {t('Menu')}
                       </span>
@@ -265,10 +276,10 @@ export function AppHeader({
                         setIsGuideModalOpen(true);
                       }}
                       title={t('Instructions')}
-                      className="w-5 h-5 rounded-full flex items-center justify-center bg-[var(--glass-item-bg)] hover:bg-[var(--glass-item-active)] border border-[var(--glass-border)]/70 text-[var(--text-main)] opacity-70 hover:opacity-100 hover:text-[#6d5dfc] hover:border-[#6d5dfc]/40 active:scale-90 transition-all shadow-xs"
+                      className="w-6 h-6 rounded-full flex items-center justify-center bg-[#6d5dfc]/15 hover:bg-[#6d5dfc]/25 text-[#6d5dfc] border-none active:scale-90 transition-all cursor-pointer outline-none ml-0.5"
                       aria-label={t('Instructions')}
                     >
-                      <Info size={11} strokeWidth={2.5} />
+                      <Info size={14} strokeWidth={2.4} />
                     </button>
                   </div>
 

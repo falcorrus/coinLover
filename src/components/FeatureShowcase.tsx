@@ -4,7 +4,8 @@ import {
   ArrowRight, Coins, Wallet, Utensils, 
   Move, Edit3, PieChart, Calendar, Plus,
   ChevronRight, ChevronLeft, CreditCard,
-  Home, Car, Coffee, Gift, TrendingUp, Activity, Baby, Mic
+  Home, Car, Coffee, Gift, TrendingUp, Activity, Baby, Mic,
+  Globe, Send, ExternalLink
 } from "lucide-react";
 
 interface Slide {
@@ -233,6 +234,56 @@ export const FeatureShowcase: React.FC<Props> = ({ onComplete, isGuideMode }) =>
             <Check size={14} className="text-emerald-400" />
             <span className="text-[11px] font-semibold text-emerald-300">Записан расход: «Обед -450»</span>
           </motion.div>
+        </div>
+      )
+    },
+    {
+      id: 5,
+      title: "Связь с разработчиком",
+      description: "Есть вопросы, отзывы или предложения? Напиши напрямую:",
+      renderVisual: () => (
+        <div className="relative w-full h-64 flex flex-col items-center justify-center p-6 bg-[#0D1117] rounded-3xl overflow-hidden border border-white/5 gap-3.5">
+          <div className="text-[10px] font-black uppercase text-white/30 tracking-[0.25em] mb-1">
+            КОНТАКТЫ И ПОДДЕРЖКА
+          </div>
+
+          {/* Website Link */}
+          <a
+            href="https://broz.agency"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full p-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-between group active:scale-95 transition-all text-left"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[#6d5dfc]/15 text-[#9d8ffc] flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Globe size={20} />
+              </div>
+              <div>
+                <div className="text-[10px] font-bold text-white/40 uppercase tracking-wider">Сайт</div>
+                <div className="text-sm font-bold text-white group-hover:text-[#9d8ffc] transition-colors">Broz.agency</div>
+              </div>
+            </div>
+            <ExternalLink size={16} className="text-white/30 group-hover:text-white transition-colors mr-1" />
+          </a>
+
+          {/* Telegram Link */}
+          <a
+            href="https://t.me/brozaurus"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full p-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-between group active:scale-95 transition-all text-left"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-sky-500/15 text-sky-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Send size={18} className="translate-x-[-1px] translate-y-[1px]" />
+              </div>
+              <div>
+                <div className="text-[10px] font-bold text-white/40 uppercase tracking-wider">Telegram</div>
+                <div className="text-sm font-bold text-white group-hover:text-sky-300 transition-colors">@brozaurus</div>
+              </div>
+            </div>
+            <ExternalLink size={16} className="text-white/30 group-hover:text-white transition-colors mr-1" />
+          </a>
         </div>
       )
     }

@@ -75,6 +75,9 @@ export const AISheet: React.FC<AISheetProps> = ({
 
   useEffect(() => {
     if (onExpandChange) onExpandChange(isExpanded);
+    return () => {
+      if (onExpandChange) onExpandChange(false);
+    };
   }, [isExpanded, onExpandChange]);
 
   useEffect(() => {
@@ -464,7 +467,8 @@ export const AISheet: React.FC<AISheetProps> = ({
       });
 
       if (!response.ok) {
-        throw new Error(`${response.status}`);
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || `Ошибка сервера: ${response.status}`);
       }
 
       const data = await response.json();
@@ -511,7 +515,12 @@ export const AISheet: React.FC<AISheetProps> = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <motion.div
+        <>
+          <div 
+            className="fixed inset-0 z-[240] bg-black/55 backdrop-blur-[2px] animate-in fade-in" 
+            onClick={onClose} 
+          />
+          <motion.div
           initial={{ 
             opacity: 0, 
             height: "56px", 
@@ -724,6 +733,7 @@ export const AISheet: React.FC<AISheetProps> = ({
             </div>
           </div>
         </motion.div>
+        </>
       )}
     </AnimatePresence>
   );
