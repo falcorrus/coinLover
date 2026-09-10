@@ -176,21 +176,7 @@ export function StoriesSection({
     }
   };
 
-  React.useEffect(() => {
-    if (activeStoryIndex === null || isPaused) return;
-    const intervalTime = 50;
-    const increment = (intervalTime / 5000) * 100;
-    const timer = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          handleNext();
-          return 0;
-        }
-        return prev + increment;
-      });
-    }, intervalTime);
-    return () => clearInterval(timer);
-  }, [activeStoryIndex, activeSlideIndex, isPaused]);
+  // Auto-advance disabled: stories are strictly controlled manually via taps and swipes
 
   const handleTouchStart = (e: React.TouchEvent) => {
     lastTouchTimestamp.current = Date.now();
@@ -772,10 +758,10 @@ export function StoriesSection({
             <div className="px-4 pt-4 pb-2 z-50 space-y-3">
               <div className="flex gap-1.5 w-full">
                 {Array.from({ length: activeStory.slideCount }).map((_, idx) => {
-                  let widthPercent = idx < activeSlideIndex ? 100 : (idx === activeSlideIndex ? progress : 0);
+                  let widthPercent = idx <= activeSlideIndex ? 100 : 0;
                   return (
                     <div key={idx} className="h-[2.5px] flex-1 rounded-full bg-[var(--text-muted)]/20 overflow-hidden">
-                      <div className="h-full bg-[var(--text-main)] transition-all duration-75" style={{ width: `${widthPercent}%`, transitionTimingFunction: "linear" }} />
+                      <div className="h-full bg-[var(--text-main)] transition-all duration-200 ease-out" style={{ width: `${widthPercent}%` }} />
                     </div>
                   );
                 })}

@@ -1,6 +1,6 @@
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sun, Moon, Plus, Menu, RefreshCcw, List, Calendar, PieChart, Sparkles, TrendingDown, TrendingUp, Wallet, X, Smartphone, QrCode, Key, Fingerprint, ShieldCheck, ShieldAlert, Settings, ChevronLeft, Mic, Search, Keyboard } from "lucide-react";
+import { Sun, Moon, Plus, Menu, RefreshCcw, List, Calendar, PieChart, Sparkles, TrendingDown, TrendingUp, Wallet, X, Smartphone, QrCode, Key, Fingerprint, ShieldCheck, ShieldAlert, Settings, ChevronLeft, Mic, Search, Keyboard, Info } from "lucide-react";
 import { APP_SETTINGS } from "../../constants/settings";
 import { HistoryModalState, Account, Transaction } from "../../types";
 import { startRegistration } from "@simplewebauthn/browser";
@@ -8,6 +8,7 @@ import { googleSheetsService, getAbsoluteApiUrl, universalFetch } from "../../se
 import { useLanguage } from "../../contexts/LanguageContext";
 import { AISheet } from "./AISheet";
 import { ReconciliationModal } from "../ReconciliationModal";
+import { FeatureShowcase } from "../FeatureShowcase";
 
 interface AppHeaderProps {
   isIncomeCollapsed: boolean;
@@ -63,6 +64,7 @@ export function AppHeader({
   const [prefetchedRegisterOptions, setPrefetchedRegisterOptions] = React.useState<any>(null);
   const [passkeyPending, setPasskeyPending] = React.useState(false); 
   const [isReconciliationModalOpen, setIsReconciliationModalOpen] = React.useState(false);
+  const [isGuideModalOpen, setIsGuideModalOpen] = React.useState(false);
 
   React.useEffect(() => {
     if (isPasskeyModalOpen && activeTableId) {
@@ -245,56 +247,71 @@ export function AppHeader({
           {isSettingsMenuOpen && (
             <>
               <div className="fixed inset-0 z-[140] bg-black/55 backdrop-blur-[4px]" onClick={() => setIsSettingsMenuOpen(false)} />
-              <div className="absolute bottom-[72px] right-0 w-[300px] bg-[var(--bg-color)] border border-[var(--glass-border)] rounded-[28px] shadow-[0_20px_60px_rgba(0,0,0,0.7),0_0_30px_rgba(109,93,252,0.12)] flex flex-col z-[145] overflow-hidden animate-in fade-in slide-in-from-bottom-5 zoom-in-95 origin-bottom-right backdrop-blur-2xl p-3">
-                {/* Header: Title + Theme Switcher */}
-                <div className="flex items-center justify-between gap-2 px-1 pb-2.5 mb-2.5 border-b border-[var(--glass-border)]/40">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#6d5dfc] animate-pulse" />
-                    <span className="text-[10px] font-black text-[var(--text-main)] uppercase tracking-[0.18em] opacity-60">
-                      {t('Menu')}
-                    </span>
+              <div className="absolute bottom-[72px] right-0 w-[326px] bg-[var(--bg-color)] border border-[var(--glass-border)] rounded-[28px] shadow-[0_24px_64px_rgba(0,0,0,0.75),0_0_30px_rgba(109,93,252,0.12)] flex flex-col z-[145] overflow-hidden animate-in fade-in slide-in-from-bottom-5 zoom-in-95 origin-bottom-right backdrop-blur-2xl p-4 pt-3.5 pb-3.5">
+                {/* Header: Title + Guide 'i' + Theme Switcher */}
+                <div className="flex items-center justify-between gap-2 px-1 pb-3 mb-3 border-b border-[var(--glass-border)]/40">
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#6d5dfc] animate-pulse" />
+                      <span className="text-[11px] font-black text-[var(--text-main)] uppercase tracking-[0.18em] opacity-60">
+                        {t('Menu')}
+                      </span>
+                    </div>
+
+                    {/* Guide / Instructions button "i" */}
+                    <button 
+                      onClick={() => {
+                        setIsSettingsMenuOpen(false);
+                        setIsGuideModalOpen(true);
+                      }}
+                      title={t('Instructions')}
+                      className="w-5 h-5 rounded-full flex items-center justify-center bg-[var(--glass-item-bg)] hover:bg-[var(--glass-item-active)] border border-[var(--glass-border)]/70 text-[var(--text-main)] opacity-70 hover:opacity-100 hover:text-[#6d5dfc] hover:border-[#6d5dfc]/40 active:scale-90 transition-all shadow-xs"
+                      aria-label={t('Instructions')}
+                    >
+                      <Info size={11} strokeWidth={2.5} />
+                    </button>
                   </div>
 
-                  {/* Theme Switcher Segment */}
-                  <div className="flex items-center gap-1.5 p-1 bg-[var(--glass-item-bg)]/80 rounded-xl border border-[var(--glass-border)]/40">
+                  {/* Theme Switcher Segment with increased spacing */}
+                  <div className="flex items-center gap-2.5 p-1 px-1.5 bg-[var(--glass-item-bg)]/80 rounded-2xl border border-[var(--glass-border)]/40">
                     <button 
                       onClick={() => setTheme("white")} 
                       title="Light"
-                      className={`p-1.5 rounded-lg transition-all ${theme === 'white' || theme === 'zen' ? 'bg-amber-100 text-amber-600 scale-105 shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
+                      className={`p-1.5 px-2 rounded-xl transition-all ${theme === 'white' || theme === 'zen' ? 'bg-amber-100 text-amber-600 scale-105 shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
                     >
-                      <Sun size={14} />
+                      <Sun size={15} />
                     </button>
                     <button 
                       onClick={() => setTheme("mint")} 
                       title="Mint"
-                      className={`p-1.5 rounded-lg transition-all ${theme === 'mint' ? 'bg-emerald-500/20 text-emerald-400 scale-105 shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
+                      className={`p-1.5 px-2 rounded-xl transition-all ${theme === 'mint' ? 'bg-emerald-500/20 text-emerald-400 scale-105 shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
                     >
-                      <Sparkles size={14} />
+                      <Sparkles size={15} />
                     </button>
                     <button 
                       onClick={() => setTheme("black")} 
                       title="Dark"
-                      className={`p-1.5 rounded-lg transition-all ${theme === 'black' || theme === 'modern' ? 'bg-[#6d5dfc]/25 text-[#9d8ffc] border border-[#6d5dfc]/40 scale-105 shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
+                      className={`p-1.5 px-2 rounded-xl transition-all ${theme === 'black' || theme === 'modern' ? 'bg-[#6d5dfc]/25 text-[#9d8ffc] border border-[#6d5dfc]/40 scale-105 shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
                     >
-                      <Moon size={14} />
+                      <Moon size={15} />
                     </button>
                   </div>
                 </div>
 
-                {/* Bento Grid 3 Columns */}
-                <div className="grid grid-cols-3 gap-1 mb-2.5">
+                {/* Bento Grid 3 Columns with generous vertical spacing */}
+                <div className="grid grid-cols-3 gap-y-4 gap-x-2 mb-3">
                   {/* Feed */}
                   <button 
                     onClick={() => { 
                       setIsSettingsMenuOpen(false); 
                       setHistoryModal({ isOpen: true, entity: { name: t('Feed'), icon: "list" }, type: "feed" }); 
                     }} 
-                    className="flex flex-col items-center justify-center p-2 rounded-2xl hover:bg-[var(--glass-item-active)] active:scale-95 transition-all group text-center"
+                    className="flex flex-col items-center justify-start py-2.5 px-1 rounded-2xl hover:bg-[var(--glass-item-active)] active:scale-95 transition-all group text-center"
                   >
-                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-[#6d5dfc]/10 text-[#6d5dfc] group-hover:scale-110 transition-transform mb-1">
-                      <List size={20} />
+                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-[#6d5dfc]/10 text-[#6d5dfc] group-hover:scale-110 transition-transform mb-2">
+                      <List size={22} />
                     </div>
-                    <span className="text-[10px] font-bold text-[var(--text-main)] tracking-tight line-clamp-1 leading-none">{t('Feed')}</span>
+                    <span className="text-[11px] font-medium text-[var(--text-main)] tracking-tight line-clamp-1 leading-snug">{t('Feed')}</span>
                   </button>
 
                   {/* Calendar */}
@@ -303,12 +320,12 @@ export function AppHeader({
                       setIsSettingsMenuOpen(false); 
                       setCalendarAnalyticsModal({ isOpen: true }); 
                     }} 
-                    className="flex flex-col items-center justify-center p-2 rounded-2xl hover:bg-[var(--glass-item-active)] active:scale-95 transition-all group text-center"
+                    className="flex flex-col items-center justify-start py-2.5 px-1 rounded-2xl hover:bg-[var(--glass-item-active)] active:scale-95 transition-all group text-center"
                   >
-                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-emerald-500/10 text-emerald-500 group-hover:scale-110 transition-transform mb-1">
-                      <Calendar size={20} />
+                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-emerald-500/10 text-emerald-500 group-hover:scale-110 transition-transform mb-2">
+                      <Calendar size={22} />
                     </div>
-                    <span className="text-[10px] font-bold text-[var(--text-main)] tracking-tight line-clamp-1 leading-none">{t('Calendar')}</span>
+                    <span className="text-[11px] font-medium text-[var(--text-main)] tracking-tight line-clamp-1 leading-snug">{t('Calendar')}</span>
                   </button>
 
                   {/* Analytics */}
@@ -317,12 +334,12 @@ export function AppHeader({
                       setIsSettingsMenuOpen(false); 
                       setAnalyticsModal({ isOpen: true, type: "expense" }); 
                     }} 
-                    className="flex flex-col items-center justify-center p-2 rounded-2xl hover:bg-[var(--glass-item-active)] active:scale-95 transition-all group text-center"
+                    className="flex flex-col items-center justify-start py-2.5 px-1 rounded-2xl hover:bg-[var(--glass-item-active)] active:scale-95 transition-all group text-center"
                   >
-                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-amber-500/10 text-amber-500 group-hover:scale-110 transition-transform mb-1">
-                      <PieChart size={20} />
+                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-amber-500/10 text-amber-500 group-hover:scale-110 transition-transform mb-2">
+                      <PieChart size={22} />
                     </div>
-                    <span className="text-[10px] font-bold text-[var(--text-main)] tracking-tight line-clamp-1 leading-none">{t('Analytics')}</span>
+                    <span className="text-[11px] font-medium text-[var(--text-main)] tracking-tight line-clamp-1 leading-snug">{t('Analytics')}</span>
                   </button>
 
                   {/* Reconcile Balances */}
@@ -332,12 +349,12 @@ export function AppHeader({
                       pullSettings();
                       setIsReconciliationModalOpen(true); 
                     }} 
-                    className="flex flex-col items-center justify-center p-2 rounded-2xl hover:bg-[var(--glass-item-active)] active:scale-95 transition-all group text-center"
+                    className="flex flex-col items-center justify-start py-2.5 px-1 rounded-2xl hover:bg-[var(--glass-item-active)] active:scale-95 transition-all group text-center"
                   >
-                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-orange-500/10 text-orange-500 group-hover:scale-110 transition-transform mb-1">
-                      <RefreshCcw size={19} className={syncStatus === 'loading' ? 'animate-spin' : ''} />
+                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-orange-500/10 text-orange-500 group-hover:scale-110 transition-transform mb-2">
+                      <RefreshCcw size={21} className={syncStatus === 'loading' ? 'animate-spin' : ''} />
                     </div>
-                    <span className="text-[10px] font-bold text-[var(--text-main)] tracking-tight line-clamp-1 leading-none">{t('Reconcile Balances')}</span>
+                    <span className="text-[11px] font-medium text-[var(--text-main)] tracking-tight line-clamp-1 leading-snug">{t('Reconcile Balances')}</span>
                   </button>
 
                   {/* Passkey Security */}
@@ -349,12 +366,12 @@ export function AppHeader({
                       }
                     }} 
                     disabled={!activeTableId}
-                    className={`flex flex-col items-center justify-center p-2 rounded-2xl hover:bg-[var(--glass-item-active)] active:scale-95 transition-all group text-center ${!activeTableId ? 'opacity-40 pointer-events-none' : ''}`}
+                    className={`flex flex-col items-center justify-start py-2.5 px-1 rounded-2xl hover:bg-[var(--glass-item-active)] active:scale-95 transition-all group text-center ${!activeTableId ? 'opacity-40 pointer-events-none' : ''}`}
                   >
-                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-indigo-500/10 text-indigo-500 group-hover:scale-110 transition-transform mb-1">
-                      <Key size={19} />
+                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-indigo-500/10 text-indigo-500 group-hover:scale-110 transition-transform mb-2">
+                      <Key size={21} />
                     </div>
-                    <span className="text-[10px] font-bold text-[var(--text-main)] tracking-tight line-clamp-1 leading-none">{t('Security')}</span>
+                    <span className="text-[11px] font-medium text-[var(--text-main)] tracking-tight line-clamp-1 leading-snug">{t('Security')}</span>
                   </button>
 
                   {/* Application / APK */}
@@ -363,17 +380,17 @@ export function AppHeader({
                       setIsSettingsMenuOpen(false); 
                       setIsDownloadModalOpen(true); 
                     }} 
-                    className="flex flex-col items-center justify-center p-2 rounded-2xl hover:bg-[var(--glass-item-active)] active:scale-95 transition-all group text-center"
+                    className="flex flex-col items-center justify-start py-2.5 px-1 rounded-2xl hover:bg-[var(--glass-item-active)] active:scale-95 transition-all group text-center"
                   >
-                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-cyan-500/10 text-cyan-600 group-hover:scale-110 transition-transform mb-1">
-                      <Smartphone size={19} />
+                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-cyan-500/10 text-cyan-600 group-hover:scale-110 transition-transform mb-2">
+                      <Smartphone size={21} />
                     </div>
-                    <span className="text-[10px] font-bold text-[var(--text-main)] tracking-tight line-clamp-1 leading-none">{t('Application')}</span>
+                    <span className="text-[11px] font-medium text-[var(--text-main)] tracking-tight line-clamp-1 leading-snug">{t('Application')}</span>
                   </button>
                 </div>
 
                 {/* Ask AI Dock */}
-                <div className="pt-2 border-t border-[var(--glass-border)]/30">
+                <div className="pt-2.5 border-t border-[var(--glass-border)]/30">
                   <div className="flex items-center justify-between px-1 mb-1.5">
                     <span className="text-[9px] font-black text-[var(--text-main)] opacity-40 uppercase tracking-[0.18em]">{t('Ask AI')}</span>
                     {tariff === "Premium" && (
@@ -381,7 +398,7 @@ export function AppHeader({
                     )}
                   </div>
 
-                  <div className="flex gap-1.5 p-1 bg-[var(--glass-item-bg)] border border-[var(--glass-border)]/40 rounded-[18px]">
+                  <div className="flex gap-2 p-1 bg-[var(--glass-item-bg)] border border-[var(--glass-border)]/40 rounded-[20px]">
                     <button 
                       onClick={() => { 
                         setIsSettingsMenuOpen(false); 
@@ -546,6 +563,29 @@ export function AppHeader({
       }}
       isLoading={syncStatus === "loading"}
     />
+
+    {isGuideModalOpen && (
+      <div 
+        onClick={() => setIsGuideModalOpen(false)} 
+        className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6 bg-black/75 backdrop-blur-md animate-in fade-in"
+      >
+        <div 
+          onClick={e => e.stopPropagation()} 
+          className="w-full max-w-sm glass-panel relative border-white/10 shadow-2xl rounded-[32px] bg-[var(--bg-color)] overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200"
+        >
+          <button 
+            onClick={() => setIsGuideModalOpen(false)} 
+            className="absolute top-5 right-5 z-30 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-all outline-none"
+            aria-label={t('Back')}
+          >
+            <X size={18} />
+          </button>
+          <div className="overflow-y-auto w-full">
+            <FeatureShowcase onComplete={() => setIsGuideModalOpen(false)} isGuideMode={true} />
+          </div>
+        </div>
+      </div>
+    )}
     </>
   );
 }

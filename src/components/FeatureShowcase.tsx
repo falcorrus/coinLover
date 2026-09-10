@@ -4,7 +4,7 @@ import {
   ArrowRight, Coins, Wallet, Utensils, 
   Move, Edit3, PieChart, Calendar, Plus,
   ChevronRight, ChevronLeft, CreditCard,
-  Home, Car, Coffee, Gift, TrendingUp, Activity, Baby
+  Home, Car, Coffee, Gift, TrendingUp, Activity, Baby, Mic
 } from "lucide-react";
 
 interface Slide {
@@ -16,6 +16,7 @@ interface Slide {
 
 interface Props {
   onComplete: () => void;
+  isGuideMode?: boolean;
 }
 
 // Helpers to match your screenshot UI
@@ -46,7 +47,7 @@ const CategoryItem = ({ color, icon: Icon, name, amount }: any) => (
   </div>
 );
 
-export const FeatureShowcase: React.FC<Props> = ({ onComplete }) => {
+export const FeatureShowcase: React.FC<Props> = ({ onComplete, isGuideMode }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const slides: Slide[] = [
@@ -157,38 +158,81 @@ export const FeatureShowcase: React.FC<Props> = ({ onComplete }) => {
     },
     {
       id: 4,
-      title: "Быстрый доступ",
-      description: "Всё под рукой. Быстрый доступ к аналитике, календарю и настройкам прямо над расходами.",
+      title: "Голосовое управление",
+      description: "Зажми сердце на 2 сек, вноси расходы, запрашивай статистику.",
       renderVisual: () => (
-        <div className="relative w-full h-64 flex flex-col items-center justify-center bg-[#0D1117] rounded-3xl overflow-hidden border border-white/5">
-          <div className="flex items-center gap-3 bg-black/40 p-2 rounded-2xl border border-white/5">
-            <div className="px-4 py-2 bg-white/5 rounded-xl border border-white/10 text-[10px] font-black text-white/60 tracking-widest">USD</div>
-            
+        <div className="relative w-full h-64 flex flex-col items-center justify-between py-5 px-4 bg-[#0D1117] rounded-3xl overflow-hidden border border-white/5">
+          {/* Top: Animated Voice Prompt Bubble */}
+          <motion.div 
+            animate={{ 
+              opacity: [0, 1, 1, 0], 
+              y: [10, 0, 0, -8],
+              scale: [0.95, 1, 1, 0.95]
+            }}
+            transition={{ duration: 4.5, repeat: Infinity, times: [0, 0.15, 0.85, 1] }}
+            className="px-4 py-2 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md flex items-center gap-2.5 shadow-lg shadow-black/40"
+          >
+            <div className="w-2 h-2 rounded-full bg-[#6d5dfc] animate-pulse" />
+            <Mic size={14} className="text-[#9d8ffc]" />
+            <span className="text-xs font-semibold text-white">«Обед 450 с карты»</span>
+          </motion.div>
+
+          {/* Center: Pulsing Heart Coin with Audio Ripple Rings */}
+          <div className="relative flex items-center justify-center my-auto">
+            {/* Audio Ripple Rings */}
             <motion.div 
-              animate={{ backgroundColor: ["rgba(109,93,252,0.05)", "rgba(109,93,252,0.3)", "rgba(109,93,252,0.05)"], borderColor: ["rgba(109,93,252,0.1)", "rgba(109,93,252,0.5)", "rgba(109,93,252,0.1)"] }}
-              transition={{ duration: 2, repeat: Infinity, delay: 0 }}
-              className="w-12 h-12 rounded-xl flex items-center justify-center border bg-[#6d5dfc]/5 border-[#6d5dfc]/20"
-            >
-              <Calendar size={20} className="text-[#6d5dfc]" />
-            </motion.div>
-            
+              animate={{ scale: [1, 1.7, 2.2], opacity: [0.6, 0.25, 0] }}
+              transition={{ duration: 2.2, repeat: Infinity, ease: "easeOut" }}
+              className="absolute w-20 h-20 rounded-full bg-[#6d5dfc]/30 border border-[#6d5dfc]/50"
+            />
             <motion.div 
-              animate={{ backgroundColor: ["rgba(244,63,94,0.05)", "rgba(244,63,94,0.3)", "rgba(244,63,94,0.05)"], borderColor: ["rgba(244,63,94,0.1)", "rgba(244,63,94,0.5)", "rgba(244,63,94,0.1)"] }}
-              transition={{ duration: 2, repeat: Infinity, delay: 0.6 }}
-              className="w-12 h-12 rounded-xl flex items-center justify-center border bg-[#f43f5e]/5 border-[#f43f5e]/20"
-            >
-              <PieChart size={20} className="text-[#f43f5e]" />
-            </motion.div>
-            
+              animate={{ scale: [1, 1.4, 1.8], opacity: [0.7, 0.3, 0] }}
+              transition={{ duration: 2.2, repeat: Infinity, ease: "easeOut", delay: 0.6 }}
+              className="absolute w-20 h-20 rounded-full bg-amber-400/25 border border-amber-400/40"
+            />
+
+            {/* Glowing Golden Coin with Heart */}
             <motion.div 
-              animate={{ backgroundColor: ["rgba(244,63,94,0.05)", "rgba(244,63,94,0.3)", "rgba(244,63,94,0.05)"], borderColor: ["rgba(244,63,94,0.1)", "rgba(244,63,94,0.5)", "rgba(244,63,94,0.1)"] }}
-              transition={{ duration: 2, repeat: Infinity, delay: 1.2 }}
-              className="w-12 h-12 rounded-xl flex items-center justify-center border bg-[#f43f5e]/5 border-[#f43f5e]/20"
+              animate={{ 
+                scale: [1, 0.94, 1.06, 1],
+                boxShadow: [
+                  "0 0 15px rgba(245,158,11,0.3)",
+                  "0 0 35px rgba(245,158,11,0.6)",
+                  "0 0 20px rgba(109,93,252,0.5)",
+                  "0 0 15px rgba(245,158,11,0.3)"
+                ]
+              }}
+              transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
+              className="relative z-10 w-16 h-16 rounded-full flex items-center justify-center cursor-pointer"
+              style={{
+                background: "linear-gradient(135deg, #F7C948 0%, #E59E0B 50%, #D97706 100%)",
+                border: "2px solid #FEF3C7"
+              }}
             >
-              <Plus size={20} className="text-[#f43f5e]" />
+              <svg width="30" height="30" viewBox="0 0 32 32" fill="none">
+                <path d="M16 23.5S9.5 20.2 9.5 15C9.5 12.2 11.5 10.5 13.5 10.5C15 10.5 16 11.8 16 11.8C16 11.8 17 10.5 18.5 10.5C20.5 10.5 22.5 12.2 22.5 15C22.5 20.2 16 23.5 16 23.5Z" fill="white" />
+              </svg>
+
+              {/* Mini voice badge */}
+              <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[#6d5dfc] flex items-center justify-center shadow-md border border-white/30">
+                <Mic size={12} className="text-white" />
+              </div>
             </motion.div>
           </div>
-          <div className="mt-8 text-[8px] font-black uppercase text-white/20 tracking-[0.4em]">Toolbar «РАСХОДЫ»</div>
+
+          {/* Bottom: Result notification */}
+          <motion.div 
+            animate={{ 
+              opacity: [0, 0, 1, 0], 
+              y: [8, 8, 0, -4],
+              scale: [0.95, 0.95, 1, 0.95]
+            }}
+            transition={{ duration: 4.5, repeat: Infinity, times: [0, 0.4, 0.85, 1] }}
+            className="px-3.5 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center gap-2 shadow-lg shadow-emerald-950/40"
+          >
+            <Check size={14} className="text-emerald-400" />
+            <span className="text-[11px] font-semibold text-emerald-300">Записан расход: «Обед -450»</span>
+          </motion.div>
         </div>
       )
     }
@@ -211,13 +255,25 @@ export const FeatureShowcase: React.FC<Props> = ({ onComplete }) => {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="p-8 text-center flex flex-col items-center gap-6 border-b border-[var(--glass-border)]/50 shrink-0 relative">
-        <div className="absolute top-8 right-8 flex gap-1">
-          {slides.map((_, i) => (
-            <div 
-              key={i} 
-              className={`h-1 rounded-full transition-all duration-300 ${i === currentSlide ? "w-6 bg-[#6d5dfc]" : "w-2 bg-white/10"}`} 
-            />
-          ))}
+        {/* Clear queue indicator with high-contrast dots and counter */}
+        <div className={`absolute top-7 ${isGuideMode ? "right-16" : "right-7"} flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/15 backdrop-blur-md shadow-sm`}>
+          <div className="flex items-center gap-1.5">
+            {slides.map((_, i) => (
+              <div 
+                key={i} 
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  i === currentSlide 
+                    ? "w-6 bg-[#6d5dfc] shadow-[0_0_10px_rgba(109,93,252,0.8)]" 
+                    : i < currentSlide
+                      ? "w-2 bg-white/60"
+                      : "w-2 bg-white/20"
+                }`} 
+              />
+            ))}
+          </div>
+          <span className="text-[10px] font-mono font-bold text-white/80 pl-1.5 border-l border-white/20 leading-none">
+            {currentSlide + 1}/{slides.length}
+          </span>
         </div>
         
         <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#6d5dfc] to-[#5b4ce3] flex items-center justify-center shadow-lg shadow-[#6d5dfc]/20">
@@ -269,7 +325,7 @@ export const FeatureShowcase: React.FC<Props> = ({ onComplete }) => {
           onClick={nextSlide}
           className="flex-[2] py-4 rounded-2xl bg-[#6d5dfc] hover:bg-[#5b4ce3] text-white font-black uppercase tracking-widest text-sm transition-colors shadow-lg shadow-[#6d5dfc]/20 flex items-center justify-center gap-2"
         >
-          <span>{currentSlide === slides.length - 1 ? "Начать настройку" : "Далее"}</span>
+          <span>{currentSlide === slides.length - 1 ? (isGuideMode ? "Понятно" : "Начать настройку") : "Далее"}</span>
           {currentSlide === slides.length - 1 ? <Check size={18} /> : <ChevronRight size={18} />}
         </button>
       </div>
