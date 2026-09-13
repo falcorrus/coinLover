@@ -1,12 +1,9 @@
 ---
-type: "report"
-category: "finance"
-project: "coinlover"
-client: "Юрий Сухинин"
-tags:
-  - "finance"
-  - "coinlover"
-  - "yura"
+type: report
+category: finance
+project: coinlover
+client: Юрий Сухинин
+tags: [finance]
 ---
 Группа: IT
 

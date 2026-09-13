@@ -22,12 +22,12 @@ export function AccountsSection({
 }: AccountsSectionProps) {
   const { t } = useLanguage();
   return (
-    <section className="px-0 pt-2 pb-2 relative z-20 shrink-0">
-      <div className="px-6 mb-1 flex justify-between items-center">
+    <section className="px-0 pt-2 pb-2 relative z-20 shrink-0 wallets-section">
+      <div className="px-6 mb-1 flex justify-between items-center wallets-header">
         <h2 className="text-[9px] font-black tracking-[0.2em] text-[var(--text-muted)] uppercase opacity-80">{t('Wallets')}</h2>
       </div>
       <SortableContext items={accounts.map(a => a.id)} strategy={horizontalListSortingStrategy}>
-        <div className="flex overflow-x-auto hide-scrollbar px-6 pb-2 pt-4" style={{ gap: 'var(--grid-gap)' }}>
+        <div className="flex overflow-x-auto hide-scrollbar px-6 pb-2 pt-4 wallets-scroll" style={{ gap: 'var(--grid-gap)' }}>
           {accounts.map(acc => (
             <AccountItem 
               key={acc.id} account={acc} isDragging={activeDragId === acc.id} 

@@ -240,22 +240,22 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[200] animate-in fade-in duration-300 flex justify-center" onClick={onClose}>
-            <div className="w-full max-w-md h-full animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
-                <div className="bg-[var(--bg-color)] w-full h-full flex flex-col overflow-hidden relative shadow-2xl safe-pt">
+            <div className="w-full max-w-md landscape-modal-width h-full animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
+                <div className="bg-[var(--bg-color)] w-full h-full flex flex-col overflow-hidden relative shadow-2xl safe-pt calendar-modal-content">
                     {/* Header */}
-                    <div className="flex justify-between items-center p-6 border-b border-[var(--glass-border)] shrink-0">
+                    <div className="calendar-header flex justify-between items-center p-6 border-b border-[var(--glass-border)] shrink-0">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-[0_0_15px_var(--primary-color)] bg-[var(--primary-color)]/20 text-[var(--primary-color)]"><Calendar size={20} /></div>
+                            <div className="calendar-header-icon w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-[0_0_15px_var(--primary-color)] bg-[var(--primary-color)]/20 text-[var(--primary-color)]"><Calendar size={20} /></div>
                             <div className="flex flex-col">
-                                <h2 className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Календарь операций</h2>
-                                <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest leading-none mt-1">активность по дням</span>
+                                <h2 className="calendar-header-title text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Календарь операций</h2>
+                                <span className="calendar-header-subtitle text-[10px] text-[var(--text-muted)] uppercase tracking-widest leading-none mt-1">активность по дням</span>
                             </div>
                         </div>
-                        <button onClick={onClose} className="w-10 h-10 rounded-xl bg-[var(--glass-item-bg)] flex items-center justify-center text-[var(--text-main)] hover:bg-[var(--glass-item-active)] transition-colors border border-[var(--glass-border)]"><X size={20} /></button>
+                        <button onClick={onClose} className="calendar-header-close w-10 h-10 rounded-xl bg-[var(--glass-item-bg)] flex items-center justify-center text-[var(--text-main)] hover:bg-[var(--glass-item-active)] transition-colors border border-[var(--glass-border)]"><X size={20} /></button>
                     </div>
 
                     {/* Month Selection */}
-                    <div className="flex justify-between items-center px-4 py-3 bg-[var(--glass-item-bg)]/50 shrink-0 border-b border-[var(--glass-border)]">
+                    <div className="calendar-month-bar flex justify-between items-center px-4 py-3 bg-[var(--glass-item-bg)]/50 shrink-0 border-b border-[var(--glass-border)]">
                         <div className="flex items-center gap-[5px]">
                             <div className="flex bg-[var(--glass-item-bg)] p-1 rounded-xl border border-[var(--glass-border)] gap-0.5 shadow-sm">
                                 <button onClick={() => setViewMode("timeline")} className={`p-1.5 rounded-lg transition-all ${viewMode === 'timeline' ? 'bg-[var(--primary-color)] text-white shadow-sm' : 'text-[var(--text-muted)] hover:bg-[var(--glass-item-active)]'}`}><List size={16} /></button>
@@ -275,7 +275,7 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
                     {/* Calendar View Area */}
                     <div className="shrink-0">
                         {viewMode === "month" ? (
-                            <div className="px-6 py-6 animate-in fade-in duration-300">
+                            <div className="calendar-month-grid-wrap px-6 py-6 animate-in fade-in duration-300">
                                 <div className="grid grid-cols-7 gap-1">
                                     {["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"].map(d => (
                                         <div key={d} className="text-[10px] font-black text-[var(--text-muted)] uppercase text-center py-2">{d}</div>
@@ -310,7 +310,7 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
                                 </div>
                             </div>
                         ) : (
-                            <div ref={timelineRef} className="flex overflow-x-auto hide-scrollbar gap-2 px-6 py-8 animate-in slide-in-from-right-4 duration-300">
+                            <div ref={timelineRef} className="calendar-timeline flex overflow-x-auto hide-scrollbar gap-2 px-6 py-8 animate-in slide-in-from-right-4 duration-300">
                                 {timelineDays.map((day) => {
                                     const { hasExpense, hasIncome, hasTransfer, transactions: dayTx } = getDailyData(day);
                                     const dateObj = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
@@ -323,7 +323,7 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
                                             key={day} 
                                             data-day={day} 
                                             onClick={() => setSelectedDay(day === selectedDay ? null : day)} 
-                                            className={`w-14 shrink-0 flex flex-col items-center gap-2 p-3 rounded-2xl transition-all border 
+                                            className={`calendar-timeline-btn w-14 shrink-0 flex flex-col items-center gap-2 p-3 rounded-2xl transition-all border 
                                             ${isSelected 
                                                 ? 'bg-[var(--primary-color)] border-[var(--primary-color)] text-white shadow-lg shadow-[var(--primary-color)]/30' 
                                                 : isToday 
@@ -331,9 +331,9 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
                                                     : 'bg-[var(--glass-item-bg)]/50 border-transparent'} 
                                             ${(dayTx.length > 0 || isSelected) ? 'opacity-100' : 'opacity-30'}`}
                                         >
-                                            <span className={`text-[10px] font-black uppercase tracking-widest ${isSelected ? 'text-white/70' : 'text-[var(--text-muted)]'}`}>{dName}</span>
-                                            <span className="text-base font-black tracking-tight">{day}</span>
-                                            <div className="flex gap-0.5 mt-1">
+                                            <span className={`day-name text-[10px] font-black uppercase tracking-widest ${isSelected ? 'text-white/70' : 'text-[var(--text-muted)]'}`}>{dName}</span>
+                                            <span className="day-num text-base font-black tracking-tight">{day}</span>
+                                            <div className="day-dots flex gap-0.5 mt-1">
                                                 {hasIncome && <div className={`w-1 h-1 rounded-full ${isSelected ? 'bg-white' : 'bg-[var(--success-color)]'}`} />}
                                                 {hasExpense && <div className={`w-1 h-1 rounded-full ${isSelected ? 'bg-white/70' : 'bg-[#D4AF37]'}`} />}
                                                 {hasTransfer && <div className={`w-1 h-1 rounded-full ${isSelected ? 'bg-white/50' : 'bg-indigo-400'}`} />}
@@ -346,14 +346,14 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
                     </div>
 
                     {/* Transaction List */}
-                    <div className="flex-1 overflow-y-auto hide-scrollbar px-6 pb-6 relative border-t border-[var(--glass-border)] pt-4">
+                    <div className="calendar-tx-list flex-1 overflow-y-auto hide-scrollbar px-6 pb-6 relative border-t border-[var(--glass-border)] pt-4">
                         {isLoading ? (
                             <div className="absolute inset-0 flex flex-col items-center justify-center">
                                 <RefreshCcw size={32} className="animate-spin text-[var(--primary-color)] opacity-20" />
                             </div>
                         ) : selectedDayData && selectedDayData.transactions.length > 0 ? (
                             <div className="flex flex-col gap-4 animate-in slide-in-from-bottom-4 duration-300">
-                                <div className="flex justify-between items-center mb-2">
+                                <div className="calendar-tx-day-summary flex justify-between items-center mb-2">
                                     <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">
                                         {String(selectedDay).padStart(2, '0')}.{String(currentDate.getMonth() + 1).padStart(2, '0')}.{currentDate.getFullYear()}
                                     </span>
@@ -370,7 +370,7 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
                                         )}
                                     </div>
                                 </div>
-                                <div className="flex flex-col gap-3">
+                                <div className="calendar-tx-items flex flex-col gap-3">
                                     {selectedDayData.transactions.map(tx => {
                                         const { item, isOutflow } = getCounterpartInfo(tx);
                                         const status = { isBroken: !accounts.find(a => a.id === tx.accountId) || (!categories.find(c => c.id === tx.targetId) && tx.type === 'expense') };
@@ -380,20 +380,22 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
                                         let displayName = tx.type === "expense" ? `${s?.name || "?"} → ${categories.find(c => c.id === tx.targetId)?.name || "?"}` : tx.type === "income" ? `${incomes.find(i => i.id === tx.targetId)?.name || "?"} → ${s?.name || "?"}` : `${s?.name || "?"} → ${accounts.find(a => a.id === tx.targetId)?.name || "?"}`;
 
                                         return (
-                                            <div key={tx.id} className="flex justify-between items-center bg-[var(--glass-item-bg)]/30 p-3 rounded-2xl border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)] transition-colors cursor-pointer" onClick={() => onItemClick?.({ name: `${String(selectedDay).padStart(2, '0')}.${String(currentDate.getMonth() + 1).padStart(2, '0')}.${currentDate.getFullYear()}`, icon: "calendar" }, "feed", [tx])}>
-                                                <div className="flex items-center gap-3">
-                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center relative shadow-inner shrink-0 ${status.isBroken ? 'bg-rose-500/20 text-rose-500' : 'bg-[var(--glass-item-bg)] text-[var(--text-muted)]'}`} style={{ color: !status.isBroken ? (item as any)?.color : undefined }}><Icon size={18} /></div>
-                                                    <div className="flex flex-col overflow-hidden">
-                                                        <span className="text-sm font-bold text-[var(--text-main)] truncate">{displayName}</span>
-                                                        <div className="flex items-center gap-2 mt-0.5">
+                                            <div key={tx.id} className="calendar-tx-card flex items-center bg-[var(--glass-item-bg)]/30 p-3 rounded-2xl border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)] transition-colors cursor-pointer" onClick={() => onItemClick?.({ name: `${String(selectedDay).padStart(2, '0')}.${String(currentDate.getMonth() + 1).padStart(2, '0')}.${currentDate.getFullYear()}`, icon: "calendar" }, "feed", [tx])}>
+                                                <div className="flex items-center gap-3 min-w-0 flex-1">
+                                                    <div className={`calendar-tx-card-icon w-10 h-10 rounded-xl flex items-center justify-center relative shadow-inner shrink-0 ${status.isBroken ? 'bg-rose-500/20 text-rose-500' : 'bg-[var(--glass-item-bg)] text-[var(--text-muted)]'}`} style={{ color: !status.isBroken ? (item as any)?.color : undefined }}><Icon size={18} /></div>
+                                                    <div className="flex flex-col min-w-0 flex-1">
+                                                        <div className="flex items-baseline overflow-hidden">
+                                                            <span className="text-sm font-bold text-[var(--text-main)] truncate">{displayName}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 mt-0.5 overflow-hidden h-4">
                                                             {tx.tag && <span className="text-[10px] text-[var(--text-muted)] uppercase font-black tracking-widest shrink-0">{tx.tag}</span>}
-                                                            {tx.comment && <span className="text-[10px] text-[var(--text-muted)] italic truncate opacity-70">({tx.comment})</span>}
+                                                            {tx.comment && <span className="text-[10px] text-[var(--text-muted)] italic truncate opacity-70 leading-none">({tx.comment})</span>}
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div className="flex flex-col items-end shrink-0 pl-2">
-                                                    <span className={`text-sm font-black ${amountInfo.color}`}>{amountInfo.amount}</span>
-                                                    {amountInfo.secondaryAmount && <span className="text-[10px] text-[var(--text-muted)] font-bold opacity-60">{amountInfo.secondaryAmount}</span>}
+                                                <div className="flex flex-col items-end shrink-0 pl-3 ml-auto min-w-[90px]">
+                                                    <span className={`text-sm font-black ${amountInfo.color} tracking-tight whitespace-nowrap`}>{amountInfo.amount}</span>
+                                                    {amountInfo.secondaryAmount && <span className="text-[10px] text-[var(--text-muted)] font-bold opacity-60 whitespace-nowrap">{amountInfo.secondaryAmount}</span>}
                                                 </div>
                                             </div>
                                         );

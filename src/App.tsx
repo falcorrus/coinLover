@@ -452,7 +452,7 @@ SplashScreen.hide().catch(() => {});
         </div>
       )}
 
-      <div className={`h-full flex flex-col max-w-md mx-auto relative shadow-2xl overflow-hidden bg-[var(--bg-color)] text-[var(--text-main)] font-sans select-none transition-colors duration-300 ${theme} ${theme === 'mint' ? 'paper-grain' : ''}`}>
+      <div className={`h-full flex flex-col max-w-md landscape-app-container mx-auto relative shadow-2xl overflow-hidden bg-[var(--bg-color)] text-[var(--text-main)] font-sans select-none transition-colors duration-300 ${theme} ${theme === 'mint' ? 'paper-grain' : ''}`}>
         <style>{`body { background: var(--bg-color); } * { -webkit-tap-highlight-color: transparent; }`}</style>
 
         <div className="absolute top-[15px] right-[15px] z-50"><div className={`w-2 h-2 rounded-full ${syncStatus === "loading" ? "bg-amber-400 animate-pulse" : syncStatus === "success" ? "bg-emerald-500/50" : syncStatus === "error" ? "bg-rose-500" : "bg-white/10"}`} /></div>

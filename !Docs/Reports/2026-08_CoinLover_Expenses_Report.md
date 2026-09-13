@@ -1,11 +1,8 @@
 ---
-type: "report"
-category: "project"
-project: "coinlover"
-tags:
-  - "personal"
-  - "finance"
-  - "coinlover"
+type: report
+category: project
+project: coinlover
+tags: [personal, finance]
 ---
 [[2026-07_CoinLover_Expenses_Report]]
 

@@ -28,8 +28,8 @@ A calm, biophilic personal finance interface focusing on emotional growth, coppe
 - **Border Radius:** `24px` for all main containers and cards.
 - **Visual Style (Neumorphism 2.0):**
   - Use "Soft UI" instead of glassmorphism.
-  - Light Shadow: `-5px -5px 10px #FFFFFF`
-  - Dark Shadow: `5px 5px 10px #D1D9D6`
+  - Light Shadow: `-5px -5px 10px `#FFFFFF``
+  - Dark Shadow: `5px 5px 10px `#D1D9D6``
   - Cards should appear slightly "puffed" out from the background.
 
 **COMPONENTS & INTERACTIONS:**
@@ -41,8 +41,8 @@ A calm, biophilic personal finance interface focusing on emotional growth, coppe
    - Square-ish with `24px` radius.
    - Subtle "Soft UI" elevation.
    - **Magnetic Effect (Active State):** When a coin is dragged over, the card should "press in" (inset shadow) to confirm target selection:
-     - `inset 2px 2px 5px #D1D9D6`
-     - `inset -2px -2px 5px #FFFFFF`
+     - `inset 2px 2px 5px `#D1D9D6``
+     - `inset -2px -2px 5px `#FFFFFF``
 3. **App Header:**
    - Centered "Total Balance" in Lora.
    - Large amount display with prominent copper currency symbol.

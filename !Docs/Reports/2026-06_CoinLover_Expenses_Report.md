@@ -2,8 +2,7 @@
 type: report
 category: project
 project: coinlover
-tags:
-  - personal
+tags: [personal]
 ---
 # 📊 Финансовый отчет CoinLover: Июнь 2026
 > Сгенерировано: 2026-07-07

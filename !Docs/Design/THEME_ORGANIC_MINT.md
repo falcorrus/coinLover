@@ -38,8 +38,8 @@ tags: [it]
     * **Action Buttons:** Идеально круглые (`borderRadius: 50%`) белые контейнеры с мягкими тенями для "+" и "Menu".
     * **Cards/Wallets:** Крупные карточки кошельков (`borderRadius: 32`) с центрированными иконками.
 * **Shadows:** Двойные мягкие тени.
-    * *Light Shadow:* `-5px -5px 10px #FFFFFF`
-    * *Dark Shadow:* `5px 5px 10px #D1D9D6`
+    * *Light Shadow:* `-5px -5px 10px `#FFFFFF``
+    * *Dark Shadow:* `5px 5px 10px `#D1D9D6``
 * **Iconography:**
     * **Style:** Line-art с толстыми линиями (approx. 2.5px weight).
     * **Details:** Закругленные края (round stroke caps) и мягкие формы. Категории используют цветные иконки, кошельки — контурные коричневатые/темные.
@@ -69,4 +69,4 @@ tags: [it]
 * **Background:** `#E8F0ED`
 * **Surface:** `#FFFFFF`
 
-> **Note:** Для реализации эффекта «меди» используй **Linear Gradient** на объекте монетки: `from: #D27D56 to: #E9B298` под углом 45°.
+> **Note:** Для реализации эффекта «меди» используй **Linear Gradient** на объекте монетки: `from: `#D27D56` to: `#E9B298`` под углом 45°.

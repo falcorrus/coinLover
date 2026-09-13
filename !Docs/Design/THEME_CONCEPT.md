@@ -8,11 +8,11 @@ project: "coinlover"
 ### Pattern
 - **Name:** Horizontal Scroll Journey
 - **Conversion Focus:** Immersive product discovery. High engagement. Keep navigation visible.
-28,Bento Grid Showcase,bento,  grid,  features,  modular,  apple-style,  showcase", 1. Hero, 2. Bento Grid (Key Features), 3. Detail Cards, 4. Tech Specs, 5. CTA, Floating Action Button or Bottom of Grid, Card backgrounds: #F5F5F7 or Glass. Icons: Vibrant brand colors. Text: Dark., Hover card scale (1.02), video inside cards, tilt effect, staggered reveal, Scannable value props. High information density without clutter. Mobile stack.
+28,Bento Grid Showcase,bento,  grid,  features,  modular,  apple-style,  showcase", 1. Hero, 2. Bento Grid (Key Features), 3. Detail Cards, 4. Tech Specs, 5. CTA, Floating Action Button or Bottom of Grid, Card backgrounds: `#F5F5F7` or Glass. Icons: Vibrant brand colors. Text: Dark., Hover card scale (1.02), video inside cards, tilt effect, staggered reveal, Scannable value props. High information density without clutter. Mobile stack.
 29,Interactive 3D Configurator,3d,  configurator,  customizer,  interactive,  product", 1. Hero (Configurator), 2. Feature Highlight (synced), 3. Price/Specs, 4. Purchase, Inside Configurator UI + Sticky Bottom Bar, Neutral studio background. Product: Realistic materials. UI: Minimal overlay., Real-time rendering, material swap animation, camera rotate/zoom, light reflection, Increases ownership feeling. 360 view reduces return rates. Direct add-to-cart.
 30,AI-Driven Dynamic Landing,ai,  dynamic,  personalized,  adaptive,  generative", 1. Prompt/Input Hero, 2. Generated Result Preview, 3. How it Works, 4. Value Prop, Input Field (Hero) + 'Try it' Buttons, Adaptive to user input. Dark mode for compute feel. Neon accents., Typing text effects, shimmering generation loaders, morphing layouts, Immediate value demonstration. 'Show, don't tell'. Low friction start.
 - **CTA Placement:** Floating Sticky CTA or End of Horizontal Track
-- **Color Strategy:** Continuous palette transition. Chapter colors. Progress bar #000000.
+- **Color Strategy:** Continuous palette transition. Chapter colors. Progress bar `#000000`.
 - **Sections:** 1. Intro (Vertical), 2. The Journey (Horizontal Track), 3. Detail Reveal, 4. Vertical Footer
 
 ### Style
@@ -24,11 +24,11 @@ project: "coinlover"
 ### Colors
 | Role | Hex |
 |------|-----|
-| Primary | #F59E0B |
-| Secondary | #FBBF24 |
-| CTA | #8B5CF6 |
-| Background | #0F172A |
-| Text | #F8FAFC |
+| Primary | `#F59E0B` |
+| Secondary | `#FBBF24` |
+| CTA | `#8B5CF6` |
+| Background | `#0F172A` |
+| Text | `#F8FAFC` |
 
 *Notes: Gold trust + purple tech*
 

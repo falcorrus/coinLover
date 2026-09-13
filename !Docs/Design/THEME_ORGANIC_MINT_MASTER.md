@@ -80,7 +80,7 @@ project: "coinlover"
 ```css
 /* Primary Button */
 .btn-primary {
-  background: #CA8A04;
+  background: `#CA8A04`;
   color: white;
   padding: 12px 24px;
   border-radius: 8px;
@@ -97,8 +97,8 @@ project: "coinlover"
 /* Secondary Button */
 .btn-secondary {
   background: transparent;
-  color: #0F172A;
-  border: 2px solid #0F172A;
+  color: `#0F172A`;
+  border: 2px solid `#0F172A`;
   padding: 12px 24px;
   border-radius: 8px;
   font-weight: 600;
@@ -111,7 +111,7 @@ project: "coinlover"
 
 ```css
 .card {
-  background: #F8FAFC;
+  background: `#F8FAFC`;
   border-radius: 12px;
   padding: 24px;
   box-shadow: var(--shadow-md);
@@ -130,16 +130,16 @@ project: "coinlover"
 ```css
 .input {
   padding: 12px 16px;
-  border: 1px solid #E2E8F0;
+  border: 1px solid `#E2E8F0`;
   border-radius: 8px;
   font-size: 16px;
   transition: border-color 200ms ease;
 }
 
 .input:focus {
-  border-color: #0F172A;
+  border-color: `#0F172A`;
   outline: none;
-  box-shadow: 0 0 0 3px #0F172A20;
+  box-shadow: 0 0 0 3px `#0F172A20`;
 }
 ```
 

@@ -2,8 +2,7 @@
 type: report
 category: diary
 project: coinlover
-tags:
-  - personal
+tags: [personal]
 ---
 Группа: IT
 

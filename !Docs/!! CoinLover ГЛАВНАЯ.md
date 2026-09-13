@@ -7,7 +7,7 @@ author:
   - Broz
   - прога
   - автоматизация
-status: 🟢 active
+status: active
 description:
   - Приложение для учета личных финансов с интерфейсом Drag & Drop и облачной синхронизацией.
 location:

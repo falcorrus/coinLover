@@ -32,8 +32,8 @@ graph TD
     F --> I
     I --> J[Рабочая PWA среда с Google Sheets]
     
-    style G fill:#2e2252,stroke:#6d5dfc,stroke-width:2px
-    style J fill:#123524,stroke:#10b981,stroke-width:2px
+    style G fill:`#2e2252`,stroke:`#6d5dfc`,stroke-width:2px
+    style J fill:`#123524`,stroke:`#10b981`,stroke-width:2px
 ```
 
 ### 1.1. Ветка А: Маркетинговый лендинг

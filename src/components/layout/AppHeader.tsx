@@ -178,7 +178,7 @@ export function AppHeader({
   };
 
   const PillButton = (
-    <button onClick={() => setPillMode(p => p === "expense" ? "income" : p === "income" ? "balance" : "expense")} className={`mx-auto px-5 py-2 rounded-full bg-[var(--glass-item-bg)] border border-[var(--glass-border)] flex items-center gap-2 hover:bg-[var(--glass-item-active)] active:scale-95 transition-all shadow-sm ${isCompact ? '' : '-mt-0.5'}`}>
+    <button onClick={() => setPillMode(p => p === "expense" ? "income" : p === "income" ? "balance" : "expense")} className={`mx-auto px-5 py-2 rounded-full bg-[var(--glass-item-bg)] border border-[var(--glass-border)] flex items-center gap-2 hover:bg-[var(--glass-item-active)] active:scale-95 transition-all shadow-sm app-header-pill ${isCompact ? '' : '-mt-0.5'}`}>
       {pillMode === "expense" ? (<><TrendingDown size={14} className="text-[#cda434]" /><span className="text-xs font-serif font-bold text-[#cda434]">-{currentSymbol} {displaySpent.toLocaleString()} {t('this month')}</span></>) : pillMode === "income" ? (<><TrendingUp size={14} className="text-[#10b981]" /><span className="text-xs font-serif font-bold text-[#10b981]">+{currentSymbol} {displayEarned.toLocaleString()} {t('this month')}</span></>) : (<><Wallet size={14} className="text-[var(--primary-color)]" /><span className="text-xs font-serif font-bold text-[var(--primary-color)]">{t('Total Balance')}: {currentSymbol} {displayBalance.toLocaleString()}</span></>)}
     </button>
   );
@@ -193,8 +193,8 @@ export function AppHeader({
         </div>
       </div>
     )}
-    <header className="px-6 flex flex-col gap-2 text-center shrink-0 safe-pt-header pb-2">
-      <div className="flex justify-between items-center mb-2">
+    <header className="px-6 flex flex-col gap-2 text-center shrink-0 safe-pt-header pb-2 app-header">
+      <div className="flex justify-between items-center mb-2 app-header-top-row">
         <button onClick={toggleIncome} className="glass-icon-btn w-10 h-10 relative shrink-0 transition-opacity duration-300">
           <Plus 
             size={APP_SETTINGS.UI.ICON_SIZE_LARGE} 
@@ -216,7 +216,7 @@ export function AppHeader({
 
       {/* Floating Action Button (FAB) Menu - Hidden when AI is open */}
       {!isAISheetOpen && (
-        <div className="fixed right-6 bottom-[calc(env(safe-area-inset-bottom,0px)+24px)] z-[150] flex flex-col items-end">
+        <div className="fixed right-6 bottom-[calc(env(safe-area-inset-bottom,0px)+24px)] z-[150] flex flex-col items-end fab-container">
           <button 
             {...settingsLongPress} 
             onClick={handleMenuClick} 

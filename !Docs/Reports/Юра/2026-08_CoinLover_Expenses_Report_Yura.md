@@ -1,12 +1,9 @@
 ---
-type: "report"
-category: "finance"
-project: "coinlover"
-client: "Юрий Сухинин"
-tags:
-  - "finance"
-  - "coinlover"
-  - "yura"
+type: report
+category: finance
+project: coinlover
+client: Юрий Сухинин
+tags: [finance]
 ---
 [[2026-05_CoinLover_Expenses_Report_Yura|Отчет Май 2026]]
 
