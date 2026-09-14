@@ -496,7 +496,8 @@ svg {
    ========================================================================== */
 @media (orientation: landscape) and (max-height: 550px) {
   :root {
-    --app-max-width: 540px;
+    --app-max-width: 520px;
+    --grid-gap: 6px;
   }
 
   .landscape-app-container {
@@ -507,55 +508,118 @@ svg {
     max-width: 580px !important;
   }
 
-  /* Safe Area / Header compression */
+  /* 1. Hide top status bar completely */
   .safe-pt {
     padding-top: max(2px, env(safe-area-inset-top, 0px)) !important;
   }
   .safe-pt-header {
     padding-top: max(4px, env(safe-area-inset-top, 0px)) !important;
-    padding-bottom: 2px !important;
+    padding-bottom: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    gap: 0 !important;
   }
   .app-header-top-row {
-    margin-bottom: 2px !important;
-  }
-  .app-header-pill {
-    padding-top: 3px !important;
-    padding-bottom: 3px !important;
-    font-size: 11px !important;
+    display: none !important;
   }
 
-  /* Wallets row lifted up & "Wallets" title hidden */
+  /* 2. Show "Wallets" title and reduce paddings/margins */
   .wallets-section {
-    padding-top: 0 !important;
+    padding-top: 2px !important;
     padding-bottom: 2px !important;
   }
   .wallets-header {
-    display: none !important;
+    display: flex !important;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+    margin-bottom: 2px !important;
   }
   .wallets-scroll {
     padding-top: 2px !important;
-    padding-bottom: 4px !important;
+    padding-bottom: 2px !important;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+    gap: 6px !important;
+  }
+
+  /* 3. Reduce wallet coins & icons by 20% */
+  .draggable-coin, .create-wallet-btn {
+    width: 51px !important;
+    height: 51px !important;
+    min-width: 51px !important;
+    min-height: 51px !important;
+  }
+  .draggable-coin svg, .create-wallet-btn svg {
+    width: 20px !important;
+    height: 20px !important;
+  }
+  .coin-wallet-name {
+    font-size: 9px !important;
+    margin-bottom: 0 !important;
+  }
+  .coin-wallet-balance {
+    font-size: 11px !important;
+  }
+  .coin-wallet-currency {
+    font-size: 8px !important;
+  }
+
+  /* 4. Reduce category icons & labels by 20% */
+  .category-item-icon svg {
+    width: 40px !important;
+    height: 40px !important;
+  }
+  .category-name-label {
+    font-size: 8px !important;
+    line-height: 1.1 !important;
+  }
+  .category-spent-label {
+    font-size: 9px !important;
+    margin-top: 1px !important;
   }
 
   /* Expenses section */
   .expenses-section {
     padding-top: 2px !important;
-    padding-bottom: 12px !important;
+    padding-bottom: 8px !important;
   }
   .expenses-header-wrap {
-    padding-top: 2px !important;
-    padding-bottom: 2px !important;
+    padding: 2px 16px !important;
   }
   .expenses-header-wrap > div:first-child {
     margin-bottom: 2px !important;
   }
 
-  /* FAB button */
+  /* 5. FAB button & dropdown menu (opens lower, to the left of the heart) */
   .fab-container {
     bottom: calc(env(safe-area-inset-bottom, 0px) + 12px) !important;
     right: calc(env(safe-area-inset-right, 0px) + 16px) !important;
-    transform: scale(0.85);
-    transform-origin: bottom right;
+  }
+  .fab-menu-dropdown {
+    bottom: 0 !important;
+    right: calc(100% + 12px) !important;
+    max-height: calc(100vh - 20px) !important;
+    overflow-y: auto !important;
+    padding: 10px 12px !important;
+    border-radius: 22px !important;
+    width: 310px !important;
+    transform-origin: bottom right !important;
+  }
+  .fab-menu-dropdown .grid {
+    gap: 6px !important;
+    margin-bottom: 8px !important;
+  }
+  .fab-menu-dropdown .grid button {
+    padding: 6px 4px !important;
+  }
+  .fab-menu-dropdown .grid button div {
+    width: 38px !important;
+    height: 38px !important;
+    margin-bottom: 4px !important;
+  }
+  .fab-menu-dropdown .grid button div svg {
+    width: 18px !important;
+    height: 18px !important;
   }
 
   /* Calendar Modal Optimizations */
@@ -670,5 +734,6 @@ svg {
     height: 15px !important;
   }
 }
+
 
 

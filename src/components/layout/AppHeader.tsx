@@ -247,7 +247,7 @@ export function AppHeader({
           {isSettingsMenuOpen && (
             <>
               <div className="fixed inset-0 z-[140] bg-black/55 backdrop-blur-[4px]" onClick={() => setIsSettingsMenuOpen(false)} />
-              <div className="absolute bottom-[72px] right-0 w-[326px] bg-[var(--bg-color)] border border-[var(--glass-border)] rounded-[28px] shadow-[0_24px_64px_rgba(0,0,0,0.75),0_0_30px_rgba(109,93,252,0.12)] flex flex-col z-[145] overflow-hidden animate-in fade-in slide-in-from-bottom-5 zoom-in-95 origin-bottom-right backdrop-blur-2xl p-4 pt-3.5 pb-3.5">
+              <div className="absolute bottom-[72px] right-0 w-[326px] bg-[var(--bg-color)] border border-[var(--glass-border)] rounded-[28px] shadow-[0_24px_64px_rgba(0,0,0,0.75),0_0_30px_rgba(109,93,252,0.12)] flex flex-col z-[145] overflow-hidden animate-in fade-in slide-in-from-bottom-5 zoom-in-95 origin-bottom-right backdrop-blur-2xl p-4 pt-3.5 pb-3.5 fab-menu-dropdown">
                 {/* Header: Title + Guide 'i' + Theme Switcher */}
                 <div className="flex items-center justify-between gap-2 px-1 pb-3 mb-3 border-b border-[var(--glass-border)]/40">
                   <div className="flex items-center gap-2">

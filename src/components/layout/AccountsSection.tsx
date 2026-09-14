@@ -42,7 +42,7 @@ export function AccountsSection({
             onClick={() => setAccountModal({ isOpen: true, account: null })}
             className="flex flex-col items-center gap-2 justify-start transition-all duration-300 w-[var(--col-width)] shrink-0 cursor-pointer opacity-60 hover:opacity-100 hover:scale-105 active:scale-95 group"
           >
-            <div className="w-[64px] h-[64px] rounded-full border border-dashed border-[var(--glass-border-highlight)] flex items-center justify-center bg-[rgba(255,255,255,0.01)] transition-colors group-hover:bg-[rgba(255,255,255,0.04)] shadow-inner">
+            <div className="w-[64px] h-[64px] create-wallet-btn rounded-full border border-dashed border-[var(--glass-border-highlight)] flex items-center justify-center bg-[rgba(255,255,255,0.01)] transition-colors group-hover:bg-[rgba(255,255,255,0.04)] shadow-inner">
               <Plus size={22} className="text-[var(--text-muted)] group-hover:text-[var(--text-main)] transition-colors" />
             </div>
             <div className="flex flex-col items-center text-center leading-tight pointer-events-none select-none">

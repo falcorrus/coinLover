@@ -122,7 +122,7 @@ export const CategoryItem: React.FC<Props> = ({
           touchAction: "none",
           filter: theme === 'modern' ? `drop-shadow(0 0 15px ${category.color}60)` : 'none'
         }}
-        className={`flex items-center justify-center transition-all duration-300 relative ${
+        className={`flex items-center justify-center transition-all duration-300 relative category-item-icon ${
           isDragging ? "scale-110" :
           (isPressing && isSortingMode) ? "scale-110 rotate-3" :
           isPressing ? "scale-90" : "group-active:scale-90"
@@ -139,13 +139,13 @@ export const CategoryItem: React.FC<Props> = ({
         />
       </div>
       <div className="flex flex-col items-center pointer-events-none select-none w-full pt-1">
-        <span className={`font-label text-[9px] uppercase tracking-[0.12em] text-center leading-tight break-words line-clamp-2 w-full px-0.5 ${
+        <span className={`font-label category-name-label text-[9px] uppercase tracking-[0.12em] text-center leading-tight break-words line-clamp-2 w-full px-0.5 ${
           theme === 'modern' ? 'font-medium text-slate-400 opacity-80' : 'font-black text-[var(--on-surface-variant)]'
         }`}>
           {category.name}
         </span>
         {spent > 0 && (
-          <span className={`font-technical text-[10px] font-bold mt-0.5 ${
+          <span className={`font-technical category-spent-label text-[10px] font-bold mt-0.5 ${
             theme === 'modern' ? 'text-slate-300 opacity-60' : 'text-[var(--text-main)] opacity-60'
           }`}>
             {currencyMode === 'local' ? `${currencySymbol} ${spent.toLocaleString()}` : `-${currencySymbol} ${spent.toLocaleString()}`}
