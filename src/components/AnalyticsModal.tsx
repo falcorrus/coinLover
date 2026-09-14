@@ -272,22 +272,22 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[200] animate-in fade-in duration-300 flex justify-center" onClick={onClose}>
-            <div className="w-full max-w-md h-full animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
-                <div className="bg-[var(--bg-color)] w-full h-full flex flex-col overflow-hidden relative shadow-2xl safe-pt">
+            <div className="w-full max-w-md landscape-modal-width h-full animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
+                <div className="bg-[var(--bg-color)] w-full h-full flex flex-col overflow-hidden relative shadow-2xl safe-pt analytics-modal-content">
                     {/* Header */}
-                    <div className="flex justify-between items-center p-6 border-b border-[var(--glass-border)] shrink-0">
+                    <div className="analytics-header flex justify-between items-center p-6 border-b border-[var(--glass-border)] shrink-0">
                         <div className="flex items-center gap-3">
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-lg ${analysisType === 'income' ? 'bg-[var(--success-color)]/20 text-[var(--success-color)] shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'bg-amber-500/20 text-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.3)]'}`}><PieChart size={20} /></div>
+                            <div className={`analytics-header-icon w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-lg ${analysisType === 'income' ? 'bg-[var(--success-color)]/20 text-[var(--success-color)] shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'bg-amber-500/20 text-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.3)]'}`}><PieChart size={20} /></div>
                             <div className="flex flex-col">
-                                <h2 className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">{analysisType === "expense" ? "Аналитика расходов" : "Аналитика доходов"}</h2>
-                                <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest leading-none mt-1">за период</span>
+                                <h2 className="analytics-header-title text-sm font-black text-[var(--text-main)] uppercase tracking-wider">{analysisType === "expense" ? "Аналитика расходов" : "Аналитика доходов"}</h2>
+                                <span className="analytics-header-subtitle text-[10px] text-[var(--text-muted)] uppercase tracking-widest leading-none mt-1">за период</span>
                             </div>
                         </div>
-                        <button onClick={onClose} className="w-10 h-10 rounded-xl bg-[var(--glass-item-bg)] flex items-center justify-center text-[var(--text-main)] hover:bg-[var(--glass-item-active)] transition-colors border border-[var(--glass-border)]"><X size={20} /></button>
+                        <button onClick={onClose} className="analytics-header-close w-10 h-10 rounded-xl bg-[var(--glass-item-bg)] flex items-center justify-center text-[var(--text-main)] hover:bg-[var(--glass-item-active)] transition-colors border border-[var(--glass-border)]"><X size={20} /></button>
                     </div>
 
                     {/* Date Navigation & Mode Toggle */}
-                    <div className="flex justify-between items-center px-4 py-3 bg-[var(--glass-item-bg)]/50 shrink-0 border-b border-[var(--glass-border)]">
+                    <div className="analytics-nav-bar flex justify-between items-center px-4 py-3 bg-[var(--glass-item-bg)]/50 shrink-0 border-b border-[var(--glass-border)]">
                         <div className="flex items-center gap-2">
                             <div className="flex bg-[var(--glass-item-bg)] p-1 rounded-xl border border-[var(--glass-border)] gap-0.5 shadow-sm">
                                 <button 
@@ -315,17 +315,17 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                     </div>
 
                     {/* Tab Selection */}
-                    <div className="flex gap-2 p-4 shrink-0 border-b border-[var(--glass-border)]">
+                    <div className="analytics-tabs flex gap-2 p-4 shrink-0 border-b border-[var(--glass-border)]">
                         <button onClick={() => { setTab("categories"); setExpandedItemId(null); }} className={`flex-1 py-2 text-xs font-bold rounded-xl transition-colors ${tab === "categories" ? "bg-[var(--glass-item-active)] text-[var(--text-main)]" : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--glass-item-bg)]"}`}>{analysisType === "expense" ? "КАТЕГОРИИ" : "ИСТОЧНИКИ"}</button>
                         <button onClick={() => { setTab("tags"); setExpandedItemId(null); }} className={`flex-1 py-2 text-xs font-bold rounded-xl transition-colors ${tab === "tags" ? "bg-[var(--glass-item-active)] text-[var(--text-main)]" : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--glass-item-bg)]"}`}>ТЕГИ</button>
                     </div>
 
-                    <div className="px-6 py-4 shrink-0 flex flex-col items-center relative">
-                        <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] tracking-widest mb-1">{analysisType === "expense" ? "Всего потрачено" : "Всего получено"}</span>
-                        <span className={`text-3xl font-black ${analysisType === "income" ? 'text-[var(--success-color)]' : 'text-[var(--text-main)]'}`}>{displaySymbol} {Math.round(displayTotal).toLocaleString()}</span>
+                    <div className="analytics-total-banner px-6 py-4 shrink-0 flex flex-col items-center relative">
+                        <span className="analytics-total-label text-[10px] uppercase font-bold text-[var(--text-muted)] tracking-widest mb-1">{analysisType === "expense" ? "Всего потрачено" : "Всего получено"}</span>
+                        <span className={`analytics-total-amount text-3xl font-black ${analysisType === "income" ? 'text-[var(--success-color)]' : 'text-[var(--text-main)]'}`}>{displaySymbol} {Math.round(displayTotal).toLocaleString()}</span>
                     </div>
 
-                    <div className="px-6 pb-2 shrink-0 flex justify-between items-center">
+                    <div className="analytics-controls-bar px-6 pb-2 shrink-0 flex justify-between items-center">
                         <button onClick={toggleAll} className="flex items-center gap-2 text-[10px] font-black text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors uppercase tracking-widest group">
                             <div className={`w-5 h-5 rounded flex items-center justify-center border transition-all ${isAllVisibleSelected ? 'bg-[var(--primary-color)]/20 border-[var(--primary-color)] text-[var(--primary-color)]' : 'bg-transparent border-[var(--glass-border)] text-[var(--text-muted)]'}`}>{isAllVisibleSelected ? <CheckCircle2 size={12} /> : <Circle size={12} />}</div>
                             {isAllVisibleSelected ? "Снять все" : "Выбрать все"}
@@ -339,12 +339,12 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                     </div>
 
                     {/* Content View (List or Chart) */}
-                    <div className="flex-1 overflow-y-auto hide-scrollbar px-6 pb-6 relative">
+                    <div className="analytics-content-list flex-1 overflow-y-auto hide-scrollbar px-6 pb-6 relative">
                         {listItems.length === 0 && !isLoading ? (
                             <div className="absolute inset-0 flex items-center justify-center text-[var(--text-muted)] text-xs uppercase font-bold tracking-widest">Нет данных</div>
                         ) : viewType === "chart" ? (
-                            <div className="flex flex-col items-center justify-center h-full animate-in zoom-in-95 duration-300">
-                                <div className="relative w-64 h-64 mb-8">
+                            <div className="analytics-chart-container flex flex-col items-center justify-center h-full animate-in zoom-in-95 duration-300">
+                                <div className="analytics-chart-wrapper relative w-64 h-64 mb-8">
                                     <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
                                         {(() => {
                                             let currentAngle = 0;
@@ -415,7 +415,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                                 </div>
                                 
                                 {/* Chart Legend */}
-                                <div className="grid grid-cols-2 gap-x-6 gap-y-3 w-full">
+                                <div className="analytics-chart-legend grid grid-cols-2 gap-x-6 gap-y-3 w-full">
                                     {listItems.filter(i => selectedIds.has(i.id)).slice(0, 6).map(item => {
                                         const isSelected = expandedItemId === item.id;
                                         return (
@@ -446,10 +446,10 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
 
                                     return (
                                         <div key={item.id} className={`flex flex-col transition-all duration-300 ${isSelected ? 'opacity-100' : 'opacity-30 grayscale'}`}>
-                                            <div className={`flex flex-col gap-1.5 p-2 rounded-xl transition-all -mx-2 cursor-pointer ${isExpanded ? 'bg-[var(--glass-item-bg)] shadow-inner' : ''}`} onClick={() => { setExpandedItemId(isExpanded ? null : item.id); if (navigator.vibrate) navigator.vibrate(10); }}>
+                                            <div className={`analytics-item-card flex flex-col gap-1.5 p-2 rounded-xl transition-all -mx-2 cursor-pointer ${isExpanded ? 'bg-[var(--glass-item-bg)] shadow-inner' : ''}`} onClick={() => { setExpandedItemId(isExpanded ? null : item.id); if (navigator.vibrate) navigator.vibrate(10); }}>
                                                 <div className="flex justify-between items-center">
                                                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                                                        <div onClick={(e) => toggleSelect(item.id, e)} className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors duration-200 cursor-pointer shrink-0 border ${isSelected ? 'bg-[var(--glass-item-bg)] border-transparent' : 'bg-transparent border-[var(--glass-border)]'}`} style={{ color: isSelected ? item.color : 'transparent' }}>{isSelected ? <item.icon size={14} /> : <Circle size={10} className="text-[var(--text-muted)] opacity-50" />}</div>
+                                                        <div onClick={(e) => toggleSelect(item.id, e)} className={`analytics-item-icon w-8 h-8 rounded-lg flex items-center justify-center transition-colors duration-200 cursor-pointer shrink-0 border ${isSelected ? 'bg-[var(--glass-item-bg)] border-transparent' : 'bg-transparent border-[var(--glass-border)]'}`} style={{ color: isSelected ? item.color : 'transparent' }}>{isSelected ? <item.icon size={14} /> : <Circle size={10} className="text-[var(--text-muted)] opacity-50" />}</div>
                                                         <span className={`text-sm font-semibold truncate transition-colors ${isSelected ? 'text-[var(--text-main)]' : 'text-[var(--text-muted)]'}`}>{item.name}</span>
                                                     </div>
                                                     <div className="flex flex-col items-end">
