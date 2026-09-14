@@ -52,12 +52,14 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
                         {confirmText}
                     </button>
 
-                    <button
-                        onClick={onCancel}
-                        className="h-14 rounded-2xl bg-[var(--glass-item-bg)] border border-[var(--glass-border)] font-bold text-[var(--text-muted)] hover:text-[var(--text-main)] transition-all duration-300 text-xs tracking-widest uppercase"
-                    >
-                        {cancelText}
-                    </button>
+                    {cancelText ? (
+                        <button
+                            onClick={onCancel}
+                            className="h-14 rounded-2xl bg-[var(--glass-item-bg)] border border-[var(--glass-border)] font-bold text-[var(--text-muted)] hover:text-[var(--text-main)] transition-all duration-300 text-xs tracking-widest uppercase cursor-pointer"
+                        >
+                            {cancelText}
+                        </button>
+                    ) : null}
                 </div>
 
                 {/* Subtle close button in corner */}

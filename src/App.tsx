@@ -389,11 +389,9 @@ SplashScreen.hide().catch(() => {});
       setTimeout(() => setIsSplashVisible(false), 500);
     }, APP_SETTINGS.SPLASH_SCREEN_DURATION);
 
-    setTimeout(() => checkConflicts(), APP_SETTINGS.CONFLICT_CHECK_DELAY);
-    
     // Background rates sync
     RatesService.syncRatesInBackground();
-  }, [activeTableId, checkConflicts]);
+  }, [activeTableId]);
 
   const toggleIncome = () => { const next = !isIncomeCollapsed; setIsIncomeCollapsed(next); setMode(next ? "expense" : "income"); };
   const toggleStories = () => {

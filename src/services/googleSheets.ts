@@ -77,15 +77,24 @@ export const googleSheetsService = {
       
       const response = await universalFetch(url);
       if (response.status === 403) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({}));
         throw { statusCode: 403, ...errorData };
+      }
+      if (response.status === 429) {
+        if (retries > 0) {
+          console.warn(`[Sheets] 429 Quota Exceeded, retrying in 2s... (${retries} left)`);
+          await new Promise(res => setTimeout(res, 2000));
+          return this.fetchSettings(ssId, retries - 1);
+        }
+        const errorData = await response.json().catch(() => ({}));
+        throw { statusCode: 429, ...errorData };
       }
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       
       const result = await response.json();
       if (result.status === "success") return result.data;
       throw new Error(result.message || "Failed to fetch settings from GAS");
-      } catch (error: any) {
+    } catch (error: any) {
       if (error.statusCode === 403) throw error; 
       if (retries > 0) {
         console.warn(`Fetch settings failed, retrying... (${retries} left)`, error);

@@ -161,12 +161,12 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
       {accessError && (
         <ConfirmModal
           isOpen={true}
-          title="Доступ ограничен"
+          title={accessError.includes("Подписка") ? "Доступ ограничен" : "Внимание"}
           message={accessError}
           confirmText="Написать владельцу"
-          cancelText=""
+          cancelText="Закрыть"
           onConfirm={() => window.open('https://t.me/argodon?text=Здравствуйте,%20у%20меня%20кончилась%20подписка%20на%20CoinLover,%20какие%20есть%20варианты%20продлить%3F%0AМое%20имя%20в%20CL%20-%20', '_blank')}
-          onCancel={() => {}} 
+          onCancel={() => setAccessError(null)} 
           danger={false}
         />
       )}

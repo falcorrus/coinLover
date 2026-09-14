@@ -14,6 +14,9 @@ export function verifyAdminToken(req: any, parsedBody: any): boolean {
   return Boolean(expected && token && token === expected);
 }
 
+let cachedUsersData: { rows: any[][]; timestamp: number } | null = null;
+const USERS_CACHE_TTL_MS = 60 * 1000; // 1 minute in-memory cache
+
 export async function checkUserAccess(sheets: any, ssId: string) {
   const cleanSsId = String(ssId).trim();
   let userTariff = (cleanSsId === MASTER_SS_ID) ? "Premium" : "Free";
@@ -22,11 +25,27 @@ export async function checkUserAccess(sheets: any, ssId: string) {
   let found = false;
 
   try {
-    const masterRes = await sheets.spreadsheets.values.get({
-      spreadsheetId: MASTER_SS_ID,
-      range: 'Users!A:G'
-    });
-    const mRows = masterRes.data.values || [];
+    const now = Date.now();
+    let mRows: any[][] = [];
+    if (cachedUsersData && (now - cachedUsersData.timestamp < USERS_CACHE_TTL_MS)) {
+      mRows = cachedUsersData.rows;
+    } else {
+      try {
+        const masterRes = await sheets.spreadsheets.values.get({
+          spreadsheetId: MASTER_SS_ID,
+          range: 'Users!A:G'
+        });
+        mRows = masterRes.data.values || [];
+        cachedUsersData = { rows: mRows, timestamp: now };
+      } catch (fetchErr: any) {
+        if (cachedUsersData) {
+          console.warn("[API] Using stale Users cache due to fetch error:", fetchErr.message);
+          mRows = cachedUsersData.rows;
+        } else {
+          throw fetchErr;
+        }
+      }
+    }
     if (mRows.length > 0) {
       let headerRowIdx = 0;
       if (String(mRows[0][0] || "").toLowerCase().includes("users") && mRows[1]) {
@@ -745,7 +764,7 @@ export default async function handler(req, res) {
         }
       } catch (e: any) {
         console.error(`[API] Failed to fetch Configs from ${targetSsId}:`, e.message);
-        const status = e.code || 500;
+        const status = Number(e.code) || Number(e.status) || 500;
         
         // If range/tab error (400 or 404) and it is indeed a missing Configs sheet,
         // it means the spreadsheet is accessible but not yet initialized.
@@ -765,15 +784,29 @@ export default async function handler(req, res) {
           });
         }
 
-        const message = status === 403 
-          ? "Доступ к таблице запрещен. Добавьте сервисный аккаунт как Редактора." 
-          : status === 404 
-            ? "Таблица не найдена. Проверьте правильность ID." 
-            : `Ошибка Google Sheets: ${e.message}`;
+        const isQuota = status === 429 || (e.message && e.message.toLowerCase().includes('quota'));
+
+        let httpStatus = 500;
+        let code = "sheets_error";
+        let message = `Ошибка Google Sheets: ${e.message}`;
+
+        if (status === 403) {
+          httpStatus = 403;
+          code = "access_denied";
+          message = "Доступ к таблице запрещен. Добавьте сервисный аккаунт как Редактора.";
+        } else if (status === 404) {
+          httpStatus = 404;
+          code = "sheet_not_found";
+          message = "Таблица не найдена. Проверьте правильность ID.";
+        } else if (isQuota) {
+          httpStatus = 429;
+          code = "quota_exceeded";
+          message = "Превышен минутный лимит запросов к Google Sheets (Quota Exceeded). Подождите минуту и повторите попытку.";
+        }
             
-        return res.status(status === 404 ? 404 : 403).json({ 
+        return res.status(httpStatus).json({ 
           status: "error", 
-          code: status === 403 ? "access_denied" : "sheet_not_found",
+          code,
           message 
         });
       }

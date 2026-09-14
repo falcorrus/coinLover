@@ -136,11 +136,11 @@ export const useSync = ({
         setSyncStatus("error");
         return false;
       }
-      setAccessError(lang === "ru" ? "Ошибка загрузки данных. Проверьте соединение." : "Failed to load data. Check connection.");
+      // General network/quota errors should not block app with a subscription lockout modal
     }
     setSyncStatus("error");
     return false;
-  }, [updateLocalFromRemote, ssId, accounts.length, categories.length, lang]);
+  }, [updateLocalFromRemote, ssId, accounts.length, categories.length]);
 
   const checkConflicts = useCallback(async () => {
     if (syncStatus === "loading" || !!accessError) return;
