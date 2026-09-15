@@ -10,6 +10,8 @@ interface ConfirmModalProps {
     confirmText?: string;
     cancelText?: string;
     danger?: boolean;
+    /** Optional extra JSX rendered below the message */
+    extraContent?: React.ReactNode;
 }
 
 export const ConfirmModal: React.FC<ConfirmModalProps> = ({
@@ -21,6 +23,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
     confirmText = "УДАЛИТЬ",
     cancelText = "ОТМЕНА",
     danger = true,
+    extraContent,
 }) => {
     if (!isOpen) return null;
 
@@ -39,6 +42,11 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
                     <p className="text-sm text-[var(--text-muted)] leading-relaxed px-2">
                         {message}
                     </p>
+                    {extraContent && (
+                        <div className="mt-2">
+                            {extraContent}
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex flex-col w-full gap-3 mt-2">

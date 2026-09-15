@@ -1,6 +1,6 @@
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sun, Moon, Plus, Menu, RefreshCcw, List, Calendar, PieChart, Sparkles, TrendingDown, TrendingUp, Wallet, X, Smartphone, QrCode, Key, Fingerprint, ShieldCheck, ShieldAlert, Settings, ChevronLeft, Mic, Search, Keyboard, Info } from "lucide-react";
+import { Sun, Moon, Plus, Menu, RefreshCcw, List, Calendar, PieChart, Sparkles, TrendingDown, TrendingUp, Wallet, X, Smartphone, QrCode, Key, Fingerprint, ShieldCheck, ShieldAlert, Settings, ChevronLeft, Mic, Search, Keyboard, Info, LogOut } from "lucide-react";
 import { APP_SETTINGS } from "../../constants/settings";
 import { HistoryModalState, Account, Transaction } from "../../types";
 import { startRegistration } from "@simplewebauthn/browser";
@@ -174,6 +174,20 @@ export function AppHeader({
       setPasskeyLoading(false);
       setPasskeyPending(false);
       setPasskeyModalHidden(false); 
+    }
+  };
+
+  const handleLogout = () => {
+    if (confirm(t('Are you sure you want to log out?'))) {
+      localStorage.removeItem("cl_active_table_id");
+      localStorage.removeItem("cl_onboarding_completed");
+      localStorage.removeItem("cl_accounts");
+      localStorage.removeItem("cl_categories");
+      localStorage.removeItem("cl_incomes");
+      localStorage.removeItem("cl_transactions");
+      localStorage.removeItem("cl_last_sync");
+      document.cookie = "cl_active_table_id=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      window.location.href = "/";
     }
   };
 
@@ -470,6 +484,17 @@ export function AppHeader({
                 <Smartphone size={16} />
                 {t('Download APK')}
               </a>
+
+              <div className="pt-2 border-t border-white/5 flex justify-center">
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-all opacity-80 hover:opacity-100 cursor-pointer"
+                >
+                  <LogOut size={13} />
+                  <span>{t('Logout')}</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>

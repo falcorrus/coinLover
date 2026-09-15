@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { 
   Account, IncomeSource, Category, Transaction, NumpadData, HistoryModalState, TransactionType, Entity
 } from "../types";
@@ -158,18 +158,45 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
   return (
     <>
       {/* 0. Блокирующая модалка при окончании подписки */}
-      {accessError && (
-        <ConfirmModal
-          isOpen={true}
-          title={accessError.includes("Подписка") ? "Доступ ограничен" : "Внимание"}
-          message={accessError}
-          confirmText="Написать владельцу"
-          cancelText="Закрыть"
-          onConfirm={() => window.open('https://t.me/argodon?text=Здравствуйте,%20у%20меня%20кончилась%20подписка%20на%20CoinLover,%20какие%20есть%20варианты%20продлить%3F%0AМое%20имя%20в%20CL%20-%20', '_blank')}
-          onCancel={() => setAccessError(null)} 
-          danger={false}
-        />
-      )}
+      {accessError && (() => {
+        const SERVICE_ACCOUNT = 'coinlover-service-acc@baonlineru.iam.gserviceaccount.com';
+        const CopyButton = () => {
+          const [copied, setCopied] = useState(false);
+          const handleCopy = () => {
+            navigator.clipboard.writeText(SERVICE_ACCOUNT).catch(console.error);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+          };
+          return (
+            <div className="flex items-center justify-center gap-2 flex-wrap mt-1">
+              <span className="text-xs text-[var(--text-muted)] font-mono break-all">{SERVICE_ACCOUNT}</span>
+              <button
+                type="button"
+                onClick={handleCopy}
+                className="flex items-center gap-1 px-2 py-1 bg-[var(--glass-item-bg)] border border-[var(--glass-border)] rounded-lg text-xs text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors cursor-pointer whitespace-nowrap"
+              >
+                {copied ? '✓ Скопировано' : '📋 Копировать'}
+              </button>
+            </div>
+          );
+        };
+        return (
+          <ConfirmModal
+            isOpen={true}
+            title={accessError.includes("Подписка") ? "Доступ ограничен" : "Внимание"}
+            message={accessError}
+            confirmText="Написать владельцу"
+            cancelText="Закрыть"
+            extraContent={<CopyButton />}
+            onConfirm={() => window.open(
+              `https://t.me/argodon?text=${encodeURIComponent('Здравствуйте, у меня просит сервисный аккаунт, напомните его, пожалуйста')}`,
+              '_blank'
+            )}
+            onCancel={() => setAccessError(null)}
+            danger={false}
+          />
+        );
+      })()}
 
       <AccountModal isOpen={accountModal.isOpen} account={accountModal.account} onClose={() => setAccountModal({ isOpen: false, account: null })} onSave={(name, balance, currency, icon, color) => { saveAccount({ ...accountModal.account, name, balance, currency, icon, color }); setAccountModal({ isOpen: false, account: null }); }} onDelete={() => { if (!accountModal.account) return; setConfirmDelete({ isOpen: true, title: "Удалить кошелек?", message: `Удалить "${accountModal.account.name}"?`, onConfirm: () => { deleteAccount(accountModal.account!.id); setAccountModal({ isOpen: false, account: null }); setConfirmDelete(p => ({ ...p, isOpen: false })); } }); }} />
       <IncomeModal isOpen={incomeModal.isOpen} income={incomeModal.income} onClose={() => setIncomeModal({ isOpen: false, income: null })} onSave={(name, icon, color, tags) => { saveIncome({ ...incomeModal.income, name, icon, color, tags }); setIncomeModal({ isOpen: false, income: null }); }} onDelete={() => { if (!incomeModal.income) return; setConfirmDelete({ isOpen: true, title: "Удалить доход?", message: `Удалить "${incomeModal.income.name}"?`, onConfirm: () => { deleteIncome(incomeModal.income!.id); setIncomeModal({ isOpen: false, income: null }); setConfirmDelete(p => ({ ...p, isOpen: false })); } }); }} />
