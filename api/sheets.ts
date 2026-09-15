@@ -392,15 +392,29 @@ async function initSheets(sheets, spreadsheetId, baseCurrency = "USD") {
   }
 }
 
-async function registerLeadInMaster(sheets, payload) {
+export function calculateEndOfNextMonth(from: Date = new Date()): string {
+  const year = from.getFullYear();
+  const month = from.getMonth(); // 0-based
+  const endOfNextMonth = new Date(year, month + 2, 0);
+  const day = String(endOfNextMonth.getDate()).padStart(2, "0");
+  const m = String(endOfNextMonth.getMonth() + 1).padStart(2, "0");
+  const y = endOfNextMonth.getFullYear();
+  return `${day}.${m}.${y}`;
+}
+
+export async function registerLeadInMaster(sheets: any, payload: any) {
   try {
     const sheetUrl = payload.sheetUrl || "";
     const ssId = payload.ssId || (sheetUrl.match(/[-\w]{25,}/) ? sheetUrl.match(/[-\w]{25,}/)[0] : "");
+    if (!ssId) {
+      console.warn("[API] registerLeadInMaster: Missing ssId, skipping.");
+      return false;
+    }
     const userSheet = "Users";
 
-    // 1. Ensure Users sheet exists
+    // 1. Ensure Users sheet exists with proper headers
     const ss = await sheets.spreadsheets.get({ spreadsheetId: MASTER_SS_ID });
-    const sheetNames = ss.data.sheets.map(s => s.properties.title);
+    const sheetNames = ss.data.sheets.map((s: any) => s.properties.title);
     if (!sheetNames.includes(userSheet)) {
       await sheets.spreadsheets.batchUpdate({
         spreadsheetId: MASTER_SS_ID,
@@ -410,7 +424,7 @@ async function registerLeadInMaster(sheets, payload) {
         spreadsheetId: MASTER_SS_ID,
         range: `${userSheet}!A1`,
         valueInputOption: 'USER_ENTERED',
-        requestBody: { values: [["Name", "Contact", "ID", "LinkApp", "LinkSheet", "Access Ends"]] }
+        requestBody: { values: [["Name", "Contact", "ID", "LinkApp", "LinkSheet", "Access Ends", "Tariff"]] }
       });
     }
 
@@ -420,15 +434,16 @@ async function registerLeadInMaster(sheets, payload) {
       range: `${userSheet}!A:C`
     });
     const existingRows = existingRes.data.values || [];
-    const userExists = existingRows.some(row => row[2] === ssId);
+    const userExists = existingRows.some((row: any[]) => row && row[2] === ssId);
     
     if (userExists) {
       console.log(`[API] User ${ssId} already registered. Skipping append.`);
       return true;
     }
 
-    // 3. Prepare data
-    const accessEnds = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toLocaleDateString('ru-RU'); 
+    // 3. Prepare data: Standard tariff, Access Ends = end of next month
+    const accessEnds = payload.accessEnds || calculateEndOfNextMonth(); 
+    const tariff = payload.tariff || "Standard";
     const linkApp = `https://coinlover.ru/?ssId=${ssId}`;
     const linkSheet = sheetUrl || `https://docs.google.com/spreadsheets/d/${ssId}`;
 
@@ -438,19 +453,21 @@ async function registerLeadInMaster(sheets, payload) {
       ssId,
       linkApp,
       linkSheet,
-      accessEnds
+      accessEnds,
+      tariff
     ];
 
-    // 4. Append to Users sheet
+    // 4. Append to Users sheet (A:G)
     await sheets.spreadsheets.values.append({
       spreadsheetId: MASTER_SS_ID,
-      range: `${userSheet}!A:F`,
+      range: `${userSheet}!A:G`,
       valueInputOption: 'USER_ENTERED',
       requestBody: { values: [newRow] }
     });
 
+    console.log(`[API] Registered new user ${payload.contact || payload.name} (${ssId}) in Master Sheet with tariff ${tariff} until ${accessEnds}`);
     return true;
-  } catch (e) {
+  } catch (e: any) {
     console.error("[API] Failed to register lead:", e.message);
     return false;
   }

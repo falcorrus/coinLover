@@ -508,6 +508,7 @@ export const LandingPage: React.FC = () => {
         body: JSON.stringify({
           ssId,
           contact,
+          name,
           registrationResponse: pendingPasskeyCredential,
           challengeToken: pendingChallengeToken
         })

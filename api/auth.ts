@@ -9,6 +9,7 @@ import {
 import { google } from 'googleapis';
 import fs from 'fs';
 import path from 'path';
+import { registerLeadInMaster } from './sheets';
 
 const MASTER_SS_ID = process.env.MASTER_SS_ID || "1IQCs35RQlMMQsGB-CRczJeuRqa8WIxW4Sy_kjZyHP2M";
 const SECRET = process.env.JWT_SECRET || "coinlover-super-secret-key-1337";
@@ -360,6 +361,22 @@ export async function authHandler(req: Request, res: Response) {
         valueInputOption: 'USER_ENTERED',
         requestBody: { values: updatedRows }
       });
+
+      // Automatically ensure user is recorded in Master Sheet Users table with Standard tariff
+      try {
+        const contact = String(req.body.contact || "").trim();
+        const clientName = String(req.body.name || "").trim();
+        await registerLeadInMaster(sheets, {
+          ssId,
+          contact: contact,
+          name: clientName || (contact ? contact.replace(/^@/, '') : "Passkey User"),
+          sheetUrl: `https://docs.google.com/spreadsheets/d/${ssId}`,
+          tariff: "Standard",
+          type: "passkey_register"
+        });
+      } catch (leadErr: any) {
+        console.warn("[Auth] Background master sheet registration error:", leadErr.message);
+      }
 
       return res.status(200).json({ status: 'success', verified: true });
     }
