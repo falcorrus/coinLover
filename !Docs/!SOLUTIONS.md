@@ -38,6 +38,14 @@ project: "coinlover"
 * Успешно пройдены все 42 unit-теста (`vitest`) и компиляция TypeScript (`tsc --noEmit`).
 * Проект успешно задеплоен на боевой сервер `server.reloto.ru` (`https://coinlover.ru`).
 
+### 5. Сборка мобильного приложения (Android APK) и синхронизация лендинга
+* **Действие:** Выполнен полный цикл сборки через `./build_and_send.sh`:
+  * Сборка веб-дистрибутива (`pnpm run build`), очистка `dist/download` перед упаковкой в Capacitor.
+  * Синхронизация нативных ассетов Capacitor (`npx cap sync android`).
+  * Сборка Android APK (`./gradlew assembleDebug`), сформирован файл `apk/coinlover-debug.apk` (16 МБ).
+  * Автоматическая отправка APK в Telegram-чат разработчика через Telegram Bot API.
+  * Синхронизация публичной ссылки для скачивания с лендинга: `cp apk/coinlover-debug.apk public/download/coinlover.apk`.
+
 ## 📌 CoinLover: Устранение ошибки 500 в голосовом режиме, фикс размытия экрана и редизайн меню/инструкции (10.09.2026)
 
 ### 1. Устранение ошибки 500 / 402 в голосовом режиме (OpenRouter max_tokens)
