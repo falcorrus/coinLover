@@ -184,60 +184,205 @@ async function updateConfigs(sheets, spreadsheetId, sheetName, payload) {
       return;
     }
 
-    // If any section is empty, fetch existing data from the sheet to preserve it
+    // Always fetch current sheet configs to preserve existing aliases, missing sections and users
     let existingAccounts: any[] = [];
     let existingCategories: any[] = [];
     let existingIncomes: any[] = [];
+    let existingUsers: any[] = [];
 
-    if (rawAccounts.length === 0 || rawCategories.length === 0 || rawIncomes.length === 0) {
-      try {
-        const currentRes = await sheets.spreadsheets.values.get({
-          spreadsheetId,
-          range: `${sheetName}!A1:M150`
-        });
-        const currentRows = currentRes.data.values || [];
-        let section = "";
-        for (let i = 0; i < currentRows.length; i++) {
-          const r = currentRows[i];
-          if (!r || !r[0]) continue;
-          const k = String(r[0]).toLowerCase().trim();
-          if (k.includes("wallets") || k.includes("accounts") || k.includes("кошельки") || k.includes("счета")) { section = "acc"; continue; }
-          if (k.includes("categories") || k.includes("категории")) { section = "cat"; continue; }
-          if (k.includes("incomes") || k.includes("доходы")) { section = "inc"; continue; }
-          if (k.startsWith("===")) { section = ""; continue; }
-          if (String(r[0]).toUpperCase() === "ID") continue;
+    const sheetAccAliases = new Map<string, string[]>();
+    const sheetCatAliases = new Map<string, string[]>();
+    const sheetIncAliases = new Map<string, string[]>();
 
-          if (section === "acc" && r[0] && r[1]) {
-            existingAccounts.push({ id: r[0], name: r[1], balance: r[2], balanceUSD: r[3] || r[2], color: r[4] || "#6d5dfc", icon: r[5] || "wallet", currency: r[6] || "USD", aliases: r[7] ? String(r[7]).split(",").map((s: string) => s.trim()).filter(Boolean) : [] });
-          } else if (section === "cat" && r[0] && r[1]) {
-            existingCategories.push({ id: r[0], name: r[1], color: r[2] || "#f43f5e", icon: r[3] || "folder", tags: r[4] || "", aliases: r[5] ? String(r[5]).split(",").map((s: string) => s.trim()).filter(Boolean) : [] });
-          } else if (section === "inc" && r[0] && r[1]) {
-            existingIncomes.push({ id: r[0], name: r[1], color: r[2] || "#10b981", icon: r[3] || "wallet", tags: r[4] || "", aliases: r[5] ? String(r[5]).split(",").map((s: string) => s.trim()).filter(Boolean) : [] });
-          }
+    try {
+      const currentRes = await sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range: `${sheetName}!A1:Z500`
+      });
+      const currentRows = currentRes.data.values || [];
+      let section = "";
+      let sectionHeaderIdx = -1;
+      let colMap: Record<string, number> = {};
+
+      for (let i = 0; i < currentRows.length; i++) {
+        const r = currentRows[i];
+        if (!r || !r[0]) continue;
+        const k = String(r[0]).toLowerCase().trim();
+
+        if (k.includes("wallets") || k.includes("accounts") || k.includes("кошельки") || k.includes("счета")) {
+          section = "acc";
+          sectionHeaderIdx = i + 1;
+          colMap = {};
+          continue;
         }
-      } catch (err: any) {
-        console.warn("[API] Could not fetch existing configs for merging:", err.message);
+        if (k.includes("categories") || k.includes("категории")) {
+          section = "cat";
+          sectionHeaderIdx = i + 1;
+          colMap = {};
+          continue;
+        }
+        if (k.includes("incomes") || k.includes("доходы")) {
+          section = "inc";
+          sectionHeaderIdx = i + 1;
+          colMap = {};
+          continue;
+        }
+        if (k.includes("users") || k.includes("пользователи")) {
+          section = "usr";
+          sectionHeaderIdx = i + 1;
+          colMap = {};
+          continue;
+        }
+        if (k.startsWith("===")) {
+          section = "";
+          continue;
+        }
+
+        if (i === sectionHeaderIdx) {
+          colMap = {};
+          r.forEach((v: any, idx: number) => {
+            if (v) colMap[String(v).trim().toLowerCase()] = idx;
+          });
+          continue;
+        }
+
+        const getIdx = (keys: string[]) => {
+          for (const key of keys) {
+            if (colMap[key] !== undefined) return colMap[key];
+          }
+          return -1;
+        };
+
+        const val = (idx: number, def = "") => {
+          if (idx === -1 || r[idx] === undefined) return def;
+          return String(r[idx]).trim().replace(/^'/, "");
+        };
+
+        const uId = getIdx(["id", "идентификатор", "айди"]);
+        const uName = getIdx(["name", "имя", "название", "кошелек", "категория", "источник"]);
+        const uAliases = getIdx(["aliases", "псевдонимы", "синонимы", "алиасы"]);
+
+        const id = uId !== -1 ? val(uId) : val(0);
+        const name = uName !== -1 ? val(uName) : val(1);
+        if (!id || id.toLowerCase() === "id") continue;
+
+        let aliases: string[] = [];
+        if (uAliases !== -1 && r[uAliases]) {
+          aliases = String(r[uAliases]).split(",").map((s: string) => s.trim()).filter(Boolean);
+        } else if (section === "acc" && r[7]) {
+          aliases = String(r[7]).split(",").map((s: string) => s.trim()).filter(Boolean);
+        } else if ((section === "cat" || section === "inc") && r[5]) {
+          aliases = String(r[5]).split(",").map((s: string) => s.trim()).filter(Boolean);
+        }
+
+        if (section === "acc") {
+          const uBal = getIdx(["balance", "баланс", "остаток"]);
+          const uBalBase = getIdx(["balance_base", "usd", "база", "баланс (база)"]);
+          const uColor = getIdx(["color", "цвет"]);
+          const uIcon = getIdx(["icon", "иконка"]);
+          const uCurr = getIdx(["currency", "валюта", "вал"]);
+
+          const acc = {
+            id,
+            name: name || "Кошелек",
+            balance: uBal !== -1 ? val(uBal) : val(2),
+            balanceUSD: uBalBase !== -1 ? val(uBalBase) : val(3),
+            color: uColor !== -1 ? val(uColor, "#6d5dfc") : val(4, "#6d5dfc"),
+            icon: uIcon !== -1 ? val(uIcon, "wallet") : val(5, "wallet"),
+            currency: (uCurr !== -1 ? val(uCurr, "USD") : val(6, "USD")).toUpperCase(),
+            aliases
+          };
+          existingAccounts.push(acc);
+          if (aliases.length > 0) {
+            sheetAccAliases.set(id, aliases);
+            sheetAccAliases.set(name.toLowerCase(), aliases);
+          }
+        } else if (section === "cat" || section === "inc") {
+          const uColor = getIdx(["color", "цвет"]);
+          const uIcon = getIdx(["icon", "иконка"]);
+          const uTags = getIdx(["tags", "теги", "метки"]);
+
+          const item = {
+            id,
+            name: name || "Без имени",
+            color: uColor !== -1 ? val(uColor, "#ccc") : val(2, "#ccc"),
+            icon: uIcon !== -1 ? val(uIcon, section === "cat" ? "folder" : "wallet") : val(3, section === "cat" ? "folder" : "wallet"),
+            tags: uTags !== -1 ? val(uTags) : val(4),
+            aliases
+          };
+          if (section === "cat") {
+            existingCategories.push(item);
+            if (aliases.length > 0) {
+              sheetCatAliases.set(id, aliases);
+              sheetCatAliases.set(name.toLowerCase(), aliases);
+            }
+          } else {
+            existingIncomes.push(item);
+            if (aliases.length > 0) {
+              sheetIncAliases.set(id, aliases);
+              sheetIncAliases.set(name.toLowerCase(), aliases);
+            }
+          }
+        } else if (section === "usr") {
+          existingUsers.push({
+            name: r[0] || "",
+            contact: r[1] || "",
+            id: r[2] || "",
+            link: r[3] || ""
+          });
+        }
       }
+    } catch (err: any) {
+      console.warn("[API] Could not fetch existing configs for merging:", err.message);
     }
 
-    const finalAccounts = rawAccounts.length > 0 ? rawAccounts : existingAccounts;
-    const finalCategories = rawCategories.length > 0 ? rawCategories : existingCategories;
-    const finalIncomes = rawIncomes.length > 0 ? rawIncomes : existingIncomes;
+    // Merge incoming data with sheet aliases
+    const mergeAliases = (incoming: any, sheetAliases: any) => {
+      const result: string[] = [];
+      const add = (val: any) => {
+        if (!val) return;
+        const trimmed = String(val).trim();
+        if (trimmed && !result.some(r => r.toLowerCase() === trimmed.toLowerCase())) {
+          result.push(trimmed);
+        }
+      };
+      if (Array.isArray(incoming)) incoming.forEach(add);
+      else if (incoming) add(incoming);
+
+      if (Array.isArray(sheetAliases)) sheetAliases.forEach(add);
+      else if (sheetAliases) add(sheetAliases);
+
+      return result;
+    };
+
+    const finalAccounts = (rawAccounts.length > 0 ? rawAccounts : existingAccounts).map((a: any) => {
+      const fromSheet = sheetAccAliases.get(a.id) || sheetAccAliases.get(String(a.name).trim().toLowerCase()) || [];
+      const merged = mergeAliases(a.aliases, fromSheet);
+      return { ...a, aliases: merged };
+    });
+
+    const finalCategories = (rawCategories.length > 0 ? rawCategories : existingCategories).map((c: any) => {
+      const fromSheet = sheetCatAliases.get(c.id) || sheetCatAliases.get(String(c.name).trim().toLowerCase()) || [];
+      const merged = mergeAliases(c.aliases, fromSheet);
+      return { ...c, aliases: merged };
+    });
+
+    const finalIncomes = (rawIncomes.length > 0 ? rawIncomes : existingIncomes).map((i: any) => {
+      const fromSheet = sheetIncAliases.get(i.id) || sheetIncAliases.get(String(i.name).trim().toLowerCase()) || [];
+      const merged = mergeAliases(i.aliases, fromSheet);
+      // Ensure income "Остальное" always has alias "Корректировки"
+      if (String(i.name).trim().toLowerCase() === "остальное") {
+        if (!merged.some(m => m.toLowerCase() === "корректировки")) {
+          merged.push("Корректировки");
+        }
+      }
+      return { ...i, aliases: merged };
+    });
 
     if (finalAccounts.length === 0 && finalCategories.length === 0 && finalIncomes.length === 0) {
       console.warn(`[API] Safeguard: All sections are completely empty for ${spreadsheetId}. Aborting.`);
       return;
     }
-
-    // Ensure income "Остальное" always has alias "Корректировки"
-    finalIncomes.forEach((i: any) => {
-      if (String(i.name).trim().toLowerCase() === "остальное") {
-        if (!Array.isArray(i.aliases)) i.aliases = i.aliases ? [i.aliases] : [];
-        if (!i.aliases.some((a: string) => String(a).trim().toLowerCase() === "корректировки")) {
-          i.aliases.push("Корректировки");
-        }
-      }
-    });
 
     // Recreate the managed parts
     const ts = payload.timestamp || new Date().toISOString();
@@ -278,6 +423,13 @@ async function updateConfigs(sheets, spreadsheetId, sheetName, payload) {
       const aliasStr = Array.isArray(i.aliases) ? i.aliases.join(", ") : (i.aliases || "");
       pushRow([i.id, i.name, i.color, i.icon, Array.isArray(i.tags) ? i.tags.join(", ") : (i.tags || ""), aliasStr]);
     });
+
+    if (existingUsers.length > 0) {
+      pushRow(["", ""]);
+      pushRow([" === USERS ===", ""]);
+      pushRow(["Name", "Contact", "ID", "Link"]);
+      existingUsers.forEach(u => pushRow([u.name, u.contact, u.id, u.link]));
+    }
 
     // Clear and update
     await sheets.spreadsheets.values.clear({
@@ -335,10 +487,10 @@ async function initSheets(sheets, spreadsheetId, baseCurrency = "USD") {
       ["ID", "Name", "Balance", "Balance_Base", "Color", "Icon", "Currency", "Aliases"],
       ["", ""],
       [" === CATEGORIES ===", ""],
-      ["ID", "Name", "Color", "Icon", "Tags"],
+      ["ID", "Name", "Color", "Icon", "Tags", "Aliases"],
       ["", ""],
       [" === INCOMES ===", ""],
-      ["ID", "Name", "Color", "Icon", "Tags"]
+      ["ID", "Name", "Color", "Icon", "Tags", "Aliases"]
     ];
 
     const txRows = [
