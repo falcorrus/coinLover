@@ -4,6 +4,7 @@ import { Account, Transaction, Category, IncomeSource } from "../types";
 import { useSync } from "./useSync";
 import { useTransactions } from "./useTransactions";
 import { useEntities } from "./useEntities";
+import { findAccount, findCategory, findIncome } from "./utils";
 
 export const useFinance = (ssId?: string) => {
   const [accounts, setAccounts] = useState<Account[]>(() => {
@@ -16,11 +17,43 @@ export const useFinance = (ssId?: string) => {
   });
   const [incomes, setIncomes] = useState<IncomeSource[]>(() => {
     const saved = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.INCOMES);
-    return saved ? JSON.parse(saved) : [];
+    const list: IncomeSource[] = saved ? JSON.parse(saved) : [];
+    return list.map(inc => {
+      if (inc.name?.trim().toLowerCase() === "остальное") {
+        const aliases = Array.isArray(inc.aliases) ? [...inc.aliases] : [];
+        if (!aliases.some(a => a.trim().toLowerCase() === "корректировки")) {
+          aliases.push("Корректировки");
+        }
+        return { ...inc, aliases };
+      }
+      return inc;
+    });
   });
   const [transactions, setTransactions] = useState<Transaction[]>(() => {
     const saved = localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.TRANSACTIONS);
-    return saved ? JSON.parse(saved) : [];
+    const list: Transaction[] = saved ? JSON.parse(saved) : [];
+    return list.map(t => {
+      let aid = t.accountId;
+      let tid = t.targetId;
+      const typeStr = String(t.type || "").trim().toLowerCase();
+      if (typeStr === "expense") {
+        const cat = findCategory(categories, tid);
+        if (cat) tid = cat.id;
+        const acc = findAccount(accounts, aid);
+        if (acc) aid = acc.id;
+      } else if (typeStr === "income") {
+        const inc = findIncome(incomes, tid);
+        if (inc) tid = inc.id;
+        const acc = findAccount(accounts, aid);
+        if (acc) aid = acc.id;
+      } else if (typeStr === "transfer") {
+        const srcAcc = findAccount(accounts, aid);
+        if (srcAcc) aid = srcAcc.id;
+        const dstAcc = findAccount(accounts, tid);
+        if (dstAcc) tid = dstAcc.id;
+      }
+      return { ...t, accountId: aid, targetId: tid };
+    });
   });
   const [users, setUsers] = useState<{ name: string; id: string }[]>([]);
   const [tariff, setTariff] = useState<string>(() => localStorage.getItem("cl_user_tariff") || "Free");

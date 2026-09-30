@@ -155,6 +155,8 @@ const isNativeApp = React.useMemo(() => {
   const [historyModal, setHistoryModal] = React.useState<any>({ isOpen: false, entity: null, type: null });
   const [analyticsModal, setAnalyticsModal] = React.useState<any>({ isOpen: false, type: "expense" });
   const [calendarAnalyticsModal, setCalendarAnalyticsModal] = React.useState({ isOpen: false });
+  const [periodModal, setPeriodModal] = React.useState({ isOpen: false });
+  const [capitalModal, setCapitalModal] = React.useState({ isOpen: false });
   const [confirmDelete, setConfirmDelete] = React.useState<any>({ isOpen: false, title: "", message: "", onConfirm: () => { } });
   const [isTagModalOpen, setIsTagModalOpen] = React.useState(false);
   const [isUsersModalOpen, setIsUsersModalOpen] = React.useState(false);
@@ -196,6 +198,8 @@ const isNativeApp = React.useMemo(() => {
       case "history": setHistoryModal({ isOpen: false, entity: null, type: null }); break;
       case "analytics": setAnalyticsModal((p: any) => ({ ...p, isOpen: false })); break;
       case "calendar": setCalendarAnalyticsModal({ isOpen: false }); break;
+      case "period": setPeriodModal({ isOpen: false }); break;
+      case "capital": setCapitalModal({ isOpen: false }); break;
       case "confirm": setConfirmDelete((p: any) => ({ ...p, isOpen: false })); break;
       case "tag": setIsTagModalOpen(false); break;
       case "users": setIsUsersModalOpen(false); break;
@@ -216,6 +220,8 @@ const isNativeApp = React.useMemo(() => {
       { id: "history", open: historyModal.isOpen },
       { id: "analytics", open: analyticsModal.isOpen },
       { id: "calendar", open: calendarAnalyticsModal.isOpen },
+      { id: "period", open: periodModal.isOpen },
+      { id: "capital", open: capitalModal.isOpen },
       { id: "confirm", open: confirmDelete.isOpen },
       { id: "tag", open: isTagModalOpen },
       { id: "users", open: isUsersModalOpen },
@@ -239,7 +245,7 @@ const isNativeApp = React.useMemo(() => {
     });
     }, [
     accountModal.isOpen, incomeModal.isOpen, categoryModal.isOpen, historyModal.isOpen,
-    analyticsModal.isOpen, calendarAnalyticsModal.isOpen, confirmDelete.isOpen,
+    analyticsModal.isOpen, calendarAnalyticsModal.isOpen, periodModal.isOpen, capitalModal.isOpen, confirmDelete.isOpen,
     isTagModalOpen, isUsersModalOpen, isThemeModalOpen, numpad.isOpen, isSettingsMenuOpen,
     activeStoryIndex, aiSheet.isOpen
     ]);
@@ -469,6 +475,8 @@ SplashScreen.hide().catch(() => {});
             setHistoryModal={setHistoryModal}
             setCalendarAnalyticsModal={setCalendarAnalyticsModal}
             setAnalyticsModal={setAnalyticsModal}
+            setPeriodModal={setPeriodModal}
+            setCapitalModal={setCapitalModal}
             theme={theme}
             setTheme={setTheme}
             syncStatus={syncStatus}
@@ -558,7 +566,7 @@ SplashScreen.hide().catch(() => {});
 
         <ModalManager
           accountModal={accountModal} incomeModal={incomeModal} categoryModal={categoryModal} historyModal={historyModal}
-          analyticsModal={analyticsModal} calendarAnalyticsModal={calendarAnalyticsModal} confirmDelete={confirmDelete}
+          analyticsModal={analyticsModal} calendarAnalyticsModal={calendarAnalyticsModal} periodModal={periodModal} capitalModal={capitalModal} confirmDelete={confirmDelete}
           numpad={numpad} isTagModalOpen={isTagModalOpen} isUsersModalOpen={isUsersModalOpen} 
           accessError={accessError} setAccessError={setAccessError}
           editingTxId={editingTxId}
@@ -566,7 +574,7 @@ SplashScreen.hide().catch(() => {});
           accounts={accounts} categories={categories} incomes={incomes} transactions={transactions} allExistingTags={allExistingTags}
           baseCurrency={calculations.baseCurrency} baseSymbol={calculations.baseSymbol}
           users={users} activeTableId={activeTableId} setAccountModal={setAccountModal} setIncomeModal={setIncomeModal} setCategoryModal={setCategoryModal}
-          setHistoryModal={setHistoryModal} setAnalyticsModal={setAnalyticsModal} setCalendarAnalyticsModal={setCalendarAnalyticsModal}
+          setHistoryModal={setHistoryModal} setAnalyticsModal={setAnalyticsModal} setCalendarAnalyticsModal={setCalendarAnalyticsModal} setPeriodModal={setPeriodModal} setCapitalModal={setCapitalModal}
           setConfirmDelete={setConfirmDelete} setNumpad={setNumpad} setIsTagModalOpen={setIsTagModalOpen} setIsUsersModalOpen={setIsUsersModalOpen}
           setEditingTxId={setEditingTxId} setIsThemeModalOpen={setIsThemeModalOpen} setTheme={setTheme}
           addTransaction={addTransaction} updateTransaction={updateTransaction} deleteTransaction={deleteTransaction}

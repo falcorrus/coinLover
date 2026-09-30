@@ -863,5 +863,179 @@ svg {
   }
 }
 
+/* ==========================================================================
+   Menu Badges (High-Contrast Theme-Adaptive Icon Badges)
+   ========================================================================== */
+
+.menu-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+/* Default / Dark Theme (:root) */
+:root {
+  --badge-feed-bg: rgba(167, 139, 250, 0.15);
+  --badge-feed-color: #c4b5fd;
+  --badge-feed-border: rgba(167, 139, 250, 0.25);
+
+  --badge-calendar-bg: rgba(16, 185, 129, 0.15);
+  --badge-calendar-color: #34d399;
+  --badge-calendar-border: rgba(16, 185, 129, 0.25);
+
+  --badge-analytics-bg: rgba(245, 158, 11, 0.15);
+  --badge-analytics-color: #fcd34d;
+  --badge-analytics-border: rgba(245, 158, 11, 0.25);
+
+  --badge-period-bg: rgba(56, 189, 248, 0.15);
+  --badge-period-color: #38bdf8;
+  --badge-period-border: rgba(56, 189, 248, 0.25);
+
+  --badge-capital-bg: rgba(129, 140, 248, 0.15);
+  --badge-capital-color: #a5b4fc;
+  --badge-capital-border: rgba(129, 140, 248, 0.25);
+
+  --badge-more-bg: rgba(148, 163, 184, 0.15);
+  --badge-more-color: #cbd5e1;
+  --badge-more-border: rgba(148, 163, 184, 0.25);
+
+  --badge-security-bg: rgba(99, 102, 241, 0.15);
+  --badge-security-color: #818cf8;
+  --badge-security-border: rgba(99, 102, 241, 0.25);
+
+  --badge-app-bg: rgba(20, 184, 166, 0.15);
+  --badge-app-color: #2dd4bf;
+  --badge-app-border: rgba(20, 184, 166, 0.25);
+
+  --badge-logout-bg: rgba(244, 63, 94, 0.15);
+  --badge-logout-color: #fb7185;
+  --badge-logout-border: rgba(244, 63, 94, 0.25);
+}
+
+/* White Precision Theme */
+:root.white {
+  --badge-feed-bg: #f3f0ff;
+  --badge-feed-color: #6d28d9;
+  --badge-feed-border: #ddd6fe;
+
+  --badge-calendar-bg: #ecfdf5;
+  --badge-calendar-color: #047857;
+  --badge-calendar-border: #a7f3d0;
+
+  --badge-analytics-bg: #fffbeb;
+  --badge-analytics-color: #b45309;
+  --badge-analytics-border: #fde68a;
+
+  --badge-period-bg: #eff6ff;
+  --badge-period-color: #1d4ed8;
+  --badge-period-border: #bfdbfe;
+
+  --badge-capital-bg: #eef2ff;
+  --badge-capital-color: #4338ca;
+  --badge-capital-border: #c7d2fe;
+
+  --badge-more-bg: #f1f5f9;
+  --badge-more-color: #334155;
+  --badge-more-border: #cbd5e1;
+
+  --badge-security-bg: #eef2ff;
+  --badge-security-color: #4338ca;
+  --badge-security-border: #c7d2fe;
+
+  --badge-app-bg: #f0fdfa;
+  --badge-app-color: #0f766e;
+  --badge-app-border: #99f6e4;
+
+  --badge-logout-bg: #fff1f2;
+  --badge-logout-color: #e11d48;
+  --badge-logout-border: #fecdd3;
+}
+
+/* Mint Organic Theme */
+:root.mint {
+  --badge-feed-bg: rgba(109, 40, 217, 0.08);
+  --badge-feed-color: #5b21b6;
+  --badge-feed-border: rgba(109, 40, 217, 0.2);
+
+  --badge-calendar-bg: rgba(18, 109, 39, 0.08);
+  --badge-calendar-color: #126d27;
+  --badge-calendar-border: rgba(18, 109, 39, 0.22);
+
+  --badge-analytics-bg: rgba(180, 83, 9, 0.08);
+  --badge-analytics-color: #92400e;
+  --badge-analytics-border: rgba(180, 83, 9, 0.22);
+
+  --badge-period-bg: rgba(3, 105, 161, 0.08);
+  --badge-period-color: #0369a1;
+  --badge-period-border: rgba(3, 105, 161, 0.22);
+
+  --badge-capital-bg: rgba(146, 74, 40, 0.09);
+  --badge-capital-color: #924a28;
+  --badge-capital-border: rgba(146, 74, 40, 0.24);
+
+  --badge-more-bg: rgba(67, 72, 70, 0.09);
+  --badge-more-color: #2c3130;
+  --badge-more-border: rgba(67, 72, 70, 0.22);
+
+  --badge-security-bg: rgba(67, 56, 202, 0.08);
+  --badge-security-color: #3730a3;
+  --badge-security-border: rgba(67, 56, 202, 0.2);
+
+  --badge-app-bg: rgba(15, 118, 110, 0.08);
+  --badge-app-color: #115e59;
+  --badge-app-border: rgba(15, 118, 110, 0.2);
+
+  --badge-logout-bg: rgba(186, 26, 26, 0.08);
+  --badge-logout-color: #ba1a1a;
+  --badge-logout-border: rgba(186, 26, 26, 0.22);
+}
+
+.menu-badge-feed {
+  background-color: var(--badge-feed-bg);
+  color: var(--badge-feed-color);
+  border: 1px solid var(--badge-feed-border);
+}
+.menu-badge-calendar {
+  background-color: var(--badge-calendar-bg);
+  color: var(--badge-calendar-color);
+  border: 1px solid var(--badge-calendar-border);
+}
+.menu-badge-analytics {
+  background-color: var(--badge-analytics-bg);
+  color: var(--badge-analytics-color);
+  border: 1px solid var(--badge-analytics-border);
+}
+.menu-badge-period {
+  background-color: var(--badge-period-bg);
+  color: var(--badge-period-color);
+  border: 1px solid var(--badge-period-border);
+}
+.menu-badge-capital {
+  background-color: var(--badge-capital-bg);
+  color: var(--badge-capital-color);
+  border: 1px solid var(--badge-capital-border);
+}
+.menu-badge-more {
+  background-color: var(--badge-more-bg);
+  color: var(--badge-more-color);
+  border: 1px solid var(--badge-more-border);
+}
+.menu-badge-security {
+  background-color: var(--badge-security-bg);
+  color: var(--badge-security-color);
+  border: 1px solid var(--badge-security-border);
+}
+.menu-badge-app {
+  background-color: var(--badge-app-bg);
+  color: var(--badge-app-color);
+  border: 1px solid var(--badge-app-border);
+}
+.menu-badge-logout {
+  background-color: var(--badge-logout-bg);
+  color: var(--badge-logout-color);
+  border: 1px solid var(--badge-logout-border);
+}
+
 
 

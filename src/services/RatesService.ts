@@ -25,13 +25,22 @@ export class RatesService {
     }
 
     static getBaseCurrency(): string {
-        return localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY) || "USD";
+        try {
+            if (typeof window !== "undefined" && window.localStorage) {
+                return window.localStorage.getItem(APP_SETTINGS.STORAGE_KEYS.LAST_CURRENCY) || "USD";
+            }
+        } catch { /* ignore */ }
+        return "USD";
     }
 
     static clearMemoryCache(): void {
         this.memoryRates = null;
-        localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.EXCHANGE_RATES);
-        localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.RATES_LAST_SYNC);
+        try {
+            if (typeof window !== "undefined" && window.localStorage) {
+                window.localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.EXCHANGE_RATES);
+                window.localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.RATES_LAST_SYNC);
+            }
+        } catch { /* ignore */ }
     }
 
     static shouldSyncRates(): boolean {

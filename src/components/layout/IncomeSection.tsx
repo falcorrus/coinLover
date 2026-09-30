@@ -6,6 +6,7 @@ import { IncomeSource, Transaction, HistoryModalState, Account } from "../../typ
 import { RatesService } from "../../services/RatesService";
 import { DraggableIncomeItem } from "../DraggableIncomeItem";
 import { useLanguage } from "../../contexts/LanguageContext";
+import { findAccount, findIncome } from "../../hooks/utils";
 
 interface IncomeSectionProps {
   isIncomeCollapsed: boolean;
@@ -44,9 +45,9 @@ export function IncomeSection({
         <div className="flex overflow-x-auto hide-scrollbar px-6 pb-4 pt-4" style={{ gap: 'var(--grid-gap)' }}>
           {incomes.map(inc => {
             const monthlyAmount = Math.round(currentMonthTransactions
-              .filter(t => String(t.type).toLowerCase() === "income" && t.targetId === inc.id)
+              .filter(t => String(t.type).toLowerCase() === "income" && (t.targetId === inc.id || findIncome(incomes, t.targetId)?.id === inc.id))
               .reduce((sum, t) => {
-                const account = accounts.find(a => a.id === t.accountId || a.name === t.accountId);
+                const account = findAccount(accounts, t.accountId);
                 const tCurr = t.targetCurrency || account?.currency || baseCurrency;
                 if (categoryCurrencyMode === 'local' && tCurr === localCurrencyCode) return sum + (t.targetAmount || 0);
                 const sCurr = t.sourceCurrency || account?.currency || baseCurrency;

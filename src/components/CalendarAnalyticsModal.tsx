@@ -3,7 +3,7 @@ import { X, ChevronLeft, ChevronRight, RefreshCcw, Calendar, Wallet, AlertCircle
 import { Transaction, Account, Category, IncomeSource } from "../types";
 import { googleSheetsService } from "../services/googleSheets";
 import { IconMap } from "../constants";
-import { safeParseDate, sortTransactionsDesc } from "../hooks/utils";
+import { safeParseDate, sortTransactionsDesc, findAccount, findCategory, findIncome } from "../hooks/utils";
 import { RatesService } from "../services/RatesService";
 
 interface CalendarAnalyticsModalProps {
@@ -171,13 +171,14 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
         const dayTx = sortTransactionsDesc(dayTxUnsorted, filteredTx);
 
         const calcSum = (type: string, useBase: boolean) => Math.round(dayTx.filter(t => t.type === type).reduce((s, t) => {
+            const acc = findAccount(accounts, t.accountId);
             const valBase = (t.targetAmountUSD && t.targetAmountUSD !== 0 && baseCurrency === 'USD')
                 ? t.targetAmountUSD
-                : RatesService.convert(t.sourceAmount || 0, t.sourceCurrency || accounts.find(a => a.id === t.accountId)?.currency || baseCurrency, baseCurrency);
+                : RatesService.convert(t.sourceAmount || 0, t.sourceCurrency || acc?.currency || baseCurrency, baseCurrency);
             
             if (useBase) return s + valBase;
             
-            const tCurr = t.targetCurrency || accounts.find(a => a.id === t.accountId)?.currency || baseCurrency;
+            const tCurr = t.targetCurrency || acc?.currency || baseCurrency;
             if (tCurr === localCurrencyCode) return s + (t.targetAmount || 0);
             return s + RatesService.convert(valBase, baseCurrency, localCurrencyCode);
         }, 0));
@@ -201,11 +202,11 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
         let counterpartItem: Account | Category | IncomeSource | undefined;
         
         if (tx.type === "expense") {
-            counterpartItem = categories.find(c => c.id === tx.targetId);
+            counterpartItem = findCategory(categories, tx.targetId);
         } else if (tx.type === "income") {
-            counterpartItem = incomes.find(i => i.id === tx.targetId);
+            counterpartItem = findIncome(incomes, tx.targetId);
         } else if (tx.type === "transfer") {
-            counterpartItem = accounts.find(a => a.id === tx.targetId);
+            counterpartItem = findAccount(accounts, tx.targetId);
         }
 
         return { item: counterpartItem, isOutflow };
@@ -213,9 +214,10 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
 
     const getAmountStr = (tx: Transaction, isOutflow: boolean) => {
         const sAmt = tx.sourceAmount || 0;
-        const sCurr = tx.sourceCurrency || accounts.find(a => a.id === tx.accountId)?.currency || baseCurrency;
+        const account = findAccount(accounts, tx.accountId);
+        const sCurr = tx.sourceCurrency || account?.currency || baseCurrency;
         const tAmt = tx.targetAmount || sAmt;
-        const tCurr = tx.targetCurrency || accounts.find(a => a.id === tx.accountId)?.currency || baseCurrency;
+        const tCurr = tx.targetCurrency || account?.currency || baseCurrency;
 
         const valBase = (tx.targetAmountUSD && tx.targetAmountUSD !== 0 && baseCurrency === 'USD')
             ? tx.targetAmountUSD
@@ -245,7 +247,14 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
                     {/* Header */}
                     <div className="calendar-header flex justify-between items-center p-6 border-b border-[var(--glass-border)] shrink-0">
                         <div className="flex items-center gap-3">
-                            <div className="calendar-header-icon w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-[0_0_15px_var(--primary-color)] bg-[var(--primary-color)]/20 text-[var(--primary-color)]"><Calendar size={20} /></div>
+                            <button 
+                                type="button"
+                                onClick={onClose}
+                                title="Закрыть"
+                                className="calendar-header-icon w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-[0_0_15px_var(--primary-color)] bg-[var(--primary-color)]/20 text-[var(--primary-color)] cursor-pointer hover:opacity-80 active:scale-95 transition-all"
+                            >
+                                <Calendar size={20} />
+                            </button>
                             <div className="flex flex-col">
                                 <h2 className="calendar-header-title text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Календарь операций</h2>
                                 <span className="calendar-header-subtitle text-[10px] text-[var(--text-muted)] uppercase tracking-widest leading-none mt-1">активность по дням</span>
@@ -373,11 +382,11 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
                                 <div className="calendar-tx-items flex flex-col gap-3">
                                     {selectedDayData.transactions.map(tx => {
                                         const { item, isOutflow } = getCounterpartInfo(tx);
-                                        const status = { isBroken: !accounts.find(a => a.id === tx.accountId) || (!categories.find(c => c.id === tx.targetId) && tx.type === 'expense') };
+                                        const status = { isBroken: !findAccount(accounts, tx.accountId) || (!findCategory(categories, tx.targetId) && tx.type === 'expense') || (!findIncome(incomes, tx.targetId) && tx.type === 'income') || (!findAccount(accounts, tx.targetId) && tx.type === 'transfer') };
                                         const Icon = item ? (IconMap[(item as any).icon] || Wallet) : (status.isBroken ? AlertCircle : Wallet);
                                         const amountInfo = getAmountStr(tx, isOutflow);
-                                        const s = accounts.find(a => a.id === tx.accountId);
-                                        let displayName = tx.type === "expense" ? `${s?.name || "?"} → ${categories.find(c => c.id === tx.targetId)?.name || "?"}` : tx.type === "income" ? `${incomes.find(i => i.id === tx.targetId)?.name || "?"} → ${s?.name || "?"}` : `${s?.name || "?"} → ${accounts.find(a => a.id === tx.targetId)?.name || "?"}`;
+                                        const s = findAccount(accounts, tx.accountId);
+                                        let displayName = tx.type === "expense" ? `${s?.name || "?"} → ${findCategory(categories, tx.targetId)?.name || "?"}` : tx.type === "income" ? `${findIncome(incomes, tx.targetId)?.name || "?"} → ${s?.name || "?"}` : `${s?.name || "?"} → ${findAccount(accounts, tx.targetId)?.name || "?"}`;
 
                                         return (
                                             <div key={tx.id} className="calendar-tx-card flex items-center bg-[var(--glass-item-bg)]/30 p-3 rounded-2xl border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)] transition-colors cursor-pointer" onClick={() => onItemClick?.({ name: `${String(selectedDay).padStart(2, '0')}.${String(currentDate.getMonth() + 1).padStart(2, '0')}.${currentDate.getFullYear()}`, icon: "calendar" }, "feed", [tx])}>

@@ -7,7 +7,7 @@ interface Props {
     isOpen: boolean;
     income: IncomeSource | null;
     onClose: () => void;
-    onSave: (name: string, icon: string, color: string, tags: string[]) => void;
+    onSave: (name: string, icon: string, color: string, tags: string[], aliases?: string[]) => void;
     onDelete: () => void;
 }
 
@@ -17,6 +17,7 @@ export const IncomeModal: React.FC<Props> = ({ isOpen, income, onClose, onSave, 
     const [color, setColor] = React.useState("var(--success-color)");
     const [tags, setTags] = React.useState<string[]>([]);
     const [newTag, setNewTag] = React.useState("");
+    const [aliases, setAliases] = React.useState<string[]>([]);
 
     React.useEffect(() => {
         if (isOpen) {
@@ -25,6 +26,7 @@ export const IncomeModal: React.FC<Props> = ({ isOpen, income, onClose, onSave, 
             setColor(income?.color || "var(--success-color)");
             setTags(income?.tags || []);
             setNewTag("");
+            setAliases(income?.aliases || []);
         }
     }, [isOpen, income]);
 
@@ -114,7 +116,7 @@ export const IncomeModal: React.FC<Props> = ({ isOpen, income, onClose, onSave, 
                             <Trash2 size={20} />
                         </button>
                     )}
-                    <button onClick={() => onSave(name, icon, color, tags)} className="flex-1 h-14 rounded-2xl bg-[var(--success-color)] text-white font-black shadow-lg shadow-[var(--success-color)]/20 uppercase tracking-widest transition-all active:scale-95">СОХРАНИТЬ</button>
+                    <button onClick={() => onSave(name, icon, color, tags, aliases)} className="flex-1 h-14 rounded-2xl bg-[var(--success-color)] text-white font-black shadow-lg shadow-[var(--success-color)]/20 uppercase tracking-widest transition-all active:scale-95">СОХРАНИТЬ</button>
                 </div>
             </div>
         </div>

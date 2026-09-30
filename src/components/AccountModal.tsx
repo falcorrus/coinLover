@@ -7,7 +7,7 @@ interface Props {
   isOpen: boolean;
   account: Account | null;
   onClose: () => void;
-  onSave: (name: string, balance: number, currency: string, icon: string, color: string) => void;
+  onSave: (name: string, balance: number, currency: string, icon: string, color: string, aliases?: string[]) => void;
   onDelete: () => void;
 }
 
@@ -19,6 +19,7 @@ export const AccountModal: React.FC<Props> = ({ isOpen, account, onClose, onSave
   const [currency, setCurrency] = React.useState("USD");
   const [icon, setIcon] = React.useState("wallet");
   const [color, setColor] = React.useState("var(--primary-color)");
+  const [aliases, setAliases] = React.useState<string[]>([]);
   const [showCurrencyInfo, setShowCurrencyInfo] = React.useState(false);
 
   React.useEffect(() => {
@@ -28,6 +29,7 @@ export const AccountModal: React.FC<Props> = ({ isOpen, account, onClose, onSave
       setCurrency(account?.currency || "USD");
       setIcon(account?.icon || "wallet");
       setColor(account?.color || "var(--primary-color)");
+      setAliases(account?.aliases || []);
       setShowCurrencyInfo(false);
     }
   }, [isOpen, account]);
@@ -164,7 +166,7 @@ export const AccountModal: React.FC<Props> = ({ isOpen, account, onClose, onSave
             </button>
           )}
           <button
-            onClick={() => onSave(name, parseFloat(balance), currency, icon, color)}
+            onClick={() => onSave(name, parseFloat(balance), currency, icon, color, aliases)}
             disabled={!name.trim()}
             className="flex-1 h-14 rounded-2xl bg-[var(--primary-color)] text-white font-bold shadow-lg shadow-[var(--primary-color)]/20 uppercase text-center disabled:opacity-30 disabled:grayscale disabled:cursor-not-allowed transition-all"
           >

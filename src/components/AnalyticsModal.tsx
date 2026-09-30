@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import { X, ChevronLeft, ChevronRight, PieChart, List, Tag, RefreshCcw, MoreHorizontal, TrendingUp, TrendingDown, CheckCircle2, Circle } from "lucide-react";
 import { Transaction, Category, IncomeSource, Account } from "../types";
 import { IconMap } from "../constants";
-import { safeParseDate } from "../hooks/utils";
+import { safeParseDate, findAccount, findCategory, findIncome } from "../hooks/utils";
 import { googleSheetsService } from "../services/googleSheets";
 import { RatesService } from "../services/RatesService";
 
@@ -125,8 +125,8 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
 
     const getTxAmountInBase = (t: Transaction) => {
         const baseCur = RatesService.getBaseCurrency();
-        // Robust account lookup: check by ID or Name
-        const account = accounts.find(a => a.id === t.accountId || a.name === t.accountId);
+        // Robust account lookup with aliases support
+        const account = findAccount(accounts, t.accountId);
         const sCurr = t.sourceCurrency || account?.currency || baseCur;
         const tCurr = t.targetCurrency || account?.currency || baseCur;
         
@@ -145,13 +145,18 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
         let items: { id: string, name: string, icon: any, color: string, amount: number, percent: number }[] = [];
         if (tab === "categories") {
             const itemMap = new Map<string, number>();
-            filteredTx.forEach(t => itemMap.set(t.targetId, (itemMap.get(t.targetId) || 0) + getTxAmountInBase(t)));
+            filteredTx.forEach(t => {
+                const canonicalId = analysisType === "expense"
+                    ? (findCategory(categories, t.targetId)?.id || t.targetId)
+                    : (findIncome(incomes, t.targetId)?.id || t.targetId);
+                itemMap.set(canonicalId, (itemMap.get(canonicalId) || 0) + getTxAmountInBase(t));
+            });
             itemMap.forEach((amount, id) => {
                 if (analysisType === "expense") {
-                    const cat = categories.find(c => c.id === id);
+                    const cat = findCategory(categories, id);
                     items.push({ id, name: cat?.name || "Удаленная категория", icon: cat ? (IconMap[cat.icon] || MoreHorizontal) : MoreHorizontal, color: cat?.color || "#6b7280", amount, percent: 0 });
                 } else {
-                    const inc = incomes.find(i => i.id === id);
+                    const inc = findIncome(incomes, id);
                     items.push({ id, name: inc?.name || "Удаленный источник", icon: TrendingUp, color: inc?.color || "var(--success-color)", amount, percent: 0 });
                 }
             });
@@ -245,20 +250,31 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
     const getItemDetails = (item: any) => {
         let details: any[] = [];
         if (tab === "categories") {
-            const subTx = filteredTx.filter(t => t.targetId === item.id);
+            const subTx = filteredTx.filter(t => {
+                if (analysisType === "expense") {
+                    return t.targetId === item.id || findCategory(categories, t.targetId)?.id === item.id;
+                } else {
+                    return t.targetId === item.id || findIncome(incomes, t.targetId)?.id === item.id;
+                }
+            });
             const map = new Map<string, number>();
             subTx.forEach(t => { const n = t.tag?.trim() || "Без тега"; map.set(n, (map.get(n) || 0) + getTxAmountInBase(t)); });
             map.forEach((amount, name) => details.push({ id: name, name, icon: Tag, color: getTagColor(name), amount, percent: item.amount > 0 ? (amount / item.amount) * 100 : 0 }));
         } else {
             const subTx = filteredTx.filter(t => (t.tag?.trim() || "Без тега") === item.name);
             const map = new Map<string, number>();
-            subTx.forEach(t => map.set(t.targetId, (map.get(t.targetId) || 0) + getTxAmountInBase(t)));
+            subTx.forEach(t => {
+                const canonicalId = analysisType === "expense"
+                    ? (findCategory(categories, t.targetId)?.id || t.targetId)
+                    : (findIncome(incomes, t.targetId)?.id || t.targetId);
+                map.set(canonicalId, (map.get(canonicalId) || 0) + getTxAmountInBase(t));
+            });
             map.forEach((amount, id) => {
                 if (analysisType === "expense") {
-                    const cat = categories.find(c => c.id === id);
+                    const cat = findCategory(categories, id);
                     details.push({ id, name: cat?.name || "Удаленная категория", icon: cat ? (IconMap[cat.icon] || MoreHorizontal) : MoreHorizontal, color: cat?.color || "#6b7280", amount, percent: item.amount > 0 ? (amount / item.amount) * 100 : 0 });
                 } else {
-                    const inc = incomes.find(i => i.id === id);
+                    const inc = findIncome(incomes, id);
                     details.push({ id, name: inc?.name || "Удаленный источник", icon: TrendingUp, color: inc?.color || "var(--success-color)", amount, percent: item.amount > 0 ? (amount / item.amount) * 100 : 0 });
                 }
             });
@@ -277,7 +293,14 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                     {/* Header */}
                     <div className="analytics-header flex justify-between items-center p-6 border-b border-[var(--glass-border)] shrink-0">
                         <div className="flex items-center gap-3">
-                            <div className={`analytics-header-icon w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-lg ${analysisType === 'income' ? 'bg-[var(--success-color)]/20 text-[var(--success-color)] shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'bg-amber-500/20 text-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.3)]'}`}><PieChart size={20} /></div>
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                title="Закрыть"
+                                className={`analytics-header-icon w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-lg cursor-pointer hover:opacity-80 active:scale-95 transition-all ${analysisType === 'income' ? 'bg-[var(--success-color)]/20 text-[var(--success-color)] shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'bg-amber-500/20 text-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.3)]'}`}
+                            >
+                                <PieChart size={20} />
+                            </button>
                             <div className="flex flex-col">
                                 <h2 className="analytics-header-title text-sm font-black text-[var(--text-main)] uppercase tracking-wider">{analysisType === "expense" ? "Аналитика расходов" : "Аналитика доходов"}</h2>
                                 <span className="analytics-header-subtitle text-[10px] text-[var(--text-muted)] uppercase tracking-widest leading-none mt-1">за период</span>
@@ -469,10 +492,13 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                                                             if (!onItemClick) return;
                                                             const eType = analysisType === "income" ? (tab === "categories" ? "income" : "tag") : (tab === "tags" ? "category" : "tag");
                                                             const filter = filteredTx.filter(t => {
+                                                                const tCanonical = analysisType === "income"
+                                                                    ? (findIncome(incomes, t.targetId)?.id || t.targetId)
+                                                                    : (findCategory(categories, t.targetId)?.id || t.targetId);
                                                                 if (analysisType === "income") {
-                                                                    return tab === "categories" ? (t.targetId === item.id && (t.tag?.trim() || "Без тега") === detail.name) : ((t.tag?.trim() || "Без тега") === item.name && t.targetId === detail.id);
+                                                                    return tab === "categories" ? (tCanonical === item.id && (t.tag?.trim() || "Без тега") === detail.name) : ((t.tag?.trim() || "Без тега") === item.name && tCanonical === detail.id);
                                                                 }
-                                                                return tab === "tags" ? ((t.tag?.trim() || "Без тега") === item.name && t.targetId === detail.id) : (t.targetId === item.id && (t.tag?.trim() || "Без тега") === detail.name);
+                                                                return tab === "tags" ? ((t.tag?.trim() || "Без тега") === item.name && tCanonical === detail.id) : (tCanonical === item.id && (t.tag?.trim() || "Без тега") === detail.name);
                                                             });
                                                             onItemClick({ ...detail }, eType, filter);
                                                         }} />

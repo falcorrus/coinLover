@@ -1,6 +1,7 @@
 import * as React from "react";
 import { RatesService } from "../services/RatesService";
 import { Account, Transaction, Category, IncomeSource } from "../types";
+import { findAccount } from "./utils";
 
 export function useCurrencyCalculations(
   accounts: Account[],
@@ -26,8 +27,7 @@ export function useCurrencyCalculations(
   }, 0)), [accounts, baseCurrency]);
   
   const totalSpentBase = React.useMemo(() => Math.round(currentMonthTransactions.filter(t => String(t.type).toLowerCase() === "expense").reduce((s, t) => {
-    const aid = String(t.accountId || "").trim().toLowerCase();
-    const account = accounts.find(a => String(a.id).trim().toLowerCase() === aid || String(a.name).trim().toLowerCase() === aid);
+    const account = findAccount(accounts, t.accountId);
     const sCurr = t.sourceCurrency || account?.currency || baseCurrency;
     const amount = isNaN(Number(t.sourceAmount)) ? 0 : t.sourceAmount;
 
@@ -38,8 +38,7 @@ export function useCurrencyCalculations(
   }, 0)), [currentMonthTransactions, baseCurrency, accounts]);
 
   const totalEarnedBase = React.useMemo(() => Math.round(currentMonthTransactions.filter(t => String(t.type).toLowerCase() === "income").reduce((s, t) => {
-    const aid = String(t.accountId || "").trim().toLowerCase();
-    const account = accounts.find(a => String(a.id).trim().toLowerCase() === aid || String(a.name).trim().toLowerCase() === aid);
+    const account = findAccount(accounts, t.accountId);
     const tCurr = t.targetCurrency || account?.currency || baseCurrency;
     const amount = isNaN(Number(t.targetAmount)) ? 0 : t.targetAmount;
 
@@ -54,8 +53,7 @@ export function useCurrencyCalculations(
     const isBase = categoryCurrencyMode === 'base';
 
     const getSafeCurr = (t: Transaction) => {
-      const aid = String(t.accountId || "").trim().toLowerCase();
-      const account = accounts.find(a => String(a.id).trim().toLowerCase() === aid || String(a.name).trim().toLowerCase() === aid);
+      const account = findAccount(accounts, t.accountId);
       return t.sourceCurrency || account?.currency || localCur;
     };
 

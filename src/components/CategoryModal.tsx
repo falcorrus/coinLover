@@ -22,6 +22,7 @@ export const CategoryModal: React.FC<Props> = ({ isOpen, category, onClose, onSa
     const [color, setColor] = React.useState("var(--primary-color)");
     const [tags, setTags] = React.useState<string[]>([]);
     const [newTag, setNewTag] = React.useState("");
+    const [aliases, setAliases] = React.useState<string[]>([]);
     const tagInputRef = useRef<HTMLInputElement>(null);
 
     React.useEffect(() => {
@@ -31,6 +32,7 @@ export const CategoryModal: React.FC<Props> = ({ isOpen, category, onClose, onSa
             setColor(category?.color || "var(--primary-color)");
             setTags(category?.tags ? [...category.tags] : []);
             setNewTag("");
+            setAliases(category?.aliases || []);
         }
     }, [isOpen, category]);
 
@@ -53,7 +55,7 @@ export const CategoryModal: React.FC<Props> = ({ isOpen, category, onClose, onSa
 
     const handleSave = () => {
         if (!name.trim()) return;
-        onSave({ ...category, name: name.trim(), icon, color, tags });
+        onSave({ ...category, name: name.trim(), icon, color, tags, aliases });
     };
 
     return (

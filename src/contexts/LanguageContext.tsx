@@ -47,6 +47,12 @@ const translations: Record<Language, Record<string, string>> = {
     'Feed': 'Лента',
     'Calendar': 'Календарь',
     'Analytics': 'Аналитика',
+    'Period': 'Период',
+    'Capital': 'Капитал',
+    'More': 'Еще',
+    'Net Worth': 'Капитал',
+    'Capital Dynamics': 'Динамика капитала',
+    'Month End Balance': 'Остаток на конец месяца',
     'Security': 'Безопасность',
     'Application': 'Приложение',
     'Logout': 'Выйти из аккаунта',
@@ -179,6 +185,12 @@ const translations: Record<Language, Record<string, string>> = {
     'Feed': 'Feed',
     'Calendar': 'Calendar',
     'Analytics': 'Analytics',
+    'Period': 'Period',
+    'Capital': 'Capital',
+    'More': 'More',
+    'Net Worth': 'Net Worth',
+    'Capital Dynamics': 'Capital Dynamics',
+    'Month End Balance': 'Month End Balance',
     'Security': 'Security',
     'Application': 'App',
     'Logout': 'Log out',
@@ -278,12 +290,21 @@ const translations: Record<Language, Record<string, string>> = {
 const LanguageContext = React.createContext<LanguageContextType | undefined>(undefined);
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [language, setLanguage] = React.useState<Language>(
-    (localStorage.getItem('cl_lang') as Language) || 'ru'
-  );
+  const [language, setLanguage] = React.useState<Language>(() => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        return (localStorage.getItem('cl_lang') as Language) || 'ru';
+      }
+    } catch { /* ignore */ }
+    return 'ru';
+  });
 
   React.useEffect(() => {
-    localStorage.setItem('cl_lang', language);
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        localStorage.setItem('cl_lang', language);
+      }
+    } catch { /* ignore */ }
   }, [language]);
 
   const t = (key: string) => translations[language][key] || key;

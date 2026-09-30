@@ -1,4 +1,5 @@
-import { Account, Transaction } from "../types";
+import { Account, Category, IncomeSource, Transaction } from "../types";
+
 import { RatesService } from "../services/RatesService";
 
 export const safeParseDate = (dateStr?: string): Date => {
@@ -115,3 +116,43 @@ export const sortTransactionsDesc = (txList: Transaction[], referenceList?: Tran
     return ref.indexOf(b) - ref.indexOf(a);
   });
 };
+
+/**
+ * Ищет кошелек по ID, текущему имени или историческим алиасам
+ */
+export const findAccount = (accounts: Account[], idOrName?: string | null): Account | undefined => {
+  if (!idOrName || !accounts || !Array.isArray(accounts)) return undefined;
+  const key = String(idOrName).trim().toLowerCase();
+  return accounts.find(a => 
+    String(a.id).trim().toLowerCase() === key || 
+    String(a.name).trim().toLowerCase() === key ||
+    (Array.isArray(a.aliases) && a.aliases.some(al => String(al).trim().toLowerCase() === key))
+  );
+};
+
+/**
+ * Ищет категорию по ID, текущему имени или историческим алиасам
+ */
+export const findCategory = (categories: Category[], idOrName?: string | null): Category | undefined => {
+  if (!idOrName || !categories || !Array.isArray(categories)) return undefined;
+  const key = String(idOrName).trim().toLowerCase();
+  return categories.find(c => 
+    String(c.id).trim().toLowerCase() === key || 
+    String(c.name).trim().toLowerCase() === key ||
+    (Array.isArray(c.aliases) && c.aliases.some(al => String(al).trim().toLowerCase() === key))
+  );
+};
+
+/**
+ * Ищет источник дохода по ID, текущему имени или историческим алиасам
+ */
+export const findIncome = (incomes: IncomeSource[], idOrName?: string | null): IncomeSource | undefined => {
+  if (!idOrName || !incomes || !Array.isArray(incomes)) return undefined;
+  const key = String(idOrName).trim().toLowerCase();
+  return incomes.find(i => 
+    String(i.id).trim().toLowerCase() === key || 
+    String(i.name).trim().toLowerCase() === key ||
+    (Array.isArray(i.aliases) && i.aliases.some(al => String(al).trim().toLowerCase() === key))
+  );
+};
+

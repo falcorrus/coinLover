@@ -5,6 +5,7 @@ import { Category, Transaction, HistoryModalState, Account } from "../../types";
 import { RatesService } from "../../services/RatesService";
 import { CategoryItem } from "../CategoryItem";
 import { useLanguage } from "../../contexts/LanguageContext";
+import { findAccount, findCategory } from "../../hooks/utils";
 
 interface ExpenseSectionProps {
   mode: "expense" | "income";
@@ -57,10 +58,9 @@ export function ExpenseSection({
             }}
           >
             {categories.map(cat => {
-              const catTx = currentMonthTransactions.filter(t => String(t.type).toLowerCase() === "expense" && t.targetId === cat.id);
+              const catTx = currentMonthTransactions.filter(t => String(t.type).toLowerCase() === "expense" && (t.targetId === cat.id || findCategory(categories, t.targetId)?.id === cat.id));
               const spent = Math.round(catTx.reduce((s, t) => {
-                const aid = String(t.accountId || "").trim().toLowerCase();
-                const account = accounts.find(a => String(a.id).trim().toLowerCase() === aid || String(a.name).trim().toLowerCase() === aid);
+                const account = findAccount(accounts, t.accountId);
                 const tCurr = t.targetCurrency || account?.currency || baseCurrency;
                 if (categoryCurrencyMode === 'local' && tCurr === localCurrencyCode) return s + (t.targetAmount || 0);
                 const sCurr = t.sourceCurrency || account?.currency || baseCurrency;

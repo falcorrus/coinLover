@@ -12,12 +12,15 @@ import { ConfirmModal } from "./ConfirmModal";
 
 const AnalyticsModal = React.lazy(() => import("./AnalyticsModal").then(m => ({ default: m.AnalyticsModal })));
 const CalendarAnalyticsModal = React.lazy(() => import("./CalendarAnalyticsModal").then(m => ({ default: m.CalendarAnalyticsModal })));
+const PeriodAnalyticsModal = React.lazy(() => import("./PeriodAnalyticsModal").then(m => ({ default: m.PeriodAnalyticsModal })));
+const CapitalAnalyticsModal = React.lazy(() => import("./CapitalAnalyticsModal").then(m => ({ default: m.CapitalAnalyticsModal })));
 const HistoryModal = React.lazy(() => import("./HistoryModal").then(m => ({ default: m.HistoryModal })));
 const UsersModal = React.lazy(() => import("./UsersModal").then(m => ({ default: m.UsersModal })));
 const ThemeModal = React.lazy(() => import("./ThemeModal").then(m => ({ default: m.ThemeModal })));
 const TagModal = React.lazy(() => import("./TagModal").then(m => ({ default: m.TagModal })));
 
 import { safeEvaluateMath } from "../utils/mathParser";
+import { findAccount, findCategory, findIncome } from "../hooks/utils";
 
 interface ModalManagerProps {
   // Modal States
@@ -27,6 +30,8 @@ interface ModalManagerProps {
   historyModal: HistoryModalState;
   analyticsModal: { isOpen: boolean; type: "expense" | "income" };
   calendarAnalyticsModal: { isOpen: boolean };
+  periodModal: { isOpen: boolean };
+  capitalModal: { isOpen: boolean };
   confirmDelete: { isOpen: boolean; title: string; message: string; onConfirm: () => void };
   numpad: NumpadData;
   isTagModalOpen: boolean;
@@ -57,6 +62,8 @@ interface ModalManagerProps {
   setHistoryModal: React.Dispatch<React.SetStateAction<HistoryModalState>>;
   setAnalyticsModal: React.Dispatch<React.SetStateAction<{ isOpen: boolean; type: "expense" | "income" }>>;
   setCalendarAnalyticsModal: React.Dispatch<React.SetStateAction<{ isOpen: boolean }>>;
+  setPeriodModal: React.Dispatch<React.SetStateAction<{ isOpen: boolean }>>;
+  setCapitalModal: React.Dispatch<React.SetStateAction<{ isOpen: boolean }>>;
   setConfirmDelete: React.Dispatch<React.SetStateAction<{ isOpen: boolean; title: string; message: string; onConfirm: () => void }>>;
   setNumpad: React.Dispatch<React.SetStateAction<NumpadData>>;
   setIsTagModalOpen: (v: boolean) => void;
@@ -82,12 +89,12 @@ interface ModalManagerProps {
 export const ModalManager: React.FC<ModalManagerProps> = (props) => {
   const {
     accountModal, incomeModal, categoryModal, historyModal, analyticsModal,
-    calendarAnalyticsModal, confirmDelete, numpad, isTagModalOpen, isUsersModalOpen, accessError, setAccessError, editingTxId,
+    calendarAnalyticsModal, periodModal, capitalModal, confirmDelete, numpad, isTagModalOpen, isUsersModalOpen, accessError, setAccessError, editingTxId,
     isThemeModalOpen, theme,
     categoryCurrencyMode, localCurrencyCode,
     accounts, categories, incomes, transactions, allExistingTags, users, activeTableId,
     setAccountModal, setIncomeModal, setCategoryModal, setHistoryModal, setAnalyticsModal,
-    setCalendarAnalyticsModal, setConfirmDelete, setNumpad, setIsTagModalOpen, setIsUsersModalOpen, setEditingTxId,
+    setCalendarAnalyticsModal, setPeriodModal, setCapitalModal, setConfirmDelete, setNumpad, setIsTagModalOpen, setIsUsersModalOpen, setEditingTxId,
     setIsThemeModalOpen, setTheme,
     addTransaction, updateTransaction, deleteTransaction, saveAccount, deleteAccount, 
     saveCategory, deleteCategory, saveIncome, deleteIncome, updateLocalFromRemote,
@@ -198,8 +205,8 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
         );
       })()}
 
-      <AccountModal isOpen={accountModal.isOpen} account={accountModal.account} onClose={() => setAccountModal({ isOpen: false, account: null })} onSave={(name, balance, currency, icon, color) => { saveAccount({ ...accountModal.account, name, balance, currency, icon, color }); setAccountModal({ isOpen: false, account: null }); }} onDelete={() => { if (!accountModal.account) return; setConfirmDelete({ isOpen: true, title: "Удалить кошелек?", message: `Удалить "${accountModal.account.name}"?`, onConfirm: () => { deleteAccount(accountModal.account!.id); setAccountModal({ isOpen: false, account: null }); setConfirmDelete(p => ({ ...p, isOpen: false })); } }); }} />
-      <IncomeModal isOpen={incomeModal.isOpen} income={incomeModal.income} onClose={() => setIncomeModal({ isOpen: false, income: null })} onSave={(name, icon, color, tags) => { saveIncome({ ...incomeModal.income, name, icon, color, tags }); setIncomeModal({ isOpen: false, income: null }); }} onDelete={() => { if (!incomeModal.income) return; setConfirmDelete({ isOpen: true, title: "Удалить доход?", message: `Удалить "${incomeModal.income.name}"?`, onConfirm: () => { deleteIncome(incomeModal.income!.id); setIncomeModal({ isOpen: false, income: null }); setConfirmDelete(p => ({ ...p, isOpen: false })); } }); }} />
+      <AccountModal isOpen={accountModal.isOpen} account={accountModal.account} onClose={() => setAccountModal({ isOpen: false, account: null })} onSave={(name, balance, currency, icon, color, aliases) => { saveAccount({ ...accountModal.account, name, balance, currency, icon, color, aliases }); setAccountModal({ isOpen: false, account: null }); }} onDelete={() => { if (!accountModal.account) return; setConfirmDelete({ isOpen: true, title: "Удалить кошелек?", message: `Удалить "${accountModal.account.name}"?`, onConfirm: () => { deleteAccount(accountModal.account!.id); setAccountModal({ isOpen: false, account: null }); setConfirmDelete(p => ({ ...p, isOpen: false })); } }); }} />
+      <IncomeModal isOpen={incomeModal.isOpen} income={incomeModal.income} onClose={() => setIncomeModal({ isOpen: false, income: null })} onSave={(name, icon, color, tags, aliases) => { saveIncome({ ...incomeModal.income, name, icon, color, tags, aliases }); setIncomeModal({ isOpen: false, income: null }); }} onDelete={() => { if (!incomeModal.income) return; setConfirmDelete({ isOpen: true, title: "Удалить доход?", message: `Удалить "${incomeModal.income.name}"?`, onConfirm: () => { deleteIncome(incomeModal.income!.id); setIncomeModal({ isOpen: false, income: null }); setConfirmDelete(p => ({ ...p, isOpen: false })); } }); }} />
       <CategoryModal isOpen={categoryModal.isOpen} category={categoryModal.category} onClose={() => setCategoryModal({ isOpen: false, category: null })} onSave={(cat) => { saveCategory(cat); setCategoryModal({ isOpen: false, category: null }); }} onDelete={() => { if (!categoryModal.category) return; setConfirmDelete({ isOpen: true, title: "Удалить категорию?", message: `Удалить "${categoryModal.category.name}"?`, onConfirm: () => { deleteCategory(categoryModal.category!.id); setCategoryModal({ isOpen: false, category: null }); setConfirmDelete(p => ({ ...p, isOpen: false })); } }); }} />
       
       <React.Suspense fallback={null}>
@@ -222,14 +229,14 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
             localCurrencyCode={localCurrencyCode}
             onItemClick={(item, type, monthTx) => { 
               let entity = item; 
-              if (type === "category") { const cat = categories.find(c => c.id === item.id); if (cat) entity = cat; } 
-              else if (type === "income") { const inc = incomes.find(i => i.id === item.id); if (inc) entity = inc; } 
+              if (type === "category") { const cat = findCategory(categories, item.id); if (cat) entity = cat; } 
+              else if (type === "income") { const inc = findIncome(incomes, item.id); if (inc) entity = inc; } 
               setHistoryModal({ 
                 isOpen: true, entity, type, 
                 customTransactions: monthTx.filter(t => { 
-                  if (type === "category") return t.targetId === item.id; 
+                  if (type === "category") return t.targetId === item.id || findCategory(categories, t.targetId)?.id === item.id; 
                   if (type === "tag") return (t.tag?.trim() || "Без тега") === item.name; 
-                  if (type === "income") return t.targetId === item.id; 
+                  if (type === "income") return t.targetId === item.id || findIncome(incomes, t.targetId)?.id === item.id; 
                   return false; 
                 }), 
                 returnTo: "analytics" 
@@ -252,8 +259,8 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
             onItemClick={async (item, type, dayTx) => { 
               if (dayTx && dayTx.length > 0) {
                 const tx = dayTx[0];
-                const source = tx.type === "income" ? incomes.find(i => i.id === tx.targetId) ?? null : accounts.find(a => a.id === tx.accountId) ?? null; 
-                const destination = tx.type === "expense" ? categories.find(c => c.id === tx.targetId) ?? null : tx.type === "income" ? accounts.find(a => a.id === tx.accountId) ?? null : accounts.find(a => a.id === tx.targetId) ?? null; 
+                const source = tx.type === "income" ? findIncome(incomes, tx.targetId) ?? null : findAccount(accounts, tx.accountId) ?? null; 
+                const destination = tx.type === "expense" ? findCategory(categories, tx.targetId) ?? null : tx.type === "income" ? findAccount(accounts, tx.accountId) ?? null : findAccount(accounts, tx.targetId) ?? null; 
                 if (source && destination) {
                   await RatesService.ensureRates();
                   setEditingTxId(tx.id);
@@ -280,14 +287,64 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
           />
         )}
 
+        {periodModal.isOpen && (
+          <PeriodAnalyticsModal 
+            isOpen={periodModal.isOpen} 
+            onClose={() => setPeriodModal({ isOpen: false })} 
+            categories={categories} 
+            incomes={incomes} 
+            accounts={accounts} 
+            globalTransactions={transactions} 
+            currencyMode={categoryCurrencyMode}
+            localCurrencyCode={localCurrencyCode}
+            baseCurrency={props.baseCurrency || "USD"}
+            baseSymbol={props.baseSymbol || "$"}
+            onItemClick={(item, type, periodTx) => { 
+              let entity = item; 
+              if (type === "category") { const cat = findCategory(categories, item.id); if (cat) entity = cat; } 
+              else if (type === "income") { const inc = findIncome(incomes, item.id); if (inc) entity = inc; } 
+              setHistoryModal({ 
+                isOpen: true, entity, type, 
+                customTransactions: periodTx, 
+                returnTo: "analytics" 
+              }); 
+            }} 
+          />
+        )}
+
+        {capitalModal.isOpen && (
+          <CapitalAnalyticsModal 
+            isOpen={capitalModal.isOpen} 
+            onClose={() => setCapitalModal({ isOpen: false })} 
+            accounts={accounts} 
+            transactions={transactions} 
+            currencyMode={categoryCurrencyMode}
+            localCurrencyCode={localCurrencyCode}
+            baseCurrency={props.baseCurrency || "USD"}
+            baseSymbol={props.baseSymbol || "$"}
+            onItemClick={(account, accountTx) => { 
+              setHistoryModal({ 
+                isOpen: true, 
+                entity: account, 
+                type: "account", 
+                customTransactions: accountTx, 
+                returnTo: "analytics" 
+              }); 
+            }} 
+          />
+        )}
+
         {historyModal.isOpen && (
           <HistoryModal 
             isOpen={historyModal.isOpen} 
             onClose={() => window.history.back()} 
             entity={historyModal.entity as any} entityType={historyModal.type} transactions={historyModal.customTransactions || transactions} accounts={accounts} categories={categories} incomes={incomes} 
+            onSaveAccount={saveAccount}
+            onSaveCategory={saveCategory}
+            onSaveIncome={saveIncome}
             onEditTransaction={async (tx) => { 
-              const source = tx.type === "income" ? incomes.find(i => i.id === tx.targetId) ?? null : accounts.find(a => a.id === tx.accountId) ?? null; 
-              const destination = tx.type === "expense" ? categories.find(c => c.id === tx.targetId) ?? null : tx.type === "income" ? accounts.find(a => a.id === tx.accountId) ?? null : accounts.find(a => a.id === tx.targetId) ?? null; 
+              const source = tx.type === "income" ? findIncome(incomes, tx.targetId) ?? null : findAccount(accounts, tx.accountId) ?? null; 
+              const destination = tx.type === "expense" ? findCategory(categories, tx.targetId) ?? null : tx.type === "income" ? findAccount(accounts, tx.accountId) ?? null : findAccount(accounts, tx.targetId) ?? null; 
               if (!source || !destination) return; 
               
               await RatesService.ensureRates();

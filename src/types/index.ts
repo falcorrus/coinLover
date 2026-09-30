@@ -6,6 +6,7 @@ export interface Account {
   color: string;
   icon: string;
   balanceUSD?: number;
+  aliases?: string[];
 }
 
 export interface Category {
@@ -14,6 +15,7 @@ export interface Category {
   color: string;
   icon: string;
   tags: string[];
+  aliases?: string[];
 }
 
 export interface IncomeSource {
@@ -23,6 +25,7 @@ export interface IncomeSource {
   icon: string;
   tags: string[];
   balanceUSD?: number;
+  aliases?: string[];
 }
 
 export type TransactionType = "expense" | "income" | "transfer";

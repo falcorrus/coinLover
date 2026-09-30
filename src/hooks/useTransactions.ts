@@ -3,7 +3,7 @@ import { Account, Transaction, Category, IncomeSource, TransactionType } from ".
 import { APP_SETTINGS } from "../constants/settings";
 import { googleSheetsService } from "../services/googleSheets";
 import { RatesService } from "../services/RatesService";
-import { getLocalTimeString, enrichAccountsWithUSD, formatDateOnly, formatDateTime } from "./utils";
+import { getLocalTimeString, enrichAccountsWithUSD, formatDateOnly, formatDateTime, findAccount, findCategory, findIncome } from "./utils";
 import { trackEvent } from "../services/analytics";
 
 interface TransactionStateProps {
@@ -36,8 +36,7 @@ export const useTransactions = ({
     const localCur = localStorage.getItem("cl_numpad_pref_currency") || cachedNumpadT || baseCur;
 
     const findAcc = (id: string) => {
-      const aid = String(id || "").trim().toLowerCase();
-      return accounts.find(a => String(a.id).trim().toLowerCase() === aid || String(a.name).trim().toLowerCase() === aid);
+      return findAccount(accounts, id);
     };
 
     if (type === "expense") { 
@@ -60,11 +59,11 @@ export const useTransactions = ({
     
     // Resolve names from latest state to ensure accuracy
     const resolvedSource = type === "income" 
-      ? incomes.find(i => i.id === source.id) 
-      : accounts.find(a => a.id === source.id);
+      ? (findIncome(incomes, source.id) || findIncome(incomes, source.name))
+      : (findAccount(accounts, source.id) || findAccount(accounts, source.name));
     const resolvedDest = (type === "expense") 
-      ? categories.find(c => c.id === destination.id) 
-      : accounts.find(a => a.id === destination.id);
+      ? (findCategory(categories, destination.id) || findCategory(categories, destination.name))
+      : (findAccount(accounts, destination.id) || findAccount(accounts, destination.name));
 
     const sName = resolvedSource?.name || source.name || "Unknown Source";
     const dName = resolvedDest?.name || destination.name || "Unknown Destination";
@@ -195,11 +194,11 @@ export const useTransactions = ({
     
     // Resolve names from latest state to ensure accuracy
     const resolvedSource = type === "income" 
-      ? incomes.find(i => i.id === source.id) 
-      : accounts.find(a => a.id === source.id);
+      ? (findIncome(incomes, source.id) || findIncome(incomes, source.name))
+      : (findAccount(accounts, source.id) || findAccount(accounts, source.name));
     const resolvedDest = (type === "expense") 
-      ? categories.find(c => c.id === destination.id) 
-      : accounts.find(a => a.id === destination.id);
+      ? (findCategory(categories, destination.id) || findCategory(categories, destination.name))
+      : (findAccount(accounts, destination.id) || findAccount(accounts, destination.name));
 
     const sName = resolvedSource?.name || source.name || "Unknown Source";
     const dName = resolvedDest?.name || destination.name || "Unknown Destination";

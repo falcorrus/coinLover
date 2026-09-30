@@ -4,7 +4,7 @@ import { Account, Transaction, IncomeSource } from "../../types";
 import { useLanguage } from "../../contexts/LanguageContext";
 import { IconMap } from "../../constants";
 import { RatesService } from "../../services/RatesService";
-import { safeParseDate } from "../../hooks/utils";
+import { safeParseDate, findCategory, findIncome } from "../../hooks/utils";
 
 interface StoriesSectionProps {
   accounts: Account[];
@@ -343,7 +343,7 @@ export function StoriesSection({
           );
         } else if (slideIdx === 1) {
           const topCategories = categories.map(c => {
-            const amount = currentMonthTransactions.filter(t => t.targetId === c.id).reduce((acc, t) => {
+            const amount = currentMonthTransactions.filter(t => t.targetId === c.id || findCategory(categories as any, t.targetId)?.id === c.id).reduce((acc, t) => {
               const account = getSafeAccount(t.accountId);
               const currency = t.sourceCurrency || account?.currency || baseCurrency;
               return acc + RatesService.convert(t.sourceAmount, currency, baseCurrency);
@@ -463,8 +463,8 @@ export function StoriesSection({
                         {todayTransactions.slice(0, 6).map((tx, i) => {
                           const isExpense = String(tx.type).toLowerCase() === "expense";
                           const counterpart = isExpense 
-                            ? categories.find(c => c.id === tx.targetId)
-                            : incomes.find(inc => inc.id === tx.targetId);
+                            ? findCategory(categories as any, tx.targetId)
+                            : findIncome(incomes, tx.targetId);
                           const account = getSafeAccount(tx.accountId);
                           const currency = isExpense 
                             ? (tx.sourceCurrency || account?.currency || baseCurrency)

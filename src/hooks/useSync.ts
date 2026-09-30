@@ -3,7 +3,7 @@ import { APP_SETTINGS } from "../constants/settings";
 import { Account, Transaction, Category, IncomeSource, SyncSettingsFields } from "../types";
 import { googleSheetsService } from "../services/googleSheets";
 import { RatesService } from "../services/RatesService";
-import { getLocalTimeString, enrichAccountsWithUSD } from "./utils";
+import { getLocalTimeString, enrichAccountsWithUSD, findAccount, findCategory, findIncome } from "./utils";
 
 export type SyncStatus = "idle" | "loading" | "error" | "success";
 
@@ -60,7 +60,19 @@ export const useSync = ({
       setAccounts(sanitized);
     }
     if (data.categories) setCategories(data.categories);
-    if (data.incomes) setIncomes(data.incomes);
+    if (data.incomes) {
+      const sanitizedIncomes = data.incomes.map(inc => {
+        if (inc.name?.trim().toLowerCase() === "остальное") {
+          const aliases = Array.isArray(inc.aliases) ? [...inc.aliases] : [];
+          if (!aliases.some(a => a.trim().toLowerCase() === "корректировки")) {
+            aliases.push("Корректировки");
+          }
+          return { ...inc, aliases };
+        }
+        return inc;
+      });
+      setIncomes(sanitizedIncomes);
+    }
     if (data.users) setUsers(data.users);
     
     if (data.tariff) {
@@ -88,7 +100,43 @@ export const useSync = ({
       lastRemoteSnapshot.current = getSettingsSnapshot(data);
     }
     if (data.transactions && Array.isArray(data.transactions)) {
-      setTransactions([...data.transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+      const currentAccounts = data.accounts ? data.accounts.map(a => ({ ...a, balance: Number(a.balance) || 0 })) : accounts;
+      const currentCategories = data.categories || categories;
+      const currentIncomes = data.incomes ? data.incomes.map(inc => {
+        if (inc.name?.trim().toLowerCase() === "остальное") {
+          const aliases = Array.isArray(inc.aliases) ? [...inc.aliases] : [];
+          if (!aliases.some(a => a.trim().toLowerCase() === "корректировки")) {
+            aliases.push("Корректировки");
+          }
+          return { ...inc, aliases };
+        }
+        return inc;
+      }) : incomes;
+
+      const normalizedTransactions = data.transactions.map(t => {
+        let aid = t.accountId;
+        let tid = t.targetId;
+        const typeStr = String(t.type || "").trim().toLowerCase();
+        if (typeStr === "expense") {
+          const cat = findCategory(currentCategories, tid);
+          if (cat) tid = cat.id;
+          const acc = findAccount(currentAccounts, aid);
+          if (acc) aid = acc.id;
+        } else if (typeStr === "income") {
+          const inc = findIncome(currentIncomes, tid);
+          if (inc) tid = inc.id;
+          const acc = findAccount(currentAccounts, aid);
+          if (acc) aid = acc.id;
+        } else if (typeStr === "transfer") {
+          const srcAcc = findAccount(currentAccounts, aid);
+          if (srcAcc) aid = srcAcc.id;
+          const dstAcc = findAccount(currentAccounts, tid);
+          if (dstAcc) tid = dstAcc.id;
+        }
+        return { ...t, accountId: aid, targetId: tid };
+      });
+
+      setTransactions([...normalizedTransactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
     }
     if (data.checkpoints) {
       setCheckpoints(data.checkpoints);

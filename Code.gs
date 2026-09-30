@@ -73,11 +73,11 @@ function ensureInitialized(ss, configName = "Configs", txName = "Transactions") 
       ["Updated", formatDate(new Date()), "", "", "", "", ""],
       ["Base_Currency", "USD", "", "", "", "", ""],
       ["", "", "", "", "", "", ""],
-      [" === WALLETS ===", "", "", "", "", "", ""],
-      ["id", "name", "balance", "balance_base", "color", "icon", "currency"],
-      ["ID", "Название", "Баланс", "Баланс (база)", "Цвет", "Иконка", "Валюта"]
+      [" === WALLETS ===", "", "", "", "", "", "", ""],
+      ["id", "name", "balance", "balance_base", "color", "icon", "currency", "aliases"],
+      ["ID", "Название", "Баланс", "Баланс (база)", "Цвет", "Иконка", "Валюта", "Псевдонимы"]
     ];
-    conf.getRange(1, 1, configHeaders.length, 7).setValues(configHeaders);
+    conf.getRange(1, 1, configHeaders.length, 8).setValues(configHeaders);
   }
   
   if (txs.getLastRow() === 0) {
@@ -202,15 +202,28 @@ function doGet(e) {
         const uBal = col["balance"] !== undefined ? col["balance"] : col["баланс"];
         const uBalBase = col["balance_base"] !== undefined ? col["balance_base"] : col["баланс (база)"];
         const uCurr = col["currency"] !== undefined ? col["currency"] : col["валюта"];
+        const uAliases = col["aliases"] !== undefined ? col["aliases"] : (col["псевдонимы"] !== undefined ? col["псевдонимы"] : col["алиасы"]);
         const uLink = col["link"] !== undefined ? col["link"] : col["ссылка"];
         const uContact = col["contact"] !== undefined ? col["contact"] : col["контакт"];
 
         if (section === "acc") {
-          data.accounts.push({ id: idVal, name: String(uName !== undefined ? row[uName] : row[1]), balance: parseNum(uBal !== undefined ? row[uBal] : row[2]), balanceUSD: parseNum(uBalBase !== undefined ? row[uBalBase] : row[3]), color: uColor !== undefined ? row[uColor] : row[4], icon: uIcon !== undefined ? row[uIcon] : (row[5] || "wallet"), currency: uCurr !== undefined ? row[uCurr] : (row[6] || "") });
+          const rawAliases = uAliases !== undefined ? row[uAliases] : "";
+          const aliases = rawAliases ? String(rawAliases).split(",").map(t => t.trim()).filter(Boolean) : [];
+          data.accounts.push({ id: idVal, name: String(uName !== undefined ? row[uName] : row[1]), balance: parseNum(uBal !== undefined ? row[uBal] : row[2]), balanceUSD: parseNum(uBalBase !== undefined ? row[uBalBase] : row[3]), color: uColor !== undefined ? row[uColor] : row[4], icon: uIcon !== undefined ? row[uIcon] : (row[5] || "wallet"), currency: uCurr !== undefined ? row[uCurr] : (row[6] || ""), aliases });
         } else if (section === "cat") {
-          data.categories.push({ id: idVal, name: String(uName !== undefined ? row[uName] : row[1]), color: uColor !== undefined ? row[uColor] : row[2], icon: uIcon !== undefined ? row[uIcon] : (row[3] || "more"), tags: (uTags !== undefined ? row[uTags] : row[4]) ? String(uTags !== undefined ? row[uTags] : row[4]).split(",").map(t => t.trim()) : [] });
+          const rawAliases = uAliases !== undefined ? row[uAliases] : "";
+          const aliases = rawAliases ? String(rawAliases).split(",").map(t => t.trim()).filter(Boolean) : [];
+          data.categories.push({ id: idVal, name: String(uName !== undefined ? row[uName] : row[1]), color: uColor !== undefined ? row[uColor] : row[2], icon: uIcon !== undefined ? row[uIcon] : (row[3] || "more"), tags: (uTags !== undefined ? row[uTags] : row[4]) ? String(uTags !== undefined ? row[uTags] : row[4]).split(",").map(t => t.trim()) : [], aliases });
         } else if (section === "inc") {
-          data.incomes.push({ id: idVal, name: String(uName !== undefined ? row[uName] : row[1]), color: uColor !== undefined ? row[uColor] : row[2], icon: uIcon !== undefined ? row[uIcon] : (row[3] || "business"), tags: (uTags !== undefined ? row[uTags] : row[4]) ? String(uTags !== undefined ? row[uTags] : row[4]).split(",").map(t => t.trim()) : [] });
+          const rawAliases = uAliases !== undefined ? row[uAliases] : "";
+          const aliases = rawAliases ? String(rawAliases).split(",").map(t => t.trim()).filter(Boolean) : [];
+          const iname = String(uName !== undefined ? row[uName] : row[1]);
+          if (iname.trim().toLowerCase() === "остальное") {
+            if (!aliases.some(function(a) { return a.toLowerCase() === "корректировки"; })) {
+              aliases.push("Корректировки");
+            }
+          }
+          data.incomes.push({ id: idVal, name: iname, color: uColor !== undefined ? row[uColor] : row[2], icon: uIcon !== undefined ? row[uIcon] : (row[3] || "business"), tags: (uTags !== undefined ? row[uTags] : row[4]) ? String(uTags !== undefined ? row[uTags] : row[4]).split(",").map(t => t.trim()) : [], aliases });
         } else if (section === "usr") {
           let usName = col["name"] !== undefined ? row[col["name"]] : (col["имя"] !== undefined ? row[col["имя"]] : row[0]);
           let usLink = col["link"] !== undefined ? row[col["link"]] : row[3];
@@ -260,17 +273,48 @@ function doGet(e) {
         const c_tag = findCol(["tag", "тег", "метка"]);
         const c_s_amt = findCol(["s_amt", "source_amount", "amount", "сумма (исх)", "сумма", "расход"]);
         const c_s_curr = findCol(["s_curr", "source_currency", "currency", "валюта (исх)", "валюта"]);
-        const c_s_base = findCol(["s_base", "source_base", "сумма (база)", "base_amount"]);
+        const c_s_base = findCol(["s_base", "base_amount", "source_base", "сумма (база)", "usd", "base_amt", "base amt", "usd amt", "цель (база)"]);
         const c_t_amt = findCol(["t_amt", "target_amount", "сумма (цель)", "получено"]);
         const c_t_curr = findCol(["t_curr", "target_currency", "валюта (цель)"]);
-        const c_t_base = findCol(["t_base", "target_base", "цель (база)"]);
+        const c_t_base = findCol(["t_base", "target_base", "цель (база)", "t_base_amt"]);
         const c_comment = findCol(["comment", "примечание", "комментарий", "коментарий"]);
         const c_id = findCol(["id", "идентификатор"]);
         
         if (c_date !== undefined) {
-          const accMap = {}; data.accounts.forEach(a => { accMap[String(a.name).trim().toLowerCase()] = a.id; accMap[String(a.id).trim().toLowerCase()] = a.id; });
-          const catMap = {}; data.categories.forEach(c => { catMap[String(c.name).trim().toLowerCase()] = c.id; catMap[String(c.id).trim().toLowerCase()] = c.id; });
-          const incMap = {}; data.incomes.forEach(i => { incMap[String(i.name).trim().toLowerCase()] = i.id; incMap[String(i.id).trim().toLowerCase()] = i.id; });
+          const accMap = {}; 
+          data.accounts.forEach(a => { 
+            accMap[String(a.name).trim().toLowerCase()] = a.id; 
+            accMap[String(a.id).trim().toLowerCase()] = a.id; 
+            if (Array.isArray(a.aliases)) {
+              a.aliases.forEach(al => {
+                if (al) accMap[String(al).trim().toLowerCase()] = a.id;
+              });
+            }
+          });
+          const catMap = {}; 
+          data.categories.forEach(c => { 
+            catMap[String(c.name).trim().toLowerCase()] = c.id; 
+            catMap[String(c.id).trim().toLowerCase()] = c.id; 
+            if (Array.isArray(c.aliases)) {
+              c.aliases.forEach(al => {
+                if (al) catMap[String(al).trim().toLowerCase()] = c.id;
+              });
+            }
+          });
+          const incMap = {}; 
+          data.incomes.forEach(i => { 
+            const iname = String(i.name).trim().toLowerCase();
+            incMap[iname] = i.id; 
+            incMap[String(i.id).trim().toLowerCase()] = i.id; 
+            if (iname === "остальное") {
+              incMap["корректировки"] = i.id;
+            }
+            if (Array.isArray(i.aliases)) {
+              i.aliases.forEach(al => {
+                if (al) incMap[String(al).trim().toLowerCase()] = i.id;
+              });
+            }
+          });
 
           for (let i = dataStartIndex; i < txRows.length; i++) {
             const r = txRows[i]; 
@@ -339,7 +383,7 @@ function doGet(e) {
               sourceAmountUSD: parseNum(r[c_s_base]),
               targetAmount: t_amt, 
               targetCurrency: String(c_t_curr !== undefined ? r[c_t_curr] : ""),
-              targetAmountUSD: parseNum(r[c_t_base]),
+              targetAmountUSD: parseNum(c_t_base !== undefined ? r[c_t_base] : r[c_s_base]),
               date: iso, 
               tag: c_tag !== undefined ? String(r[c_tag]) : undefined, 
               comment: c_comment !== undefined ? String(r[c_comment]) : undefined
@@ -433,19 +477,27 @@ function doPost(e) {
       pushRow(["Updated", settingsData.timestamp]);
       pushRow(["Base_Currency", baseCurrency]);
       pushRow([""]); pushRow([" === WALLETS ==="]);
-      pushRow(["id", "name", "balance", "balance_base", "color", "icon", "currency"]);
-      pushRow(["ID", "Название", "Баланс", "Баланс (база)", "Цвет", "Иконка", "Валюта"]);
-      accounts.forEach(a => pushRow([a.id, a.name, a.balance, a.balanceUSD || "", a.color, a.icon, a.currency]));
+      pushRow(["id", "name", "balance", "balance_base", "color", "icon", "currency", "aliases"]);
+      pushRow(["ID", "Название", "Баланс", "Баланс (база)", "Цвет", "Иконка", "Валюта", "Псевдонимы"]);
+      accounts.forEach(a => pushRow([a.id, a.name, a.balance, a.balanceUSD || "", a.color, a.icon, a.currency, Array.isArray(a.aliases) ? a.aliases.join(", ") : (a.aliases || "")]));
       
       pushRow([""]); pushRow([" === CATEGORIES ==="]);
-      pushRow(["id", "name", "color", "icon", "tags"]);
-      pushRow(["ID", "Название", "Цвет", "Иконка", "Теги"]);
-      categories.forEach(c => pushRow([c.id, c.name, c.color, c.icon, Array.isArray(c.tags) ? c.tags.join(", ") : c.tags]));
+      pushRow(["id", "name", "color", "icon", "tags", "aliases"]);
+      pushRow(["ID", "Название", "Цвет", "Иконка", "Теги", "Псевдонимы"]);
+      categories.forEach(c => pushRow([c.id, c.name, c.color, c.icon, Array.isArray(c.tags) ? c.tags.join(", ") : (c.tags || ""), Array.isArray(c.aliases) ? c.aliases.join(", ") : (c.aliases || "")]));
       
       pushRow([""]); pushRow([" === INCOMES ==="]);
-      pushRow(["id", "name", "color", "icon", "tags"]);
-      pushRow(["ID", "Название", "Цвет", "Иконка", "Теги"]);
-      incomes.forEach(i => pushRow([i.id, i.name, i.color, i.icon, Array.isArray(i.tags) ? i.tags.join(", ") : i.tags]));
+      pushRow(["id", "name", "color", "icon", "tags", "aliases"]);
+      pushRow(["ID", "Название", "Цвет", "Иконка", "Теги", "Псевдонимы"]);
+      incomes.forEach(i => {
+        let aList = Array.isArray(i.aliases) ? [...i.aliases] : (i.aliases ? [i.aliases] : []);
+        if (String(i.name).trim().toLowerCase() === "остальное") {
+          if (!aList.some(function(a) { return String(a).trim().toLowerCase() === "корректировки"; })) {
+            aList.push("Корректировки");
+          }
+        }
+        pushRow([i.id, i.name, i.color, i.icon, Array.isArray(i.tags) ? i.tags.join(", ") : (i.tags || ""), aList.join(", ")]);
+      });
       
       if (existingUsers.length > 0) {
         pushRow([""]); pushRow([" === USERS ==="]);

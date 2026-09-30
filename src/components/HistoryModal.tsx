@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { X, ArrowDownLeft, ArrowUpRight, ArrowRight, Wallet, Pencil, Tag, ArrowRightLeft, AlertCircle, Check } from "lucide-react";
 import { Transaction, Account, Category, IncomeSource } from "../types";
 import { IconMap } from "../constants";
-import { safeParseDate, sortTransactionsDesc } from "../hooks/utils";
+import { safeParseDate, sortTransactionsDesc, findAccount, findCategory, findIncome } from "../hooks/utils";
 import { RatesService } from "../services/RatesService";
 
 interface HistoryModalProps {
@@ -15,10 +15,13 @@ interface HistoryModalProps {
     categories: Category[];
     incomes: IncomeSource[];
     onEditTransaction?: (tx: Transaction) => void;
+    onSaveAccount?: (acc: Account) => void;
+    onSaveCategory?: (cat: Category) => void;
+    onSaveIncome?: (inc: IncomeSource) => void;
 }
 
 export const HistoryModal: React.FC<HistoryModalProps> = ({
-    isOpen, onClose, entity, entityType, transactions, accounts, categories, incomes, onEditTransaction
+    isOpen, onClose, entity, entityType, transactions, accounts, categories, incomes, onEditTransaction, onSaveAccount, onSaveCategory, onSaveIncome
 }) => {
     const [repairingTx, setRepairingTx] = useState<{ tx: Transaction, field: "source" | "target" } | null>(null);
 
@@ -26,11 +29,58 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
 
     let filteredTransactions: Transaction[] = [];
     if (entityType === "account") {
-        filteredTransactions = transactions.filter(t => t.accountId === entity.id || t.targetId === entity.id);
+        const entityAliases = Array.isArray(entity.aliases) ? entity.aliases.map((a: string) => a.trim().toLowerCase()) : [];
+        const entityNameKey = String(entity.name || "").trim().toLowerCase();
+        const entityIdKey = String(entity.id || "").trim().toLowerCase();
+
+        const matchesAccount = (keyOrId?: string | null) => {
+            if (!keyOrId) return false;
+            const k = String(keyOrId).trim().toLowerCase();
+            if (k === entityIdKey || k === entityNameKey || entityAliases.includes(k)) return true;
+            const acc = findAccount(accounts, keyOrId);
+            return acc?.id === entity.id;
+        };
+
+        filteredTransactions = transactions.filter(t => {
+            return matchesAccount(t.accountId) || (t.type === "transfer" && matchesAccount(t.targetId));
+        });
     } else if (entityType === "category") {
-        filteredTransactions = transactions.filter(t => t.targetId === entity.id);
+        const entityAliases = Array.isArray(entity.aliases) ? entity.aliases.map((a: string) => a.trim().toLowerCase()) : [];
+        const entityNameKey = String(entity.name || "").trim().toLowerCase();
+        const entityIdKey = String(entity.id || "").trim().toLowerCase();
+
+        filteredTransactions = transactions.filter(t => {
+            const typeStr = String(t.type || "").trim().toLowerCase();
+            if (typeStr && typeStr !== "expense") return false;
+            
+            const cat = findCategory(categories, t.targetId);
+            if (cat && cat.id === entity.id) return true;
+            
+            const targetKey = String(t.targetId || "").trim().toLowerCase();
+            return !!targetKey && (targetKey === entityIdKey || targetKey === entityNameKey || entityAliases.includes(targetKey));
+        });
     } else if (entityType === "income") {
-        filteredTransactions = transactions.filter(t => t.accountId === entity.id || t.targetId === entity.id);
+        const entityAliases = Array.isArray(entity.aliases) ? entity.aliases.map((a: string) => a.trim().toLowerCase()) : [];
+        const entityNameKey = String(entity.name || "").trim().toLowerCase();
+        const entityIdKey = String(entity.id || "").trim().toLowerCase();
+
+        filteredTransactions = transactions.filter(t => {
+            const typeStr = String(t.type || "").trim().toLowerCase();
+            if (typeStr && typeStr !== "income") return false;
+            
+            const inc = findIncome(incomes, t.targetId);
+            if (inc && inc.id === entity.id) return true;
+            
+            const targetKey = String(t.targetId || "").trim().toLowerCase();
+            if (targetKey && (targetKey === entityIdKey || targetKey === entityNameKey || entityAliases.includes(targetKey))) {
+                return true;
+            }
+
+            const incAcc = findIncome(incomes, t.accountId);
+            if (incAcc && incAcc.id === entity.id) return true;
+            const accKey = String(t.accountId || "").trim().toLowerCase();
+            return !!accKey && (accKey === entityIdKey || accKey === entityNameKey || entityAliases.includes(accKey));
+        });
     } else if (entityType === "tag") {
         filteredTransactions = transactions.filter(t => t.tag === entity.name && t.type === "expense");
     } else if (entityType === "feed") {
@@ -54,11 +104,11 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
     });
 
     const checkBroken = (tx: Transaction) => {
-        const acc = accounts.find(a => a.id === tx.accountId);
+        const acc = findAccount(accounts, tx.accountId);
         let targetExists = false;
-        if (tx.type === "expense") targetExists = categories.some(c => c.id === tx.targetId);
-        else if (tx.type === "income") targetExists = incomes.some(i => i.id === tx.targetId);
-        else if (tx.type === "transfer") targetExists = accounts.some(a => a.id === tx.targetId);
+        if (tx.type === "expense") targetExists = !!findCategory(categories, tx.targetId);
+        else if (tx.type === "income") targetExists = !!findIncome(incomes, tx.targetId);
+        else if (tx.type === "transfer") targetExists = !!findAccount(accounts, tx.targetId);
 
         return {
             sourceBroken: !acc,
@@ -70,7 +120,8 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
     const getCounterpartInfo = (tx: Transaction) => {
         let isOutflow = true;
         if (entityType === "account") {
-            if (tx.accountId === entity.id) isOutflow = tx.type !== "income";
+            const acc = findAccount(accounts, tx.accountId);
+            if (acc?.id === entity.id || tx.accountId === entity.id) isOutflow = tx.type !== "income";
             else isOutflow = false;
         } else if (entityType === "category" || entityType === "tag") {
             isOutflow = true;
@@ -81,18 +132,18 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
         }
 
         let counterpartItem: Account | Category | IncomeSource | undefined;
-        const aid = String(tx.accountId || "").trim().toLowerCase();
         if (tx.type === "expense") {
             counterpartItem = (entityType === "category" || entityType === "tag") 
-                ? accounts.find(a => String(a.id).trim().toLowerCase() === aid || String(a.name).trim().toLowerCase() === aid)
-                : categories.find(c => c.id === tx.targetId);
+                ? findAccount(accounts, tx.accountId)
+                : findCategory(categories, tx.targetId);
         } else if (tx.type === "income") {
             counterpartItem = (entityType === "income")
-                ? accounts.find(a => String(a.id).trim().toLowerCase() === aid || String(a.name).trim().toLowerCase() === aid)
-                : incomes.find(i => i.id === tx.targetId);
+                ? findAccount(accounts, tx.accountId)
+                : findIncome(incomes, tx.targetId);
         } else if (tx.type === "transfer") {
-            const otherId = String(tx.accountId === entity.id ? tx.targetId : tx.accountId).trim().toLowerCase();
-            counterpartItem = accounts.find(a => String(a.id).trim().toLowerCase() === otherId || String(a.name).trim().toLowerCase() === otherId);
+            const acc = findAccount(accounts, tx.accountId);
+            const otherId = (acc?.id === entity.id || tx.accountId === entity.id) ? tx.targetId : tx.accountId;
+            counterpartItem = findAccount(accounts, otherId);
         }
 
         return { item: counterpartItem, isOutflow };
@@ -102,9 +153,8 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
         const baseCurrency = RatesService.getBaseCurrency();
         const sAmt = tx.sourceAmount ?? tx.amount ?? 0;
         const sAmtUsd = tx.sourceAmountUSD ?? tx.amountUSD;
-        // Robust account lookup
-        const aid = String(tx.accountId || "").trim().toLowerCase();
-        const account = accounts.find(a => String(a.id).trim().toLowerCase() === aid || String(a.name).trim().toLowerCase() === aid);
+        // Robust account lookup with aliases support
+        const account = findAccount(accounts, tx.accountId);
         const sCurr = tx.sourceCurrency || (account?.currency || baseCurrency);
         const tAmt = tx.targetAmount ?? tx.amountLocal ?? sAmt;
         const tCurr = tx.targetCurrency || tx.currencyLocal || (account?.currency || baseCurrency);
@@ -163,7 +213,16 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
             updatedTx.accountId = newId;
             // When fixing source (the wallet), update source currency to match the new wallet
             const acc = accounts.find(a => a.id === newId);
-            if (acc) updatedTx.sourceCurrency = acc.currency;
+            if (acc) {
+                updatedTx.sourceCurrency = acc.currency;
+                const brokenKey = String(repairingTx.tx.accountId || "").trim();
+                if (brokenKey && brokenKey.toLowerCase() !== acc.id.toLowerCase() && brokenKey.toLowerCase() !== acc.name.toLowerCase()) {
+                    const existingAliases = acc.aliases || [];
+                    if (!existingAliases.some(al => al.toLowerCase() === brokenKey.toLowerCase())) {
+                        onSaveAccount?.({ ...acc, aliases: [...existingAliases, brokenKey] });
+                    }
+                }
+            }
         } else {
             updatedTx.targetId = newId;
             // Handle cross-type repair (e.g. broken transfer becoming an expense)
@@ -176,7 +235,38 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
             // If target is an account, update target currency to match it
             if (type === "account") {
                 const acc = accounts.find(a => a.id === newId);
-                if (acc) updatedTx.targetCurrency = acc.currency;
+                if (acc) {
+                    updatedTx.targetCurrency = acc.currency;
+                    const brokenKey = String(repairingTx.tx.targetId || "").trim();
+                    if (brokenKey && brokenKey.toLowerCase() !== acc.id.toLowerCase() && brokenKey.toLowerCase() !== acc.name.toLowerCase()) {
+                        const existingAliases = acc.aliases || [];
+                        if (!existingAliases.some(al => al.toLowerCase() === brokenKey.toLowerCase())) {
+                            onSaveAccount?.({ ...acc, aliases: [...existingAliases, brokenKey] });
+                        }
+                    }
+                }
+            } else if (type === "category") {
+                const cat = categories.find(c => c.id === newId);
+                if (cat) {
+                    const brokenKey = String(repairingTx.tx.targetId || "").trim();
+                    if (brokenKey && brokenKey.toLowerCase() !== cat.id.toLowerCase() && brokenKey.toLowerCase() !== cat.name.toLowerCase()) {
+                        const existingAliases = cat.aliases || [];
+                        if (!existingAliases.some(al => al.toLowerCase() === brokenKey.toLowerCase())) {
+                            onSaveCategory?.({ ...cat, aliases: [...existingAliases, brokenKey] });
+                        }
+                    }
+                }
+            } else if (type === "income") {
+                const inc = incomes.find(i => i.id === newId);
+                if (inc) {
+                    const brokenKey = String(repairingTx.tx.targetId || "").trim();
+                    if (brokenKey && brokenKey.toLowerCase() !== inc.id.toLowerCase() && brokenKey.toLowerCase() !== inc.name.toLowerCase()) {
+                        const existingAliases = inc.aliases || [];
+                        if (!existingAliases.some(al => al.toLowerCase() === brokenKey.toLowerCase())) {
+                            onSaveIncome?.({ ...inc, aliases: [...existingAliases, brokenKey] });
+                        }
+                    }
+                }
             }
         }
         
@@ -191,7 +281,15 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
             <div className="glass-panel bg-[var(--bg-color)]/90 w-full max-w-sm max-h-[80vh] flex flex-col overflow-hidden shadow-2xl shadow-[var(--shadow-color)]" onClick={e => e.stopPropagation()}>
                 <div className="flex justify-between items-center p-6 border-b border-[var(--glass-border)] shrink-0">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-[0_0_15px_currentColor]" style={{ color: entity.color || "var(--primary-color)" }}><EntityIcon size={20} /></div>
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            title="Закрыть"
+                            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-[0_0_15px_currentColor] cursor-pointer hover:opacity-80 active:scale-95 transition-all"
+                            style={{ color: entity.color || "var(--primary-color)" }}
+                        >
+                            <EntityIcon size={20} />
+                        </button>
                         <div className="flex flex-col"><h2 className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">{entity.name}</h2><span className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest">История</span></div>
                     </div>
                     <button onClick={onClose} className="w-8 h-8 rounded-lg bg-[var(--glass-item-bg)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"><X size={16} /></button>
@@ -217,15 +315,15 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                                             
                                             let displayName = item?.name || (status.isBroken ? "Требует внимания" : "Unknown");
                                             if (entityType === "feed") {
-                                                const s = accounts.find(a => a.id === tx.accountId);
+                                                const s = findAccount(accounts, tx.accountId);
                                                 if (tx.type === "expense") {
-                                                    const dName = categories.find(c => c.id === tx.targetId)?.name || "?";
+                                                    const dName = findCategory(categories, tx.targetId)?.name || "?";
                                                     displayName = `${s?.name || "?"} → ${dName}`;
                                                 } else if (tx.type === "income") {
-                                                    const dName = incomes.find(i => i.id === tx.targetId)?.name || "?";
+                                                    const dName = findIncome(incomes, tx.targetId)?.name || "?";
                                                     displayName = `${dName} → ${s?.name || "?"}`;
                                                 } else {
-                                                    const dName = accounts.find(a => a.id === tx.targetId)?.name || "?";
+                                                    const dName = findAccount(accounts, tx.targetId)?.name || "?";
                                                     displayName = `${s?.name || "?"} → ${dName}`;
                                                 }
                                             }
