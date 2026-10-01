@@ -49,7 +49,7 @@ describe('PeriodAnalyticsModal', () => {
     }
   ];
 
-  it('renders modal with title, categories and 12-month legend', () => {
+  it('renders modal with title, categories and dynamic period legend', () => {
     const handleClose = vi.fn();
     render(
       <PeriodAnalyticsModal
@@ -68,7 +68,7 @@ describe('PeriodAnalyticsModal', () => {
 
     // Title should be visible
     expect(screen.getByText('Период')).toBeDefined();
-    expect(screen.getAllByText(/12 месяцев/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Cash Flow/i).length).toBeGreaterThan(0);
 
     // Category names should be visible
     expect(screen.getByText('Жилье')).toBeDefined();
@@ -227,5 +227,41 @@ describe('PeriodAnalyticsModal', () => {
     expect(screen.getByText(/Сальдо/i)).toBeDefined();
     expect(screen.getAllByText(/Доход/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Расход/i).length).toBeGreaterThan(0);
+  });
+
+  it('renders full 12 months when data spans a year or more', () => {
+    const oldDate = new Date();
+    oldDate.setMonth(oldDate.getMonth() - 11);
+
+    const oldTx: Transaction = {
+      id: 'tx-old',
+      date: oldDate.toISOString(),
+      type: 'expense',
+      accountId: 'acc-1',
+      targetId: 'cat-home',
+      sourceAmount: 300,
+      sourceCurrency: 'USD',
+      sourceAmountUSD: 300,
+      targetAmount: 300,
+      targetCurrency: 'USD',
+      targetAmountUSD: 300
+    };
+
+    render(
+      <PeriodAnalyticsModal
+        isOpen={true}
+        onClose={() => {}}
+        categories={mockCategories}
+        incomes={mockIncomes}
+        accounts={mockAccounts}
+        globalTransactions={[...mockTransactions, oldTx]}
+        currencyMode="base"
+        localCurrencyCode="USD"
+        baseCurrency="USD"
+        baseSymbol="$"
+      />
+    );
+
+    expect(screen.getAllByText(/12 месяцев/i).length).toBeGreaterThan(0);
   });
 });

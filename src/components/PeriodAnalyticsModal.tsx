@@ -169,14 +169,36 @@ export const PeriodAnalyticsModal: React.FC<PeriodAnalyticsModalProps> = ({
         return 0;
     };
 
-    // 12 Months Definition (rolling last 12 months up to current month)
+    // Dynamic Months Definition: up to 12 months based on existing data, minimum 1 (current month)
     const monthsRange = useMemo(() => {
         const now = new Date();
         const currentYear = now.getFullYear();
         const currentMonth = now.getMonth();
+
+        // Find earliest transaction date within the last 12 months
+        const maxMonthsBack = 11; // 0..11 => 12 months total
+        let earliestMonthsAgo = 0; // default to only current month if no data
+
+        transactions.forEach(t => {
+            const d = safeParseDate(t.date);
+            if (isNaN(d.getTime())) return;
+            const yDiff = currentYear - d.getFullYear();
+            const mDiff = currentMonth - d.getMonth();
+            const totalMonthsDiff = yDiff * 12 + mDiff;
+
+            // Only consider transactions between 0 and 11 months ago (or in current/future)
+            if (totalMonthsDiff >= 0 && totalMonthsDiff <= maxMonthsBack) {
+                if (totalMonthsDiff > earliestMonthsAgo) {
+                    earliestMonthsAgo = totalMonthsDiff;
+                }
+            } else if (totalMonthsDiff > maxMonthsBack) {
+                // If there are older transactions, cap at max 12 months
+                earliestMonthsAgo = maxMonthsBack;
+            }
+        });
+
         const list = [];
-        
-        for (let i = 11; i >= 0; i--) {
+        for (let i = earliestMonthsAgo; i >= 0; i--) {
             const d = new Date(currentYear, currentMonth - i, 1);
             const y = d.getFullYear();
             const m = d.getMonth();
@@ -196,9 +218,9 @@ export const PeriodAnalyticsModal: React.FC<PeriodAnalyticsModalProps> = ({
             });
         }
         return list;
-    }, []);
+    }, [transactions]);
 
-    // Filter transactions for the entire 12-month period
+    // Filter transactions for the calculated period
     const periodStart = monthsRange[0].date;
     const periodTransactions = useMemo(() => {
         return transactions.filter(t => {
@@ -356,13 +378,20 @@ export const PeriodAnalyticsModal: React.FC<PeriodAnalyticsModalProps> = ({
             }
         }
 
-        // 12-month totals
+        // Period totals (up to 12 months)
         const totalIncome = monthlyBarData.reduce((s, m) => s + m.displayIncome, 0);
         const totalExpense = monthlyBarData.reduce((s, m) => s + m.displayExpense, 0);
         const totalNet = totalIncome - totalExpense;
+        const monthsCount = monthlyBarData.length;
+
+        const getMonthsWord = (n: number) => {
+            if (n % 10 === 1 && n % 100 !== 11) return "месяц";
+            if ([2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100)) return "месяца";
+            return "месяцев";
+        };
 
         return {
-            title: "За 12 месяцев",
+            title: `За ${monthsCount} ${getMonthsWord(monthsCount)}`,
             subtitle: "Cash Flow",
             income: totalIncome,
             expense: totalExpense,
@@ -448,15 +477,32 @@ export const PeriodAnalyticsModal: React.FC<PeriodAnalyticsModalProps> = ({
 
     if (!isOpen) return null;
 
-    // SVG Chart Constants
+    // Dynamic SVG Chart Dimensions
     const svgWidth = 360;
     const svgHeight = 175;
     const paddingX = 12;
     const chartBaseline = 135;
     const maxBarHeight = 95;
-    const slotWidth = (svgWidth - paddingX * 2) / 12; // 28px
-    const barWidth = 8;
-    const barGap = 2;
+
+    const monthsCount = monthsRange.length;
+    const slotWidth = (svgWidth - paddingX * 2) / Math.max(1, monthsCount);
+
+    // Adaptive bar width and gap for fewer months (thicker bars for better touch & clickability)
+    const { barWidth, barGap, barRadius } = useMemo(() => {
+        if (monthsCount <= 2) {
+            return { barWidth: 32, barGap: 6, barRadius: 6 };
+        }
+        if (monthsCount <= 4) {
+            return { barWidth: 22, barGap: 4, barRadius: 4 };
+        }
+        if (monthsCount <= 6) {
+            return { barWidth: 16, barGap: 3, barRadius: 3 };
+        }
+        if (monthsCount <= 8) {
+            return { barWidth: 12, barGap: 3, barRadius: 3 };
+        }
+        return { barWidth: 8, barGap: 2, barRadius: 2 };
+    }, [monthsCount]);
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[200] animate-in fade-in duration-300 flex justify-center" onClick={onClose}>
@@ -476,7 +522,9 @@ export const PeriodAnalyticsModal: React.FC<PeriodAnalyticsModalProps> = ({
                             </button>
                             <div className="flex flex-col">
                                 <h2 className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">Период</h2>
-                                <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest leading-none mt-1">12 месяцев • Cash Flow</span>
+                                <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest leading-none mt-1">
+                                    {monthsCount === 12 ? "12 месяцев" : `До 12 мес (${monthsCount} ${monthsCount === 1 ? 'месяц' : [2, 3, 4].includes(monthsCount) ? 'месяца' : 'месяцев'})`} • Cash Flow
+                                </span>
                             </div>
                         </div>
                         <button 
@@ -667,7 +715,7 @@ export const PeriodAnalyticsModal: React.FC<PeriodAnalyticsModalProps> = ({
                                                         y={incomeY} 
                                                         width={barWidth} 
                                                         height={incomeH} 
-                                                        rx={2} 
+                                                        rx={barRadius} 
                                                         fill={INCOME_COLOR} 
                                                         className="transition-all duration-300"
                                                         style={{ 
@@ -685,7 +733,7 @@ export const PeriodAnalyticsModal: React.FC<PeriodAnalyticsModalProps> = ({
                                                         y={expenseY} 
                                                         width={barWidth} 
                                                         height={expenseH} 
-                                                        rx={2} 
+                                                        rx={barRadius} 
                                                         fill={EXPENSE_COLOR} 
                                                         className="transition-all duration-300"
                                                         style={{ 
@@ -696,17 +744,17 @@ export const PeriodAnalyticsModal: React.FC<PeriodAnalyticsModalProps> = ({
                                                     />
                                                 )}
 
-                                                {/* Month Number in Legend (1..12) */}
+                                                {/* Month Label in Legend (e.g. "Май" if <= 6 months, or 1..12) */}
                                                 <text 
                                                     x={slotCenter} 
                                                     y={151} 
                                                     textAnchor="middle" 
-                                                    fontSize={10} 
+                                                    fontSize={monthsCount <= 6 ? 11 : 10} 
                                                     fontWeight={isSelected || m.isCurrent ? "900" : "600"} 
                                                     fill={isSelected ? "var(--text-main)" : (m.isCurrent ? "var(--primary-color)" : "var(--text-muted)")}
-                                                    className="transition-colors"
+                                                    className="transition-colors capitalize"
                                                 >
-                                                    {m.monthNumber}
+                                                    {monthsCount <= 6 ? m.shortName : m.monthNumber}
                                                 </text>
 
                                                 {/* Current Month Indicator Dot */}
@@ -741,7 +789,7 @@ export const PeriodAnalyticsModal: React.FC<PeriodAnalyticsModalProps> = ({
 
                         <div className="flex items-center gap-2">
                             <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">
-                                {selectedMonthKey ? "За месяц" : "За 12 мес"}
+                                {selectedMonthKey ? "За месяц" : `За ${monthsCount} мес`}
                             </span>
                             <div className="flex items-center gap-1.5 text-[10px] font-bold text-[var(--text-muted)] bg-[var(--glass-item-bg)] px-2.5 py-1 rounded-xl border border-[var(--glass-border)]">
                                 <Layers size={11} className={
