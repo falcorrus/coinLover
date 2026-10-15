@@ -9,13 +9,6 @@ interface PremiumModalProps {
 export const PremiumModal: React.FC<PremiumModalProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
-  const handleRequestPremium = () => {
-    const message = "Здравствуйте, дайте, пожалуйста Premium в Coinlover";
-    const url = `https://t.me/argodon?text=${encodeURIComponent(message)}`;
-    window.open(url, "_blank");
-    onClose();
-  };
-
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[600] flex items-center justify-center p-6 animate-in fade-in duration-300">
       <div className="glass-panel w-full max-w-[320px] p-8 flex flex-col items-center gap-6 text-center border-[var(--glass-border)] shadow-2xl shadow-[var(--shadow-color)] animate-in zoom-in-95 duration-300 slide-in-from-bottom-8 relative">
@@ -27,25 +20,18 @@ export const PremiumModal: React.FC<PremiumModalProps> = ({ isOpen, onClose }) =
         </div>
 
         <div className="space-y-2">
-          <h3 className="text-lg font-black tracking-tight text-[var(--text-main)] uppercase">Доступно в тарифе Premium</h3>
+          <h3 className="text-lg font-black tracking-tight text-[var(--text-main)] uppercase">Все функции активны</h3>
           <p className="text-xs text-[var(--text-muted)] leading-relaxed px-1">
-            Можете запросить тестовый период в TG: <span className="text-[var(--primary-color)] font-bold">@argodon</span>
+            В текущей версии все возможности CoinLover доступны бесплатно для всех пользователей.
           </p>
         </div>
 
         <div className="flex flex-col w-full gap-3 mt-2">
           <button
-            onClick={handleRequestPremium}
+            onClick={onClose}
             className="h-14 rounded-2xl font-black text-white shadow-xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] bg-[var(--primary-color)] shadow-[var(--primary-color)]/20"
           >
-            Запросить Premium
-          </button>
-
-          <button
-            onClick={onClose}
-            className="h-14 rounded-2xl bg-[var(--glass-item-bg)] border border-[var(--glass-border)] font-bold text-[var(--text-muted)] hover:text-[var(--text-main)] transition-all duration-300 text-xs tracking-widest uppercase"
-          >
-            Закрыть
+            Отлично
           </button>
         </div>
 

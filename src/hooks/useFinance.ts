@@ -56,7 +56,7 @@ export const useFinance = (ssId?: string) => {
     });
   });
   const [users, setUsers] = useState<{ name: string; id: string }[]>([]);
-  const [tariff, setTariff] = useState<string>(() => localStorage.getItem("cl_user_tariff") || "Free");
+  const [tariff, setTariff] = useState<string>(() => localStorage.getItem("cl_user_tariff") || "Premium");
 
   const isInitialLoad = useRef(true);
 

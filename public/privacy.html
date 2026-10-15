@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Политика конфиденциальности — CoinLover</title>
+  <style>
+    :root {
+      --bg: #090a0f;
+      --card-bg: rgba(255, 255, 255, 0.04);
+      --border: rgba(255, 255, 255, 0.08);
+      --accent: #6d5dfc;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      padding: 40px 20px;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 40px;
+      backdrop-filter: blur(20px);
+    }
+    h1 {
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      color: #fff;
+    }
+    .date {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 32px;
+    }
+    h2 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-top: 28px;
+      margin-bottom: 12px;
+      color: var(--accent);
+    }
+    p, ul {
+      color: var(--text);
+      font-size: 15px;
+      margin-bottom: 16px;
+    }
+    ul {
+      padding-left: 20px;
+    }
+    li {
+      margin-bottom: 8px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    .footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--muted);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Политика конфиденциальности CoinLover</h1>
+    <div class="date">Дата вступления в силу: 15 октября 2026 г.</div>
+
+    <p>Настоящая Политика конфиденциальности описывает, как приложение <strong>CoinLover</strong> (далее — «Приложение», «Сервис») обрабатывает, использует и защищает информацию пользователей.</p>
+
+    <h2>1. Основной принцип: Приватность ваших финансов</h2>
+    <p>CoinLover разработан с фокусом на максимальную конфиденциальность. Мы не храним ваши пароли от банковских счетов, номера карт или закрытую финансовую информацию на собственных серверах. Все ваши финансовые транзакции хранятся либо локально на вашем устройстве, либо в вашей личной Google Таблице (Google Sheets), к которой имеете доступ только вы.</p>
+
+    <h2>2. Какие данные мы собираем</h2>
+    <ul>
+      <li><strong>Финансовые записи:</strong> Суммы транзакций, даты, категории и названия счетов, которые вы вводите для учета. Эти данные передаются исключительно в вашу персональную Google Таблицу через защищенный HTTPS-прокси.</li>
+      <li><strong>Технические данные:</strong> Идентификатор вашей таблицы (Spreadsheet ID) и токен авторизации (Passkey/Session Token) для поддержания защищенного сеанса связи с вашей таблицей.</li>
+      <li><strong>Анонимная аналитика:</strong> Обобщенные данные об использовании приложения (например, факт открытия экранов или ошибки интерфейса) без привязки к личности пользователя через Google Analytics.</li>
+    </ul>
+
+    <h2>3. Разрешения устройства</h2>
+    <ul>
+      <li><strong>Доступ к сети Интернет (INTERNET):</strong> Требуется исключительно для синхронизации записей с вашей таблицей Google Sheets и курсами валют.</li>
+      <li><strong>Аудио и микрофон:</strong> Мобильное Android-приложение <strong>не запрашивает</strong> и не использует системное разрешение на доступ к микрофону. Никакие аудиозаписи не осуществляются и не передаются на серверы.</li>
+    </ul>
+
+    <h2>4. Передача данных третьим лицам</h2>
+    <p>Мы не продаем, не сдаем в аренду и не передаем ваши персональные или финансовые данные третьим лицам или рекламным сетям. Синхронизация данных осуществляется напрямую с сервисами Google (Google Sheets API) по защищенным протоколам шифрования SSL/TLS.</p>
+
+    <h2 id="delete-account">5. Удаление данных и учетной записи</h2>
+    <p>Вы имеете полный контроль над своими данными в любой момент времени:</p>
+    <ul>
+      <li>Вы можете очистить локальные данные приложения в настройках CoinLover («Сброс / Выход») или в настройках приложений Android.</li>
+      <li>Вы можете в любой момент закрыть доступ к своей Google Таблице или удалить её в своем личном кабинете Google Диска.</li>
+      <li>Для полного удаления связанного профиля и любых технических метаданных обратитесь по адресу: <a href="mailto:support@coinlover.ru">support@coinlover.ru</a> или воспользуйтесь специальной страницей <a href="/delete-account.html">Запрос на удаление аккаунта и данных</a>.</li>
+    </ul>
+
+    <h2>6. Контакты</h2>
+    <p>Если у вас возникли вопросы по поводу данной Политики конфиденциальности, пожалуйста, свяжитесь с нами:</p>
+    <ul>
+      <li>Email: <a href="mailto:support@coinlover.ru">support@coinlover.ru</a></li>
+      <li>Сайт: <a href="https://coinlover.ru" target="_blank">https://coinlover.ru</a></li>
+    </ul>
+
+    <div class="footer">
+      &copy; 2026 CoinLover. Все права защищены.
+    </div>
+  </div>
+</body>
+</html>

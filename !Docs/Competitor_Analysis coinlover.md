@@ -67,7 +67,7 @@ CoinLover — приложение для учета личных финансо
 | 💰 Модель    | Freemium (подписка ~5 USD/мес) |
 | 🔗 Сайт      | coinkeeper.me                  |
 | ⭐ Рейтинг    | ~4.5 (App Store / Google Play) |
-
+> Его roadmap: https://roadmap.coinkeeper.me/
 ### За что хвалят CoinKeeper (Топ-5)
 
 1. **🪙 Drag & Drop монетки с визуальным заполнением**

@@ -321,10 +321,6 @@ const isNativeApp = React.useMemo(() => {
 
   const settingsLongPress = useLongPress(
     () => { 
-      if (tariff !== "Premium") {
-        setIsPremiumModalOpen(true);
-        return;
-      }
       setAiSheet({ isOpen: true, startInVoiceMode: true });
       if (navigator.vibrate) navigator.vibrate(APP_SETTINGS.HAPTIC_FEEDBACK_DURATION_MEDIUM); 
     },

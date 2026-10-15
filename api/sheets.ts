@@ -1418,11 +1418,42 @@ export default async function handler(req, res) {
           });
 
           if (payload.action === 'addTransaction') {
-            await sheets.spreadsheets.values.append({ 
+            // Determine target row deterministically by checking existing row count in column A
+            const colRes = await sheets.spreadsheets.values.get({ 
               spreadsheetId: targetSsId, 
-              range: `${txSheetName}!A:Z`, 
-              valueInputOption: 'USER_ENTERED', 
-              requestBody: { values: [row] } 
+              range: `${txSheetName}!A:A` 
+            });
+            const existingRows = colRes.data.values || [];
+            const nextRow = Math.max(existingRows.length + 1, 3);
+
+            const ssMeta = await sheets.spreadsheets.get({
+              spreadsheetId: targetSsId,
+              fields: "sheets(properties(sheetId,title,gridProperties))"
+            });
+            const sheetMeta = ssMeta.data.sheets?.find((s: any) => s.properties.title === txSheetName);
+            const currentMaxRows = sheetMeta?.properties?.gridProperties?.rowCount || 1000;
+            const sheetId = sheetMeta?.properties?.sheetId;
+
+            if (nextRow > currentMaxRows && sheetId !== undefined) {
+              await sheets.spreadsheets.batchUpdate({
+                spreadsheetId: targetSsId,
+                requestBody: {
+                  requests: [{
+                    appendDimension: {
+                      sheetId,
+                      dimension: "ROWS",
+                      length: Math.max(100, nextRow - currentMaxRows + 50)
+                    }
+                  }]
+                }
+              });
+            }
+
+            await sheets.spreadsheets.values.update({
+              spreadsheetId: targetSsId,
+              range: `${txSheetName}!A${nextRow}`,
+              valueInputOption: 'USER_ENTERED',
+              requestBody: { values: [row] }
             });
           } else {
             // updateTransaction: find row by ID

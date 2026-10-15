@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Удаление аккаунта и данных — CoinLover</title>
+  <style>
+    :root {
+      --bg: #090a0f;
+      --card-bg: rgba(255, 255, 255, 0.04);
+      --border: rgba(255, 255, 255, 0.08);
+      --accent: #6d5dfc;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      padding: 40px 20px;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 40px;
+      backdrop-filter: blur(20px);
+    }
+    .header-links {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 24px;
+      font-size: 14px;
+    }
+    h1 {
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      color: #fff;
+    }
+    .subtitle {
+      color: var(--muted);
+      font-size: 15px;
+      margin-bottom: 32px;
+    }
+    h2 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-top: 28px;
+      margin-bottom: 12px;
+      color: var(--accent);
+    }
+    p, ul {
+      color: var(--text);
+      font-size: 15px;
+      margin-bottom: 16px;
+    }
+    ul {
+      padding-left: 20px;
+    }
+    li {
+      margin-bottom: 8px;
+    }
+    .badge-box {
+      background: rgba(109, 93, 252, 0.08);
+      border: 1px solid rgba(109, 93, 252, 0.25);
+      border-radius: 16px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    .lang-divider {
+      border: none;
+      border-top: 1px dashed var(--border);
+      margin: 40px 0;
+    }
+    .footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--muted);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header-links">
+      <a href="/">&larr; Главная</a>
+      <a href="/privacy.html">Политика конфиденциальности</a>
+    </div>
+
+    <!-- RU SECTION -->
+    <h1>Удаление учетной записи и связанных данных</h1>
+    <div class="subtitle">Приложение: <strong>CoinLover</strong> | Инструкция по запросу на удаление аккаунта и данных</div>
+
+    <p>Мы уважаем вашу приватность и предоставляем полную свободу управления вашей информацией. В соответствии с требованиями Google Play, вы можете в любой момент запросить полное удаление вашей учетной записи и всех связанных с ней данных.</p>
+
+    <div class="badge-box">
+      <h2 style="margin-top: 0;">Как подать запрос на удаление (через веб):</h2>
+      <p>Если вы больше не используете приложение или удалили его с устройства, отправьте письмо на наш адрес поддержки:</p>
+      <p>📧 Email: <a href="mailto:support@coinlover.ru?subject=Удаление%20аккаунта%20CoinLover"><strong>support@coinlover.ru</strong></a></p>
+      <p>В теме письма укажите: <em>«Удаление аккаунта CoinLover»</em>, а в теле письма — адрес электронной почты или идентификатор, привязанный к вашему профилю / Passkey.</p>
+      <p><strong>Срок обработки:</strong> Запрос выполняется в течение 24–72 часов (не более 30 календарных дней).</p>
+    </div>
+
+    <h2>Удаление данных внутри приложения</h2>
+    <p>Если приложение установлено на вашем устройстве:</p>
+    <ul>
+      <li>Откройте <strong>CoinLover</strong> &rarr; перейдите в <strong>Настройки</strong>.</li>
+      <li>Нажмите кнопку <strong>«Сброс данных / Выход»</strong>. Локальный кеш и токены сессии будут удалены немедленно.</li>
+    </ul>
+
+    <h2>Какие данные удаляются</h2>
+    <ul>
+      <li>Учетные данные авторизации и открытые ключи WebAuthn/Passkey.</li>
+      <li>Идентификаторы сессий и сервисные токены доступа.</li>
+      <li>Привязка к персональной таблице (Spreadsheet ID).</li>
+      <li>Локальные настройки интерфейса и кэш приложения.</li>
+    </ul>
+
+    <h2>Какие данные сохраняются</h2>
+    <p><strong>Никакие персональные или идентификационные данные не сохраняются.</strong> Все записи о сессиях и профиле удаляются безвозвратно. Финансовые данные, находящиеся в вашей личной Google Таблице, хранятся на вашем персональном Google Диске и контролируются исключительно вами — вы можете удалить саму таблицу в любой момент через интерфейс Google Drive.</p>
+
+    <hr class="lang-divider">
+
+    <!-- EN SECTION (FOR GOOGLE PLAY REVIEWERS) -->
+    <h1>Account and Associated Data Deletion Request</h1>
+    <div class="subtitle">Application: <strong>CoinLover</strong> | Instructions for account & data deletion</div>
+
+    <p>CoinLover respects your privacy and provides full control over your data. In compliance with Google Play's Account Deletion Policy, users can request the deletion of their account and associated data through the web without requiring the app to be installed.</p>
+
+    <div class="badge-box">
+      <h2 style="margin-top: 0;">How to Request Deletion via Web:</h2>
+      <p>To request permanent deletion of your account and related data, please email our support team:</p>
+      <p>📧 Email: <a href="mailto:support@coinlover.ru?subject=CoinLover%20Account%20Deletion%20Request"><strong>support@coinlover.ru</strong></a></p>
+      <p>Subject: <em>"CoinLover Account Deletion Request"</em>. Please provide the email address or identifier associated with your account/Passkey.</p>
+      <p><strong>Processing Time:</strong> All requests are fulfilled within 24–72 hours (max 30 calendar days).</p>
+    </div>
+
+    <h2>In-App Deletion Steps</h2>
+    <ul>
+      <li>Open <strong>CoinLover</strong> &rarr; navigate to <strong>Settings</strong>.</li>
+      <li>Click <strong>"Reset / Sign Out"</strong>. All local storage and session tokens will be purged immediately.</li>
+    </ul>
+
+    <h2>What Data is Deleted</h2>
+    <ul>
+      <li>Authentication credentials, session tokens, and WebAuthn/Passkey records.</li>
+      <li>Spreadsheet IDs and service metadata.</li>
+      <li>Locally cached preferences, categories, and offline data.</li>
+    </ul>
+
+    <h2>Data Retention Policy</h2>
+    <p><strong>No personal data is retained</strong> after deletion. Financial transactions stored in your private Google Sheet remain under your personal Google Account on Google Drive and can be deleted by you at any time.</p>
+
+    <div class="footer">
+      &copy; 2026 CoinLover (<a href="https://coinlover.ru">https://coinlover.ru</a>). Все права защищены. | <a href="/privacy.html">Privacy Policy</a>
+    </div>
+  </div>
+</body>
+</html>

@@ -16,8 +16,20 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            def keystoreFile = file('coinlover-release-key.jks')
+            if (keystoreFile.exists()) {
+                storeFile keystoreFile
+                storePassword 'coinlover2026'
+                keyAlias 'coinlover'
+                keyPassword 'coinlover2026'
+            }
+        }
+    }
     buildTypes {
         release {
+            signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

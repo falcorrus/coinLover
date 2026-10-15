@@ -439,11 +439,7 @@ export function AppHeader({
                           onClick={() => { 
                             setIsSettingsMenuOpen(false); 
                             setMenuView("main");
-                            if (tariff !== "Premium") {
-                              onOpenPremiumModal();
-                            } else {
-                              setIsAISheetOpen(true, false); 
-                            }
+                            setIsAISheetOpen(true, false); 
                           }}
                           className="flex-1 flex items-center justify-center gap-2 py-2 rounded-[14px] hover:bg-[var(--glass-item-active)] active:scale-95 transition-all group cursor-pointer"
                         >
@@ -454,11 +450,7 @@ export function AppHeader({
                           onClick={() => { 
                             setIsSettingsMenuOpen(false); 
                             setMenuView("main");
-                            if (tariff !== "Premium") {
-                              onOpenPremiumModal();
-                            } else {
-                              setIsAISheetOpen(true, true); 
-                            }
+                            setIsAISheetOpen(true, true); 
                           }}
                           className="flex-1 flex items-center justify-center gap-2 py-2 rounded-[14px] bg-[#6d5dfc]/10 hover:bg-[#6d5dfc]/20 active:scale-95 transition-all group border border-[#6d5dfc]/20 cursor-pointer"
                         >

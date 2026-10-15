@@ -5,7 +5,6 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { getAbsoluteApiUrl, googleSheetsService, universalFetch } from '../../services/googleSheets';
 import { Account, Category, Transaction, TransactionType } from '../../types';
 import { Capacitor } from '@capacitor/core';
-import { SpeechRecognition as NativeSpeechRecognition } from '@capacitor-community/speech-recognition';
 
 
 interface Message {
@@ -65,8 +64,6 @@ export const AISheet: React.FC<AISheetProps> = ({
   const [showDoneButton, setShowDoneButton] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const nativeListenerRef = useRef<any>(null);
-  const nativeListeningStateListenerRef = useRef<any>(null);
   const webRecognitionRef = useRef<any>(null);
   const lastTranscriptRef = useRef<string>("");
   const silenceTimeoutRef = useRef<any>(null);
@@ -253,116 +250,15 @@ export const AISheet: React.FC<AISheetProps> = ({
     const isNative = Capacitor.isNativePlatform();
 
     if (isNative) {
-      try {
-        if (!NativeSpeechRecognition) {
-          throw new Error("SpeechRecognition plugin is not loaded/implemented");
+      setMessages(prev => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: '🎙️ **Голосовой ввод доступен в веб-версии сервиса (coinlover.ru).**\n\nВ мобильном приложении вы можете ввести запрос текстом или нажать на значок микрофона на клавиатуре вашего телефона.'
         }
-
-        const { available } = await NativeSpeechRecognition.available();
-        if (!available) {
-          throw new Error("Speech recognition not available natively on this device");
-        }
-
-        const permStatus = await NativeSpeechRecognition.checkPermissions();
-        if (permStatus.speechRecognition !== 'granted') {
-          const reqStatus = await NativeSpeechRecognition.requestPermissions();
-          if (reqStatus.speechRecognition !== 'granted') {
-            throw new Error("speech_recognition_permission_denied");
-          }
-        }
-        
-        setIsRecording(true);
-        if (window.navigator.vibrate) window.navigator.vibrate(50);
-
-        if (nativeListenerRef.current) {
-          nativeListenerRef.current.remove();
-          nativeListenerRef.current = null;
-        }
-
-        if (nativeListeningStateListenerRef.current) {
-          nativeListeningStateListenerRef.current.remove();
-          nativeListeningStateListenerRef.current = null;
-        }
-
-        lastTranscriptRef.current = "";
-        setQuery("");
-
-        // Слушатель частичных результатов
-        nativeListenerRef.current = await NativeSpeechRecognition.addListener(
-          "partialResults",
-          (data: { matches: string[] }) => {
-            if (data.matches && data.matches.length > 0) {
-              const text = data.matches[0];
-              lastTranscriptRef.current = text;
-              setQuery(text);
-              resetSilenceTimer();
-            }
-          }
-        );
-
-        // Слушатель состояния (запуск / остановка)
-        nativeListeningStateListenerRef.current = await NativeSpeechRecognition.addListener(
-          "listeningState",
-          (data: { status: 'started' | 'stopped' }) => {
-            console.log("Native listening state change:", data.status);
-            if (data.status === 'stopped') {
-              clearSilenceTimer();
-              setIsRecording(currentRecording => {
-                if (currentRecording) {
-                  setTimeout(() => {
-                    stopVoiceRecording();
-                  }, 100);
-                }
-                return false;
-              });
-            }
-          }
-        );
-
-        // Запуск
-        await NativeSpeechRecognition.start({
-          language: "ru-RU",
-          maxResults: 1,
-          partialResults: true,
-          popup: false,
-        });
-
-      } catch (err: any) {
-        console.error("Native speech recognition failed, falling back to Web API:", err);
-        const errMsg = err.message || "";
-        
-        if (nativeListenerRef.current) {
-          nativeListenerRef.current.remove();
-          nativeListenerRef.current = null;
-        }
-        if (nativeListeningStateListenerRef.current) {
-          nativeListeningStateListenerRef.current.remove();
-          nativeListeningStateListenerRef.current = null;
-        }
-        
-        if (errMsg === "speech_recognition_permission_denied") {
-          setMessages(prev => [...prev, { 
-            role: 'assistant', 
-            content: '⚠️ **Нет доступа к микрофону:** Разрешение на распознавание речи отклонено.\n\nПожалуйста, перейдите в настройки телефона -> Приложения -> CoinLover -> Разрешения и разрешите доступ к Микрофону.' 
-          }]);
-          setIsRecording(false);
-        } else {
-          const isNotImplemented = errMsg.includes('not implemented') || 
-                                   errMsg.includes('loaded') || 
-                                   errMsg.includes('is not a function') ||
-                                   errMsg.includes('plugin');
-          
-          if (isNotImplemented) {
-            setMessages(prev => [...prev, { 
-              role: 'assistant', 
-              content: '⚠️ **Ошибка голосового ввода:** Нативный плагин распознавания речи отсутствует в этой сборке APK.\n\nПожалуйста, соберите и установите новую версию приложения с помощью команды `./build_and_send.sh`.' 
-            }]);
-            setIsRecording(false);
-          } else {
-            await startWebVoiceRecording(true);
-          }
-        }
-      }
+      ]);
+      setIsRecording(false);
+      return;
     } else {
       await startWebVoiceRecording(false);
     }
@@ -371,27 +267,11 @@ export const AISheet: React.FC<AISheetProps> = ({
   const stopVoiceRecording = async () => {
     clearSilenceTimer();
     const isNative = Capacitor.isNativePlatform();
-    if (isNative) {
+    if (!isNative && webRecognitionRef.current) {
       try {
-        await NativeSpeechRecognition.stop();
+        webRecognitionRef.current.stop();
       } catch (e) {
-        console.error("Failed to stop native speech recognition:", e);
-      }
-      if (nativeListenerRef.current) {
-        nativeListenerRef.current.remove();
-        nativeListenerRef.current = null;
-      }
-      if (nativeListeningStateListenerRef.current) {
-        nativeListeningStateListenerRef.current.remove();
-        nativeListeningStateListenerRef.current = null;
-      }
-    } else {
-      if (webRecognitionRef.current) {
-        try {
-          webRecognitionRef.current.stop();
-        } catch (e) {
-          console.error("Failed to stop web speech recognition:", e);
-        }
+        console.error("Failed to stop web speech recognition:", e);
       }
     }
     setIsRecording(false);

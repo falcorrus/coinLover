@@ -79,8 +79,8 @@ export const useSync = ({
       localStorage.setItem("cl_user_tariff", data.tariff);
       if (setTariff) setTariff(data.tariff);
     } else {
-      // Default to Free if not specified
-      const defaultTariff = "Free";
+      // Default to Premium for full feature access
+      const defaultTariff = "Premium";
       localStorage.setItem("cl_user_tariff", defaultTariff);
       if (setTariff) setTariff(defaultTariff);
     }
