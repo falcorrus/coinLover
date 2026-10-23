@@ -355,7 +355,7 @@ export const CalendarAnalyticsModal: React.FC<CalendarAnalyticsModalProps> = ({
                     </div>
 
                     {/* Transaction List */}
-                    <div className="calendar-tx-list flex-1 overflow-y-auto hide-scrollbar px-6 pb-6 relative border-t border-[var(--glass-border)] pt-4">
+                    <div className="calendar-tx-list flex-1 overflow-y-auto hide-scrollbar px-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] relative border-t border-[var(--glass-border)] pt-4">
                         {isLoading ? (
                             <div className="absolute inset-0 flex flex-col items-center justify-center">
                                 <RefreshCcw size={32} className="animate-spin text-[var(--primary-color)] opacity-20" />

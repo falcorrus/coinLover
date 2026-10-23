@@ -277,7 +277,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
     const EntityIcon = entityType === "tag" ? Tag : (IconMap[entity.icon] || Wallet);
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[200] flex flex-col items-center justify-end p-4 animate-in fade-in slide-in-from-bottom-10" onClick={onClose}>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[200] flex flex-col items-center justify-end p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] animate-in fade-in slide-in-from-bottom-10 safe-pb-modal" onClick={onClose}>
             <div className="glass-panel bg-[var(--bg-color)]/90 w-full max-w-sm max-h-[80vh] flex flex-col overflow-hidden shadow-2xl shadow-[var(--shadow-color)]" onClick={e => e.stopPropagation()}>
                 <div className="flex justify-between items-center p-6 border-b border-[var(--glass-border)] shrink-0">
                     <div className="flex items-center gap-3">

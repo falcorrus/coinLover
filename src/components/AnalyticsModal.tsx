@@ -362,7 +362,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                     </div>
 
                     {/* Content View (List or Chart) */}
-                    <div className="analytics-content-list flex-1 overflow-y-auto hide-scrollbar px-6 pb-6 relative">
+                    <div className="analytics-content-list flex-1 overflow-y-auto hide-scrollbar px-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] relative">
                         {listItems.length === 0 && !isLoading ? (
                             <div className="absolute inset-0 flex items-center justify-center text-[var(--text-muted)] text-xs uppercase font-bold tracking-widest">Нет данных</div>
                         ) : viewType === "chart" ? (

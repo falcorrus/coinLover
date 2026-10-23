@@ -17,3 +17,14 @@ artifacts/
 *.jks
 *.keystore
 keystore.properties
+scratch/
+CoinLover- video/
+*.mp3
+playmarket_release/live_mobile/
+playmarket_release/raw_mobile/
+playmarket_release/scripts/
+playmarket_release/video/
+playmarket_release/screenshots/phone/
+playmarket_release/screenshots/tablet_7in/
+playmarket_release/screenshots/tablet_10in/
+apk/coinlover-release.apk

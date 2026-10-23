@@ -637,7 +637,7 @@ export const CapitalAnalyticsModal: React.FC<CapitalAnalyticsModalProps> = ({
                     </div>
 
                     {/* Accounts List */}
-                    <div className="flex-1 overflow-y-auto hide-scrollbar px-6 py-2">
+                    <div className="flex-1 overflow-y-auto hide-scrollbar px-6 pt-2 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))]">
                         {accountList.length === 0 && !isLoading ? (
                             <div className="flex items-center justify-center h-40 text-[var(--text-muted)] text-xs uppercase font-bold tracking-widest">
                                 Нет счетов

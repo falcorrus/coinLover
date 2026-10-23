@@ -57,7 +57,7 @@ export const ThemeModal: React.FC<Props> = ({ isOpen, onClose, currentTheme, onS
   const activeId = getActiveId();
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center p-4 animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] animate-in fade-in duration-300 safe-pb-modal">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       
       <div className="relative w-full max-w-md bg-[var(--panel-bg)] border border-[var(--glass-border)] rounded-[32px] overflow-hidden shadow-2xl animate-in slide-in-from-bottom duration-300 sm:zoom-in-95">

@@ -484,10 +484,30 @@ svg {
   }
 }
 
+.safe-pb {
+  padding-bottom: 16px !important;
+}
+
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .safe-pb {
+    padding-bottom: max(16px, env(safe-area-inset-bottom, 0px)) !important;
+  }
+  .safe-pb-modal {
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
+
+.numpad-bottom-bar {
+  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px)) !important;
+}
+
 /* If app is launched in standalone mode (PWA Add to Home Screen) */
 @media (display-mode: standalone) {
   .safe-pt, .safe-pt-header {
     padding-top: calc(env(safe-area-inset-top, 0px) + 16px) !important;
+  }
+  .safe-pb {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 16px) !important;
   }
 }
 

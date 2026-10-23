@@ -1,6 +1,6 @@
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sun, Moon, Plus, Menu, RefreshCcw, List, Calendar, PieChart, BarChart3, Sparkles, TrendingDown, TrendingUp, Wallet, X, Smartphone, QrCode, Key, Fingerprint, ShieldCheck, ShieldAlert, Settings, ChevronLeft, ChevronRight, Mic, Search, Keyboard, Info, LogOut, MoreHorizontal, Landmark } from "lucide-react";
+import { Sun, Moon, Plus, Menu, RefreshCcw, List, Calendar, PieChart, BarChart3, Sparkles, TrendingDown, TrendingUp, Wallet, X, Smartphone, QrCode, Key, Fingerprint, ShieldCheck, ShieldAlert, Settings, ChevronLeft, ChevronRight, Mic, Search, Keyboard, Info, LogOut, MoreHorizontal, Landmark, Play } from "lucide-react";
 import { APP_SETTINGS } from "../../constants/settings";
 import { HistoryModalState, Account, Transaction } from "../../types";
 import { startRegistration } from "@simplewebauthn/browser";
@@ -58,6 +58,7 @@ export function AppHeader({
   const isCompact = categoriesCount > 8;
   const [menuView, setMenuView] = React.useState<"main" | "more">("main");
   const [isDownloadModalOpen, setIsDownloadModalOpen] = React.useState(false);
+  const [downloadSource, setDownloadSource] = React.useState<"playmarket" | "apk">("playmarket");
   const [isPasskeyModalOpen, setIsPasskeyModalOpen] = React.useState(false);
   const [passkeyModalHidden, setPasskeyModalHidden] = React.useState(false); 
   const [passkeyStatus, setPasskeyStatus] = React.useState<"idle" | "loading" | "enabled" | "disabled">("idle");
@@ -526,7 +527,7 @@ export function AppHeader({
                           </div>
                           <div className="flex flex-col min-w-0">
                             <span className="text-xs font-bold text-[var(--text-main)] truncate">{t('Application')}</span>
-                            <span className="text-[10px] text-[var(--text-muted)] truncate">{t('Download APK')}</span>
+                            <span className="text-[10px] text-[var(--text-muted)] truncate">{t('Play Market & APK')}</span>
                           </div>
                         </div>
                         <ChevronRight size={15} className="text-[var(--text-muted)] group-hover:translate-x-0.5 transition-transform" />
@@ -563,27 +564,81 @@ export function AppHeader({
 
       {isDownloadModalOpen && (
         <div onClick={() => setIsDownloadModalOpen(false)} className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/60 backdrop-blur-md">
-          <div onClick={e => e.stopPropagation()} className="w-full max-w-sm glass-panel p-8 relative border-white/10 shadow-2xl rounded-[32px] bg-[var(--bg-color)]">
-            <button onClick={() => setIsDownloadModalOpen(false)} className="absolute top-4 right-4 text-white/40 hover:text-white transition-colors outline-none"><X size={24} /></button>
-            <div className="text-center mb-6">
-              <h3 className="text-xl font-bold text-[var(--text-main)] mb-2">{t('Install CoinLover')}</h3>
-              <p className="text-xs text-[var(--text-main)] opacity-50">{t('Scan QR code to download')}</p>
+          <div onClick={e => e.stopPropagation()} className="w-full max-w-sm glass-panel p-6 sm:p-8 relative border-white/10 shadow-2xl rounded-[32px] bg-[var(--bg-color)]">
+            <button onClick={() => setIsDownloadModalOpen(false)} className="absolute top-4 right-4 text-white/40 hover:text-white transition-colors outline-none cursor-pointer"><X size={24} /></button>
+            <div className="text-center mb-4">
+              <h3 className="text-xl font-bold text-[var(--text-main)] mb-1.5">{t('Install CoinLover')}</h3>
+              <p className="text-xs text-[var(--text-main)] opacity-50">
+                {downloadSource === "playmarket" ? "Google Play Store" : "Direct APK (Android)"}
+              </p>
             </div>
-            <div className="bg-white p-3 rounded-2xl flex justify-center mb-6">
+
+            {/* Tabs: Play Market vs APK */}
+            <div className="flex p-1 bg-[var(--glass-item-bg)] border border-[var(--glass-border)] rounded-2xl mb-5">
+              <button
+                type="button"
+                onClick={() => setDownloadSource("playmarket")}
+                className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                  downloadSource === "playmarket"
+                    ? "bg-white/10 text-[var(--text-main)] shadow-sm"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-main)]"
+                }`}
+              >
+                <Play size={12} className="fill-current text-emerald-400" />
+                <span>Play Market</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setDownloadSource("apk")}
+                className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                  downloadSource === "apk"
+                    ? "bg-white/10 text-[var(--text-main)] shadow-sm"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-main)]"
+                }`}
+              >
+                <Smartphone size={13} />
+                <span>{t('Direct APK')}</span>
+              </button>
+            </div>
+
+            <div className="bg-white p-3 rounded-2xl flex justify-center mb-5 shadow-inner">
               <img 
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent("https://coinlover.ru/download/coinlover.apk")}`} 
-                alt="Download QR"
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(
+                  downloadSource === "playmarket"
+                    ? "https://play.google.com/store/apps/details?id=coinLover.ru"
+                    : "https://coinlover.ru/download/coinlover.apk"
+                )}`} 
+                alt={downloadSource === "playmarket" ? "Play Market QR" : "Download APK QR"}
                 className="w-[180px] h-[180px] block"
               />
             </div>
-            <div className="flex flex-col gap-3">
+
+            <div className="flex flex-col gap-2.5">
+              <a 
+                href="https://play.google.com/store/apps/details?id=coinLover.ru" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`w-full py-3.5 rounded-xl flex items-center justify-center gap-2.5 transition-all text-xs uppercase tracking-widest font-bold shadow-lg active:scale-95 ${
+                  downloadSource === "playmarket"
+                    ? "bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-emerald-500/20"
+                    : "bg-[var(--glass-item-bg)] border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)] text-[var(--text-main)]"
+                }`}
+              >
+                <Play size={13} className="fill-current" />
+                <span>{t('Open in Play Market')}</span>
+              </a>
+
               <a 
                 href="/download/coinlover.apk" 
                 download
-                className="w-full py-4 bg-[#6d5dfc] text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-[#5b4ce3] transition-all text-xs uppercase tracking-widest"
+                className={`w-full py-3.5 rounded-xl flex items-center justify-center gap-2.5 transition-all text-xs uppercase tracking-widest font-bold active:scale-95 ${
+                  downloadSource === "apk"
+                    ? "bg-[#6d5dfc] hover:bg-[#5b4ce3] text-white shadow-lg shadow-[#6d5dfc]/20"
+                    : "bg-[var(--glass-item-bg)] border border-[var(--glass-border)] hover:bg-[var(--glass-item-active)] text-[var(--text-main)]"
+                }`}
               >
-                <Smartphone size={16} />
-                {t('Download APK')}
+                <Smartphone size={14} />
+                <span>{t('Download Direct APK')}</span>
               </a>
 
               <div className="pt-2 border-t border-white/5 flex justify-center">

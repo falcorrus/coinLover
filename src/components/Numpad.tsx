@@ -291,7 +291,7 @@ export const Numpad: React.FC<Props> = ({
           </div>
 
         {/* Bottom Action Bar */}
-        <div className="flex justify-center px-4 py-6 bg-[var(--numpad-bg)] shrink-0 touch-manipulation select-none">
+        <div className="flex justify-center px-4 pt-3 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] bg-[var(--numpad-bg)] shrink-0 touch-manipulation select-none numpad-bottom-bar">
           <div className="flex items-center bg-[#1a1c1e]/80 backdrop-blur-xl rounded-2xl p-1.5 border border-white/5 shadow-2xl">
             <button type="button" onClick={handleYesterday} className="px-6 py-3 text-white/40 font-black uppercase text-[10px] tracking-widest active:text-white transition-all hover:text-white/70 touch-manipulation">Вчера</button>
             <button type="button" onClick={() => onSubmit()} className="px-12 py-3 bg-[var(--success-color)] text-white font-black uppercase text-[10px] tracking-widest rounded-xl shadow-lg shadow-[var(--success-color)]/20 active:scale-95 transition-all touch-manipulation">
@@ -309,7 +309,7 @@ export const Numpad: React.FC<Props> = ({
       {/* Currency Picker Modal */}
       {currencyPicker.isOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[500] flex items-end justify-center animate-in fade-in duration-300" onClick={(e) => { e.stopPropagation(); setCurrencyPicker({ isOpen: false, field: null }); }}>
-          <div className="w-full max-w-md bg-[var(--bg-color)] border border-[var(--glass-border)] rounded-t-3xl p-6 flex flex-col gap-4 animate-in slide-in-from-bottom duration-300 shadow-2xl" onClick={e => e.stopPropagation()}>
+          <div className="w-full max-w-md bg-[var(--bg-color)] border border-[var(--glass-border)] rounded-t-3xl p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] flex flex-col gap-4 animate-in slide-in-from-bottom duration-300 shadow-2xl safe-pb-modal" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center"><h3 className="text-sm font-bold uppercase text-[var(--text-main)]">Выберите валюту</h3><button onClick={() => setCurrencyPicker({ isOpen: false, field: null })} className="p-1 text-[var(--text-muted)] hover:text-[var(--text-main)]"><X size={20} /></button></div>
             <div className={`grid ${getGridCols()} gap-2`}>
               {availableCurrencies.map(curr => (
@@ -347,7 +347,7 @@ export const Numpad: React.FC<Props> = ({
             className={`w-full max-w-md bg-[var(--bg-color)] border border-[var(--glass-border)] p-6 flex flex-col gap-4 shadow-2xl shadow-[var(--shadow-color)] ${
               isIOS 
                 ? "rounded-2xl animate-in zoom-in-95 duration-300" 
-                : "rounded-t-3xl sm:rounded-2xl animate-in slide-in-from-bottom sm:zoom-in-95 duration-300"
+                : "rounded-t-3xl sm:rounded-2xl animate-in slide-in-from-bottom sm:zoom-in-95 duration-300 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] safe-pb-modal"
             }`}
             onClick={(e) => e.stopPropagation()}
           >
@@ -374,7 +374,7 @@ export const Numpad: React.FC<Props> = ({
               <button onClick={() => setPickingEntity(null)} className="w-8 h-8 rounded-lg bg-[var(--glass-item-bg)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-main)]"><X size={18} /></button>
             </div>
             
-            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2 hide-scrollbar">
+            <div className="flex-1 overflow-y-auto p-4 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] flex flex-col gap-2 hide-scrollbar">
               {/* Option 1: Accounts */}
               {((pickingEntity === "source" && data.type !== "income") || (pickingEntity === "destination" && data.type !== "expense")) && (
                 <div className="flex flex-col gap-2 mb-4">
