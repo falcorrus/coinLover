@@ -5,6 +5,32 @@ project: "coinlover"
 ---
 # !SOLUTIONS.md — Лог принятых решений (Success Loop)
 
+## 📌 CoinLover: Адаптация под 3-кнопочную навигацию Android (Safe Area Insets) и добавление Play Market в меню (23.10.2026)
+
+### 1. Исправление перекрытия кнопок ввода расхода панелью навигации Android
+* **Проблема:** В мобильном приложении на Android-устройствах с 3-кнопочной системной навигацией (`|||` `O` `<`) кнопки нижнего бара цифровой клавиатуры Numpad («Вчера», «Сегодня», иконка календаря) заезжали под системную панель, из-за чего нижняя половина кнопок перекрывалась и не нажималась.
+* **Причина:** Приложение работает в режиме Edge-to-Edge (`viewport-fit=cover`). В `Numpad.tsx` верхняя шапка компенсировала `env(safe-area-inset-top)` через `.safe-pt`, однако нижняя панель действий имела фиксированный отступ `py-6` (24px) без учета `env(safe-area-inset-bottom)`. На Android с 3 кнопками навигации высота панели составляет 48–56px, что приводило к наложению кнопок ОС поверх интерфейса приложения.
+* **Решение:**
+  * В `src/components/Numpad.tsx` для блока действий добавлен адаптивный отступ `pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))]` и класс `.numpad-bottom-bar`.
+  * В `src/index.css` добавлены утилиты `.safe-pb`, `.safe-pb-modal` и `.numpad-bottom-bar` с поддержкой `@supports (padding-bottom: env(safe-area-inset-bottom))` и PWA standalone режима.
+  * Добавлены безопасные отступы для дочерних шторок Numpad (выбор валюты, комментарий, выбор счета/категории), модалок тем (`ThemeModal.tsx`), истории (`HistoryModal.tsx`), секции расходов (`ExpenseSection.tsx`) и модалок аналитики (`AnalyticsModal.tsx`, `PeriodAnalyticsModal.tsx`, `CapitalAnalyticsModal.tsx`, `CalendarAnalyticsModal.tsx`).
+
+### 2. Добавление выбора Google Play / Play Market в меню приложения
+* **Проблема:** В меню «Ещё» → «Приложение» присутствовал только вариант прямой загрузки APK. Требовалось предоставить пользователям возможность перехода в официальный Google Play Store (Play Market).
+* **Решение:**
+  * В `src/components/layout/AppHeader.tsx` подменю «Ещё» обновлено: подпись пункта «Приложение» изменена на `Play Market, APK`.
+  * В модальное окно установки добавлен переключатель табов: `Play Market` и `Прямой APK`.
+  * При выборе `Play Market`: QR-код и кнопка действия ведут на страницу приложения в Google Play (`https://play.google.com/store/apps/details?id=coinLover.ru`).
+  * При выборе `Прямой APK`: генерируется QR-код и прямая ссылка на `/download/coinlover.apk`.
+  * Добавлены переводы для RU и EN в `src/contexts/LanguageContext.tsx`.
+
+### 3. Верификация, сборка и деплой
+* Успешно пройдены все 43 unit-теста (`npm test` / `vitest`).
+* Пройдена проверка типов `npm run lint` (`tsc --noEmit`).
+* Собран веб-билд, синхронизирован с Capacitor Android (`npx cap sync android`).
+* Скомпилирован свежий Android APK: `apk/coinlover-debug.apk` и скопирован в `public/download/coinlover.apk`.
+* Выполнен деплой на боевой сервер `server.reloto.ru` (`https://coinlover.ru`), проверена доступность сайта (200 OK) и свежего файла APK (`Last-Modified: 23 Oct 2026`).
+
 ## 📌 CoinLover: Система алиасов сущностей, защита Configs в Google Sheets, закрытие отчётов по иконке и редизайн цветов меню (30.09.2026)
 
 ### 1. Система алиасов (исторических имён) и защита от затирания столбца Aliases в Google Sheets
