@@ -117,3 +117,5 @@ ssh root@server.reloto.ru "docker logs -f coinlover"
 - [[2026-06-11]]
 - [[2026-06-05]]
 - [[2026-04_CoinLover_Expenses_Report]]
+- [[2026-10-29_Превью_и_раскадровка_промо-видео_CoinLover]]
+- [[PROMO_VIDEO_STORYBOARD]]
