@@ -6,5 +6,7 @@ services:
     container_name: coinlover
     ports:
       - "8010:80"
+    volumes:
+      - ./data:/app/data
     restart: always
     env_file: .env

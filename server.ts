@@ -7,6 +7,7 @@ import rateLimit from 'express-rate-limit';
 import sheetsHandler from './api/sheets.ts';
 import { authHandler } from './api/auth.ts';
 import aiHandler from './api/ai-analyst.ts';
+import { telemetryHandler } from './api/telemetry.ts';
 
 dotenv.config();
 
@@ -63,6 +64,7 @@ app.use((req, res, next) => {
   const origin = req.headers.origin;
   const allowedOrigins = [
     'https://coinlover.ru',
+    'https://coin.tucano.cc',
     'https://coin.reloto.ru',
     'http://localhost',
     'http://localhost:80',
@@ -71,7 +73,7 @@ app.use((req, res, next) => {
     'capacitor://localhost'
   ];
 
-  if (origin && (allowedOrigins.includes(origin) || origin.endsWith('.reloto.ru') || origin.endsWith('.coinlover.ru'))) {
+  if (origin && (allowedOrigins.includes(origin) || origin.endsWith('.reloto.ru') || origin.endsWith('.coinlover.ru') || origin.endsWith('.tucano.cc'))) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
   } else {
@@ -113,6 +115,15 @@ app.all('/api/ai-analyst', async (req, res) => {
   } catch (err: any) {
     console.error('AI API Error:', err);
     res.status(500).json({ status: 'error', message: process.env.NODE_ENV === 'production' ? 'AI processing error' : err.message });
+  }
+});
+
+app.all('/api/telemetry*', async (req, res) => {
+  try {
+    await telemetryHandler(req, res);
+  } catch (err: any) {
+    console.error('Telemetry API Error:', err);
+    res.status(500).json({ status: 'error', message: process.env.NODE_ENV === 'production' ? 'Telemetry error' : err.message });
   }
 });
 

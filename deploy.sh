@@ -80,6 +80,8 @@ services:
     container_name: ${container_prefix}
     ports:
       - "$port_front:80"
+    volumes:
+      - ./data:/app/data
     restart: always
     env_file: .env
 EOT

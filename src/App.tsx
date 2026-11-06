@@ -32,6 +32,7 @@ import { IncomeSection } from "./components/layout/IncomeSection";
 import { googleSheetsService } from "./services/googleSheets";
 import { useLanguage } from "./contexts/LanguageContext";
 import { setGAUser, trackScreen, trackEvent } from "./services/analytics";
+import { initTelemetry } from "./services/telemetry";
 import { Capacitor } from "@capacitor/core";
 import { App as CapacitorApp } from "@capacitor/app";
 import { SplashScreen } from "@capacitor/splash-screen";
@@ -145,6 +146,13 @@ const isNativeApp = React.useMemo(() => {
     if (cached === "mint") return "mint";
     return "black";
   });
+
+  React.useEffect(() => {
+    initTelemetry({
+      getTableId: () => activeTableId,
+      getTheme: () => theme
+    });
+  }, [activeTableId, theme]);
   const [editingTxId, setEditingTxId] = React.useState<string | null>(null);
   const [categoryCurrencyMode, setCategoryCurrencyMode] = React.useState<"base" | "local">(() => (localStorage.getItem("cl_category_currency_mode") as any) || "base");
 
