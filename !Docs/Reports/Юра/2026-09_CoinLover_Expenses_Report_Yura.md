@@ -6,7 +6,9 @@ client: Юрий Сухинин
 created: 2026-10-06
 author: LLM
 tags:
-- finance
+  - finance
+share_link: https://share.note.sx/7td0pbat
+share_updated: 2026-11-05T12:05:22-03:00
 ---
 
 [[2026-08_CoinLover_Expenses_Report_Yura|Отчет Август 2026]]

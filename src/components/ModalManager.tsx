@@ -233,12 +233,7 @@ export const ModalManager: React.FC<ModalManagerProps> = (props) => {
               else if (type === "income") { const inc = findIncome(incomes, item.id); if (inc) entity = inc; } 
               setHistoryModal({ 
                 isOpen: true, entity, type, 
-                customTransactions: monthTx.filter(t => { 
-                  if (type === "category") return t.targetId === item.id || findCategory(categories, t.targetId)?.id === item.id; 
-                  if (type === "tag") return (t.tag?.trim() || "Без тега") === item.name; 
-                  if (type === "income") return t.targetId === item.id || findIncome(incomes, t.targetId)?.id === item.id; 
-                  return false; 
-                }), 
+                customTransactions: monthTx, 
                 returnTo: "analytics" 
               }); 
             }} 

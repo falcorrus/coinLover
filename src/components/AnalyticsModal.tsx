@@ -490,7 +490,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                                                     {details.map(detail => (
                                                         <DetailItem key={detail.id} detail={detail} analysisType={analysisType} currencyMode={currencyMode} localCurrencyCode={localCurrencyCode} onClick={() => {
                                                             if (!onItemClick) return;
-                                                            const eType = analysisType === "income" ? (tab === "categories" ? "income" : "tag") : (tab === "tags" ? "category" : "tag");
+                                                            const eType = tab === "tags" ? (analysisType === "income" ? "income" : "category") : "tag";
                                                             const filter = filteredTx.filter(t => {
                                                                 const tCanonical = analysisType === "income"
                                                                     ? (findIncome(incomes, t.targetId)?.id || t.targetId)

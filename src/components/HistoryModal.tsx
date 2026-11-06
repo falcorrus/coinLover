@@ -82,7 +82,11 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
             return !!accKey && (accKey === entityIdKey || accKey === entityNameKey || entityAliases.includes(accKey));
         });
     } else if (entityType === "tag") {
-        filteredTransactions = transactions.filter(t => t.tag === entity.name && t.type === "expense");
+        const entityNameKey = String(entity.name || entity.id || "").trim().toLowerCase();
+        filteredTransactions = transactions.filter(t => {
+            const tagKey = String(t.tag || "").trim().toLowerCase();
+            return tagKey === entityNameKey;
+        });
     } else if (entityType === "feed") {
         filteredTransactions = transactions;
     }
@@ -123,8 +127,10 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
             const acc = findAccount(accounts, tx.accountId);
             if (acc?.id === entity.id || tx.accountId === entity.id) isOutflow = tx.type !== "income";
             else isOutflow = false;
-        } else if (entityType === "category" || entityType === "tag") {
+        } else if (entityType === "category") {
             isOutflow = true;
+        } else if (entityType === "tag") {
+            isOutflow = tx.type !== "income";
         } else if (entityType === "income") {
             isOutflow = false;
         } else if (entityType === "feed") {

@@ -14,3 +14,4 @@ author: LLM
 - [[2026-05_CoinLover_Expenses_Report_Yura]]
 - [[2026-08_CoinLover_Expenses_Report_Yura]]
 - [[2026-09_CoinLover_Expenses_Report_Yura]]
+- [[2026-10_CoinLover_Expenses_Report_Yura]]
