@@ -21,6 +21,7 @@ const NativeAuthScreen = React.lazy(() => import("./components/NativeAuthScreen"
 const OnboardingModal = React.lazy(() => import("./components/OnboardingModal").then(m => ({ default: m.OnboardingModal })));
 const PremiumModal = React.lazy(() => import("./components/PremiumModal").then(m => ({ default: m.PremiumModal })));
 const AISheet = React.lazy(() => import("./components/layout/AISheet").then(m => ({ default: m.AISheet })));
+const CoinLoverStageshowDemo = React.lazy(() => import("./components/CoinLoverStageshowDemo").then(m => ({ default: m.CoinLoverStageshowDemo })));
 
 // Layout Components
 import { AppHeader } from "./components/layout/AppHeader";
@@ -329,7 +330,7 @@ const isNativeApp = React.useMemo(() => {
 
   const settingsLongPress = useLongPress(
     () => { 
-      setAiSheet({ isOpen: true, startInVoiceMode: true });
+      setAiSheet({ isOpen: true, startInVoiceMode: true, isExpanded: false });
       if (navigator.vibrate) navigator.vibrate(APP_SETTINGS.HAPTIC_FEEDBACK_DURATION_MEDIUM); 
     },
     600,
@@ -422,6 +423,17 @@ SplashScreen.hide().catch(() => {});
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: APP_SETTINGS.DND_ACTIVATION_DISTANCE } }));
 
+  // /demo - Интерактивное демо возможностей через Stageshow
+  if (currentPath === "/demo" || urlParams.get("demo") === "true") {
+    return (
+      <div className="min-h-screen bg-[#050505] p-3 md:p-6 flex flex-col items-center justify-center">
+        <React.Suspense fallback={<div className="min-h-screen bg-[#050505]" />}>
+          <CoinLoverStageshowDemo onStartApp={() => window.location.href = "/"} standalone />
+        </React.Suspense>
+      </div>
+    );
+  }
+
   // /landing всегда показываем лендинг, независимо от состояния онбординга
   if (currentPath === "/landing") {
     return (
@@ -507,7 +519,7 @@ SplashScreen.hide().catch(() => {});
             accounts={accounts}
             currentMonthTransactions={currentMonthTransactions}
             theme={theme}
-            setTheme={setTheme}
+            setTheme={setTheme as any}
             setHistoryModal={setHistoryModal}
             setCalendarAnalyticsModal={setCalendarAnalyticsModal}
             setAnalyticsModal={setAnalyticsModal}

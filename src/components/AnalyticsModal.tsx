@@ -232,7 +232,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
         e.stopPropagation();
         const nextSet = new Set(selectedIds);
         if (nextSet.has(id)) nextSet.delete(id); else nextSet.add(id);
-        const next = { ...selections, [currentKey]: nextSet };
+        const next = { ...selections, [currentKey]: nextSet } as any;
         setSelections(next); saveStoredSelections(next);
         if (navigator.vibrate) navigator.vibrate(10);
     };
@@ -242,7 +242,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
         const allSelected = ids.length > 0 && ids.every(id => selectedIds.has(id));
         const nextSet = new Set(selectedIds);
         if (allSelected) ids.forEach(id => nextSet.delete(id)); else ids.forEach(id => nextSet.add(id));
-        const next = { ...selections, [currentKey]: nextSet };
+        const next = { ...selections, [currentKey]: nextSet } as any;
         setSelections(next); saveStoredSelections(next);
         if (navigator.vibrate) navigator.vibrate(20);
     };

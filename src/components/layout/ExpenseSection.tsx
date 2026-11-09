@@ -76,13 +76,13 @@ export function ExpenseSection({
                   category={cat}
                   spent={spent}
                   isDragging={activeDragId === cat.id}
-                  activeDragType={activeDragType}
+                  activeDragType={activeDragType as any}
                   isOver={overId === cat.id}
                   isSortingMode={isSortingMode}
                   onLongPress={() => { setIsSortingMode(false); setCategoryModal({ isOpen: true, category: cat }); }}
                   onSortingMode={() => setIsSortingMode(true)}
                   onClick={() => setHistoryModal({ isOpen: true, entity: cat, type: "category" })}
-                  currencyMode={categoryCurrencyMode}
+                  currencyMode={categoryCurrencyMode as any}
                   currencySymbol={categoryCurrencyMode === 'base' ? baseSymbol : localSymbol}
                   iconSize={catIconSize}
                 />

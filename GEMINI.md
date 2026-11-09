@@ -15,6 +15,7 @@
 - **Build & Send APK:** `./build_and_send.sh`
 - **Deploy:** `./deploy.sh` (Wait for user target: Main/Dev)
 - **Update Landing APK:** `cp apk/coinlover-debug.apk public/download/coinlover.apk`
+- **Sync Monthly Balance:** `python3 ~/.gemini/commands/coinlover_sync_balance_sheet.py` (Автоматически 1-го числа каждого месяца в 00:05 GMT-3 в таб "МОЙ БАЛАНС")
 
 ## 🛡 Security & Sync Policy
 - **Primary Sync:** Always use VPS Proxy (`/api/sheets/`).

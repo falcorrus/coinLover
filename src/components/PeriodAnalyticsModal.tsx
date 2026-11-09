@@ -854,9 +854,9 @@ export const PeriodAnalyticsModal: React.FC<PeriodAnalyticsModalProps> = ({
                                                             {displaySymbol} {Math.round(item.displayAmount).toLocaleString()}
                                                         </span>
                                                         <div className="flex items-center gap-1 text-[11px] font-semibold text-[var(--text-muted)] group-hover:text-[var(--text-main)] transition-colors">
-                                                            {item.nativeAmount !== undefined && item.currency && item.currency !== localCurrencyCode && (
+                                                            {(item as any).nativeAmount !== undefined && (item as any).currency && (item as any).currency !== localCurrencyCode && (
                                                                 <span className="opacity-70 text-[10px] mr-1">
-                                                                    ({Math.round(item.nativeAmount).toLocaleString()} {item.currency})
+                                                                    ({Math.round((item as any).nativeAmount).toLocaleString()} {(item as any).currency})
                                                                 </span>
                                                             )}
                                                             <span>{item.percent.toFixed(1)}%</span>

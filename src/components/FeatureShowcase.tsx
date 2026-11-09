@@ -5,7 +5,7 @@ import {
   Move, Edit3, PieChart, Calendar, Plus,
   ChevronRight, ChevronLeft, CreditCard,
   Home, Car, Coffee, Gift, TrendingUp, Activity, Baby, Mic,
-  Globe, Send, ExternalLink
+  Globe, Send, ExternalLink, Sparkles
 } from "lucide-react";
 
 interface Slide {
@@ -379,6 +379,16 @@ export const FeatureShowcase: React.FC<Props> = ({ onComplete, isGuideMode }) =>
           <span>{currentSlide === slides.length - 1 ? (isGuideMode ? "Понятно" : "Начать настройку") : "Далее"}</span>
           {currentSlide === slides.length - 1 ? <Check size={18} /> : <ChevronRight size={18} />}
         </button>
+      </div>
+
+      <div className="text-center pt-2">
+        <a
+          href="/demo"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#6d5dfc] hover:text-[#8b7efc] transition-colors"
+        >
+          <Sparkles size={13} />
+          <span>Смотреть живое интерактивное Stageshow демо</span>
+        </a>
       </div>
     </div>
   );

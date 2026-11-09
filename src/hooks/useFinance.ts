@@ -79,7 +79,7 @@ export const useFinance = (ssId?: string) => {
     saveAccount, deleteAccount, syncCategories, saveCategory, deleteCategory,
     syncIncomes, syncAccountsOrder, saveIncome, deleteIncome
   } = useEntities({
-    accounts, setAccounts, categories, setCategories, incomes, setIncomes, pushSettings
+    accounts, setAccounts, categories, setCategories, incomes, setIncomes, pushSettings: pushSettings as any
   });
 
   // Effect to pull data when table ID changes or on initial load

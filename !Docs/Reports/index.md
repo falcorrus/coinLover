@@ -20,4 +20,5 @@ author: LLM
 - [[2026-08_CoinLover_Expenses_Report]]
 - [[2026-09_CoinLover_Expenses_Report]]
 - [[2026-10_CoinLover_Expenses_Report]]
+- [[2026-11_CoinLover_Expenses_Report]]
 - [[2_PROJECTS/MyApps/CoinLover/!Docs/Reports/Юра/index.md|Все отчеты Юра]]

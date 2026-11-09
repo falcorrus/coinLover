@@ -34,7 +34,7 @@ export function AccountsSection({
               onSortingMode={() => setIsSortingMode(true)} 
               onLongPress={(a) => { setIsSortingMode(false); setAccountModal({ isOpen: true, account: a }); }} 
               onClick={(account) => setHistoryModal({ isOpen: true, entity: account, type: "account" })} 
-              activeDragType={activeDragType} isSortingMode={isSortingMode} isOver={overId === acc.id} 
+              activeDragType={activeDragType as any} isSortingMode={isSortingMode} isOver={overId === acc.id} 
             />
           ))}
           {/* Инлайновая кнопка создания нового кошелька */}
