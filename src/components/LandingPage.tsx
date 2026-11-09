@@ -10,7 +10,6 @@ import {
 import { googleSheetsService } from "../services/googleSheets";
 import { startAuthentication, startRegistration } from "@simplewebauthn/browser";
 import { trackEvent, trackScreen } from "../services/analytics";
-import { CoinLoverStageshowDemo } from "./CoinLoverStageshowDemo";
 
 type Language = "ru" | "en";
 
@@ -229,7 +228,6 @@ export const LandingPage: React.FC = () => {
   const [storiesImageIndex, setStoriesImageIndex] = React.useState(0);
   const [themeImageIndex, setThemeImageIndex] = React.useState(0);
   const [copiedEmail, setCopiedEmail] = React.useState(false);
-  const [heroMode, setHeroMode] = React.useState<"stageshow" | "video">("stageshow");
   const [prefetchedLoginOptions, setPrefetchedLoginOptions] = React.useState<any>(null);
   const [usePasskeyForOnboarding, setUsePasskeyForOnboarding] = React.useState(true);
   const [isPasskeyRegisterPending, setIsPasskeyRegisterPending] = React.useState(false);
@@ -674,13 +672,6 @@ export const LandingPage: React.FC = () => {
               >EN</button>
             </div>
 
-            <a 
-              href="/demo" 
-              className="px-2 md:px-3 py-1.5 text-[10px] md:text-sm font-semibold text-[#6d5dfc] bg-[#6d5dfc]/10 hover:bg-[#6d5dfc]/20 border border-[#6d5dfc]/20 rounded-lg transition-all flex items-center gap-1.5 outline-none"
-            >
-              <Sparkles size={13} />
-              <span>Демо</span>
-            </a>
             <button id="btn_login_top" onClick={() => handleOpenModal("login")} className="px-2 md:px-4 py-2 text-[10px] md:text-sm font-medium text-white/70 hover:text-white transition-colors outline-none">{t.loginBtn}</button>
             <button id="btn_signup_top" onClick={() => handleOpenModal("onboarding")} className="px-3 md:px-4 py-2 bg-[#6d5dfc] hover:bg-[#5b4ce3] text-white text-[10px] md:text-sm font-semibold rounded-xl transition-all shadow-lg shadow-[#6d5dfc]/20 whitespace-nowrap outline-none">
               <span>{t.cta}</span>
@@ -696,63 +687,22 @@ export const LandingPage: React.FC = () => {
               {t.sloganMain} <br />
               <span className="text-gradient-purple">{t.sloganSub}</span>
             </h1>
-            <p className="text-base md:text-xl text-white/60 max-w-2xl mx-auto mb-8 md:mb-10">{t.scrollHint}</p>
+            <p className="text-base md:text-xl text-white/60 max-w-2xl mx-auto mb-10 md:mb-12">{t.scrollHint}</p>
           </motion.div>
 
-          {/* Toggle between Stageshow Live Demo and Video */}
-          <div className="flex items-center justify-center gap-2 mb-8">
-            <button
-              type="button"
-              onClick={() => setHeroMode("stageshow")}
-              className={`px-4 py-2 text-xs font-semibold rounded-full transition-all flex items-center gap-2 ${
-                heroMode === "stageshow"
-                  ? "bg-[#6d5dfc] text-white shadow-lg shadow-[#6d5dfc]/30"
-                  : "bg-white/5 text-white/60 hover:text-white hover:bg-white/10"
-              }`}
-            >
-              <Sparkles size={13} />
-              <span>Интерактивное Демо (Stageshow)</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setHeroMode("video")}
-              className={`px-4 py-2 text-xs font-semibold rounded-full transition-all flex items-center gap-2 ${
-                heroMode === "video"
-                  ? "bg-[#6d5dfc] text-white shadow-lg shadow-[#6d5dfc]/30"
-                  : "bg-white/5 text-white/60 hover:text-white hover:bg-white/10"
-              }`}
-            >
-              <Film size={13} />
-              <span>Видео</span>
-            </button>
-          </div>
-
-          <div className="relative flex justify-center mb-20 group">
+          <div className="relative flex justify-center mt-12 mb-20 group">
             <div className="absolute -inset-4 bg-[#6d5dfc]/10 blur-3xl opacity-50 group-hover:opacity-100 transition-opacity duration-1000 rounded-full" />
-            {heroMode === "stageshow" ? (
-              <motion.div
-                key="stageshow"
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="w-full max-w-4xl z-10"
-              >
-                <CoinLoverStageshowDemo onStartApp={() => handleOpenModal("onboarding")} />
-              </motion.div>
-            ) : (
-              <motion.div 
-                key="video"
-                initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="glass-panel p-2 border-white/10 shadow-2xl relative z-10 overflow-hidden w-fit max-w-[280px] md:max-w-[320px] mx-auto rounded-[40px]"
-              >
-                <video id="video_hero" autoPlay muted loop playsInline className="w-full h-auto rounded-[32px] block shadow-2xl">
-                  <source src="/hero-demo.mp4" type="video/mp4" />
-                </video>
-                <div className="absolute inset-0 bg-gradient-to-t from-[#050505]/20 to-transparent pointer-events-none rounded-[32px]" />
-              </motion.div>
-            )}
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ duration: 1, delay: 0.4 }}
+              className="glass-panel p-2 border-white/10 shadow-2xl relative z-10 overflow-hidden w-fit max-w-[280px] md:max-w-[320px] mx-auto rounded-[40px]"
+            >
+              <video id="video_hero" autoPlay muted loop playsInline className="w-full h-auto rounded-[32px] block shadow-2xl">
+                <source src="/hero-demo.mp4" type="video/mp4" />
+              </video>
+              <div className="absolute inset-0 bg-gradient-to-t from-[#050505]/20 to-transparent pointer-events-none rounded-[32px]" />
+            </motion.div>
           </div>
         </div>
       </section>
