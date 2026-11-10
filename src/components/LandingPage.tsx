@@ -757,23 +757,23 @@ export const LandingPage: React.FC = () => {
               <p className="text-sm sm:text-base text-white/60 mb-6 sm:mb-8 leading-relaxed max-w-lg">{t.heroAdaptedDesc}</p>
 
               {/* Primary Action Buttons: Google Play & Web/PWA side by side */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mb-5 max-w-lg">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 max-w-xl">
                 {/* Google Play Button */}
                 <a 
                   href="https://play.google.com/store/apps/details?id=coinLover.ru" 
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center sm:justify-start gap-3.5 px-5 py-3.5 bg-[#6d5dfc] hover:bg-[#5b4ce3] text-white rounded-2xl transition-all shadow-xl shadow-[#6d5dfc]/25 hover:shadow-[#6d5dfc]/40 active:scale-95 group"
+                  className="flex items-center justify-center sm:justify-start gap-4 px-6 py-4 bg-[#6d5dfc] hover:bg-[#5b4ce3] text-white rounded-[22px] transition-all shadow-xl shadow-[#6d5dfc]/25 hover:shadow-[#6d5dfc]/40 active:scale-[0.98] group"
                 >
-                  <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none">
+                  <svg className="w-6 h-6 shrink-0" viewBox="0 0 24 24" fill="none">
                     <path d="M3.609 1.814L13.792 12 3.61 22.186A2.215 2.215 0 0 1 3 20.613V3.387c0-.594.223-1.15.609-1.573z" fill="#00E676" />
                     <path d="M17.437 8.355l-3.645 3.645L3.61 1.814c.328-.358.804-.582 1.334-.582.49 0 .937.19 1.272.502l11.221 6.621z" fill="#FFD600" />
                     <path d="M17.437 15.645L4.944 23.018A1.91 1.91 0 0 1 3.609 22.186L13.792 12l3.645 3.645z" fill="#FF1744" />
                     <path d="M21.285 10.608l-3.848-2.253L13.792 12l3.645 3.645 3.848-2.253c.82-.48.82-1.904 0-2.384z" fill="#00B0FF" />
                   </svg>
                   <div className="text-left min-w-0">
-                    <span className="block text-[9px] sm:text-[10px] text-white/80 uppercase tracking-widest font-black leading-none">{t.heroGooglePlaySub}</span>
-                    <span className="block text-xs sm:text-[13px] lg:text-sm font-bold text-white tracking-tight leading-tight mt-1 whitespace-nowrap">{t.heroInstallPlay}</span>
+                    <span className="block text-[10px] text-white/80 uppercase tracking-widest font-black leading-none">{t.heroGooglePlaySub}</span>
+                    <span className="block text-sm sm:text-[15px] font-bold text-white tracking-tight leading-tight mt-1 whitespace-nowrap">{t.heroInstallPlay}</span>
                   </div>
                 </a>
 
@@ -786,35 +786,35 @@ export const LandingPage: React.FC = () => {
                       handleOpenModal("login");
                     }
                   }}
-                  className="flex items-center justify-center sm:justify-start gap-3.5 px-5 py-3.5 bg-[#0f0f13] hover:bg-white/[0.08] text-white rounded-2xl transition-all border border-white/10 hover:border-white/20 active:scale-95 group shadow-lg"
+                  className="flex items-center justify-center sm:justify-start gap-4 px-6 py-4 bg-[#0d0d12] hover:bg-white/[0.06] text-white rounded-[22px] transition-all border border-white/10 hover:border-white/20 active:scale-[0.98] group shadow-lg"
                 >
-                  <Globe size={20} className="text-[#6d5dfc] shrink-0 group-hover:scale-110 transition-transform" />
+                  <Globe className="w-6 h-6 text-[#6d5dfc] shrink-0 group-hover:scale-105 transition-transform" />
                   <div className="text-left min-w-0">
-                    <span className="block text-[9px] sm:text-[10px] text-white/50 uppercase tracking-widest font-black leading-none">{t.heroWebPwaSub}</span>
-                    <span className="block text-xs sm:text-[13px] lg:text-sm font-bold text-white tracking-tight leading-tight mt-1 whitespace-nowrap">{t.heroOpenBrowser}</span>
+                    <span className="block text-[10px] text-white/50 uppercase tracking-widest font-black leading-none">{t.heroWebPwaSub}</span>
+                    <span className="block text-sm sm:text-[15px] font-bold text-white tracking-tight leading-tight mt-1 whitespace-nowrap">{t.heroOpenBrowser}</span>
                   </div>
                 </button>
               </div>
 
               {/* Device sync indicators */}
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5 sm:gap-3.5 text-white/60 text-xs pt-1">
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 sm:gap-4 text-white/60 text-xs pt-1">
                 <div className="flex items-center gap-1.5 text-white/70">
-                  <Smartphone size={14} className="text-[#6d5dfc]" />
-                  <span className="text-[11px] sm:text-xs font-medium">{t.devices.mobile}</span>
+                  <Smartphone size={15} className="text-[#6d5dfc]" />
+                  <span className="text-xs font-medium">{t.devices.mobile}</span>
                 </div>
-                <span className="text-white/20">•</span>
+                <span className="text-white/25">·</span>
                 <div className="flex items-center gap-1.5 text-white/70">
-                  <Tablet size={14} className="text-[#6d5dfc]" />
-                  <span className="text-[11px] sm:text-xs font-medium">{t.devices.tablet}</span>
+                  <Tablet size={15} className="text-[#6d5dfc]" />
+                  <span className="text-xs font-medium">{t.devices.tablet}</span>
                 </div>
-                <span className="text-white/20">•</span>
+                <span className="text-white/25">·</span>
                 <div className="flex items-center gap-1.5 text-white/70">
-                  <Laptop size={14} className="text-[#6d5dfc]" />
-                  <span className="text-[11px] sm:text-xs font-medium">{t.devices.desktop}</span>
+                  <Laptop size={15} className="text-[#6d5dfc]" />
+                  <span className="text-xs font-medium">{t.devices.desktop}</span>
                 </div>
-                <span className="text-white/20">•</span>
-                <div className="inline-flex items-center gap-1.5 text-emerald-400 text-[10px] sm:text-[11px] font-semibold bg-emerald-950/40 px-2.5 py-1 rounded-full border border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.15)]">
-                  <RefreshCw size={11} className="text-emerald-400 animate-spin" style={{ animationDuration: '6s' }} />
+                <span className="text-white/25">·</span>
+                <div className="inline-flex items-center gap-1.5 text-emerald-400 text-xs font-medium bg-emerald-950/40 px-3 py-1 rounded-full border border-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.15)]">
+                  <RefreshCw size={12} className="text-emerald-400 animate-spin" style={{ animationDuration: '6s' }} />
                   <span>{t.heroInstantSync}</span>
                 </div>
               </div>

@@ -50,5 +50,16 @@ export default defineConfig(({mode}) => {
         }
       }
     },
+    preview: {
+      port: 5173,
+      host: '0.0.0.0',
+      proxy: {
+        '/api': {
+          target: 'https://coinlover.ru',
+          changeOrigin: true,
+          secure: false,
+        }
+      }
+    },
   };
 });
