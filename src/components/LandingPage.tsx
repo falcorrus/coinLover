@@ -8,6 +8,7 @@ import {
   Fingerprint, Move, Copy, Check, QrCode, Play
 } from "lucide-react";
 import { googleSheetsService } from "../services/googleSheets";
+import { APP_SETTINGS } from "../constants/settings";
 import { startAuthentication, startRegistration } from "@simplewebauthn/browser";
 import { trackEvent, trackScreen } from "../services/analytics";
 
@@ -20,6 +21,14 @@ const translations = {
     sloganMain: "Твои деньги.",
     sloganSub: "Твой учет. Твой стиль.",
     scrollHint: "Посмотрите, как магия транзакций оживает в CoinLover.",
+    financeTrackerBadge: "Трекер личных финансов",
+    heroInstallPlay: "Установить из Google Play",
+    heroOpenBrowser: "Открыть в браузере",
+    heroGooglePlaySub: "GOOGLE PLAY",
+    heroWebPwaSub: "WEB / PWA",
+    heroInstantSync: "Мгновенная синхронизация",
+    heroAdaptedTitle: "Работает на любых устройствах.",
+    heroAdaptedDesc: "Синхронизация на лету между смартфоном, планшетом и компьютером.",
     easyInsertTag: "Мгновенный учет",
     easyInsertTitle: "Лёгкий ввод",
     easyInsertText: "Один жест, одна цифра, «Внести». Или просто скажите голосом.",
@@ -114,6 +123,14 @@ const translations = {
     sloganMain: "Your money.",
     sloganSub: "Your tracking. Your style.",
     scrollHint: "See how transaction magic comes to life in CoinLover.",
+    financeTrackerBadge: "Personal Finance Tracker",
+    heroInstallPlay: "Install from Google Play",
+    heroOpenBrowser: "Open in Browser",
+    heroGooglePlaySub: "GOOGLE PLAY",
+    heroWebPwaSub: "WEB / PWA",
+    heroInstantSync: "Real-time sync",
+    heroAdaptedTitle: "Works on any device.",
+    heroAdaptedDesc: "Instant real-time sync across your phone, tablet, and computer.",
     easyInsertTag: "Instant Logging",
     easyInsertTitle: "Easy Input",
     easyInsertText: "One gesture, one digit, 'Add'. Or just say it out loud.",
@@ -635,6 +652,14 @@ export const LandingPage: React.FC = () => {
     setPendingChallengeToken("");
   };
 
+  const handleLaunchDemoMode = () => {
+    const demoId = APP_SETTINGS.DEMO_SS_ID;
+    localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.ACTIVE_TABLE_ID, demoId);
+    localStorage.setItem("cl_onboarding_completed", "true");
+    document.cookie = `cl_active_table_id=${demoId}; path=/; max-age=${60*60*24*365}; SameSite=Lax`;
+    window.location.href = `/?ssId=${demoId}`;
+  };
+
   const wallets = [
     { name: t.wallets.cash, icon: <Banknote size={48} />, color: "#10b981", active: false },
     { name: t.wallets.bank, icon: <Wallet size={48} />, color: "#06b6d4", active: true },
@@ -650,7 +675,7 @@ export const LandingPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-[650vh] bg-[#050505] text-white selection:bg-[#6d5dfc]/30 font-sans overflow-x-hidden focus:outline-none">
+    <div className="min-h-screen bg-[#050505] text-white selection:bg-[#6d5dfc]/30 font-sans overflow-x-hidden focus:outline-none">
       <style>{`* { -webkit-tap-highlight-color: transparent; outline: none !important; } .text-gradient-purple { background: linear-gradient(135deg, #fff 0%, #6d5dfc 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }`}</style>
       
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
@@ -688,144 +713,223 @@ export const LandingPage: React.FC = () => {
         </div>
       </nav>
 
-      <section className="relative pt-32 md:pt-40 pb-10 px-4 md:px-6">
-        <div className="max-w-4xl mx-auto text-center relative z-10">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
-            <h1 className="text-3xl md:text-7xl font-extrabold mb-6 md:mb-8 tracking-tight leading-[1.2] md:leading-[1.1]">
+      <section className="relative pt-32 md:pt-40 pb-12 md:pb-16 px-4 md:px-6">
+        <div className="max-w-6xl mx-auto relative z-10">
+          {/* Top Heading */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="text-center max-w-4xl mx-auto mb-10 md:mb-14">
+            {/* Badge: Трекер личных финансов */}
+            <div className="inline-flex items-center gap-2 text-white/50 text-xs md:text-sm font-medium mb-3 md:mb-4 tracking-wide">
+              <span className="w-2 h-2 rounded-full bg-[#6d5dfc] animate-pulse" />
+              <span>{t.financeTrackerBadge}</span>
+            </div>
+
+            <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-4 md:mb-5 tracking-tight leading-[1.15]">
               {t.sloganMain} <br />
               <span className="text-gradient-purple">{t.sloganSub}</span>
             </h1>
-            <p className="text-base md:text-xl text-white/60 max-w-2xl mx-auto mb-10 md:mb-12">{t.scrollHint}</p>
+            <p className="text-sm sm:text-base md:text-lg text-white/60 max-w-2xl mx-auto">{t.scrollHint}</p>
           </motion.div>
 
-          <div className="relative flex justify-center mt-12 mb-20 group">
-            <div className="absolute -inset-4 bg-[#6d5dfc]/10 blur-3xl opacity-50 group-hover:opacity-100 transition-opacity duration-1000 rounded-full" />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{ duration: 1, delay: 0.4 }}
-              className="glass-panel p-2 border-white/10 shadow-2xl relative z-10 overflow-hidden w-fit max-w-[280px] md:max-w-[320px] mx-auto rounded-[40px]"
-            >
-              <video id="video_hero" autoPlay muted loop playsInline className="w-full h-auto rounded-[32px] block shadow-2xl">
-                <source src="/hero-demo.mp4" type="video/mp4" />
-              </video>
-              <div className="absolute inset-0 bg-gradient-to-t from-[#050505]/20 to-transparent pointer-events-none rounded-[32px]" />
-            </motion.div>
+          {/* Two-Column Hero Grid: Left (Smartphone Video: 5 cols ~42%), Right (Adapted Block: 7 cols ~58%) */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12 items-center max-w-6xl mx-auto">
+            {/* Left Column: Phone Video */}
+            <div className="md:col-span-5 flex justify-center order-2 md:order-1">
+              <div className="relative group">
+                <div className="absolute -inset-4 bg-[#6d5dfc]/15 blur-3xl opacity-60 group-hover:opacity-100 transition-opacity duration-1000 rounded-full" />
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: 0.2 }}
+                  className="glass-panel p-2 border-white/10 shadow-2xl relative z-10 overflow-hidden w-fit max-w-[280px] md:max-w-[300px] mx-auto rounded-[38px]"
+                >
+                  <video id="video_hero" autoPlay muted loop playsInline className="w-full h-auto rounded-[30px] block shadow-2xl">
+                    <source src="/hero-demo.mp4" type="video/mp4" />
+                  </video>
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#050505]/20 to-transparent pointer-events-none rounded-[30px]" />
+                </motion.div>
+              </div>
+            </div>
+
+            {/* Right Column: Clean, frameless multiplatform block */}
+            <div className="md:col-span-7 order-1 md:order-2 text-center md:text-left flex flex-col justify-center">
+              <span className="text-[#6d5dfc] font-bold tracking-[0.25em] uppercase text-[11px] mb-2.5 block">{t.downloadTag}</span>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold mb-3 leading-tight tracking-tight text-white">{t.heroAdaptedTitle}</h2>
+              <p className="text-sm sm:text-base text-white/60 mb-6 sm:mb-8 leading-relaxed max-w-lg">{t.heroAdaptedDesc}</p>
+
+              {/* Primary Action Buttons: Google Play & Web/PWA side by side */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mb-5 max-w-lg">
+                {/* Google Play Button */}
+                <a 
+                  href="https://play.google.com/store/apps/details?id=coinLover.ru" 
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center sm:justify-start gap-3.5 px-5 py-3.5 bg-[#6d5dfc] hover:bg-[#5b4ce3] text-white rounded-2xl transition-all shadow-xl shadow-[#6d5dfc]/25 hover:shadow-[#6d5dfc]/40 active:scale-95 group"
+                >
+                  <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none">
+                    <path d="M3.609 1.814L13.792 12 3.61 22.186A2.215 2.215 0 0 1 3 20.613V3.387c0-.594.223-1.15.609-1.573z" fill="#00E676" />
+                    <path d="M17.437 8.355l-3.645 3.645L3.61 1.814c.328-.358.804-.582 1.334-.582.49 0 .937.19 1.272.502l11.221 6.621z" fill="#FFD600" />
+                    <path d="M17.437 15.645L4.944 23.018A1.91 1.91 0 0 1 3.609 22.186L13.792 12l3.645 3.645z" fill="#FF1744" />
+                    <path d="M21.285 10.608l-3.848-2.253L13.792 12l3.645 3.645 3.848-2.253c.82-.48.82-1.904 0-2.384z" fill="#00B0FF" />
+                  </svg>
+                  <div className="text-left min-w-0">
+                    <span className="block text-[9px] sm:text-[10px] text-white/80 uppercase tracking-widest font-black leading-none">{t.heroGooglePlaySub}</span>
+                    <span className="block text-xs sm:text-[13px] lg:text-sm font-bold text-white tracking-tight leading-tight mt-1 whitespace-nowrap">{t.heroInstallPlay}</span>
+                  </div>
+                </a>
+
+                {/* Web / Chrome Button */}
+                <button
+                  onClick={() => {
+                    if (activeTableId) {
+                      window.location.href = "/";
+                    } else {
+                      handleOpenModal("login");
+                    }
+                  }}
+                  className="flex items-center justify-center sm:justify-start gap-3.5 px-5 py-3.5 bg-[#0f0f13] hover:bg-white/[0.08] text-white rounded-2xl transition-all border border-white/10 hover:border-white/20 active:scale-95 group shadow-lg"
+                >
+                  <Globe size={20} className="text-[#6d5dfc] shrink-0 group-hover:scale-110 transition-transform" />
+                  <div className="text-left min-w-0">
+                    <span className="block text-[9px] sm:text-[10px] text-white/50 uppercase tracking-widest font-black leading-none">{t.heroWebPwaSub}</span>
+                    <span className="block text-xs sm:text-[13px] lg:text-sm font-bold text-white tracking-tight leading-tight mt-1 whitespace-nowrap">{t.heroOpenBrowser}</span>
+                  </div>
+                </button>
+              </div>
+
+              {/* Device sync indicators */}
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5 sm:gap-3.5 text-white/60 text-xs pt-1">
+                <div className="flex items-center gap-1.5 text-white/70">
+                  <Smartphone size={14} className="text-[#6d5dfc]" />
+                  <span className="text-[11px] sm:text-xs font-medium">{t.devices.mobile}</span>
+                </div>
+                <span className="text-white/20">•</span>
+                <div className="flex items-center gap-1.5 text-white/70">
+                  <Tablet size={14} className="text-[#6d5dfc]" />
+                  <span className="text-[11px] sm:text-xs font-medium">{t.devices.tablet}</span>
+                </div>
+                <span className="text-white/20">•</span>
+                <div className="flex items-center gap-1.5 text-white/70">
+                  <Laptop size={14} className="text-[#6d5dfc]" />
+                  <span className="text-[11px] sm:text-xs font-medium">{t.devices.desktop}</span>
+                </div>
+                <span className="text-white/20">•</span>
+                <div className="inline-flex items-center gap-1.5 text-emerald-400 text-[10px] sm:text-[11px] font-semibold bg-emerald-950/40 px-2.5 py-1 rounded-full border border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.15)]">
+                  <RefreshCw size={11} className="text-emerald-400 animate-spin" style={{ animationDuration: '6s' }} />
+                  <span>{t.heroInstantSync}</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      <div className="max-w-6xl mx-auto space-y-32 md:space-y-60 py-10 md:py-20 px-6">
-        <section className="text-center max-w-3xl mx-auto relative group">
-          <div className="absolute -inset-10 bg-[#6d5dfc]/5 blur-3xl opacity-50 group-hover:opacity-100 transition-opacity duration-1000 rounded-full pointer-events-none" />
-          <div className="relative z-10 py-6">
-            <span className="text-[#6d5dfc] font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">{t.easyInsertTag}</span>
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">{t.easyInsertTitle}</h2>
-            <p className="text-lg text-white/50 mb-8 leading-relaxed max-w-2xl mx-auto">{t.easyInsertText}</p>
+      <div className="max-w-6xl mx-auto space-y-24 md:space-y-36 lg:space-y-44 py-16 md:py-28 px-6">
+        {/* 1. Твои данные — в твоих таблицах (Sheets / Privacy / Ownership) */}
+        <section className="flex flex-col md:flex-row items-center gap-12 lg:gap-20">
+          <div className="flex-1 text-center md:text-left">
+            <span className="text-green-500 font-bold tracking-[0.25em] uppercase text-xs mb-3 block">{t.sheetsTag}</span>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-5 leading-[1.15] tracking-tight">{t.sheetsTitle}</h2>
+            <p className="text-base sm:text-lg text-white/55 leading-relaxed max-w-xl">{t.sheetsText}</p>
+          </div>
+          <div className="flex-1 relative group flex justify-center md:justify-end">
+            <div className="absolute -inset-4 bg-green-500/10 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000 rounded-full" />
+            <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.3 }} className="glass-panel p-2 border-white/10 shadow-2xl relative z-10 overflow-hidden w-fit rounded-[24px]">
+              <img src="/sheets-preview.png" alt="Sheets" className="block w-full h-auto max-h-[420px] rounded-[20px] object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#050505]/40 to-transparent pointer-events-none" />
+            </motion.div>
           </div>
         </section>
 
-        <section className="flex flex-col md:flex-row items-center gap-16 md:gap-20">
+        {/* 2. Трать в любой валюте (Currency) - raised up under Sheets */}
+        <section className="flex flex-col md:flex-row-reverse items-center gap-12 lg:gap-20">
           <div className="flex-1 text-center md:text-left">
-            <span className="text-[#6d5dfc] font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">{t.analyticsTag}</span>
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">{t.analyticsTitle}</h2>
-            <p className="text-lg text-white/50 mb-8 leading-relaxed">{t.analyticsText}</p>
-          </div>
-          <div className="flex-1 relative group flex justify-center md:justify-end min-h-[450px] md:min-h-[600px]">
-            <div className="absolute -inset-4 bg-[#6d5dfc]/10 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000 rounded-full" />
-            <AnimatePresence mode="wait">
-              <motion.div key={analyticsImageIndex} initial={{ opacity: 0, x: 20, scale: 0.95 }} animate={{ opacity: 1, x: 0, scale: 1 }} exit={{ opacity: 0, x: -20, scale: 0.95 }} transition={{ duration: 0.8, ease: "easeInOut" }} className="glass-panel p-2 border-white/10 shadow-2xl relative z-10 overflow-hidden w-fit perspective-1000 h-fit">
-                <motion.img animate={{ y: [0, -5, 0], rotate: [0, 0.5, 0] }} transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }} src={analyticsImageIndex === 0 ? "/analytics-preview.png" : "/analytics-pie-preview.png"} alt="Analytics" className="block w-full h-auto max-h-[450px] md:max-h-[600px] rounded-[20px]" />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#050505]/40 to-transparent pointer-events-none" />
-              </motion.div>
-            </AnimatePresence>
-          </div>
-        </section>
-
-
-        <section className="flex flex-col md:flex-row-reverse items-center gap-16 md:gap-20">
-          <div className="flex-1 text-center md:text-left">
-            <span className="text-orange-400 font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">{t.customTag}</span>
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">{t.customTitle}</h2>
-            <p className="text-lg text-white/50 mb-8 leading-relaxed">{t.customText}</p>
+            <span className="text-blue-400 font-bold tracking-[0.25em] uppercase text-xs mb-3 block">{t.currencyTag}</span>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-5 leading-[1.15] tracking-tight">{t.currencyTitle}</h2>
+            <p className="text-base sm:text-lg text-white/55 leading-relaxed max-w-xl">{t.currencyText}</p>
           </div>
           <div className="flex-1 relative group flex justify-center md:justify-start">
-            <div className="absolute -inset-4 bg-orange-500/5 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000 rounded-full" />
-            <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.3 }} className="glass-panel p-2 border-white/10 shadow-2xl relative z-10 overflow-hidden w-fit">
-              <img src="/edit-preview.png" alt="Edit" className="block w-full h-auto max-h-[450px] md:max-h-[550px] rounded-[20px] object-contain" />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#050505]/40 to-transparent pointer-events-none" />
-            </motion.div>
-          </div>
-        </section>
-
-        <section className="flex flex-col md:flex-row items-center gap-16 md:gap-20">
-          <div className="flex-1 text-center md:text-left">
-            <span className="text-yellow-500 font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">{t.historyTag}</span>
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">{t.historyTitle}</h2>
-            <p className="text-lg text-white/50 mb-8 leading-relaxed">{t.historyText}</p>
-          </div>
-          <div className="flex-1 relative group flex justify-center md:justify-end">
-            <div className="absolute -inset-4 bg-yellow-500/5 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000 rounded-full" />
-            <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.3 }} className="glass-panel p-2 border-white/10 shadow-2xl relative z-10 overflow-hidden w-fit">
-              <img src="/history-preview.png" alt="History" className="block w-full h-auto max-h-[450px] md:max-h-[550px] rounded-[20px] object-contain" />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#050505]/40 to-transparent pointer-events-none" />
-            </motion.div>
-          </div>
-        </section>
-
-
-        <section className="flex flex-col md:flex-row items-center gap-16 md:gap-20">
-          <div className="flex-1 text-center md:text-left">
-            <span className="text-blue-400 font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">{t.currencyTag}</span>
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">{t.currencyTitle}</h2>
-            <p className="text-lg text-white/50 mb-8 leading-relaxed">{t.currencyText}</p>
-          </div>
-          <div className="flex-1 relative group flex justify-center md:justify-end">
-            <div className="absolute -inset-4 bg-blue-500/5 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000 rounded-full" />
-            <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.3 }} className="glass-panel p-2 border-white/10 shadow-2xl relative z-10 overflow-hidden w-fit">
+            <div className="absolute -inset-4 bg-blue-500/10 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000 rounded-full" />
+            <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.3 }} className="glass-panel p-2 border-white/10 shadow-2xl relative z-10 overflow-hidden w-fit rounded-[24px]">
               <img src="/currency-preview.png" alt="Currency" className="block w-full h-auto max-h-[450px] md:max-h-[550px] rounded-[20px] object-contain" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#050505]/40 to-transparent pointer-events-none" />
             </motion.div>
           </div>
         </section>
 
-        <section className="flex flex-col md:flex-row-reverse items-center gap-16 md:gap-20">
+        {/* 3. Аналитика (Analytics) */}
+        <section className="flex flex-col md:flex-row items-center gap-12 lg:gap-20">
           <div className="flex-1 text-center md:text-left">
-            <span className="text-[#6d5dfc] font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">{t.storiesTag}</span>
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">{t.storiesTitle}</h2>
-            <p className="text-lg text-white/50 mb-8 leading-relaxed">{t.storiesText}</p>
+            <span className="text-[#6d5dfc] font-bold tracking-[0.25em] uppercase text-xs mb-3 block">{t.analyticsTag}</span>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-5 leading-[1.15] tracking-tight">{t.analyticsTitle}</h2>
+            <p className="text-base sm:text-lg text-white/55 leading-relaxed max-w-xl">{t.analyticsText}</p>
           </div>
-          <div className="flex-1 relative group flex justify-center md:justify-start items-center min-h-[450px] md:min-h-[600px]">
+          <div className="flex-1 relative group flex justify-center md:justify-end min-h-[420px] md:min-h-[550px]">
             <div className="absolute -inset-4 bg-[#6d5dfc]/10 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000 rounded-full" />
             <AnimatePresence mode="wait">
-              <motion.div key={storiesImageIndex} initial={{ opacity: 0, x: -20, scale: 0.95 }} animate={{ opacity: 1, x: 0, scale: 1 }} exit={{ opacity: 0, x: 20, scale: 0.95 }} transition={{ duration: 0.8, ease: "easeInOut" }} className="glass-panel p-2 border-white/10 shadow-2xl relative z-10 overflow-hidden w-fit perspective-1000 h-fit">
-                <motion.img animate={{ y: [0, -5, 0], rotate: [0, -0.5, 0] }} transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }} src={storiesImageIndex === 0 ? "/stories-preview-1.png" : storiesImageIndex === 1 ? "/stories-preview-2.png" : "/stories-preview-3.png"} alt="Stories" className="block w-full h-auto max-h-[450px] md:max-h-[600px] rounded-[20px] object-contain" />
+              <motion.div key={analyticsImageIndex} initial={{ opacity: 0, x: 20, scale: 0.95 }} animate={{ opacity: 1, x: 0, scale: 1 }} exit={{ opacity: 0, x: -20, scale: 0.95 }} transition={{ duration: 0.8, ease: "easeInOut" }} className="glass-panel p-2 border-white/10 shadow-2xl relative z-10 overflow-hidden w-fit perspective-1000 h-fit rounded-[24px]">
+                <motion.img animate={{ y: [0, -5, 0], rotate: [0, 0.5, 0] }} transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }} src={analyticsImageIndex === 0 ? "/analytics-preview.png" : "/analytics-pie-preview.png"} alt="Analytics" className="block w-full h-auto max-h-[450px] md:max-h-[580px] rounded-[20px]" />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#050505]/40 to-transparent pointer-events-none" />
               </motion.div>
             </AnimatePresence>
           </div>
         </section>
 
-        <section className="flex flex-col md:flex-row items-center gap-16 md:gap-20">
+        {/* 4. Настройка (Customization) */}
+        <section className="flex flex-col md:flex-row-reverse items-center gap-12 lg:gap-20">
           <div className="flex-1 text-center md:text-left">
-            <span className="text-green-500 font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">{t.sheetsTag}</span>
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">{t.sheetsTitle}</h2>
-            <p className="text-lg text-white/50 mb-8 leading-relaxed">{t.sheetsText}</p>
+            <span className="text-orange-400 font-bold tracking-[0.25em] uppercase text-xs mb-3 block">{t.customTag}</span>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-5 leading-[1.15] tracking-tight">{t.customTitle}</h2>
+            <p className="text-base sm:text-lg text-white/55 leading-relaxed max-w-xl">{t.customText}</p>
           </div>
-          <div className="flex-1 relative group flex justify-center md:justify-end">
-            <div className="absolute -inset-4 bg-green-500/5 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000 rounded-full" />
-            <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.3 }} className="glass-panel p-2 border-white/10 shadow-2xl relative z-10 overflow-hidden w-fit">
-              <img src="/sheets-preview.png" alt="Sheets" className="block w-full h-auto max-h-[400px] rounded-[20px] object-cover" />
+          <div className="flex-1 relative group flex justify-center md:justify-start">
+            <div className="absolute -inset-4 bg-orange-500/10 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000 rounded-full" />
+            <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.3 }} className="glass-panel p-2 border-white/10 shadow-2xl relative z-10 overflow-hidden w-fit rounded-[24px]">
+              <img src="/edit-preview.png" alt="Edit" className="block w-full h-auto max-h-[450px] md:max-h-[550px] rounded-[20px] object-contain" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#050505]/40 to-transparent pointer-events-none" />
             </motion.div>
           </div>
         </section>
 
-        <section className="flex flex-col md:flex-row-reverse items-center gap-16 md:gap-20">
+        {/* 5. История (History) */}
+        <section className="flex flex-col md:flex-row items-center gap-12 lg:gap-20">
           <div className="flex-1 text-center md:text-left">
-            <span className="text-[#6d5dfc] font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">{t.aiTag}</span>
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">{t.aiTitle}</h2>
-            <p className="text-lg text-white/50 mb-8 leading-relaxed">{t.aiText}</p>
+            <span className="text-yellow-500 font-bold tracking-[0.25em] uppercase text-xs mb-3 block">{t.historyTag}</span>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-5 leading-[1.15] tracking-tight">{t.historyTitle}</h2>
+            <p className="text-base sm:text-lg text-white/55 leading-relaxed max-w-xl">{t.historyText}</p>
+          </div>
+          <div className="flex-1 relative group flex justify-center md:justify-end">
+            <div className="absolute -inset-4 bg-yellow-500/10 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000 rounded-full" />
+            <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.3 }} className="glass-panel p-2 border-white/10 shadow-2xl relative z-10 overflow-hidden w-fit rounded-[24px]">
+              <img src="/history-preview.png" alt="History" className="block w-full h-auto max-h-[450px] md:max-h-[550px] rounded-[20px] object-contain" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#050505]/40 to-transparent pointer-events-none" />
+            </motion.div>
+          </div>
+        </section>
+
+        {/* 6. Сторис (Stories) */}
+        <section className="flex flex-col md:flex-row-reverse items-center gap-12 lg:gap-20">
+          <div className="flex-1 text-center md:text-left">
+            <span className="text-[#6d5dfc] font-bold tracking-[0.25em] uppercase text-xs mb-3 block">{t.storiesTag}</span>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-5 leading-[1.15] tracking-tight">{t.storiesTitle}</h2>
+            <p className="text-base sm:text-lg text-white/55 leading-relaxed max-w-xl">{t.storiesText}</p>
+          </div>
+          <div className="flex-1 relative group flex justify-center md:justify-start items-center min-h-[420px] md:min-h-[550px]">
+            <div className="absolute -inset-4 bg-[#6d5dfc]/10 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000 rounded-full" />
+            <AnimatePresence mode="wait">
+              <motion.div key={storiesImageIndex} initial={{ opacity: 0, x: -20, scale: 0.95 }} animate={{ opacity: 1, x: 0, scale: 1 }} exit={{ opacity: 0, x: 20, scale: 0.95 }} transition={{ duration: 0.8, ease: "easeInOut" }} className="glass-panel p-2 border-white/10 shadow-2xl relative z-10 overflow-hidden w-fit perspective-1000 h-fit rounded-[24px]">
+                <motion.img animate={{ y: [0, -5, 0], rotate: [0, -0.5, 0] }} transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }} src={storiesImageIndex === 0 ? "/stories-preview-1.png" : storiesImageIndex === 1 ? "/stories-preview-2.png" : "/stories-preview-3.png"} alt="Stories" className="block w-full h-auto max-h-[450px] md:max-h-[580px] rounded-[20px] object-contain" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#050505]/40 to-transparent pointer-events-none" />
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </section>
+
+        {/* 7. ИИ-Ассистент (AI Assistant) */}
+        <section className="flex flex-col md:flex-row items-center gap-12 lg:gap-20">
+          <div className="flex-1 text-center md:text-left">
+            <span className="text-[#6d5dfc] font-bold tracking-[0.25em] uppercase text-xs mb-3 block">{t.aiTag}</span>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-5 leading-[1.15] tracking-tight">{t.aiTitle}</h2>
+            <p className="text-base sm:text-lg text-white/55 leading-relaxed max-w-xl">{t.aiText}</p>
             <div className="pt-6 border-t border-white/5">
               <a 
                 href={tgUrl} 
@@ -838,135 +942,36 @@ export const LandingPage: React.FC = () => {
               </a>
             </div>
           </div>
-          <div className="flex-1 relative group flex justify-center md:justify-start items-center min-h-[450px] md:min-h-[600px]">
+          <div className="flex-1 relative group flex justify-center md:justify-end items-center min-h-[420px] md:min-h-[550px]">
             <div className="absolute -inset-4 bg-[#6d5dfc]/10 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000 rounded-full" />
             <AnimatePresence mode="wait">
-              <motion.div key={aiImageIndex} initial={{ opacity: 0, x: -20, scale: 0.95 }} animate={{ opacity: 1, x: 0, scale: 1 }} exit={{ opacity: 0, x: 20, scale: 0.95 }} transition={{ duration: 0.8, ease: "easeInOut" }} className="glass-panel p-2 border-white/10 shadow-2xl relative z-10 overflow-hidden w-fit perspective-1000 h-fit">
-                <motion.img animate={{ y: [0, -5, 0], rotate: [0, -0.5, 0] }} transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }} src={aiImageIndex === 0 ? "/ai-preview-1.png" : "/ai-preview-2.png"} alt="AI Assistant" className="block w-full h-auto max-h-[450px] md:max-h-[600px] rounded-[20px] object-contain" />
+              <motion.div key={aiImageIndex} initial={{ opacity: 0, x: 20, scale: 0.95 }} animate={{ opacity: 1, x: 0, scale: 1 }} exit={{ opacity: 0, x: -20, scale: 0.95 }} transition={{ duration: 0.8, ease: "easeInOut" }} className="glass-panel p-2 border-white/10 shadow-2xl relative z-10 overflow-hidden w-fit perspective-1000 h-fit rounded-[24px]">
+                <motion.img animate={{ y: [0, -5, 0], rotate: [0, 0.5, 0] }} transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }} src={aiImageIndex === 0 ? "/ai-preview-1.png" : "/ai-preview-2.png"} alt="AI Assistant" className="block w-full h-auto max-h-[450px] md:max-h-[580px] rounded-[20px] object-contain" />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#050505]/40 to-transparent pointer-events-none" />
               </motion.div>
             </AnimatePresence>
           </div>
         </section>
 
-        <section className="flex flex-col md:flex-row items-center gap-16 md:gap-20">
+        {/* 8. Темы (Themes) */}
+        <section className="flex flex-col md:flex-row-reverse items-center gap-12 lg:gap-20">
           <div className="flex-1 text-center md:text-left">
-            <span className="text-[#6d5dfc] font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">{t.themeTag}</span>
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">{t.themeTitle}</h2>
-            <p className="text-lg text-white/50 mb-8 leading-relaxed">{t.themeText}</p>
+            <span className="text-[#6d5dfc] font-bold tracking-[0.25em] uppercase text-xs mb-3 block">{t.themeTag}</span>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-5 leading-[1.15] tracking-tight">{t.themeTitle}</h2>
+            <p className="text-base sm:text-lg text-white/55 leading-relaxed max-w-xl">{t.themeText}</p>
           </div>
-          <div className="flex-1 relative group flex justify-center md:justify-end items-center min-h-[450px] md:min-h-[600px]">
+          <div className="flex-1 relative group flex justify-center md:justify-start items-center min-h-[420px] md:min-h-[550px]">
             <div className="absolute -inset-4 bg-[#6d5dfc]/10 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000 rounded-full" />
             <AnimatePresence mode="wait">
-              <motion.div key={themeImageIndex} initial={{ opacity: 0, x: 20, scale: 0.95 }} animate={{ opacity: 1, x: 0, scale: 1 }} exit={{ opacity: 0, x: -20, scale: 0.95 }} transition={{ duration: 0.8, ease: "easeInOut" }} className="glass-panel p-2 border-white/10 shadow-2xl relative z-10 overflow-hidden w-fit perspective-1000 h-fit">
-                <motion.img animate={{ y: [0, -5, 0], rotate: [0, 0.5, 0] }} transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }} src={themeImageIndex === 0 ? "/style-preview-1.png" : themeImageIndex === 1 ? "/style-preview-2.png" : "/style-preview-3.png"} alt="Theme Styles" className="block w-full h-auto max-h-[450px] md:max-h-[600px] rounded-[20px] object-contain" />
+              <motion.div key={themeImageIndex} initial={{ opacity: 0, x: -20, scale: 0.95 }} animate={{ opacity: 1, x: 0, scale: 1 }} exit={{ opacity: 0, x: 20, scale: 0.95 }} transition={{ duration: 0.8, ease: "easeInOut" }} className="glass-panel p-2 border-white/10 shadow-2xl relative z-10 overflow-hidden w-fit perspective-1000 h-fit rounded-[24px]">
+                <motion.img animate={{ y: [0, -5, 0], rotate: [0, -0.5, 0] }} transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }} src={themeImageIndex === 0 ? "/style-preview-1.png" : themeImageIndex === 1 ? "/style-preview-2.png" : "/style-preview-3.png"} alt="Theme Styles" className="block w-full h-auto max-h-[450px] md:max-h-[580px] rounded-[20px] object-contain" />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#050505]/40 to-transparent pointer-events-none" />
               </motion.div>
             </AnimatePresence>
           </div>
         </section>
 
-
-        <section id="download" className="flex flex-col md:flex-row items-center gap-16 md:gap-20 py-10">
-          <div className="flex-1 text-center md:text-left">
-            <span className="text-[#6d5dfc] font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">{t.downloadTag}</span>
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">{t.downloadTitle}</h2>
-            <p className="text-lg text-white/50 mb-8 leading-relaxed">{t.downloadText}</p>
-            
-            {/* Device sync badges */}
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 sm:gap-6 mb-8 pb-6 border-b border-white/10 text-white/60 text-xs">
-              <div className="flex items-center gap-2">
-                <Smartphone size={18} className="text-[#6d5dfc]" />
-                <span className="font-medium">{t.devices.mobile}</span>
-              </div>
-              <span className="text-white/20 hidden sm:inline">•</span>
-              <div className="flex items-center gap-2">
-                <Tablet size={18} className="text-[#6d5dfc]" />
-                <span className="font-medium">{t.devices.tablet}</span>
-              </div>
-              <span className="text-white/20 hidden sm:inline">•</span>
-              <div className="flex items-center gap-2">
-                <Laptop size={18} className="text-[#6d5dfc]" />
-                <span className="font-medium">{t.devices.desktop}</span>
-              </div>
-              <span className="text-white/20 hidden sm:inline">•</span>
-              <div className="flex items-center gap-1.5 text-emerald-400 text-[11px] font-semibold bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
-                <RefreshCw size={12} className="animate-spin" style={{ animationDuration: '6s' }} />
-                <span>{lang === 'ru' ? 'Мгновенная синхронизация' : 'Real-time sync'}</span>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-4 justify-center md:justify-start">
-              {/* Google Play Button */}
-              <a 
-                href="https://play.google.com/store/apps/details?id=coinLover.ru" 
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-4 px-7 py-4 bg-[#6d5dfc] hover:bg-[#5b4ce3] text-white font-bold rounded-2xl transition-all shadow-xl shadow-[#6d5dfc]/20 group active:scale-98"
-              >
-                <svg className="w-6 h-6 shrink-0" viewBox="0 0 24 24" fill="none">
-                  <path d="M3.609 1.814L13.792 12 3.61 22.186A2.215 2.215 0 0 1 3 20.613V3.387c0-.594.223-1.15.609-1.573z" fill="#00E676" />
-                  <path d="M17.437 8.355l-3.645 3.645L3.61 1.814c.328-.358.804-.582 1.334-.582.49 0 .937.19 1.272.502l11.221 6.621z" fill="#FFD600" />
-                  <path d="M17.437 15.645L4.944 23.018A1.91 1.91 0 0 1 3.609 22.186L13.792 12l3.645 3.645z" fill="#FF1744" />
-                  <path d="M21.285 10.608l-3.848-2.253L13.792 12l3.645 3.645 3.848-2.253c.82-.48.82-1.904 0-2.384z" fill="#00B0FF" />
-                </svg>
-                <div className="text-left">
-                  <div className="text-[10px] opacity-80 uppercase tracking-widest font-black">{(t as any).downloadPlaySubtitle || "Доступно в"}</div>
-                  <div className="text-base uppercase tracking-wider">{t.downloadGooglePlay}</div>
-                </div>
-              </a>
-
-              {/* Web / PWA Button */}
-              <button
-                onClick={() => {
-                  if (activeTableId) {
-                    window.location.href = "/";
-                  } else {
-                    handleOpenModal("onboarding");
-                  }
-                }}
-                className="flex items-center gap-4 px-6 py-4 bg-white/5 hover:bg-white/10 text-white font-bold rounded-2xl transition-all border border-white/10 group active:scale-98"
-              >
-                <Globe size={24} className="text-[#6d5dfc]" />
-                <div className="text-left">
-                  <div className="text-[10px] opacity-70 uppercase tracking-widest font-black">PWA / Browser</div>
-                  <div className="text-base uppercase tracking-wider">{t.openInChrome}</div>
-                </div>
-              </button>
-
-              {/* Direct APK Download Button */}
-              <a 
-                href="/download/coinlover.apk" 
-                download
-                className="flex items-center gap-4 px-6 py-4 bg-white/5 hover:bg-white/10 text-white/90 hover:text-white font-bold rounded-2xl transition-all border border-white/10 group active:scale-98"
-              >
-                <Smartphone size={24} className="text-white/60 group-hover:text-white transition-colors" />
-                <div className="text-left">
-                  <div className="text-[10px] opacity-70 uppercase tracking-widest font-black">{(t as any).downloadDirectSubtitle || "Direct Download"}</div>
-                  <div className="text-base uppercase tracking-wider">Android APK</div>
-                </div>
-              </a>
-            </div>
-          </div>
-          
-          <div className="flex-1 flex justify-center md:justify-end">
-            <div className="relative group">
-              <div className="absolute -inset-8 bg-[#6d5dfc]/20 blur-3xl opacity-50 group-hover:opacity-100 transition-opacity duration-1000 rounded-full" />
-              <div className="glass-panel p-6 border-white/10 shadow-2xl relative z-10 flex flex-col items-center gap-4 bg-[#050505]/60">
-                <div className="bg-white p-3 rounded-2xl shadow-inner">
-                  <img 
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent("https://play.google.com/store/apps/details?id=coinLover.ru")}`} 
-                    alt="Google Play QR"
-                    className="w-[180px] h-[180px] block"
-                  />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">{(t as any).downloadQrHint || "Сканируйте для установки из Google Play"}</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="text-center py-20 relative">
+        <section className="text-center py-16 md:py-24 relative">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#6d5dfc]/5 blur-[120px] rounded-full pointer-events-none" />
           <h2 className="text-5xl md:text-7xl font-bold mb-8 tracking-tight">{t.finalCta}</h2>
           
@@ -1268,13 +1273,22 @@ export const LandingPage: React.FC = () => {
                   )}
 
                   {modalType !== "studio" && (
-                    <div className="pt-2 text-center border-t border-white/5 mt-1">
+                    <div className="pt-3 text-center border-t border-white/5 mt-2 flex items-center justify-center gap-3">
+                      <button 
+                        type="button"
+                        onClick={handleLaunchDemoMode}
+                        className="inline-flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 font-semibold transition-colors"
+                      >
+                        <Sparkles size={13} className="text-amber-400" />
+                        <span>{lang === "ru" ? "Открыть демо-режим" : "Open Demo App"}</span>
+                      </button>
+                      <span className="text-white/20">•</span>
                       <a 
                         href="/demo"
                         className="inline-flex items-center gap-1.5 text-xs text-white/40 hover:text-[#6d5dfc] transition-colors"
                       >
                         <Play size={12} className="text-[#6d5dfc]" />
-                        <span>{(t as any).modalDemoBtn || "Попробовать демо-режим"}</span>
+                        <span>{lang === "ru" ? "Видео-обзор" : "Video Overview"}</span>
                       </a>
                     </div>
                   )}

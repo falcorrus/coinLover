@@ -296,13 +296,13 @@
 }
 
 .cl-detail-hero-card {
-  background: rgba(13, 17, 23, 0.7);
-  backdrop-filter: blur(25px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 24px;
-  padding: 24px;
+  background: transparent;
+  backdrop-filter: none;
+  border: none;
+  border-radius: 0;
+  padding: 8px 0;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .cl-card-glow {

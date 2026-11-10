@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { APP_SETTINGS } from '../constants/settings';
 import {
   Coins,
   Play,
@@ -152,17 +154,22 @@ export const CoinLoverStageshowDemo: React.FC<CoinLoverStageshowDemoProps> = ({
 
   const activeFeature = DEMO_FEATURES.find(f => f.id === activeTabId) || DEMO_FEATURES[0];
 
-  // Switch video when tab changes
+  // Switch video when tab changes and play immediately
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.playbackRate = speed;
-      videoRef.current.currentTime = 0;
-      videoRef.current.play().then(() => {
-        setIsPlaying(true);
-      }).catch(err => {
-        console.warn('Autoplay prevented:', err);
-        setIsPlaying(false);
-      });
+    const video = videoRef.current;
+    if (video) {
+      video.muted = isMuted;
+      video.playbackRate = speed;
+      video.currentTime = 0;
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.then(() => {
+          setIsPlaying(true);
+        }).catch(err => {
+          console.warn('Autoplay prevented:', err);
+          setIsPlaying(false);
+        });
+      }
     }
   }, [activeTabId]);
 
@@ -201,6 +208,18 @@ export const CoinLoverStageshowDemo: React.FC<CoinLoverStageshowDemoProps> = ({
       const total = videoRef.current.duration || 1;
       setProgress((current / total) * 100);
     }
+  };
+
+  const handleLaunchDemo = () => {
+    if (onStartApp) {
+      onStartApp();
+      return;
+    }
+    const demoId = APP_SETTINGS.DEMO_SS_ID;
+    localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.ACTIVE_TABLE_ID, demoId);
+    localStorage.setItem('cl_onboarding_completed', 'true');
+    document.cookie = `cl_active_table_id=${demoId}; path=/; max-age=${60*60*24*365}; SameSite=Lax`;
+    window.location.href = `/?ssId=${demoId}`;
   };
 
   const handleVideoEnded = () => {
@@ -248,9 +267,10 @@ export const CoinLoverStageshowDemo: React.FC<CoinLoverStageshowDemoProps> = ({
 
           <button
             className="cl-demo-btn-action cl-demo-btn-primary"
-            onClick={onStartApp || (() => window.location.href = '/')}
+            onClick={handleLaunchDemo}
           >
-            <span>В программу</span>
+            <Sparkles size={14} className="text-amber-300" />
+            <span>Открыть демо-режим</span>
             <ArrowRight size={14} />
           </button>
         </div>
@@ -276,8 +296,13 @@ export const CoinLoverStageshowDemo: React.FC<CoinLoverStageshowDemoProps> = ({
 
       {/* Showcase Grid: Phone with Real Video + Details Panel */}
       <div className="cl-showcase-grid">
-        {/* Left: iPhone Pro Mockup with Real Screen Recording */}
-        <div className="cl-phone-bezel">
+        {/* Left: iPhone Pro Mockup with Real Screen Recording & Entrance Animation */}
+        <motion.div 
+          initial={{ opacity: 0, y: 30, scale: 0.94 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          className="cl-phone-bezel"
+        >
           <div className="cl-phone-screen-inner">
             {/* Dynamic Island */}
             <div className="cl-dynamic-island">
@@ -285,21 +310,34 @@ export const CoinLoverStageshowDemo: React.FC<CoinLoverStageshowDemoProps> = ({
               <div className="cl-island-sensor" />
             </div>
 
-            {/* The Real Video Player */}
-            <video
-              ref={videoRef}
-              key={activeFeature.videoSrc}
-              src={activeFeature.videoSrc}
-              poster={activeFeature.poster}
-              autoPlay
-              muted={isMuted}
-              playsInline
-              preload="auto"
-              onTimeUpdate={handleTimeUpdate}
-              onEnded={handleVideoEnded}
-              onClick={togglePlay}
-              className="cl-real-video"
-            />
+            {/* The Real Video Player with Entrance & Dissolve Animation */}
+            <AnimatePresence mode="wait">
+              <motion.video
+                ref={videoRef}
+                key={activeFeature.videoSrc}
+                src={activeFeature.videoSrc}
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.45, ease: "easeOut" }}
+                autoPlay
+                muted={isMuted}
+                playsInline
+                preload="auto"
+                onCanPlay={(e) => {
+                  const vid = e.currentTarget;
+                  vid.muted = isMuted;
+                  const p = vid.play();
+                  if (p !== undefined) {
+                    p.then(() => setIsPlaying(true)).catch(() => {});
+                  }
+                }}
+                onTimeUpdate={handleTimeUpdate}
+                onEnded={handleVideoEnded}
+                onClick={togglePlay}
+                className="cl-real-video"
+              />
+            </AnimatePresence>
 
             {/* Video Progress Bar */}
             <div className="cl-video-progress">
@@ -328,7 +366,7 @@ export const CoinLoverStageshowDemo: React.FC<CoinLoverStageshowDemoProps> = ({
               </button>
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Right: Feature Description and Interactive Highlights */}
         <div className="cl-details-panel">
@@ -362,20 +400,19 @@ export const CoinLoverStageshowDemo: React.FC<CoinLoverStageshowDemoProps> = ({
             <div className="cl-cta-row">
               <button
                 className="cl-btn-large-primary"
-                onClick={onStartApp || (() => window.location.href = '/')}
+                onClick={handleLaunchDemo}
               >
-                <span>Начать пользоваться бесплатно</span>
+                <Sparkles size={16} className="text-amber-300" />
+                <span>Открыть демо-режим вживую</span>
                 <ArrowRight size={16} />
               </button>
 
-              <a
-                href="/download/coinlover.apk"
-                download
+              <button
+                onClick={() => window.location.href = '/landing'}
                 className="cl-btn-large-secondary"
               >
-                <Smartphone size={16} />
-                <span>Скачать APK</span>
-              </a>
+                <span>Подключить свою таблицу</span>
+              </button>
             </div>
           </div>
         </div>

@@ -1,10 +1,12 @@
 # 📊 Project Status: coinlover
 
-> **Последнее обновление (Deploy Milestone):** 2026-11-10 11:36  
+> **Последнее обновление (Deploy Milestone):** 2026-11-10 17:23  
 > **Итог:** Фиксация этапа разработки перед деплоем.
 
 ## 🏁 Завершено (Done)
-- [x] Error calling Local AI: HTTPConnectionPool(host='localhost', port=11434): Read timed out. (read timeout=90)
+- [x] USER_REQUEST: деплой лендинг
+- [x] TOOL_OUTPUT: Created At: 2026-11-10T17:22:24-03:00
+- [x] Completed At: 2026-11-10T17:22:24-03:00
 
 ## ⏳ В работе (WIP)
 - [ ] Проверка стабильности на проде
@@ -15,6 +17,10 @@
 ---
 
 ## 📜 История этапов
+### [2026-11-10 17:23] Deploy Milestone
+- **Итог:** Фиксация этапа разработки перед деплоем.
+- **Закрыто:** USER_REQUEST: деплой лендинг, TOOL_OUTPUT: Created At: 2026-11-10T17:22:24-03:00, Completed At: 2026-11-10T17:22:24-03:00
+
 ### [2026-11-10 11:36] Deploy Milestone
 - **Итог:** Фиксация этапа разработки перед деплоем.
 - **Закрыто:** Error calling Local AI: HTTPConnectionPool(host='localhost', port=11434): Read timed out. (read timeout=90)

@@ -425,10 +425,18 @@ SplashScreen.hide().catch(() => {});
 
   // /demo - Интерактивное демо возможностей через Stageshow
   if (currentPath === "/demo" || urlParams.get("demo") === "true") {
+    const launchDemo = () => {
+      const demoId = APP_SETTINGS.DEMO_SS_ID;
+      localStorage.setItem(APP_SETTINGS.STORAGE_KEYS.ACTIVE_TABLE_ID, demoId);
+      localStorage.setItem("cl_onboarding_completed", "true");
+      document.cookie = `cl_active_table_id=${demoId}; path=/; max-age=${60*60*24*365}; SameSite=Lax`;
+      window.location.href = `/?ssId=${demoId}`;
+    };
+
     return (
       <div className="min-h-screen bg-[#050505] p-3 md:p-6 flex flex-col items-center justify-center">
         <React.Suspense fallback={<div className="min-h-screen bg-[#050505]" />}>
-          <CoinLoverStageshowDemo onStartApp={() => window.location.href = "/"} standalone />
+          <CoinLoverStageshowDemo onStartApp={launchDemo} standalone />
         </React.Suspense>
       </div>
     );
@@ -474,6 +482,30 @@ SplashScreen.hide().catch(() => {});
 
       <div className={`h-full flex flex-col max-w-md landscape-app-container mx-auto relative shadow-2xl overflow-hidden bg-[var(--bg-color)] text-[var(--text-main)] font-sans select-none transition-colors duration-300 ${theme} ${theme === 'mint' ? 'paper-grain' : ''}`}>
         <style>{`body { background: var(--bg-color); } * { -webkit-tap-highlight-color: transparent; }`}</style>
+
+        {activeTableId === APP_SETTINGS.DEMO_SS_ID && (
+          <div className="bg-amber-500/10 border-b border-amber-500/20 px-3 py-1.5 flex items-center justify-between text-xs z-50 backdrop-blur-md shrink-0">
+            <div className="flex items-center gap-1.5 text-amber-300 font-semibold text-[11px]">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+              <span>Демо-режим</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <a href="/demo" className="text-white/60 hover:text-white text-[10px] underline">
+                Видео
+              </a>
+              <button
+                onClick={() => {
+                  localStorage.removeItem(APP_SETTINGS.STORAGE_KEYS.ACTIVE_TABLE_ID);
+                  document.cookie = `cl_active_table_id=; path=/; max-age=0; SameSite=Lax`;
+                  window.location.href = "/landing";
+                }}
+                className="px-2 py-0.5 bg-[#6d5dfc] hover:bg-[#5b4ce3] text-white text-[10px] font-bold rounded-lg transition-all shadow"
+              >
+                Подключить свою
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="absolute top-[15px] right-[15px] z-50"><div className={`w-2 h-2 rounded-full ${syncStatus === "loading" ? "bg-amber-400 animate-pulse" : syncStatus === "success" ? "bg-emerald-500/50" : syncStatus === "error" ? "bg-rose-500" : "bg-white/10"}`} /></div>
 
