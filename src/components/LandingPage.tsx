@@ -94,9 +94,9 @@ const translations = {
     loginTabLabel: "Вход",
     signupTabLabel: "Новый пользователь",
     loginBtn: "Войти",
-    downloadTag: "Мобильное приложение",
-    downloadTitle: "CoinLover всегда под рукой.",
-    downloadText: "Установите приложение на свой смартфон для мгновенного доступа к финансам. Сканируйте QR-код или переходите по ссылкам.",
+    downloadTag: "Мультиплатформенность",
+    downloadTitle: "CoinLover на любых устройствах.",
+    downloadText: "Используйте CoinLover там, где вам удобно: установите официальное приложение из Google Play или работайте в любом браузере (Chrome, Safari) на компьютере и планшете. Все данные синхронизируются на лету.",
     downloadAppStore: "App Store",
     downloadGooglePlay: "Google Play",
     downloadBtn: "Скачать",
@@ -188,9 +188,9 @@ const translations = {
     loginTabLabel: "Sign In",
     signupTabLabel: "New User",
     loginBtn: "Log In",
-    downloadTag: "Mobile App",
-    downloadTitle: "CoinLover always at hand.",
-    downloadText: "Install the app on your smartphone for instant access to your finances. Scan the QR code or follow the links.",
+    downloadTag: "True Multi-platform",
+    downloadTitle: "CoinLover on any device.",
+    downloadText: "Use CoinLover wherever you are: install the official app from Google Play or launch the web app in any browser (Chrome, Safari) on desktop or tablet. All data syncs in real time.",
     downloadAppStore: "App Store",
     downloadGooglePlay: "Google Play",
     downloadBtn: "Download",
@@ -773,24 +773,6 @@ export const LandingPage: React.FC = () => {
           </div>
         </section>
 
-        <section className="flex flex-col md:flex-row items-center gap-16 md:gap-20">
-          <div className="flex-1 text-center md:text-left order-2 md:order-1">
-            <div className="relative inline-block group mb-10">
-              <div className="absolute -inset-10 bg-[#6d5dfc]/10 blur-3xl opacity-50 rounded-full" />
-              <div className="relative grid grid-cols-3 gap-8 md:gap-12">
-                <div className="flex flex-col items-center gap-4 text-white/40"><Smartphone size={40} className="md:w-16 md:h-16" /><span className="text-[8px] font-bold uppercase tracking-widest">{t.devices.mobile}</span></div>
-                <div className="flex flex-col items-center gap-4 text-white/40"><Tablet size={48} className="md:w-20 md:h-20" /><span className="text-[8px] font-bold uppercase tracking-widest">{t.devices.tablet}</span></div>
-                <div className="flex flex-col items-center gap-4 text-white/40"><Laptop size={56} className="md:w-24 md:h-24" /><span className="text-[8px] font-bold uppercase tracking-widest">{t.devices.desktop}</span></div>
-              </div>
-              <motion.div animate={{ rotate: 360 }} transition={{ duration: 10, repeat: Infinity, ease: "linear" }} className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-10"><RefreshCw size={200} className="text-[#6d5dfc]" /></motion.div>
-            </div>
-          </div>
-          <div className="flex-1 text-center md:text-left order-1 md:order-2">
-            <span className="text-purple-400 font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">{t.multiTag}</span>
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">{t.multiTitle}</h2>
-            <p className="text-lg text-white/50 mb-8 leading-relaxed">{t.multiText}</p>
-          </div>
-        </section>
 
         <section className="flex flex-col md:flex-row items-center gap-16 md:gap-20">
           <div className="flex-1 text-center md:text-left">
@@ -889,8 +871,31 @@ export const LandingPage: React.FC = () => {
           <div className="flex-1 text-center md:text-left">
             <span className="text-[#6d5dfc] font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">{t.downloadTag}</span>
             <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">{t.downloadTitle}</h2>
-            <p className="text-lg text-white/50 mb-10 leading-relaxed">{t.downloadText}</p>
+            <p className="text-lg text-white/50 mb-8 leading-relaxed">{t.downloadText}</p>
             
+            {/* Device sync badges */}
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 sm:gap-6 mb-8 pb-6 border-b border-white/10 text-white/60 text-xs">
+              <div className="flex items-center gap-2">
+                <Smartphone size={18} className="text-[#6d5dfc]" />
+                <span className="font-medium">{t.devices.mobile}</span>
+              </div>
+              <span className="text-white/20 hidden sm:inline">•</span>
+              <div className="flex items-center gap-2">
+                <Tablet size={18} className="text-[#6d5dfc]" />
+                <span className="font-medium">{t.devices.tablet}</span>
+              </div>
+              <span className="text-white/20 hidden sm:inline">•</span>
+              <div className="flex items-center gap-2">
+                <Laptop size={18} className="text-[#6d5dfc]" />
+                <span className="font-medium">{t.devices.desktop}</span>
+              </div>
+              <span className="text-white/20 hidden sm:inline">•</span>
+              <div className="flex items-center gap-1.5 text-emerald-400 text-[11px] font-semibold bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
+                <RefreshCw size={12} className="animate-spin" style={{ animationDuration: '6s' }} />
+                <span>{lang === 'ru' ? 'Мгновенная синхронизация' : 'Real-time sync'}</span>
+              </div>
+            </div>
+
             <div className="flex flex-wrap gap-4 justify-center md:justify-start">
               {/* Google Play Button */}
               <a 

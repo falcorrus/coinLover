@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { DatabaseSync } from 'node:sqlite';
 import fs from 'fs';
 import path from 'path';
+import { verifyAdminToken } from './sheets.ts';
 
 let db: DatabaseSync | null = null;
 
@@ -77,6 +78,14 @@ export async function telemetryHandler(req: Request, res: Response) {
   }
 
   if (req.method === 'GET' && subPath === 'stats') {
+    const isAdmin = verifyAdminToken(req, req.query);
+    if (!isAdmin) {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Доступ к статистике телеметрии разрешен только администраторам.'
+      });
+    }
+
     try {
       const days = Math.min(Math.max(parseInt(req.query.days as string, 10) || 7, 1), 90);
 

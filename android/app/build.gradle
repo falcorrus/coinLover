@@ -21,9 +21,9 @@ android {
             def keystoreFile = file('coinlover-release-key.jks')
             if (keystoreFile.exists()) {
                 storeFile keystoreFile
-                storePassword 'coinlover2026'
-                keyAlias 'coinlover'
-                keyPassword 'coinlover2026'
+                storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: 'coinlover2026'
+                keyAlias System.getenv("ANDROID_KEY_ALIAS") ?: 'coinlover'
+                keyPassword System.getenv("ANDROID_KEY_PASSWORD") ?: 'coinlover2026'
             }
         }
     }

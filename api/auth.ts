@@ -12,7 +12,10 @@ import path from 'path';
 import { registerLeadInMaster } from './sheets';
 
 const MASTER_SS_ID = process.env.MASTER_SS_ID || "1IQCs35RQlMMQsGB-CRczJeuRqa8WIxW4Sy_kjZyHP2M";
-const SECRET = process.env.JWT_SECRET || "coinlover-super-secret-key-1337";
+const SECRET = process.env.JWT_SECRET || (() => {
+  console.warn("[Auth Security Warning] JWT_SECRET is not set in environment. Generating random ephemeral secret.");
+  return crypto.randomBytes(32).toString('hex');
+})();
 
 // Helper: Get Sheets client (similar to api/sheets.ts)
 let sheetsClient: any = null;

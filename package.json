@@ -53,5 +53,8 @@
     "vercel": "^59.11.7",
     "vite": "^6.2.0",
     "vitest": "^4.1.0"
+  },
+  "overrides": {
+    "proxy-addr": ">=2.0.8"
   }
 }
