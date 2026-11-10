@@ -156,3 +156,41 @@ export const findIncome = (incomes: IncomeSource[], idOrName?: string | null): I
   );
 };
 
+/**
+ * Определяет сумму в базовой валюте (base_amt / столбец J):
+ * Проверяет столбцы операции (F - I): если одна из валют является базовой (например USD),
+ * берется точное значение этой валюты напрямую из операции, исключая погрешности рыночных курсов.
+ */
+export const resolveBaseAmount = (
+  sourceAmount: number,
+  sourceCurrency: string,
+  targetAmount: number,
+  targetCurrency: string,
+  baseCurrency: string = "USD",
+  convertedTargetUSD?: number,
+  convertedSourceUSD?: number
+): number => {
+  const base = (baseCurrency || "USD").trim().toUpperCase();
+  const sCurr = (sourceCurrency || "").trim().toUpperCase();
+  const tCurr = (targetCurrency || sourceCurrency || "").trim().toUpperCase();
+  const sAmt = Number(sourceAmount) || 0;
+  const tAmt = Number(targetAmount !== undefined ? targetAmount : sourceAmount) || 0;
+
+  if (sCurr === base && tCurr === base) {
+    return tAmt !== 0 ? tAmt : sAmt;
+  }
+  if (sCurr === base && tCurr !== base) {
+    return sAmt;
+  }
+  if (tCurr === base && sCurr !== base) {
+    return tAmt;
+  }
+  if (convertedTargetUSD !== undefined && convertedTargetUSD !== 0) {
+    return convertedTargetUSD;
+  }
+  if (convertedSourceUSD !== undefined && convertedSourceUSD !== 0) {
+    return convertedSourceUSD;
+  }
+  return RatesService.convert(tAmt, tCurr, base);
+};
+

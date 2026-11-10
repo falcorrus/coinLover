@@ -1354,6 +1354,23 @@ export default async function handler(req, res) {
           const rawHeaders = headerRes.data.values?.[0] || [];
           const headers = rawHeaders.map(h => String(h).trim().toLowerCase());
           
+          const baseCurr = String(payload.baseCurrency || "USD").trim().toUpperCase();
+          const sCurr = String(payload.sourceCurrency || "").trim().toUpperCase();
+          const tCurr = String(payload.targetCurrency || payload.sourceCurrency || "").trim().toUpperCase();
+          const sAmt = Number(payload.sourceAmount) || 0;
+          const tAmt = Number(payload.targetAmount !== undefined ? payload.targetAmount : payload.sourceAmount) || 0;
+
+          let baseAmt = 0;
+          if (sCurr === baseCurr && tCurr === baseCurr) {
+            baseAmt = tAmt !== 0 ? tAmt : sAmt;
+          } else if (sCurr === baseCurr && tCurr !== baseCurr) {
+            baseAmt = sAmt;
+          } else if (tCurr === baseCurr && sCurr !== baseCurr) {
+            baseAmt = tAmt;
+          } else {
+            baseAmt = payload.targetAmountUSD !== undefined && payload.targetAmountUSD !== 0 ? payload.targetAmountUSD : (payload.sourceAmountUSD || 0);
+          }
+
           const dataMap: any = { 
             "date": payload.date, 
             "type": payload.type, 
@@ -1364,7 +1381,7 @@ export default async function handler(req, res) {
             "s_curr": payload.sourceCurrency, 
             "t_amt": payload.targetAmount || payload.sourceAmount, 
             "t_curr": payload.targetCurrency || payload.sourceCurrency, 
-            "base_amt": payload.targetAmountUSD !== undefined && payload.targetAmountUSD !== 0 ? payload.targetAmountUSD : (payload.sourceAmountUSD || 0), 
+            "base_amt": baseAmt, 
             "comment": payload.comment || "", 
             "id": payload.id 
           };

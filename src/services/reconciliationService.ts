@@ -82,11 +82,11 @@ export class ReconciliationService {
 
     if (options?.customCheckpointDate instanceof Date && !isNaN(options.customCheckpointDate.getTime())) {
       checkpointDt = options.customCheckpointDate;
+    } else if (checkpointDate) {
+      checkpointDt = ReconciliationService.parseDate(checkpointDate);
     } else if (options?.useStartOfPrevMonth !== false) {
       // Default rule: use start of previous month
       checkpointDt = ReconciliationService.getStartOfPreviousMonth();
-    } else if (checkpointDate) {
-      checkpointDt = ReconciliationService.parseDate(checkpointDate);
     }
     const isCheckpointValid = checkpointDt !== null;
 

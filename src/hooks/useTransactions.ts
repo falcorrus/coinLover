@@ -3,7 +3,7 @@ import { Account, Transaction, Category, IncomeSource, TransactionType } from ".
 import { APP_SETTINGS } from "../constants/settings";
 import { googleSheetsService } from "../services/googleSheets";
 import { RatesService } from "../services/RatesService";
-import { getLocalTimeString, enrichAccountsWithUSD, formatDateOnly, formatDateTime, findAccount, findCategory, findIncome } from "./utils";
+import { getLocalTimeString, enrichAccountsWithUSD, formatDateOnly, formatDateTime, findAccount, findCategory, findIncome, resolveBaseAmount } from "./utils";
 import { trackEvent } from "../services/analytics";
 
 interface TransactionStateProps {
@@ -56,6 +56,24 @@ export const useTransactions = ({
 
     const sAmountUSD = RatesService.convert(sourceAmount, sCurr, baseCur);
     const tAmountUSD = RatesService.convert(finalTargetAmount, tCurr, baseCur);
+
+    const baseCurNorm = (baseCur || "USD").trim().toUpperCase();
+    const sCurrNorm = (sCurr || "").trim().toUpperCase();
+    const tCurrNorm = (tCurr || "").trim().toUpperCase();
+
+    let computedSourceUSD = Math.round(sAmountUSD * 100) / 100;
+    let computedTargetUSD = Math.round(tAmountUSD * 100) / 100;
+
+    if (sCurrNorm === baseCurNorm && tCurrNorm === baseCurNorm) {
+      computedSourceUSD = sourceAmount;
+      computedTargetUSD = finalTargetAmount;
+    } else if (sCurrNorm === baseCurNorm && tCurrNorm !== baseCurNorm) {
+      computedSourceUSD = sourceAmount;
+      computedTargetUSD = sourceAmount;
+    } else if (tCurrNorm === baseCurNorm && sCurrNorm !== baseCurNorm) {
+      computedSourceUSD = finalTargetAmount;
+      computedTargetUSD = finalTargetAmount;
+    }
     
     // Resolve names from latest state to ensure accuracy
     const resolvedSource = type === "income" 
@@ -75,10 +93,10 @@ export const useTransactions = ({
       targetId: type === "income" ? source.id : (destination as Category).id, 
       sourceAmount, 
       sourceCurrency: sCurr, 
-      sourceAmountUSD: Math.round(sAmountUSD * 100) / 100, 
+      sourceAmountUSD: computedSourceUSD, 
       targetAmount: finalTargetAmount, 
       targetCurrency: tCurr, 
-      targetAmountUSD: Math.round(tAmountUSD * 100) / 100, 
+      targetAmountUSD: computedTargetUSD, 
       date, 
       tag, 
       comment: comment || undefined 
@@ -191,6 +209,24 @@ export const useTransactions = ({
 
     const sAmountUSD = RatesService.convert(sourceAmount, sCurr, baseCur);
     const tAmountUSD = RatesService.convert(finalTargetAmount, tCurr, baseCur);
+
+    const baseCurNorm = (baseCur || "USD").trim().toUpperCase();
+    const sCurrNorm = (sCurr || "").trim().toUpperCase();
+    const tCurrNorm = (tCurr || "").trim().toUpperCase();
+
+    let computedSourceUSD = Math.round(sAmountUSD * 100) / 100;
+    let computedTargetUSD = Math.round(tAmountUSD * 100) / 100;
+
+    if (sCurrNorm === baseCurNorm && tCurrNorm === baseCurNorm) {
+      computedSourceUSD = sourceAmount;
+      computedTargetUSD = finalTargetAmount;
+    } else if (sCurrNorm === baseCurNorm && tCurrNorm !== baseCurNorm) {
+      computedSourceUSD = sourceAmount;
+      computedTargetUSD = sourceAmount;
+    } else if (tCurrNorm === baseCurNorm && sCurrNorm !== baseCurNorm) {
+      computedSourceUSD = finalTargetAmount;
+      computedTargetUSD = finalTargetAmount;
+    }
     
     // Resolve names from latest state to ensure accuracy
     const resolvedSource = type === "income" 
@@ -210,10 +246,10 @@ export const useTransactions = ({
       targetId: type === "income" ? source.id : (destination as Category).id, 
       sourceAmount, 
       sourceCurrency: sCurr, 
-      sourceAmountUSD: Math.round(sAmountUSD * 100) / 100, 
+      sourceAmountUSD: computedSourceUSD, 
       targetAmount: finalTargetAmount, 
       targetCurrency: tCurr, 
-      targetAmountUSD: Math.round(tAmountUSD * 100) / 100, 
+      targetAmountUSD: computedTargetUSD, 
       date, 
       tag, 
       comment: comment || undefined 

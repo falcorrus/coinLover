@@ -200,4 +200,41 @@ describe('findIncome', () => {
   });
 });
 
+describe('resolveBaseAmount (Column J formation)', () => {
+  it('preserves exact source amount when source currency is base currency (row 928 example)', async () => {
+    const { resolveBaseAmount } = await import('../utils');
+    // Row 928: 800 USD -> 1,327,200 ARS. Market rate converted ARS would be 858.81.
+    const baseAmt = resolveBaseAmount(800, 'USD', 1327200, 'ARS', 'USD', 858.81, 800);
+    expect(baseAmt).toBe(800);
+  });
+
+  it('preserves exact target amount when target currency is base currency (row 929 example)', async () => {
+    const { resolveBaseAmount } = await import('../utils');
+    // Row 929: 1,327,200 ARS -> 800 USD.
+    const baseAmt = resolveBaseAmount(1327200, 'ARS', 800, 'USD', 'USD', 800, 858.81);
+    expect(baseAmt).toBe(800);
+  });
+
+  it('preserves source amount for expense charged in base currency', async () => {
+    const { resolveBaseAmount } = await import('../utils');
+    // Row 926: Card in USD charged 44.08 USD for 239.44 BRL bill. Market was 43.50.
+    const baseAmt = resolveBaseAmount(44.08, 'USD', 239.44, 'BRL', 'USD', 43.50, 44.08);
+    expect(baseAmt).toBe(44.08);
+  });
+
+  it('preserves amount when both source and target are in base currency', async () => {
+    const { resolveBaseAmount } = await import('../utils');
+    const baseAmt = resolveBaseAmount(50, 'USD', 50, 'USD', 'USD');
+    expect(baseAmt).toBe(50);
+  });
+
+  it('falls back to converted amount when neither currency is base currency', async () => {
+    const { resolveBaseAmount } = await import('../utils');
+    // 100 BRL expense, base is USD. Converted is 18.25.
+    const baseAmt = resolveBaseAmount(100, 'BRL', 100, 'BRL', 'USD', 18.25);
+    expect(baseAmt).toBe(18.25);
+  });
+});
+
+
 

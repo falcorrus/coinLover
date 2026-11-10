@@ -515,7 +515,22 @@ function doPost(e) {
       const rawHeaders = all[0];
       const ids = rawHeaders.map(h => String(h).trim().toLowerCase());
       
-      const baseAmt = data.targetAmountUSD !== undefined && data.targetAmountUSD !== 0 ? data.targetAmountUSD : (data.sourceAmountUSD || 0);
+      const baseCurr = String(data.baseCurrency || "USD").trim().toUpperCase();
+      const sCurr = String(data.sourceCurrency || "").trim().toUpperCase();
+      const tCurr = String(data.targetCurrency || data.sourceCurrency || "").trim().toUpperCase();
+      const sAmt = Number(data.sourceAmount) || 0;
+      const tAmt = Number(data.targetAmount !== undefined ? data.targetAmount : data.sourceAmount) || 0;
+
+      let baseAmt = 0;
+      if (sCurr === baseCurr && tCurr === baseCurr) {
+        baseAmt = tAmt !== 0 ? tAmt : sAmt;
+      } else if (sCurr === baseCurr && tCurr !== baseCurr) {
+        baseAmt = sAmt;
+      } else if (tCurr === baseCurr && sCurr !== baseCurr) {
+        baseAmt = tAmt;
+      } else {
+        baseAmt = data.targetAmountUSD !== undefined && data.targetAmountUSD !== 0 ? data.targetAmountUSD : (data.sourceAmountUSD || 0);
+      }
       const f = { 
         "date": parseDateSafe(data.date), "type": data.type, "src": data.sourceName || "Unknown Source", "dst": data.destinationName || "Unknown Destination",
         "tag": data.tagName || "", "s_amt": Number(data.sourceAmount), "s_curr": data.sourceCurrency,

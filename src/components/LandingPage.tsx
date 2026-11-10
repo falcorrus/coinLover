@@ -5,7 +5,7 @@ import {
   Database, MousePointer2, Layout, Lock, Coins, X, Send, 
   Wallet, Banknote, TrendingUp, Coffee, ShoppingBag, Car, Utensils, Film,
   FileSpreadsheet, Languages, Search, History, Smartphone, Tablet, Laptop, RefreshCw,
-  Fingerprint, Move, Copy, Check, QrCode
+  Fingerprint, Move, Copy, Check, QrCode, Play
 } from "lucide-react";
 import { googleSheetsService } from "../services/googleSheets";
 import { startAuthentication, startRegistration } from "@simplewebauthn/browser";
@@ -91,8 +91,8 @@ const translations = {
     modalLoginSuccess: "Успешный вход!",
     modalLoginSuccessSub: "Мы нашли вашу таблицу. Запускаем сессию...",
     modalLoginError: "Некорректная ссылка или таблица не найдена",
-    loginTabLabel: "Уже зарегистрированы?",
-    signupTabLabel: "Новый пользователь?",
+    loginTabLabel: "Вход",
+    signupTabLabel: "Новый пользователь",
     loginBtn: "Войти",
     downloadTag: "Мобильное приложение",
     downloadTitle: "CoinLover всегда под рукой.",
@@ -103,6 +103,10 @@ const translations = {
     downloadModalTitle: "Установить CoinLover",
     orLabel: "или",
     faceIdBtn: "Войти через Face ID / Passkey",
+    downloadPlaySubtitle: "Доступно в",
+    downloadDirectSubtitle: "Прямое скачивание",
+    downloadQrHint: "Сканируйте для установки из Google Play",
+    modalDemoBtn: "Попробовать демо-режим",
   },
   en: {
     demo: "Demo",
@@ -181,8 +185,8 @@ const translations = {
     modalLoginSuccess: "Logged in!",
     modalLoginSuccessSub: "We found your sheet. Starting session...",
     modalLoginError: "Invalid URL or sheet not found",
-    loginTabLabel: "Already registered?",
-    signupTabLabel: "New user?",
+    loginTabLabel: "Sign In",
+    signupTabLabel: "New User",
     loginBtn: "Log In",
     downloadTag: "Mobile App",
     downloadTitle: "CoinLover always at hand.",
@@ -193,6 +197,10 @@ const translations = {
     downloadModalTitle: "Install CoinLover",
     orLabel: "or",
     faceIdBtn: "Log In with Face ID / Passkey",
+    downloadPlaySubtitle: "Get it on",
+    downloadDirectSubtitle: "Direct download",
+    downloadQrHint: "Scan to install from Google Play",
+    modalDemoBtn: "Try Demo Mode",
   }
 };
 
@@ -883,10 +891,36 @@ export const LandingPage: React.FC = () => {
             <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">{t.downloadTitle}</h2>
             <p className="text-lg text-white/50 mb-10 leading-relaxed">{t.downloadText}</p>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+            <div className="flex flex-wrap gap-4 justify-center md:justify-start">
+              {/* Google Play Button */}
+              <a 
+                href="https://play.google.com/store/apps/details?id=coinLover.ru" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-4 px-7 py-4 bg-[#6d5dfc] hover:bg-[#5b4ce3] text-white font-bold rounded-2xl transition-all shadow-xl shadow-[#6d5dfc]/20 group active:scale-98"
+              >
+                <svg className="w-6 h-6 shrink-0" viewBox="0 0 24 24" fill="none">
+                  <path d="M3.609 1.814L13.792 12 3.61 22.186A2.215 2.215 0 0 1 3 20.613V3.387c0-.594.223-1.15.609-1.573z" fill="#00E676" />
+                  <path d="M17.437 8.355l-3.645 3.645L3.61 1.814c.328-.358.804-.582 1.334-.582.49 0 .937.19 1.272.502l11.221 6.621z" fill="#FFD600" />
+                  <path d="M17.437 15.645L4.944 23.018A1.91 1.91 0 0 1 3.609 22.186L13.792 12l3.645 3.645z" fill="#FF1744" />
+                  <path d="M21.285 10.608l-3.848-2.253L13.792 12l3.645 3.645 3.848-2.253c.82-.48.82-1.904 0-2.384z" fill="#00B0FF" />
+                </svg>
+                <div className="text-left">
+                  <div className="text-[10px] opacity-80 uppercase tracking-widest font-black">{(t as any).downloadPlaySubtitle || "Доступно в"}</div>
+                  <div className="text-base uppercase tracking-wider">{t.downloadGooglePlay}</div>
+                </div>
+              </a>
+
+              {/* Web / PWA Button */}
               <button
-                onClick={() => handleOpenModal("login")}
-                className="flex items-center gap-4 px-8 py-4 bg-white/5 hover:bg-white/10 text-white font-bold rounded-2xl transition-all border border-white/10 group"
+                onClick={() => {
+                  if (activeTableId) {
+                    window.location.href = "/";
+                  } else {
+                    handleOpenModal("onboarding");
+                  }
+                }}
+                className="flex items-center gap-4 px-6 py-4 bg-white/5 hover:bg-white/10 text-white font-bold rounded-2xl transition-all border border-white/10 group active:scale-98"
               >
                 <Globe size={24} className="text-[#6d5dfc]" />
                 <div className="text-left">
@@ -894,14 +928,16 @@ export const LandingPage: React.FC = () => {
                   <div className="text-base uppercase tracking-wider">{t.openInChrome}</div>
                 </div>
               </button>
+
+              {/* Direct APK Download Button */}
               <a 
                 href="/download/coinlover.apk" 
                 download
-                className="flex items-center gap-4 px-8 py-4 bg-[#6d5dfc] hover:bg-[#5b4ce3] text-white font-bold rounded-2xl transition-all shadow-xl shadow-[#6d5dfc]/20 group"
+                className="flex items-center gap-4 px-6 py-4 bg-white/5 hover:bg-white/10 text-white/90 hover:text-white font-bold rounded-2xl transition-all border border-white/10 group active:scale-98"
               >
-                <Smartphone size={24} />
+                <Smartphone size={24} className="text-white/60 group-hover:text-white transition-colors" />
                 <div className="text-left">
-                  <div className="text-[10px] opacity-70 uppercase tracking-widest font-black">Direct Download</div>
+                  <div className="text-[10px] opacity-70 uppercase tracking-widest font-black">{(t as any).downloadDirectSubtitle || "Direct Download"}</div>
                   <div className="text-base uppercase tracking-wider">Android APK</div>
                 </div>
               </a>
@@ -914,12 +950,12 @@ export const LandingPage: React.FC = () => {
               <div className="glass-panel p-6 border-white/10 shadow-2xl relative z-10 flex flex-col items-center gap-4 bg-[#050505]/60">
                 <div className="bg-white p-3 rounded-2xl shadow-inner">
                   <img 
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent("https://coinlover.ru/download/coinlover.apk")}`} 
-                    alt="Download QR"
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent("https://play.google.com/store/apps/details?id=coinLover.ru")}`} 
+                    alt="Google Play QR"
                     className="w-[180px] h-[180px] block"
                   />
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Scan to download APK</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">{(t as any).downloadQrHint || "Сканируйте для установки из Google Play"}</span>
               </div>
             </div>
           </div>
@@ -976,21 +1012,39 @@ export const LandingPage: React.FC = () => {
                         : t.studioTitle}
                   </h2>
 
-                    {false && (
-                      <div className="flex bg-white/5 rounded-xl p-1 border border-white/5 mt-1 mb-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setModalType("onboarding");
-                            setStep(1);
-                            setErrorMsg("");
-                          }}
-                          className="flex-1 py-2 text-xs font-bold rounded-lg transition-all bg-[#6d5dfc] text-white shadow-md"
-                        >
-                          {t.signupTabLabel}
-                        </button>
-                      </div>
-                    )}
+                  {modalType !== "studio" && (
+                    <div className="flex bg-black/40 p-1 rounded-xl border border-white/10 mt-1 mb-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setModalType("onboarding");
+                          setStep(1);
+                          setErrorMsg("");
+                        }}
+                        className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+                          modalType === "onboarding"
+                            ? "bg-[#6d5dfc] text-white shadow-[0_2px_10px_rgba(109,93,252,0.3)]"
+                            : "text-white/40 hover:text-white"
+                        }`}
+                      >
+                        {t.signupTabLabel}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setModalType("login");
+                          setErrorMsg("");
+                        }}
+                        className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+                          modalType === "login"
+                            ? "bg-[#6d5dfc] text-white shadow-[0_2px_10px_rgba(109,93,252,0.3)]"
+                            : "text-white/40 hover:text-white"
+                        }`}
+                      >
+                        {t.loginTabLabel}
+                      </button>
+                    </div>
+                  )}
                     
                   
                   {modalType === "studio" && (
@@ -1206,6 +1260,18 @@ export const LandingPage: React.FC = () => {
                         {isLoading ? <RefreshCw className="animate-spin w-5 h-5" /> : <>{t.modalSend} <Send size={18} /></>}
                       </button>
                     </form>
+                  )}
+
+                  {modalType !== "studio" && (
+                    <div className="pt-2 text-center border-t border-white/5 mt-1">
+                      <a 
+                        href="/demo"
+                        className="inline-flex items-center gap-1.5 text-xs text-white/40 hover:text-[#6d5dfc] transition-colors"
+                      >
+                        <Play size={12} className="text-[#6d5dfc]" />
+                        <span>{(t as any).modalDemoBtn || "Попробовать демо-режим"}</span>
+                      </a>
+                    </div>
                   )}
                 </div>
               ) : (

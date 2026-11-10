@@ -445,7 +445,7 @@ SplashScreen.hide().catch(() => {});
 
   // Show landing when no active table and either root or non‑user path
   if (!activeTableId && !isUserPath) {
-    if (isNativeApp) {
+    if (isNativeApp || currentPath === "/auth" || currentPath === "/login") {
       return (
         <React.Suspense fallback={<div className="min-h-screen bg-[#050505]" />}>
           <NativeAuthScreen />

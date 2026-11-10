@@ -31,9 +31,10 @@ export function useCurrencyCalculations(
     const sCurr = t.sourceCurrency || account?.currency || baseCurrency;
     const amount = isNaN(Number(t.sourceAmount)) ? 0 : t.sourceAmount;
 
-    // Игнорируем t.sourceAmountUSD из таблицы, так как там могут быть неверные данные (например в USD вместо EUR)
-    // Всегда считаем базу сами на лету
-    const val = RatesService.convert(amount || 0, sCurr, baseCurrency);
+    // Приоритет столбца J (sourceAmountUSD) при базовой валюте USD (синхронизировано с аналитикой)
+    const val = (t.sourceAmountUSD && t.sourceAmountUSD !== 0 && baseCurrency === 'USD')
+      ? t.sourceAmountUSD
+      : RatesService.convert(amount || 0, sCurr, baseCurrency);
     return s + val;
   }, 0)), [currentMonthTransactions, baseCurrency, accounts]);
 
@@ -42,8 +43,10 @@ export function useCurrencyCalculations(
     const tCurr = t.targetCurrency || account?.currency || baseCurrency;
     const amount = isNaN(Number(t.targetAmount)) ? 0 : t.targetAmount;
 
-    // Аналогично для доходов
-    const val = RatesService.convert(amount || 0, tCurr, baseCurrency);
+    // Приоритет столбца J (targetAmountUSD) при базовой валюте USD (синхронизировано с аналитикой)
+    const val = (t.targetAmountUSD && t.targetAmountUSD !== 0 && baseCurrency === 'USD')
+      ? t.targetAmountUSD
+      : RatesService.convert(amount || 0, tCurr, baseCurrency);
     return s + val;
   }, 0)), [currentMonthTransactions, baseCurrency, accounts]);
 
@@ -75,8 +78,9 @@ export function useCurrencyCalculations(
         if (t.targetCurrency === localCur && t.targetAmount) return s + t.targetAmount;
         
         const sCurr = getSafeCurr(t);
-        // Считаем из оригинала, игнорируя колонку "USD" в таблице
-        const valBase = RatesService.convert(t.sourceAmount || 0, sCurr, baseCurrency);
+        const valBase = (t.sourceAmountUSD && t.sourceAmountUSD !== 0 && baseCurrency === 'USD')
+          ? t.sourceAmountUSD
+          : RatesService.convert(t.sourceAmount || 0, sCurr, baseCurrency);
         return s + RatesService.convert(valBase, baseCurrency, localCur);
       }, 0));
 
@@ -86,7 +90,9 @@ export function useCurrencyCalculations(
         if (t.targetCurrency === localCur && t.targetAmount) return s + t.targetAmount;
         
         const tCurr = getSafeCurr(t);
-        const valBase = RatesService.convert(t.targetAmount || 0, tCurr, baseCurrency);
+        const valBase = (t.targetAmountUSD && t.targetAmountUSD !== 0 && baseCurrency === 'USD')
+          ? t.targetAmountUSD
+          : RatesService.convert(t.targetAmount || 0, tCurr, baseCurrency);
         return s + RatesService.convert(valBase, baseCurrency, localCur);
       }, 0));
 
